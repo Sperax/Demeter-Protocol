@@ -554,6 +554,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 rewardsLeft = getRewardBalance(rwdToken);
         if (rewardsLeft > 0) {
             // Transfer the rewards to the common reward fund
+            rewardData[rwdToken].supply -= rewardsLeft;
             IERC20(rwdToken).safeTransfer(emergencyRet, rewardsLeft);
             emit FundsRecovered(emergencyRet, rwdToken, rewardsLeft);
         }
@@ -776,6 +777,10 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         // Initialize reward Data
         rewardTokens = new address[](numRewards);
         for (uint8 i = 0; i < numRewards; ++i) {
+            require(
+                _rewardData[i].rewardsPerSec.length == numFunds,
+                "Invalid reward data"
+            );
             address rwdToken = _rewardData[i].token;
             // Validate if addresses are correct
             _isNonZeroAddr(rwdToken);
