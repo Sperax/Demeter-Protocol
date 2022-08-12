@@ -171,6 +171,14 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         _;
     }
 
+    modifier isTokenManager(address _rwdToken) {
+        require(
+            _msgSender() == rewardData[_rwdToken].tknManager,
+            "Not the token manager"
+        );
+        _;
+    }
+
     // @notice constructor
     // @param _farmStartTime - time of farm start
     // @param _cooldownPeriod - cooldown period for locked deposits
@@ -386,33 +394,84 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         _claimRewards(account, _depositId);
     }
 
-    /// @notice Recover rewardToken from the farm in case of EMERGENCY
-    /// @dev Shuts down the farm completely
-    function declareEmergency() external onlyOwner {
-        uint256 numRewards = rewardTokens.length;
-        updateCooldownPeriod(0);
-        toggleDepositPause();
-        inEmergency = true;
-        for (uint8 i = 0; i < numRewards; ++i) {
-            recoverRewardFunds(rewardTokens[i]);
-        }
-    }
-
     /// @notice Add rewards to the farm.
     /// @param _rwdToken the reward token's address.
     /// @param _amount the amount of reward tokens to add.
-    /// @dev Only the _rwdToken manager can add the rewards.
     function addRewards(address _rwdToken, uint256 _amount)
         external
         nonReentrant
     {
-        address caller = _msgSender();
         require(
-            caller == rewardData[_rwdToken].tknManager || caller == owner(),
-            "Unauthorized call"
+            rewardData[_rwdToken].tknManager != address(0),
+            "Invalid reward token"
         );
         rewardData[_rwdToken].supply += _amount;
-        IERC20(_rwdToken).safeTransferFrom(caller, address(this), _amount);
+        IERC20(_rwdToken).safeTransferFrom(
+            _msgSender(),
+            address(this),
+            _amount
+        );
+    }
+
+    // --------------------- Admin  Functions ---------------------
+    /// @notice Update the cooldown period
+    /// @param _newCooldownPeriod The new cooldown period (in seconds)
+    function updateCooldownPeriod(uint256 _newCooldownPeriod)
+        external
+        onlyOwner
+    {
+        require(cooldownPeriod != 0, "Farm does not support lockup");
+        require(
+            cooldownPeriod > MIN_COOLDOWN_PERIOD,
+            "Cooldown period too low"
+        );
+        uint256 oldCooldownPeriod = cooldownPeriod;
+        cooldownPeriod = _newCooldownPeriod;
+        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
+    }
+
+    /// @notice Pause / UnPause the deposit
+    function toggleDepositPause() external onlyOwner {
+        isPaused = !isPaused;
+        emit DepositPaused(isPaused);
+    }
+
+    /// @notice Recover rewardToken from the farm in case of EMERGENCY
+    /// @dev Shuts down the farm completely
+    function declareEmergency() external onlyOwner nonReentrant {
+        _updateFarmRewardData();
+        cooldownPeriod = 0;
+        isPaused = true;
+        inEmergency = true;
+        for (uint8 i = 0; i < rewardTokens.length; ++i) {
+            _recoverRewardFunds(rewardTokens[i], type(uint256).max);
+        }
+    }
+
+    // --------------------- Token Manager Functions ---------------------
+    /// @notice Get the remaining balance out of the  farm
+    /// @param _rwdToken The reward token's address
+    /// @param _amount The amount of the reward token to be withdrawn
+    /// @dev Function recovers minOf(_amount, rewardsLeft)
+    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
+    function recoverRewardFunds(address _rwdToken, uint256 _amount)
+        external
+        isTokenManager(_rwdToken)
+        nonReentrant
+    {
+        _updateFarmRewardData();
+        _recoverRewardFunds(_rwdToken, _amount);
+    }
+
+    /// @notice Function to update reward params for a fund.
+    /// @param _rwdToken The reward token's address
+    /// @param _newRewardRates The new reward rate for the fund (includes the precision)
+    function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
+        external
+        isTokenManager(_rwdToken)
+    {
+        _updateFarmRewardData();
+        _setRewardRate(_rwdToken, _newRewardRates);
     }
 
     /// @notice Function to compute the total accrued rewards for a deposit
@@ -507,74 +566,6 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         return rewardFunds[_fundId];
     }
 
-    // --------------------- Admin  Functions ---------------------
-    /// @notice Update the cooldown period
-    /// @param _newCooldownPeriod The new cooldown period (in seconds)
-    function updateCooldownPeriod(uint256 _newCooldownPeriod) public onlyOwner {
-        require(cooldownPeriod != 0, "Farm doesnot support lockup");
-        require(
-            cooldownPeriod > MIN_COOLDOWN_PERIOD,
-            "Cooldown period too low"
-        );
-        uint256 oldCooldownPeriod = cooldownPeriod;
-        cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
-    }
-
-    /// @notice Pause / UnPause the deposit
-    function toggleDepositPause() public onlyOwner {
-        isPaused = !isPaused;
-        emit DepositPaused(isPaused);
-    }
-
-    /// @notice Function to update reward params for a fund.
-    /// @param _rwdToken The reward token's address
-    /// @param _newRewardRates The new reward rate for the fund (includes the precision)
-    function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
-        public
-    {
-        address caller = _msgSender();
-        require(
-            caller == rewardData[_rwdToken].tknManager || caller == owner(),
-            "Unauthorized call"
-        );
-        uint256 numFunds = rewardFunds.length;
-        uint8 id = rewardData[_rwdToken].id;
-        require(
-            _newRewardRates.length == numFunds,
-            "Invalid reward rates length"
-        );
-        // Update the total accumulated rewards here
-        _updateFarmRewardData();
-        // Update the reward rate
-        uint256[] memory oldRewardRates = getRewardRates(_rwdToken);
-        for (uint8 i = 0; i < numFunds; ++i) {
-            rewardFunds[i].rewardsPerSec[id] = _newRewardRates[i];
-        }
-        emit RewardRateUpdated(_rwdToken, oldRewardRates, _newRewardRates);
-    }
-
-    /// @notice Get the remaining balance out of the  farm
-    /// @dev All the leftover funds are returned to the emergency address
-    /// @param _rwdToken The reward token's address
-    function recoverRewardFunds(address _rwdToken) public nonReentrant {
-        address caller = _msgSender();
-        require(
-            caller == rewardData[_rwdToken].tknManager || caller == owner(),
-            "Unauthorized call"
-        );
-        address emergencyRet = rewardData[_rwdToken].emergencyReturn;
-        // Update the total accumulated rewards here1
-        setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
-        uint256 rewardsLeft = getRewardBalance(_rwdToken);
-        if (rewardsLeft > 0) {
-            // Transfer the rewards to the common reward fund
-            rewardData[_rwdToken].supply -= rewardsLeft;
-            IERC20(_rwdToken).safeTransfer(emergencyRet, rewardsLeft);
-            emit FundsRecovered(emergencyRet, _rwdToken, rewardsLeft);
-        }
-    }
-
     /// @notice Get the remaining reward balnce for the farm.
     /// @param _rwdToken The reward token's address
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
@@ -583,13 +574,17 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
 
         uint256 numFunds = rewardFunds.length;
         uint256 rewardsAcc = rewardData[_rwdToken].accRewards;
+        uint256 supply = rewardData[_rwdToken].supply;
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = lastFundUpdateTime - block.timestamp;
             for (uint8 i = 0; i < rewardFunds.length; ++i) {
                 rewardsAcc += rewardFunds[i].rewardsPerSec[rwdId] * time;
             }
         }
-        return (rewardData[_rwdToken].supply - rewardsAcc);
+        if (rewardsAcc > supply) {
+            return 0;
+        }
+        return (supply - rewardsAcc);
     }
 
     /// @notice get reward rates for a rewardToken.
@@ -665,6 +660,43 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                 IERC20(rewardTokens[j]).safeTransfer(_account, totalRewards[j]);
             }
         }
+    }
+
+    /// @notice Get the remaining balance out of the  farm
+    /// @param _rwdToken The reward token's address
+    /// @param _amount The amount of the reward token to be withdrawn
+    /// @dev Function recovers minOf(_amount, rewardsLeft)
+    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
+    function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
+        _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
+        address emergencyRet = rewardData[_rwdToken].emergencyReturn;
+        uint256 rewardsLeft = getRewardBalance(_rwdToken);
+        uint256 amountToRecover = _amount < rewardsLeft ? _amount : rewardsLeft;
+        if (amountToRecover > 0) {
+            rewardData[_rwdToken].supply -= amountToRecover;
+            IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
+            emit FundsRecovered(emergencyRet, _rwdToken, amountToRecover);
+        }
+    }
+
+    /// @notice Function to update reward params for a fund.
+    /// @param _rwdToken The reward token's address
+    /// @param _newRewardRates The new reward rate for the fund (includes the precision)
+    function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
+        private
+    {
+        uint8 id = rewardData[_rwdToken].id;
+        uint256 numFunds = rewardFunds.length;
+        require(
+            _newRewardRates.length == numFunds,
+            "Invalid reward rates length"
+        );
+        uint256[] memory oldRewardRates = getRewardRates(_rwdToken);
+        // Update the reward rate
+        for (uint8 i = 0; i < numFunds; ++i) {
+            rewardFunds[i].rewardsPerSec[id] = _newRewardRates[i];
+        }
+        emit RewardRateUpdated(_rwdToken, oldRewardRates, _newRewardRates);
     }
 
     /// @notice Add subscription to the reward fund for a deposit
@@ -752,9 +784,9 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
             uint256 numRewards = rewardTokens.length;
             // Update the reward funds.
             for (uint8 i = 0; i < rewardFunds.length; ++i) {
-                RewardFund storage fund = rewardFunds[i];
+                RewardFund memory fund = rewardFunds[i];
                 if (fund.totalLiquidity > 0) {
-                    for (uint8 j = 0; j < numRewards; j++) {
+                    for (uint8 j = 0; j < numRewards; ++j) {
                         uint256 accRewards = fund.rewardsPerSec[j] * time;
                         rewardData[rewardTokens[j]].accRewards += accRewards;
                         fund.accRewardPerShare[j] +=
@@ -762,6 +794,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                             fund.totalLiquidity;
                     }
                 }
+                rewardFunds[i] = fund;
             }
             lastFundUpdateTime = block.timestamp;
         }
