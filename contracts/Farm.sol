@@ -185,6 +185,8 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     ) {
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
+        isPaused = false;
+        inEmergency = false;
 
         // initialize uniswap related data
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
