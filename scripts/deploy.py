@@ -11,7 +11,7 @@ from .utils import (
 )
 import json
 
-GAS_LIMIT = 1000000
+GAS_LIMIT = 100000000
 
 
 def deploy(owner, contract, config):
