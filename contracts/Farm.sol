@@ -180,12 +180,12 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         _;
     }
 
-    // @notice constructor
-    // @param _farmStartTime - time of farm start
-    // @param _cooldownPeriod - cooldown period for locked deposits
-    // @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    // @param _uniswapPoolData - init data for UniswapV3 pool
-    // @param _rewardData - init data for reward tokens
+    /// @notice constructor
+    /// @param _farmStartTime - time of farm start
+    /// @param _cooldownPeriod - cooldown period for locked deposits
+    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _uniswapPoolData - init data for UniswapV3 pool
+    /// @param _rewardData - init data for reward tokens
     constructor(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
@@ -213,7 +213,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         if (_cooldownPeriod > 0) {
             require(
                 _cooldownPeriod > MIN_COOLDOWN_PERIOD,
-                "Cooldown period must be greater than or equal to "
+                "Cooldown < MinCooldownPeriod"
             );
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
@@ -651,19 +651,10 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             // Update the total rewards earned for the deposit
             userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-        }
-
-        if (inEmergency) {
-            // Record event in case of emergency
-            emit EmergencyClaim(_account);
-        } else {
-            // Transfer the rewards to the user
-            for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
-                IERC20(rewardTokens[iRwd]).safeTransfer(
-                    _account,
-                    totalRewards[iRwd]
-                );
-            }
+            IERC20(rewardTokens[iRwd]).safeTransfer(
+                _account,
+                totalRewards[iRwd]
+            );
         }
     }
 
@@ -793,7 +784,18 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                 RewardFund memory fund = rewardFunds[iFund];
                 if (fund.totalLiquidity > 0) {
                     for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                        address rwdToken = rewardTokens[iRwd];
+                        uint256 rwdSupply = rewardData[rwdToken].supply;
+                        uint256 rwdAccrued = rewardData[rwdToken].accRewards;
+
+                        uint256 rwdBal = 0;
+                        if (rwdSupply > rwdAccrued) {
+                            rwdBal = rwdSupply - rwdAccrued;
+                        }
                         uint256 accRewards = fund.rewardsPerSec[iRwd] * time;
+                        if (accRewards > rwdBal) {
+                            accRewards = rwdBal;
+                        }
                         rewardData[rewardTokens[iRwd]].accRewards += accRewards;
                         fund.accRewardPerShare[iRwd] +=
                             (accRewards * PREC) /
