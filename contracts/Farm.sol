@@ -621,14 +621,12 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256[] memory totalRewards = new uint256[](numRewards);
         // Compute the rewards for each subscription.
         for (uint8 iSub = 0; iSub < numSubs; ++iSub) {
+            uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
-
             for (uint256 iRwd = 0; iRwd < numRewards; ++iRwd) {
                 // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
                 uint256 accRewards = (userDeposit.liquidity *
-                    rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
-                        iRwd
-                    ]) / PREC;
+                    rewardFunds[fundId].accRewardPerShare[iRwd]) / PREC;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
                 depositSubs[iSub].rewardClaimed[iRwd] += rewards[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
@@ -640,10 +638,10 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
 
             emit RewardsClaimed(
                 _account,
-                depositSubs[iSub].fundId,
+                fundId,
                 userDeposit.tokenId,
                 userDeposit.liquidity,
-                rewardFunds[depositSubs[iSub].fundId].totalLiquidity,
+                rewardFunds[fundId].totalLiquidity,
                 rewards
             );
         }
@@ -796,7 +794,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                         if (accRewards > rwdBal) {
                             accRewards = rwdBal;
                         }
-                        rewardData[rewardTokens[iRwd]].accRewards += accRewards;
+                        rewardData[rwdToken].accRewards += accRewards;
                         fund.accRewardPerShare[iRwd] +=
                             (accRewards * PREC) /
                             fund.totalLiquidity;
