@@ -283,7 +283,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     {
         address account = _msgSender();
         require(
-            deposits[account].length > _depositId,
+            _depositId < deposits[account].length,
             "Deposit does not exist"
         );
         Deposit storage userDeposit = deposits[account][_depositId];
@@ -313,7 +313,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     function withdraw(uint256 _depositId) external nonReentrant {
         address account = _msgSender();
         require(
-            deposits[account].length > _depositId,
+            _depositId < deposits[account].length,
             "Deposit does not exist"
         );
         Deposit memory userDeposit = deposits[account][_depositId];
@@ -374,7 +374,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         nonReentrant
     {
         require(
-            deposits[_account].length > _depositId,
+            _depositId < deposits[_account].length,
             "Deposit does not exist"
         );
         _claimRewards(_account, _depositId);
@@ -389,7 +389,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     {
         address account = _msgSender();
         require(
-            deposits[account].length > _depositId,
+            _depositId < deposits[account].length,
             "Deposit does not exist"
         );
         _claimRewards(account, _depositId);
@@ -485,7 +485,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         returns (uint256[] memory rewards)
     {
         require(
-            deposits[_account].length > _depositId,
+            _depositId < deposits[_account].length,
             "Deposit does not exist"
         );
         Deposit storage userDeposit = deposits[_account][_depositId];
@@ -551,7 +551,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         returns (Subscription memory)
     {
         require(
-            subscriptions[_tokenId].length > _subscriptionId,
+            _subscriptionId < subscriptions[_tokenId].length,
             "Subscription does not exist"
         );
         return subscriptions[_tokenId][_subscriptionId];
