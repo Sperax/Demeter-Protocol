@@ -594,12 +594,16 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 rewardsAcc = rewardData[_rwdToken].accRewards;
         uint256 supply = rewardData[_rwdToken].supply;
         if (block.timestamp > lastFundUpdateTime) {
-            uint256 time = lastFundUpdateTime - block.timestamp;
+            uint256 time = block.timestamp - lastFundUpdateTime;
             for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
-                rewardsAcc += rewardFunds[iFund].rewardsPerSec[rwdId] * time;
+                if (rewardFunds[iFund].totalLiquidity > 0) {
+                    rewardsAcc +=
+                        rewardFunds[iFund].rewardsPerSec[rwdId] *
+                        time;
+                }
             }
         }
-        if (rewardsAcc > supply) {
+        if (rewardsAcc >= supply) {
             return 0;
         }
         return (supply - rewardsAcc);
