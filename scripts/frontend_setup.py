@@ -127,12 +127,12 @@ def main():
 
     print(f'\n{network.show_active()}:\n')
     print(f'{config_name} Farm address: {farm.address}')
-    reward_data = list(
+    reward_data = *list(
         map(lambda x: list(x.values()), config['reward_token_data'])
     ),
     token_A = token_obj(config['uniswap_pool_data']['token_A'])
     token_B = token_obj(config['uniswap_pool_data']['token_B'])
-    rwd_tokens = map(lambda x: token_obj(x[0][0]), reward_data)
+    rwd_tokens = list(map(lambda x: token_obj(x[0]), reward_data))
 
     accounts[0].transfer(user_account, '50 ether')
 
