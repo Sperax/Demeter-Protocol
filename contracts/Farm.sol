@@ -423,7 +423,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     {
         require(cooldownPeriod != 0, "Farm does not support lockup");
         require(
-            cooldownPeriod > MIN_COOLDOWN_PERIOD,
+            _newCooldownPeriod > MIN_COOLDOWN_PERIOD,
             "Cooldown period too low"
         );
         uint256 oldCooldownPeriod = cooldownPeriod;
