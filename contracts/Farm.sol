@@ -38,7 +38,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
 
     // Defines the reward funds for the farm
     // totalLiquidity - amount of liquidity sharing the rewards in the fund
-    // rewardsPerSec - the emision rate of the fund
+    // rewardsPerSec - the emission rate of the fund
     // accRewardPerShare - the accumulated reward per share
     struct RewardFund {
         uint256 totalLiquidity;
@@ -50,7 +50,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     // fund id - id of the subscribed reward fund
     // rewardDebt - rewards claimed for a deposit corresponding to
     //              latest accRewardPerShare value of the budget
-    // rewardCalimed - rewards claimed for a deposit from the reward fund
+    // rewardClaimed - rewards claimed for a deposit from the reward fund
     struct Subscription {
         uint8 fundId;
         uint256[] rewardDebt;
@@ -174,7 +174,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
 
     modifier isTokenManager(address _rwdToken) {
         require(
-            _msgSender() == rewardData[_rwdToken].tknManager,
+            msg.sender == rewardData[_rwdToken].tknManager,
             "Not the token manager"
         );
         _;
@@ -232,7 +232,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         bytes calldata _data
     ) external override notPaused returns (bytes4) {
         require(
-            _msgSender() == NFPM,
+            msg.sender == NFPM,
             "UniswapV3Staker::onERC721Received: not a univ3 nft"
         );
 
@@ -281,11 +281,8 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         notInEmergency
         nonReentrant
     {
-        address account = _msgSender();
-        require(
-            _depositId < deposits[account].length,
-            "Deposit does not exist"
-        );
+        address account = msg.sender;
+        _isValidDeposit(account, _depositId);
         Deposit storage userDeposit = deposits[account][_depositId];
 
         // validate if the deposit is in locked state
@@ -311,11 +308,8 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external nonReentrant {
-        address account = _msgSender();
-        require(
-            _depositId < deposits[account].length,
-            "Deposit does not exist"
-        );
+        address account = msg.sender;
+        _isValidDeposit(account, _depositId);
         Deposit memory userDeposit = deposits[account][_depositId];
 
         // Check for the withdrawal criteria
@@ -373,10 +367,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         notInEmergency
         nonReentrant
     {
-        require(
-            _depositId < deposits[_account].length,
-            "Deposit does not exist"
-        );
+        _isValidDeposit(_account, _depositId);
         _claimRewards(_account, _depositId);
     }
 
@@ -387,11 +378,8 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         notInEmergency
         nonReentrant
     {
-        address account = _msgSender();
-        require(
-            _depositId < deposits[account].length,
-            "Deposit does not exist"
-        );
+        address account = msg.sender;
+        _isValidDeposit(account, _depositId);
         _claimRewards(account, _depositId);
     }
 
@@ -406,12 +394,9 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
             rewardData[_rwdToken].tknManager != address(0),
             "Invalid reward token"
         );
+        _updateFarmRewardData();
         rewardData[_rwdToken].supply += _amount;
-        IERC20(_rwdToken).safeTransferFrom(
-            _msgSender(),
-            address(this),
-            _amount
-        );
+        IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     // --------------------- Admin  Functions ---------------------
@@ -584,7 +569,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         return rewardFunds[_fundId];
     }
 
-    /// @notice Get the remaining reward balnce for the farm.
+    /// @notice Get the remaining reward balance for the farm.
     /// @param _rwdToken The reward token's address
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         uint256 rwdId = rewardData[_rwdToken].id;
@@ -635,7 +620,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                 depositSubs[iSub].rewardClaimed[iRwd] += rewards[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
 
-                // Update userRewardDebt for the subscritption
+                // Update userRewardDebt for the subscriptions
                 // rewardDebt = liquidity * accRewardPerShare
                 depositSubs[iSub].rewardDebt[iRwd] = accRewards;
             }
@@ -666,10 +651,13 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
     function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
-        _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
         address emergencyRet = rewardData[_rwdToken].emergencyReturn;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
-        uint256 amountToRecover = _amount < rewardsLeft ? _amount : rewardsLeft;
+        uint256 amountToRecover = _amount;
+        if (_amount >= rewardsLeft) {
+            amountToRecover = rewardsLeft;
+            _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
+        }
         if (amountToRecover > 0) {
             rewardData[_rwdToken].supply -= amountToRecover;
             IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
@@ -824,7 +812,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
             "Invalid reward data"
         );
 
-        // Initialilze fund storage
+        // Initialize fund storage
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
@@ -847,7 +835,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
             _isNonZeroAddr(_rewardData[iRwd].tknManager);
             _isNonZeroAddr(_rewardData[iRwd].emergencyReturn);
             for (uint8 iFund = 0; iFund < _numFunds; ++iFund) {
-                // @dev assign the relavant reward rates to the funds
+                // @dev assign the relevant reward rates to the funds
                 rewardFunds[iFund].rewardsPerSec[iRwd] = _rewardData[iRwd]
                     .rewardsPerSec[iFund];
             }
@@ -897,6 +885,17 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         );
 
         return uint256(liquidity);
+    }
+
+    /// @notice Validate the deposit for account
+    function _isValidDeposit(address _account, uint256 _depositId)
+        private
+        view
+    {
+        require(
+            _depositId < deposits[_account].length,
+            "Deposit does not exist"
+        );
     }
 
     /// @notice Validate address
