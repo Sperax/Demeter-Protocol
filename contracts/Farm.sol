@@ -469,32 +469,33 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         view
         returns (uint256[] memory rewards)
     {
-        require(
-            _depositId < deposits[_account].length,
-            "Deposit does not exist"
-        );
+        _isValidDeposit(_account, _depositId);
         Deposit storage userDeposit = deposits[_account][_depositId];
         Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numRewards = rewardTokens.length;
         rewards = new uint256[](numRewards);
 
+        uint256 time = 0;
         // In case the reward is not updated
         if (block.timestamp > lastFundUpdateTime) {
-            uint256 time = block.timestamp - lastFundUpdateTime;
-            // Update the two reward funds.
-            for (uint8 iSub = 0; iSub < depositSubs.length; ++iSub) {
-                uint8 fundId = depositSubs[iSub].fundId;
-                for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+            time = block.timestamp - lastFundUpdateTime;
+        }
+
+        // Update the two reward funds.
+        for (uint8 iSub = 0; iSub < depositSubs.length; ++iSub) {
+            uint8 fundId = depositSubs[iSub].fundId;
+            for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                if (funds[fundId].totalLiquidity > 0) {
+                    // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] +=
                         (funds[fundId].rewardsPerSec[iRwd] * time * PREC) /
                         funds[fundId].totalLiquidity;
-
-                    rewards[iRwd] +=
-                        ((userDeposit.liquidity *
-                            funds[fundId].accRewardPerShare[iRwd]) / PREC) -
-                        depositSubs[iSub].rewardDebt[iRwd];
                 }
+                rewards[iRwd] +=
+                    ((userDeposit.liquidity *
+                        funds[fundId].accRewardPerShare[iRwd]) / PREC) -
+                    depositSubs[iSub].rewardDebt[iRwd];
             }
         }
         return rewards;
