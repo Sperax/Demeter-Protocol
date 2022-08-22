@@ -102,6 +102,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
+    uint256 public immutable farmStartTime;
 
     // Reward info
     RewardFund[] public rewardFunds;
@@ -194,6 +195,7 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
     ) {
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
+        farmStartTime = _farmStartTime;
         isPaused = false;
         inEmergency = false;
 
