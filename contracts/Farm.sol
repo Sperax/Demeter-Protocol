@@ -489,9 +489,10 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
             uint8 fundId = depositSubs[iSub].fundId;
             for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
                 if (funds[fundId].totalLiquidity > 0) {
+                    uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] +=
-                        (funds[fundId].rewardsPerSec[iRwd] * time * PREC) /
+                        (accRewards * PREC) /
                         funds[fundId].totalLiquidity;
                 }
                 rewards[iRwd] +=
@@ -779,19 +780,8 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                 RewardFund memory fund = rewardFunds[iFund];
                 if (fund.totalLiquidity > 0) {
                     for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
-                        address rwdToken = rewardTokens[iRwd];
-                        uint256 rwdSupply = rewardData[rwdToken].supply;
-                        uint256 rwdAccrued = rewardData[rwdToken].accRewards;
-
-                        uint256 rwdBal = 0;
-                        if (rwdSupply > rwdAccrued) {
-                            rwdBal = rwdSupply - rwdAccrued;
-                        }
-                        uint256 accRewards = fund.rewardsPerSec[iRwd] * time;
-                        if (accRewards > rwdBal) {
-                            accRewards = rwdBal;
-                        }
-                        rewardData[rwdToken].accRewards += accRewards;
+                        uint256 accRewards = _getAccRewards(iRwd, iFund, time);
+                        rewardData[rewardTokens[iRwd]].accRewards += accRewards;
                         fund.accRewardPerShare[iRwd] +=
                             (accRewards * PREC) /
                             fund.totalLiquidity;
@@ -853,6 +843,27 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
                 supply: 0
             });
         }
+    }
+
+    function _getAccRewards(
+        uint8 _rwdId,
+        uint8 _fundId,
+        uint256 _time
+    ) private view returns (uint256) {
+        RewardFund memory fund = rewardFunds[_fundId];
+        address rwdToken = rewardTokens[_rwdId];
+        uint256 rwdSupply = rewardData[rwdToken].supply;
+        uint256 rwdAccrued = rewardData[rwdToken].accRewards;
+
+        uint256 rwdBal = 0;
+        if (rwdSupply > rwdAccrued) {
+            rwdBal = rwdSupply - rwdAccrued;
+        }
+        uint256 accRewards = fund.rewardsPerSec[_rwdId] * _time;
+        if (accRewards > rwdBal) {
+            accRewards = rwdBal;
+        }
+        return accRewards;
     }
 
     /// @notice Validate the position for the pool and get Liquidity
