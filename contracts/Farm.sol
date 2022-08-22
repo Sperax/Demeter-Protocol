@@ -637,12 +637,14 @@ contract Farm is Ownable, ReentrancyGuard, IERC721Receiver {
         }
 
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
-            // Update the total rewards earned for the deposit
-            userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-            IERC20(rewardTokens[iRwd]).safeTransfer(
-                _account,
-                totalRewards[iRwd]
-            );
+            if (totalRewards[iRwd] > 0) {
+                // Update the total rewards earned for the deposit
+                userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
+                IERC20(rewardTokens[iRwd]).safeTransfer(
+                    _account,
+                    totalRewards[iRwd]
+                );
+            }
         }
     }
 
