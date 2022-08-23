@@ -11,7 +11,7 @@ from .utils import (
 )
 import json
 
-GAS_LIMIT = 100000000
+GAS_LIMIT = 80000000
 
 
 def deploy(owner, contract, config):
@@ -33,20 +33,30 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     # contract owner account
-    owner = get_account('owner account')
+    deployer = get_account('deployer account')
     config_name, contract, config = get_config('Select farm config:')
+    farm_owner_multisig = "0x6d5240f086637fb408c7F727010A10cf57D51B62"
 
-    farm = deploy(owner, contract, config)
+    farm = deploy(deployer, contract, config)
 
     print(f'\n{network.show_active()}:\n')
     print(f'{config_name} Farm address: {farm.address}')
 
+    # transfer ownership to farm owner multisig
+    farm.transferOwnership(
+        farm_owner_multisig,
+        {'from': deployer, 'gas_limit': GAS_LIMIT}
+    )
+
     data = dict(
         type='deployment_'+config_name+'_farm',
         config=config,
-        owner=owner.address
+        owner=farm_owner_multisig
     )
     data[config_name+'_farm'] = farm.address
     print(json.dumps(data, indent=4))
 
     save_deployment_artifacts(data)
+
+    # fund the farm with SPA via addRewards() 
+    # fund the farm with L2DAO via addRewards() 
