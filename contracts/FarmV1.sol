@@ -111,6 +111,7 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public immutable uniswapPool;
+    address public immutable farmDeployer;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -214,6 +215,9 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rewardData
     ) {
+        farmDeployer = msg.sender;
+        require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
+
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
         farmStartTime = _farmStartTime;
@@ -228,6 +232,8 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             _uniswapPoolData.tokenA,
             _uniswapPoolData.feeTier
         );
+
+        require(uniswapPool != address(0), "Invalid uniswap pool config");
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -336,7 +342,7 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         Deposit memory userDeposit = deposits[account][_depositId];
 
         // Check for the withdrawal criteria
-        // Note: In case of emergency, skip the cooldown check
+        // Note: If farm is paused, skip the cooldown check
         if (!isPaused) {
             require(!userDeposit.locked, "Please initiate cooldown");
             if (userDeposit.expiryDate > 0) {
@@ -387,7 +393,7 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     /// @dev Anyone can call this function to claim rewards for the user
     function claimRewards(address _account, uint256 _depositId)
         external
-        notPaused
+        farmNotClosed
         nonReentrant
     {
         _isValidDeposit(_account, _depositId);
@@ -396,7 +402,11 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Claim rewards for the user.
     /// @param _depositId The id of the deposit
-    function claimRewards(uint256 _depositId) external notPaused nonReentrant {
+    function claimRewards(uint256 _depositId)
+        external
+        farmNotClosed
+        nonReentrant
+    {
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         _claimRewards(account, _depositId);
@@ -442,7 +452,7 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
         require(block.timestamp < farmStartTime, "Farm already started");
-        require(_newStartTime > block.timestamp, "Start time in past");
+        require(_newStartTime >= block.timestamp, "Time < now");
         farmStartTime = _newStartTime;
         lastFundUpdateTime = _newStartTime;
 
@@ -478,6 +488,8 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Pause / UnPause the deposit
     function farmPauseSwitch(bool _isPaused) external onlyOwner farmNotClosed {
+        require(isPaused != _isPaused, "Farm already in required state");
+        _updateFarmRewardData();
         isPaused = !isPaused;
         emit FarmPaused(isPaused);
     }
@@ -844,22 +856,31 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Function to update the FarmRewardData for all funds
     function _updateFarmRewardData() private {
-        if (block.timestamp > lastFundUpdateTime && !isPaused) {
-            uint256 time = block.timestamp - lastFundUpdateTime;
-            uint256 numRewards = rewardTokens.length;
-            // Update the reward funds.
-            for (uint8 iFund = 0; iFund < rewardFunds.length; ++iFund) {
-                RewardFund memory fund = rewardFunds[iFund];
-                if (fund.totalLiquidity > 0) {
-                    for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
-                        uint256 accRewards = _getAccRewards(iRwd, iFund, time);
-                        rewardData[rewardTokens[iRwd]].accRewards += accRewards;
-                        fund.accRewardPerShare[iRwd] +=
-                            (accRewards * PREC) /
-                            fund.totalLiquidity;
+        if (block.timestamp > lastFundUpdateTime) {
+            // if farm is paused don't accrue any rewards.
+            // only update the lastFundUpdateTime.
+            if (!isPaused) {
+                uint256 time = block.timestamp - lastFundUpdateTime;
+                uint256 numRewards = rewardTokens.length;
+                // Update the reward funds.
+                for (uint8 iFund = 0; iFund < rewardFunds.length; ++iFund) {
+                    RewardFund memory fund = rewardFunds[iFund];
+                    if (fund.totalLiquidity > 0) {
+                        for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                            uint256 accRewards = _getAccRewards(
+                                iRwd,
+                                iFund,
+                                time
+                            );
+                            rewardData[rewardTokens[iRwd]]
+                                .accRewards += accRewards;
+                            fund.accRewardPerShare[iRwd] +=
+                                (accRewards * PREC) /
+                                fund.totalLiquidity;
+                        }
                     }
+                    rewardFunds[iFund] = fund;
                 }
-                rewardFunds[iFund] = fund;
             }
             lastFundUpdateTime = block.timestamp;
         }
