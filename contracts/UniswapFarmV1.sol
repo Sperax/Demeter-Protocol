@@ -46,7 +46,7 @@ struct RewardTokenData {
     address tknManager;
 }
 
-contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
+contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
@@ -111,7 +111,6 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public immutable uniswapPool;
-    address public immutable farmDeployer;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -215,7 +214,6 @@ contract FarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rewardData
     ) {
-        farmDeployer = msg.sender;
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
 
         // Initialize farm global params
