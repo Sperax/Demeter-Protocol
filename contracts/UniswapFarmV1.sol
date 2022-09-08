@@ -20,6 +20,9 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -46,7 +49,12 @@ struct RewardTokenData {
     address tknManager;
 }
 
-contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
+contract UniswapFarmV1 is
+    Ownable,
+    ReentrancyGuard,
+    Initializable,
+    IERC721Receiver
+{
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
@@ -110,7 +118,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
-    address public immutable uniswapPool;
+    address public uniswapPool;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -202,20 +210,23 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         _;
     }
 
+    // Disallow initialization of a implementation contract
+    constructor() initializer {}
+
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rewardData - init data for reward tokens
-    constructor(
+    function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rewardData
-    ) {
+    ) external initializer {
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
-
+        _transferOwnership(msg.sender);
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
         farmStartTime = _farmStartTime;

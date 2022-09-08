@@ -20,6 +20,7 @@ pragma solidity 0.8.10;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./UniswapFarmV1.sol";
 
 contract UniswapFarmV1Factory is Ownable, ReentrancyGuard {
@@ -30,6 +31,7 @@ contract UniswapFarmV1Factory is Ownable, ReentrancyGuard {
     address public constant feeReceiver =
         0x5b12d9846F8612E439730d18E1C12634753B1bF1;
 
+    address public immutable implementation;
     address public feeToken;
     uint256 public feeAmount;
     uint256 public numFarmCreated;
@@ -45,6 +47,7 @@ contract UniswapFarmV1Factory is Ownable, ReentrancyGuard {
         _isNonZeroAddr(_feeToken);
         feeToken = _feeToken;
         feeAmount = _feeAmount;
+        implementation = address(new UniswapFarmV1());
     }
 
     /// @notice Creates a new farm
@@ -62,7 +65,10 @@ contract UniswapFarmV1Factory is Ownable, ReentrancyGuard {
     ) external nonReentrant returns (address farm) {
         _isNonZeroAddr(_farmAdmin);
         _collectFees(_uniswapPoolData.tokenA, _uniswapPoolData.tokenB);
-        UniswapFarmV1 farmInstance = new UniswapFarmV1(
+        UniswapFarmV1 farmInstance = UniswapFarmV1(
+            Clones.clone(implementation)
+        );
+        farmInstance.initialize(
             _farmStartTime,
             _cooldownPeriod,
             _uniswapPoolData,

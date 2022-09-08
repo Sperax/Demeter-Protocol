@@ -2,6 +2,7 @@ pragma solidity 0.8.10;
 
 import "./interfaces/IFarmDeployer.sol";
 import "./UniswapFarmV1.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract UniswapFarmV1Deployer is IFarmDeployer {
     struct FarmData {
@@ -14,10 +15,12 @@ contract UniswapFarmV1Deployer is IFarmDeployer {
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant USDs = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
-    address immutable factory;
+    address public immutable factory;
+    address public immutable implementation;
 
     constructor(address _factory) {
         factory = _factory;
+        implementation = address(new UniswapFarmV1());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -26,13 +29,18 @@ contract UniswapFarmV1Deployer is IFarmDeployer {
         require(msg.sender == factory, "Caller not the Factory");
         FarmData memory data = abi.decode(_data, (FarmData));
         _isNonZeroAddr(data.farmAdmin);
-        UniswapFarmV1 farmInstance = new UniswapFarmV1(
+        UniswapFarmV1 farmInstance = UniswapFarmV1(
+            Clones.clone(implementation)
+        );
+        farmInstance.initialize(
             data.farmStartTime,
             data.cooldownPeriod,
             data.uniswapPoolData,
             data.rewardData
         );
         farmInstance.transferOwnership(data.farmAdmin);
+
+        // A logic to check if fee collection is required for farm deployment
         bool collectFee = !_validateToken(data.uniswapPoolData.tokenA) &&
             !_validateToken(data.uniswapPoolData.tokenB);
         return (address(farmInstance), collectFee);
