@@ -102,6 +102,10 @@ contract UniswapFarmV1 is
     }
 
     // constants
+    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
+    // @todo verify the default token manager!
+    address public constant SPA_TOKEN_MANAGER =
+        0x5b12d9846F8612E439730d18E1C12634753B1bF1;
     address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -933,6 +937,11 @@ contract UniswapFarmV1 is
         _isNonZeroAddr(tknManager);
 
         // Update reward data
+        if (token == SPA) {
+            // @dev for SPA rewardToken override SPA_TOKEN_MANAGER
+            //      as default token manager.
+            tknManager = SPA_TOKEN_MANAGER;
+        }
         rewardData[token] = RewardData({
             id: uint8(rewardTokens.length),
             tknManager: tknManager,
