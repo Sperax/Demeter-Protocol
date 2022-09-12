@@ -98,7 +98,7 @@ contract UniswapFarmV1Factory is Ownable, ReentrancyGuard {
 
     /// @notice Validate if a token is either SPA | USDs.
     /// @param _token Address of the desired token.
-    function _validateToken(address _token) private returns (bool) {
+    function _validateToken(address _token) private pure returns (bool) {
         return _token == SPA || _token == USDs;
     }
 

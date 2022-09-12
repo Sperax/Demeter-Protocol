@@ -23,7 +23,7 @@ import "./interfaces/IFarmDeployer.sol";
 contract FarmFactory is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    address public constant feeReceiver =
+    address public constant FEE_RECEIVER =
         0x5b12d9846F8612E439730d18E1C12634753B1bF1;
 
     address public feeToken;
@@ -43,21 +43,21 @@ contract FarmFactory is Ownable, ReentrancyGuard {
     /// @param _feeAmount The fee amount to be paid by the creator.
     constructor(address _feeToken, uint256 _feeAmount) {
         _isNonZeroAddr(_feeToken);
+        require(_feeAmount != 0, "Fee cannot be zero");
         feeToken = _feeToken;
         feeAmount = _feeAmount;
     }
 
     /// @notice Creates a new farm
-    /// @param _farmName Farm to deploy.
+    /// @param _farmType Farm to deploy.
     /// @param _data Encoded farm deployment params.
-    function createFarm(string memory _farmName, bytes memory _data)
+    function createFarm(string memory _farmType, bytes memory _data)
         external
         onlyOwner
-        nonReentrant
         returns (address farm)
     {
         bool collectFee = false;
-        (farm, collectFee) = IFarmDeployer(farmDeployer[_farmName]).deploy(
+        (farm, collectFee) = IFarmDeployer(farmDeployer[_farmType]).deploy(
             _data
         );
         if (collectFee) {
@@ -90,7 +90,7 @@ contract FarmFactory is Ownable, ReentrancyGuard {
     /// @notice Collect fees for farm creation.
     /// @dev Collect fees only if neither of the tokens are SPA | USDs.
     function _collectFees() private {
-        IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
+        IERC20(feeToken).safeTransferFrom(msg.sender, FEE_RECEIVER, feeAmount);
         emit FeeCollected(feeToken, feeAmount);
     }
 
