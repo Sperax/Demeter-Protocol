@@ -2,7 +2,8 @@
 # https://eth-brownie.readthedocs.io/en/stable/config.html
 # required external contracts
 dependencies:
-  - OpenZeppelin/openzeppelin-contracts@4.5.0
+  - OpenZeppelin/openzeppelin-contracts@4.7.3
+  - OpenZeppelin/openzeppelin-contracts-upgradeable@4.7.3
 
 pytest:
     # these settings replace the defaults when running pytest
@@ -17,6 +18,8 @@ compiler:
           runs: 200
         remappings:
           - "@openzeppelin/contracts=OpenZeppelin/openzeppelin-contracts@4.5.0/contracts"
+          - "@openzeppelin/contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable@4.7.3/contracts"
+
 
 # automatically fetch contract sources from Etherscan
 autofetch_sources: True
