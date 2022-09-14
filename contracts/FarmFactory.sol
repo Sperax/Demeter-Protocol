@@ -15,13 +15,14 @@ pragma solidity 0.8.10;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+
 import "./interfaces/IFarmDeployer.sol";
 
-contract FarmFactory is Ownable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
+contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     address public constant FEE_RECEIVER =
         0x5b12d9846F8612E439730d18E1C12634753B1bF1;
@@ -38,12 +39,22 @@ contract FarmFactory is Ownable, ReentrancyGuard {
     event FarmCreated(address creator, address farm);
     event FarmDeployerRegistered(string farmType, address deployer);
 
+    // Disable initialization for the implementation contract
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice constructor
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
-    constructor(address _feeToken, uint256 _feeAmount) {
+    function initialize(address _feeToken, uint256 _feeAmount)
+        external
+        initializer
+    {
         _isNonZeroAddr(_feeToken);
         require(_feeAmount != 0, "Fee cannot be zero");
+        OwnableUpgradeable.__Ownable_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         feeToken = _feeToken;
         feeAmount = _feeAmount;
     }
@@ -53,19 +64,18 @@ contract FarmFactory is Ownable, ReentrancyGuard {
     /// @param _data Encoded farm deployment params.
     function createFarm(string memory _farmType, bytes memory _data)
         external
-        onlyOwner
-        returns (address farm)
+        nonReentrant
+        returns (address)
     {
-        bool collectFee = false;
-        (farm, collectFee) = IFarmDeployer(farmDeployer[_farmType]).deploy(
-            _data
-        );
+        (address farm, bool collectFee) = IFarmDeployer(farmDeployer[_farmType])
+            .deploy(_data);
         if (collectFee) {
             _collectFees();
         }
         farms.push(farm);
         numFarmCreated += 1;
         emit FarmCreated(msg.sender, farm);
+        return farm;
     }
 
     /// @notice Register a new farm deployer.
@@ -88,9 +98,13 @@ contract FarmFactory is Ownable, ReentrancyGuard {
     }
 
     /// @notice Collect fees for farm creation.
-    /// @dev Collect fees only if neither of the tokens are SPA | USDs.
+    /// @dev Collect fees only if validated by the farm deployer.
     function _collectFees() private {
-        IERC20(feeToken).safeTransferFrom(msg.sender, FEE_RECEIVER, feeAmount);
+        IERC20Upgradeable(feeToken).safeTransferFrom(
+            msg.sender,
+            FEE_RECEIVER,
+            feeAmount
+        );
         emit FeeCollected(feeToken, feeAmount);
     }
 
