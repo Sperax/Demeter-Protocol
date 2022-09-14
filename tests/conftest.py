@@ -1,11 +1,9 @@
-# pylint: disable=redefined-outer-name
 #!/usr/bin/python3
 import pytest
 import math
 import brownie
 from brownie import (
     interface,
-    FarmFactory,
     Farm,
     chain,
 
@@ -102,16 +100,15 @@ constants = {
 }
 
 
-def deploy_factory(owner, contract, config):
+def deploy(owner, contract, config):
     farm = contract.deploy(
-        config['feeToken'],
-        config['feeAmount'],
+        config['farm_start_time'],
+        config['cooldown_period'],
+        list(config['uniswap_pool_data'].values()),
+        list(map(lambda x: list(x.values()), config['reward_token_data'])),
         {'from': owner, 'gas_limit': GAS_LIMIT},
     )
     return farm
-
-
-assert False
 
 
 def token_obj(token):
