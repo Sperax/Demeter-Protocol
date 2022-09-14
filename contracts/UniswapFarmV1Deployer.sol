@@ -19,6 +19,7 @@ contract UniswapFarmV1Deployer is IFarmDeployer {
     address public immutable implementation;
 
     constructor(address _factory) {
+        _isNonZeroAddr(_factory);
         factory = _factory;
         implementation = address(new UniswapFarmV1());
     }
@@ -41,6 +42,7 @@ contract UniswapFarmV1Deployer is IFarmDeployer {
         farmInstance.transferOwnership(data.farmAdmin);
 
         // A logic to check if fee collection is required for farm deployment
+        // Collect fee only if neither of the token is either SPA | USDs
         bool collectFee = !_validateToken(data.uniswapPoolData.tokenA) &&
             !_validateToken(data.uniswapPoolData.tokenB);
         return (address(farmInstance), collectFee);
