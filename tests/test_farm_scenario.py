@@ -52,6 +52,7 @@ def test_scenario_1(
     # User claims the rewards
     # User withdraws the deposit
     global token_id1
+    chain.snapshot()
     nftm = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
     spa = token_obj('spa')
     usds = token_obj('usds')
@@ -82,6 +83,26 @@ def test_scenario_1(
 
     init_farm(owner, farm, config)
     print('Initialized Farm.....')
+    with brownie.reverts('Time < now'):
+        farm.updateFarmStartTime(brownie.chain.time()-1, {'from': owner})
+    farm.updateFarmStartTime(brownie.chain.time(), {'from': owner})
+    print('farm started.........')
+
+    chain.snapshot()
+    chain.mine(10, chain.time()+86400*7)
+    chain.sleep(86400*7)
+    with brownie.reverts('Farm already started'):
+        farm.updateFarmStartTime(brownie.chain.time()+100, {'from': owner})
+    print('Adding Reward Tokens.....')
+    with brownie.reverts('Reward token already added'):
+        farm.addRewardToken(
+            [token_obj('usds').address, owner], {'from': owner})
+    farm.addRewardToken([token_obj('frax').address, owner], {'from': owner})
+    farm.addRewardToken([token_obj('dai').address, owner], {'from': owner})
+    with brownie.reverts('Max number of rewards reached!'):
+        farm.addRewardToken(
+            [token_obj('usdc').address, owner], {'from': owner})
+
     reward_token = token_obj(farm_config['reward_token_A'])
     reward_token_1 = token_obj(farm_config['reward_token_B'])
     token_a = token_obj(farm_config['token_A'])
@@ -135,7 +156,6 @@ def test_scenario_1(
     # Get position details
     position = position_manager.positions(token_id1)
     print('User position: ', position)
-    chain.snapshot()
 
     # check the initial number of deposit for the user.
     num_deposits = farm.getNumDeposits(owner)
@@ -169,6 +189,7 @@ def test_scenario_1(
                 lock_data,
                 {'from': nftm, 'gas_limit': GAS_LIMIT},
             )
+
     print_stats(farm, token_id1)
     assert farm.getNumDeposits(owner) == num_deposits + 1
     assert deposit_txn.events['Deposited']['account'] == owner
@@ -559,6 +580,19 @@ def test_scenario_2(
 
     # Withdraw the deposit
     print('\n ----Withdrawing the deposit---- ')
+    chain.snapshot()
+    print('\n ----Farm is Paused---- ')
+    with brownie.reverts('Farm already in required state'):
+        farm.farmPauseSwitch(False, {'from': owner})
+    chain.mine(10, 86400)
+    farm.farmPauseSwitch(True, {'from': owner})
+    farm._updateFarmRewardData({'from': owner})
+    withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
+    with brownie.reverts('Invalid address'):
+        farm._isNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
+    farm._updateFarmRewardData({'from': owner})
+    chain.revert()
+    print('\n ----Farm is running---- ')
     withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
     print_stats(farm, token_id1)
     r2 = withdraw_txn.events['RewardsClaimed']['rewardAmount']

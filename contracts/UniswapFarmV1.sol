@@ -868,7 +868,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Function to update the FarmRewardData for all funds
-    function _updateFarmRewardData() private {
+    function _updateFarmRewardData() public {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.

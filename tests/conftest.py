@@ -59,7 +59,40 @@ constants = {
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': owner,
                 },
+            ],
+            'reward_token_over_data': [
+                {
+                    'reward_tkn':
+                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
+                    'tkn_manager': owner,
+                },
             ]
+
         }
     },
 
@@ -99,7 +132,21 @@ constants = {
                     'tkn_manager': owner,
 
                 },
+            ],
+            'reward_token_over_data': [
+                {
+                    'reward_tkn':
+                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    'tkn_manager': owner,
+                },
+                {
+                    'reward_tkn':
+                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': owner,
+                },
+
             ]
+
         }
     },
 
@@ -166,6 +213,9 @@ def token_obj(token):
         'spa': interface.ERC20('0x5575552988A3A80504bBaeB1311674fCFd40aD4B'),
         'usdc': interface.ERC20('0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
         'usds': interface.ERC20('0xD74f5255D557944cf7Dd0E45FF521520002D5748'),
+        'usdt': interface.ERC20('0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+        'dai': interface.ERC20('0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+        'frax': interface.ERC20('0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'),
     }
     return token_dict[token]
 
