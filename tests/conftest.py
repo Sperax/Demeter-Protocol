@@ -5,9 +5,13 @@ import brownie
 from brownie import (
     interface,
     Farm,
+    UniswapFarmV1,
     chain,
+    TransparentUpgradeableProxy,
+    Contract,
 
 )
+import eth_utils
 
 
 MIN_BALANCE = 1000000000000000000
@@ -28,11 +32,18 @@ constants = {
         'reward_token_B': 'spa',
         'reward_tokens': ['usds', 'spa'],
         'config': {
-            'farm_start_time': chain.time(),
+            'farm_start_time': chain.time()+1000,
             'cooldown_period': 86400 * 21,
             'uniswap_pool_data': {
                 'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                 'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                'fee_tier': 3000,
+                'lower_tick': -887220,
+                'upper_tick': 0,
+            },
+            'uniswap_pool_false_data': {
+                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
                 'fee_tier': 3000,
                 'lower_tick': -887220,
                 'upper_tick': 0,
@@ -42,17 +53,11 @@ constants = {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': owner,
-                    'emergency_r':
-                    '0xb56e5620A79cfe59aF7c0FcaE95aADbEA8ac32A1',
-                    'reward_rate': [1e13, 5e12],
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': owner,
-                    'emergency_r':
-                    '0xb56e5620A79cfe59aF7c0FcaE95aADbEA8ac32A1',
-                    'reward_rate': [1e15, 5e14],
                 },
             ]
         }
@@ -66,11 +71,18 @@ constants = {
         'reward_token_B': 'spa',
         'reward_tokens': ['usds', 'spa'],
         'config': {
-            'farm_start_time': chain.time(),
+            'farm_start_time': chain.time()+1000,
             'cooldown_period': 0,
             'uniswap_pool_data': {
                 'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                 'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                'fee_tier': 3000,
+                'lower_tick': -887220,
+                'upper_tick': 0,
+            },
+            'uniswap_pool_false_data': {
+                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
                 'fee_tier': 3000,
                 'lower_tick': -887220,
                 'upper_tick': 0,
@@ -80,17 +92,12 @@ constants = {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': owner,
-                    'emergency_r':
-                    '0xb56e5620A79cfe59aF7c0FcaE95aADbEA8ac32A1',
-                    'reward_rate': [1e13],
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': owner,
-                    'emergency_r':
-                    '0xb56e5620A79cfe59aF7c0FcaE95aADbEA8ac32A1',
-                    'reward_rate': [1e15],
+
                 },
             ]
         }
@@ -109,6 +116,48 @@ def deploy(owner, contract, config):
         {'from': owner, 'gas_limit': GAS_LIMIT},
     )
     return farm
+
+
+def deploy_uni_farm(owner, contract):
+    farm = contract.deploy(
+
+        {'from': owner, 'gas_limit': GAS_LIMIT},
+    )
+    proxy = TransparentUpgradeableProxy.deploy(
+        farm.address,
+        '0x3E49925A79CbFb68BAa5bc9DFb4f7D955D1ddF25',
+        eth_utils.to_bytes(hexstr='0x'),
+        {'from': owner, 'gas_limit': GAS_LIMIT},
+    )
+
+    factory = Contract.from_abi(
+        'uniswapFarmV1',
+        proxy.address,
+        contract.abi
+    )
+    return factory
+
+
+def init_farm(owner, farm, config):
+    init = farm.initialize(
+        config['farm_start_time'],
+        config['cooldown_period'],
+        list(config['uniswap_pool_data'].values()),
+        list(map(lambda x: list(x.values()), config['reward_token_data'])),
+        {'from': owner, 'gas_limit': GAS_LIMIT},
+    )
+    return init
+
+
+def false_init_farm(owner, farm, config):
+    init = farm.initialize(
+        brownie.chain.time()-1,
+        config['cooldown_period'],
+        list(config['uniswap_pool_data'].values()),
+        list(map(lambda x: list(x.values()), config['reward_token_data'])),
+        {'from': owner, 'gas_limit': GAS_LIMIT},
+    )
+    return init
 
 
 def token_obj(token):

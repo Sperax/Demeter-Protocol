@@ -6,20 +6,19 @@ dependencies:
   - OpenZeppelin/openzeppelin-contracts-upgradeable@4.7.3
 
 pytest:
-    # these settings replace the defaults when running pytest
-    default_contract_owner: true
-    reverting_tx_gas_limit: 6721975
-    revert_traceback: true
+  # these settings replace the defaults when running pytest
+  default_contract_owner: true
+  reverting_tx_gas_limit: 6721975
+  revert_traceback: true
 compiler:
-    solc:
-        version: 0.8.10
-        optimizer:
-          enabled: true
-          runs: 200
-        remappings:
-          - "@openzeppelin/contracts=OpenZeppelin/openzeppelin-contracts@4.5.0/contracts"
-          - "@openzeppelin/contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable@4.7.3/contracts"
-
+  solc:
+    version: 0.8.10
+    optimizer:
+      enabled: true
+      runs: 200
+    remappings:
+      - "@openzeppelin/contracts=OpenZeppelin/openzeppelin-contracts@4.5.0/contracts"
+      - "@openzeppelin/contracts-upgradeable=OpenZeppelin/openzeppelin-contracts-upgradeable@4.7.3/contracts"
 
 # automatically fetch contract sources from Etherscan
 autofetch_sources: True
@@ -34,3 +33,5 @@ reports:
     - LiquidityAmounts
     - MockToken
     - SafeERC20
+    - TransparentUpgradeableProxy
+    - Ownable
