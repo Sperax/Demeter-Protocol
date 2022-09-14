@@ -64,7 +64,7 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @param _data Encoded farm deployment params.
     function createFarm(string memory _farmType, bytes memory _data)
         external
-        onlyOwner
+        nonReentrant
         returns (address)
     {
         (address farm, bool collectFee) = IFarmDeployer(farmDeployer[_farmType])
