@@ -23,7 +23,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-import {INonfungiblePositionManager as INFPM, IUniswapV3Factory} from "../interfaces/UniswapV3.sol";
+import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -215,7 +215,9 @@ contract UniswapFarmV1 is
     }
 
     // Disallow initialization of a implementation contract
-    constructor() initializer {}
+    constructor() {
+        _disableInitializers();
+    }
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
@@ -238,15 +240,18 @@ contract UniswapFarmV1 is
         isClosed = false;
 
         // initialize uniswap related data
-        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
-        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(
             _uniswapPoolData.tokenB,
             _uniswapPoolData.tokenA,
             _uniswapPoolData.feeTier
         );
-
         require(uniswapPool != address(0), "Invalid uniswap pool config");
+        _validateTickRange(
+            _uniswapPoolData.tickLowerAllowed,
+            _uniswapPoolData.tickUpperAllowed
+        );
+        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
+        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -1011,6 +1016,21 @@ contract UniswapFarmV1 is
         );
 
         return uint256(liquidity);
+    }
+
+    function _validateTickRange(int24 _tickLower, int24 _tickUpper)
+        private
+        view
+    {
+        int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
+        require(
+            _tickLower < _tickUpper &&
+                _tickLower >= -887220 &&
+                _tickLower % spacing == 0 &&
+                _tickUpper <= 887220 &&
+                _tickUpper % spacing == 0,
+            "Invalid tick range"
+        );
     }
 
     /// @notice Validate the deposit for account
