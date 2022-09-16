@@ -19,25 +19,22 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "./interfaces/IFarmDeployer.sol";
-
 contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    address public constant FEE_RECEIVER =
-        0x5b12d9846F8612E439730d18E1C12634753B1bF1;
-
+    address public feeReceiver;
     address public feeToken;
     uint256 public feeAmount;
-    uint256 public numFarmCreated;
     address[] public farms;
-    string[] public deployerList;
-
-    mapping(string => address) public farmDeployer;
+    address[] public deployerList;
+    mapping(address => bool) public farmRegistered;
+    mapping(address => bool) public deployerRegistered;
 
     event FeeCollected(address token, uint256 amount);
-    event FarmCreated(address creator, address farm);
-    event FarmDeployerRegistered(string farmType, address deployer);
+    event FarmRegistered(address farm, address creator);
+    event FarmDeployerRegistered(address deployer);
+    event FarmDeployerRemoved(address deployer);
+    event FeeParamsUpdated(address receiver, address token, uint256 amount);
 
     // Disable initialization for the implementation contract
     constructor() {
@@ -47,65 +44,91 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @notice constructor
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
-    function initialize(address _feeToken, uint256 _feeAmount)
-        external
-        initializer
-    {
-        _isNonZeroAddr(_feeToken);
-        require(_feeAmount != 0, "Fee cannot be zero");
+    function initialize(
+        address _feeReceiver,
+        address _feeToken,
+        uint256 _feeAmount
+    ) external initializer {
         OwnableUpgradeable.__Ownable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
-        feeToken = _feeToken;
-        feeAmount = _feeAmount;
+        updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
     }
 
-    /// @notice Creates a new farm
-    /// @param _farmType Farm to deploy.
-    /// @param _data Encoded farm deployment params.
-    function createFarm(string memory _farmType, bytes memory _data)
-        external
-        nonReentrant
-        returns (address)
-    {
-        (address farm, bool collectFee) = IFarmDeployer(farmDeployer[_farmType])
-            .deploy(_data);
-        if (collectFee) {
-            _collectFees();
+    /// @notice Register a farm created by registered Deployer
+    /// @dev Only registered deployer can register a farm.
+    /// @param _farm Address of the created farm contract
+    /// @param _creator Address of the farm creator
+    /// @param _collectFee Flag stating if fee collection is required
+    function registerFarm(
+        address _farm,
+        address _creator,
+        bool _collectFee
+    ) external {
+        require(deployerRegistered[msg.sender], "Deployer not registered");
+        if (_collectFee) {
+            IERC20Upgradeable(feeToken).safeTransferFrom(
+                _creator,
+                feeReceiver,
+                feeAmount
+            );
+            emit FeeCollected(feeToken, feeAmount);
         }
-        farms.push(farm);
-        numFarmCreated += 1;
-        emit FarmCreated(msg.sender, farm);
-        return farm;
+        farms.push(_farm);
+        farmRegistered[_farm] = true;
+        emit FarmRegistered(_farm, _creator);
     }
 
     /// @notice Register a new farm deployer.
-    /// @param _farmType a unique identifier for a farm (ex : UniswapV3FarmV1)
-    function registerFarmDeployer(string memory _farmType, address _deployer)
-        external
-        onlyOwner
-    {
+    /// @param  _deployer Address of deployer to be registered
+    function registerFarmDeployer(address _deployer) external onlyOwner {
         _isNonZeroAddr(_deployer);
-        require(
-            farmDeployer[_farmType] == address(0),
-            "Deployer already exists"
-        );
-        farmDeployer[_farmType] = _deployer;
-        deployerList.push(_farmType);
+        require(!deployerRegistered[_deployer], "Deployer already registered");
+        deployerList.push(_deployer);
+        deployerRegistered[_deployer] = true;
+        emit FarmDeployerRegistered(_deployer);
     }
 
-    function getFarmDeployerList() external view returns (string[] memory) {
+    /// @notice Remove an existing deployer from factory
+    /// @param _id of the deployer to be removed (0 index based)
+    function removeDeployer(uint16 _id) external onlyOwner {
+        require(_id < deployerList.length, "Invalid deployer id");
+        uint256 numDeployers = deployerList.length;
+        address deployer = deployerList[_id];
+        delete deployerRegistered[deployer];
+        deployerList[_id] = deployerList[numDeployers - 1];
+        deployerList.pop();
+
+        emit FarmDeployerRemoved(deployer);
+    }
+
+    /// @notice Get list of registered deployer
+    /// @return Returns array of registered deployer addresses
+    function getFarmDeployerList() external view returns (address[] memory) {
         return deployerList;
     }
 
-    /// @notice Collect fees for farm creation.
-    /// @dev Collect fees only if validated by the farm deployer.
-    function _collectFees() private {
-        IERC20Upgradeable(feeToken).safeTransferFrom(
-            msg.sender,
-            FEE_RECEIVER,
-            feeAmount
-        );
-        emit FeeCollected(feeToken, feeAmount);
+    /// @notice Get list of farms created via registered deployer
+    /// @return Returns array of farm addresses
+    function getFarmList() external view returns (address[] memory) {
+        return farms;
+    }
+
+    /// @notice Update the fee params for factory
+    /// @param _receiver feeReceiver address
+    /// @param _feeToken token address for fee
+    /// @param _amount amount of token to be collected
+    function updateFeeParams(
+        address _receiver,
+        address _feeToken,
+        uint256 _amount
+    ) public onlyOwner {
+        _isNonZeroAddr(_receiver);
+        _isNonZeroAddr(_feeToken);
+        require(_amount > 0, "Fee can not be 0");
+        feeReceiver = _receiver;
+        feeToken = _feeToken;
+        feeAmount = _amount;
+        emit FeeParamsUpdated(_receiver, _feeToken, _amount);
     }
 
     /// @notice Validate address

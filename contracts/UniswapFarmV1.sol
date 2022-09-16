@@ -23,7 +23,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-import {INonfungiblePositionManager as INFPM, IUniswapV3Factory} from "../interfaces/UniswapV3.sol";
+import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -42,8 +42,6 @@ struct UniswapPoolData {
 // Defines the reward data for constructor.
 // token - Address of the token
 // tknManager - Authority to update rewardToken related Params.
-// rewardRates - Reward rates for fund types. (max length is 2)
-//               Only the first two elements would be considered
 struct RewardTokenData {
     address token;
     address tknManager;
@@ -112,7 +110,7 @@ contract UniswapFarmV1 is
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
-    uint256 public constant MIN_COOLDOWN_PERIOD = 2 days;
+    uint256 public constant MIN_COOLDOWN_PERIOD = 1 days;
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
@@ -215,11 +213,13 @@ contract UniswapFarmV1 is
     }
 
     // Disallow initialization of a implementation contract
-    constructor() initializer {}
+    constructor() {
+        _disableInitializers();
+    }
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits
+    /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rewardData - init data for reward tokens
@@ -238,15 +238,18 @@ contract UniswapFarmV1 is
         isClosed = false;
 
         // initialize uniswap related data
-        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
-        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(
             _uniswapPoolData.tokenB,
             _uniswapPoolData.tokenA,
             _uniswapPoolData.feeTier
         );
-
         require(uniswapPool != address(0), "Invalid uniswap pool config");
+        _validateTickRange(
+            _uniswapPoolData.tickLowerAllowed,
+            _uniswapPoolData.tickUpperAllowed
+        );
+        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
+        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -331,7 +334,7 @@ contract UniswapFarmV1 is
         require(userDeposit.locked, "Can not initiate cooldown");
 
         // update the deposit expiry time & lock status
-        userDeposit.expiryDate = block.timestamp + cooldownPeriod;
+        userDeposit.expiryDate = block.timestamp + (cooldownPeriod * 1 days);
         userDeposit.locked = false;
 
         // claim the pending rewards for the user
@@ -444,7 +447,7 @@ contract UniswapFarmV1 is
 
     // --------------------- Admin  Functions ---------------------
     /// @notice Update the cooldown period
-    /// @param _newCooldownPeriod The new cooldown period (in seconds)
+    /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod)
         external
         onlyOwner
@@ -456,7 +459,7 @@ contract UniswapFarmV1 is
         );
         uint256 oldCooldownPeriod = cooldownPeriod;
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
+        emit CooldownPeriodUpdated(oldCooldownPeriod, cooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -525,7 +528,6 @@ contract UniswapFarmV1 is
     /// @param _rwdToken The reward token's address
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
-    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
     function recoverRewardFunds(address _rwdToken, uint256 _amount)
         external
         isTokenManager(_rwdToken)
@@ -1011,6 +1013,21 @@ contract UniswapFarmV1 is
         );
 
         return uint256(liquidity);
+    }
+
+    function _validateTickRange(int24 _tickLower, int24 _tickUpper)
+        private
+        view
+    {
+        int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
+        require(
+            _tickLower < _tickUpper &&
+                _tickLower >= -887220 &&
+                _tickLower % spacing == 0 &&
+                _tickUpper <= 887220 &&
+                _tickUpper % spacing == 0,
+            "Invalid tick range"
+        );
     }
 
     /// @notice Validate the deposit for account

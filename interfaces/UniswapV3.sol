@@ -103,3 +103,7 @@ interface IUniswapV3Factory {
         uint24 fee
     ) external view returns (address pool);
 }
+
+interface IUniswapV3TickSpacing {
+    function tickSpacing() external view returns (int24);
+}
