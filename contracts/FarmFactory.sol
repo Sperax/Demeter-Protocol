@@ -19,8 +19,6 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "./interfaces/IFarmDeployer.sol";
-
 contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -28,14 +26,14 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     address public feeToken;
     uint256 public feeAmount;
     address[] public farms;
-    string[] public deployerList;
-
-    mapping(string => address) public farmDeployer;
+    address[] public deployerList;
+    mapping(address => bool) public farmRegistered;
+    mapping(address => bool) public deployerRegistered;
 
     event FeeCollected(address token, uint256 amount);
-    event FarmCreated(address farm, address creator, string farmType);
-    event FarmDeployerRegistered(string farmType, address deployer);
-    event FarmDeployerRemoved(string farmType);
+    event FarmRegistered(address farm, address creator);
+    event FarmDeployerRegistered(address deployer);
+    event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
 
     // Disable initialization for the implementation contract
@@ -56,58 +54,61 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
     }
 
-    /// @notice Creates a new farm
-    /// @param _farmType Farm to deploy.
-    /// @param _data Encoded farm deployment params.
-    function createFarm(string memory _farmType, bytes memory _data)
-        external
-        nonReentrant
-        returns (address)
-    {
-        address deployer = farmDeployer[_farmType];
-        require(deployer != address(0), "Invalid farm type");
-        (address farm, bool collectFee) = IFarmDeployer(deployer).deploy(_data);
-        if (collectFee) {
-            _collectFees();
+    /// @notice Register a farm created by registered Deployer
+    /// @dev Only registered deployer can register a farm.
+    /// @param _farm Address of the created farm contract
+    /// @param _creator Address of the farm creator
+    /// @param _collectFee Flag stating if fee collection is required
+    function registerFarm(
+        address _farm,
+        address _creator,
+        bool _collectFee
+    ) external {
+        require(deployerRegistered[msg.sender], "Deployer not registered");
+        if (_collectFee) {
+            IERC20Upgradeable(feeToken).safeTransferFrom(
+                _creator,
+                feeReceiver,
+                feeAmount
+            );
+            emit FeeCollected(feeToken, feeAmount);
         }
-        farms.push(farm);
-        emit FarmCreated(farm, msg.sender, _farmType);
-        return farm;
+        farms.push(_farm);
+        farmRegistered[_farm] = true;
+        emit FarmRegistered(_farm, _creator);
     }
 
     /// @notice Register a new farm deployer.
-    /// @param _farmType a unique identifier for a farm (ex : UniswapV3FarmV1)
-    function registerFarmDeployer(string memory _farmType, address _deployer)
-        external
-        onlyOwner
-    {
+    /// @param  _deployer Address of deployer to be registered
+    function registerFarmDeployer(address _deployer) external onlyOwner {
         _isNonZeroAddr(_deployer);
-        require(
-            farmDeployer[_farmType] == address(0),
-            "Deployer already exists"
-        );
-        deployerList.push(_farmType);
-        farmDeployer[_farmType] = _deployer;
-        emit FarmDeployerRegistered(_farmType, _deployer);
+        require(!deployerRegistered[_deployer], "Deployer already registered");
+        deployerList.push(_deployer);
+        deployerRegistered[_deployer] = true;
+        emit FarmDeployerRegistered(_deployer);
     }
 
     /// @notice Remove an existing deployer from factory
-    /// @param _id of the deployer to be removed
+    /// @param _id of the deployer to be removed (0 index based)
     function removeDeployer(uint16 _id) external onlyOwner {
         require(_id < deployerList.length, "Invalid deployer id");
         uint256 numDeployers = deployerList.length;
-        string memory deployer = deployerList[_id];
-        delete farmDeployer[deployer];
+        address deployer = deployerList[_id];
+        delete deployerRegistered[deployer];
         deployerList[_id] = deployerList[numDeployers - 1];
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
     }
 
-    function getFarmDeployerList() external view returns (string[] memory) {
+    /// @notice Get list of registered deployer
+    /// @return Returns array of registered deployer addresses
+    function getFarmDeployerList() external view returns (address[] memory) {
         return deployerList;
     }
 
+    /// @notice Get list of farms created via registered deployer
+    /// @return Returns array of farm addresses
     function getFarmList() external view returns (address[] memory) {
         return farms;
     }
@@ -128,17 +129,6 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         feeToken = _feeToken;
         feeAmount = _amount;
         emit FeeParamsUpdated(_receiver, _feeToken, _amount);
-    }
-
-    /// @notice Collect fees for farm creation.
-    /// @dev Collect fees only if validated by the farm deployer.
-    function _collectFees() private {
-        IERC20Upgradeable(feeToken).safeTransferFrom(
-            msg.sender,
-            feeReceiver,
-            feeAmount
-        );
-        emit FeeCollected(feeToken, feeAmount);
     }
 
     /// @notice Validate address
