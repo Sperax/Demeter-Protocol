@@ -42,8 +42,6 @@ struct UniswapPoolData {
 // Defines the reward data for constructor.
 // token - Address of the token
 // tknManager - Authority to update rewardToken related Params.
-// rewardRates - Reward rates for fund types. (max length is 2)
-//               Only the first two elements would be considered
 struct RewardTokenData {
     address token;
     address tknManager;
@@ -112,7 +110,7 @@ contract UniswapFarmV1 is
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
-    uint256 public constant MIN_COOLDOWN_PERIOD = 2 days;
+    uint256 public constant MIN_COOLDOWN_PERIOD = 1 days;
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
@@ -221,7 +219,7 @@ contract UniswapFarmV1 is
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits
+    /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rewardData - init data for reward tokens
@@ -336,7 +334,7 @@ contract UniswapFarmV1 is
         require(userDeposit.locked, "Can not initiate cooldown");
 
         // update the deposit expiry time & lock status
-        userDeposit.expiryDate = block.timestamp + cooldownPeriod;
+        userDeposit.expiryDate = block.timestamp + (cooldownPeriod * 1 days);
         userDeposit.locked = false;
 
         // claim the pending rewards for the user
@@ -449,7 +447,7 @@ contract UniswapFarmV1 is
 
     // --------------------- Admin  Functions ---------------------
     /// @notice Update the cooldown period
-    /// @param _newCooldownPeriod The new cooldown period (in seconds)
+    /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod)
         external
         onlyOwner
@@ -461,7 +459,7 @@ contract UniswapFarmV1 is
         );
         uint256 oldCooldownPeriod = cooldownPeriod;
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
+        emit CooldownPeriodUpdated(oldCooldownPeriod, cooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -530,7 +528,6 @@ contract UniswapFarmV1 is
     /// @param _rwdToken The reward token's address
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
-    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
     function recoverRewardFunds(address _rwdToken, uint256 _amount)
         external
         isTokenManager(_rwdToken)
