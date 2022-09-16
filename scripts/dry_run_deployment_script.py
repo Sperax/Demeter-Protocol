@@ -58,24 +58,32 @@ def main():
     )
 
     print('Create a UniswapV3 Farm using the deployer.')
+
+    config = {
+        'farm_admin': deployer,
+        'farm_start_time': chain.time(),
+        'cooldown_period': 0,
+        'uniswap_pool_data': {
+            'tokenA': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+            'tokenB': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+            'fee_tier': 3000,
+            'tick_lower': -48960,
+            'tick_upper': -6900,
+        },
+        'reward_token_data': [
+            {
+                'token_addr': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+                'token_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+            }
+        ]
+    }
     create_tx = farm_deployer.createFarm(
         (
-            deployer,
-            chain.time()+100,
-            0,
-            (
-                '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
-                '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                3000,
-                -48960,
-                -6900
-            ),
-            [
-                (
-                    '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
-                    '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
-                )
-            ]
+            config['farm_admin'],
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(config['uniswap_pool_data'].values()),
+            list(map(lambda x: list(x.values()), config['reward_token_data'])),
         ),
         {'from': deployer}
     )
