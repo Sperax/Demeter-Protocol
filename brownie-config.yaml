@@ -36,3 +36,5 @@ reports:
     - SafeERC20
     - TransparentUpgradeableProxy
     - Ownable
+    - AddressUpgradeable
+    - OwnableUpgradeable
