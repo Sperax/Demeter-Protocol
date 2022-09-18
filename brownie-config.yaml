@@ -38,3 +38,4 @@ reports:
     - Ownable
     - AddressUpgradeable
     - OwnableUpgradeable
+    - SafeERC20Upgradeable
