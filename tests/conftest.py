@@ -5,7 +5,6 @@ import brownie
 from brownie import (
     interface,
     Farm,
-    UniswapFarmV1,
     chain,
     TransparentUpgradeableProxy,
     Contract,
@@ -20,6 +19,12 @@ NO_LOCKUP_REWARD_RATE = 1*1e18
 LOCKUP_REWARD_RATE = 2*1e18
 
 owner = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+
+
+@pytest.fixture(autouse=True)
+def isolation(fn_isolation):
+    pass
+
 
 """Add new farm configurations here to run the tests"""
 
