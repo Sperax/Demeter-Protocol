@@ -1,11 +1,12 @@
 pragma solidity 0.8.10;
 
 import "./FarmFactory.sol";
-
+import "./BaseFarmDeployer.sol";
 import {UniswapFarmV1, RewardTokenData, UniswapPoolData} from "./UniswapFarmV1.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniswapFarmV1Deployer {
+contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -22,26 +23,23 @@ contract UniswapFarmV1Deployer {
     }
 
     string public constant DEPLOYER_NAME = "UniswapV3FarmDeployer";
-    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant USDs = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
-    address public immutable factory;
-    // Stores the address of farm implementation.
-    address public immutable implementation;
-
-    event FarmCreated(address farm, address creator);
 
     constructor(address _factory) {
         _isNonZeroAddr(_factory);
         factory = _factory;
-        implementation = address(new UniswapFarmV1());
+        farmImplementation = address(new UniswapFarmV1());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
-    function createFarm(FarmData memory _data) external returns (address) {
+    function createFarm(FarmData memory _data)
+        external
+        nonReentrant
+        returns (address)
+    {
         _isNonZeroAddr(_data.farmAdmin);
         UniswapFarmV1 farmInstance = UniswapFarmV1(
-            Clones.clone(implementation)
+            Clones.clone(farmImplementation)
         );
         farmInstance.initialize(
             _data.farmStartTime,
@@ -53,11 +51,13 @@ contract UniswapFarmV1Deployer {
         address farm = address(farmInstance);
         // A logic to check if fee collection is required for farm deployment
         // Collect fee only if neither of the token is either SPA | USDs
-        bool collectFee = !_validateToken(_data.uniswapPoolData.tokenA) &&
-            !_validateToken(_data.uniswapPoolData.tokenB);
-
-        FarmFactory(factory).registerFarm(farm, msg.sender, collectFee);
-
+        if (
+            !_validateToken(_data.uniswapPoolData.tokenA) &&
+            !_validateToken(_data.uniswapPoolData.tokenB)
+        ) {
+            _collectFee();
+        }
+        FarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender);
         return farm;
     }

@@ -15,13 +15,9 @@ pragma solidity 0.8.10;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-
+contract FarmFactory is OwnableUpgradeable {
     address public feeReceiver;
     address public feeToken;
     uint256 public feeAmount;
@@ -30,7 +26,6 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
 
-    event FeeCollected(address token, uint256 amount);
     event FarmRegistered(address farm, address creator);
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
@@ -50,7 +45,6 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 _feeAmount
     ) external initializer {
         OwnableUpgradeable.__Ownable_init();
-        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
     }
 
@@ -58,21 +52,8 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @dev Only registered deployer can register a farm.
     /// @param _farm Address of the created farm contract
     /// @param _creator Address of the farm creator
-    /// @param _collectFee Flag stating if fee collection is required
-    function registerFarm(
-        address _farm,
-        address _creator,
-        bool _collectFee
-    ) external {
+    function registerFarm(address _farm, address _creator) external {
         require(deployerRegistered[msg.sender], "Deployer not registered");
-        if (_collectFee) {
-            IERC20Upgradeable(feeToken).safeTransferFrom(
-                _creator,
-                feeReceiver,
-                feeAmount
-            );
-            emit FeeCollected(feeToken, feeAmount);
-        }
         farms.push(_farm);
         farmRegistered[_farm] = true;
         emit FarmRegistered(_farm, _creator);
@@ -111,6 +92,20 @@ contract FarmFactory is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @return Returns array of farm addresses
     function getFarmList() external view returns (address[] memory) {
         return farms;
+    }
+
+    /// @notice Get all the fee parameters for creating farm.
+    /// @return Returns FeeReceiver, feeToken address and feeTokenAmt.
+    function getFeeParams()
+        external
+        view
+        returns (
+            address,
+            address,
+            uint256
+        )
+    {
+        return (feeReceiver, feeToken, feeAmount);
     }
 
     /// @notice Update the fee params for factory
