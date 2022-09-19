@@ -8,8 +8,6 @@ import time
 import json
 import os
 
-from .constants import constants
-
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -36,7 +34,7 @@ def get_account(msg: str):
     return owner
 
 
-def get_config(msg: str):
+def get_config(msg: str, constants):
     config_name = (
         click.prompt(
             msg,
@@ -107,11 +105,14 @@ def getConstantsFromNetwork(testnetAddr, mainnetAddr):
     return mainnetAddr
 
 
-def save_deployment_artifacts(data):
+def save_deployment_artifacts(data, name):
     # Function to store deployment artifacts
     path = os.path.join('deployed', network.show_active())
     os.makedirs(path, exist_ok=True)
-    file = os.path.join(path, time.strftime('%m-%d-%Y_%H:%M:%S') + '.json')
+    file = os.path.join(
+        path,
+        name + '_' + time.strftime('%m-%d-%Y_%H:%M:%S') + '.json'
+    )
     with open(file, 'w') as json_file:
         json.dump(data, json_file, indent=4, sort_keys=True)
     print(f'Artifacts stored at: {file}')

@@ -10,6 +10,7 @@ from .utils import (
     signal_handler
 )
 import json
+from .constants import old_farm_constants
 
 GAS_LIMIT = 100000000
 
@@ -34,7 +35,10 @@ def main():
 
     # contract owner account
     owner = get_account('owner account')
-    config_name, contract, config = get_config('Select farm config:')
+    config_name, contract, config = get_config(
+        'Select farm config:',
+        old_farm_constants
+    )
 
     farm = deploy(owner, contract, config)
 
@@ -49,4 +53,4 @@ def main():
     data[config_name+'_farm'] = farm.address
     print(json.dumps(data, indent=4))
 
-    save_deployment_artifacts(data)
+    save_deployment_artifacts(data, config_name)

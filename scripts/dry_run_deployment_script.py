@@ -89,5 +89,5 @@ def main():
     )
 
     # Initialize contract objects
-    farm_implementation = UniswapFarmV1.at(farm_deployer.implementation())  # noqa
+    farm_implementation = UniswapFarmV1.at(farm_deployer.farmImplementation())  # noqa
     farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
