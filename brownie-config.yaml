@@ -39,3 +39,4 @@ reports:
     - AddressUpgradeable
     - OwnableUpgradeable
     - SafeERC20Upgradeable
+    - Clones
