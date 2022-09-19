@@ -6,7 +6,8 @@ from brownie import (
     UniswapFarmV1Deployer,
     reverts,
     ZERO_ADDRESS,
-    UniswapFarmV1
+    UniswapFarmV1,
+    chain
 )
 import pytest
 import eth_utils
@@ -57,6 +58,11 @@ def factory(factory_contract):
 
 @pytest.fixture(scope='module')
 def farm_deployer(factory):
+    with reverts('Invalid address'):
+        farm_deployer = UniswapFarmV1Deployer.deploy(
+            ZERO_ADDRESS,
+            {'from': deployer}
+        )
     farm_deployer = UniswapFarmV1Deployer.deploy(factory, {'from': deployer})
     factory.registerFarmDeployer(
         farm_deployer,
@@ -71,6 +77,7 @@ def farm():
     return farm
 
 
+# @pytest.mark.skip()
 class TestInitialization:
     def test_initialization_invalid_token(self, factory_contract):
         print('-------------------------------------------------')
@@ -119,6 +126,7 @@ class TestInitialization:
         assert factory.feeReceiver() == deployer
 
 
+# @pytest.mark.skip()
 class TestRegisterFarmDeployer:
     def test_only_admin(self, factory):
         with reverts('Ownable: caller is not the owner'):
@@ -165,6 +173,7 @@ class TestRegisterFarmDeployer:
             )
 
 
+# @pytest.mark.skip()
 class TestRemoveDeployer:
     def test_only_admin(self, factory):
         with reverts('Ownable: caller is not the owner'):
@@ -201,6 +210,7 @@ class TestRemoveDeployer:
             assert factory.deployerList(i+1) == accounts[i+2]
 
 
+# @pytest.mark.skip()
 class TestRegisterFarm:
     def test_unregisteredDeployer(self, factory, farm):
         with reverts('Deployer not registered'):
@@ -252,6 +262,7 @@ class TestRegisterFarm:
         assert factory.farmRegistered(farm)
 
 
+# @pytest.mark.skip()
 class TestUpdateFeeParams:
     def test_updateFeeParams(self, factory):
         tx = factory.updateFeeParams(
@@ -267,3 +278,192 @@ class TestUpdateFeeParams:
         assert factory.feeReceiver() == accounts[3]
         assert factory.feeToken() == token_obj('usdc')
         assert factory.feeAmount() == 100*1e18
+
+
+# @pytest.mark.skip()
+class TestDeployerInitialization:
+    def test_deployer_initialization(self, farm_deployer, factory):
+        print('Checking if deployer is initialized properly')
+        assert farm_deployer.DEPLOYER_NAME() == 'UniswapV3FarmDeployer'
+        assert farm_deployer.SPA() == token_obj('spa')
+        assert farm_deployer.USDs() == token_obj('usds')
+        assert farm_deployer.factory() == factory
+
+
+# @pytest.mark.skip()
+class TestCreateFarm:
+    @pytest.fixture(scope='module')
+    def config(self):
+        config = {
+            'farm_admin': deployer,
+            'farm_start_time': chain.time(),
+            'cooldown_period': 0,
+            'uniswap_pool_data': {
+                'tokenA': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+                'tokenB': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                'fee_tier': 3000,
+                'tick_lower': -48960,
+                'tick_upper': -6900,
+            },
+            'reward_token_data': [
+                {
+                    'token_addr': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+                    'token_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1' # noqa
+                }
+            ]
+        }
+        return config
+
+    def test_create_farm_with_usds(self, farm_deployer, config, factory):
+        config['farm_start_time'] = chain.time()
+        print('Creating farm with token B as USDs')
+        create_tx = farm_deployer.createFarm(
+            (
+                config['farm_admin'],
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(
+                    map(
+                        lambda x: list(x.values()),
+                        config['reward_token_data']
+                    )
+                ),
+            ),
+            {'from': deployer}
+        )
+        print('Checking whether farm is deployed correctly or not')
+        farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FarmCreated']
+        assert farm == event['farm']
+        assert deployer == event['creator']
+        print('Checking whether farm is added to factory or not')
+        assert farm == factory.farms(0)
+        assert factory.farmRegistered(farm)
+        print('Checking whether farm is properly initialized or not')
+        assert farm.lastFundUpdateTime() == config['farm_start_time']
+        assert farm.farmStartTime() == config['farm_start_time']
+        assert farm.owner() == deployer
+        print('Everything looks good')
+
+    def test_create_farm_with_spa(self, farm_deployer, config, factory):
+        config['farm_start_time'] = chain.time()
+        config['uniswap_pool_data']['tokenB'] = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8' # noqa
+        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B' # noqa
+        config['uniswap_pool_data']['fee_tier'] = 10000
+        config['uniswap_pool_data']['tick_lower'] = -322200
+        config['uniswap_pool_data']['tick_upper'] = -318800
+
+        print('Creating farm with token A as SPA')
+        create_tx = farm_deployer.createFarm(
+            (
+                config['farm_admin'],
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(
+                    map(
+                        lambda x: list(x.values()),
+                        config['reward_token_data']
+                    )
+                ),
+            ),
+            {'from': deployer}
+        )
+        print('Checking whether farm is deployed correctly or not')
+        farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FarmCreated']
+        assert farm == event['farm']
+        assert deployer == event['creator']
+        print('Checking whether farm is added to factory or not')
+        assert farm == factory.farms(0)
+        assert factory.farmRegistered(farm)
+        print('Checking whether farm is properly initialized or not')
+        assert farm.lastFundUpdateTime() == config['farm_start_time']
+        assert farm.farmStartTime() == config['farm_start_time']
+        assert farm.owner() == deployer
+        print('Everything looks good')
+
+    def test_create_farm_with_spa_usds(self, farm_deployer, config, factory):
+        config['farm_start_time'] = chain.time()
+        config['uniswap_pool_data']['tokenB'] = '0xD74f5255D557944cf7Dd0E45FF521520002D5748' # noqa
+        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B' # noqa
+
+        print('Creating farm for SPA/USDs')
+        create_tx = farm_deployer.createFarm(
+            (
+                config['farm_admin'],
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(
+                    map(
+                        lambda x: list(x.values()),
+                        config['reward_token_data']
+                    )
+                ),
+            ),
+            {'from': accounts[2]}
+        )
+        print('Checking whether farm is deployed correctly or not')
+        farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FarmCreated']
+        assert farm == event['farm']
+        assert accounts[2] == event['creator']
+        print('Checking whether farm is added to factory or not')
+        assert farm == factory.farms(0)
+        assert factory.farmRegistered(farm)
+        print('Checking whether farm is properly initialized or not')
+        assert farm.lastFundUpdateTime() == config['farm_start_time']
+        assert farm.farmStartTime() == config['farm_start_time']
+        assert farm.owner() == deployer
+        print('Everything looks good')
+
+    def test_create_farm_without_spa_usds(
+        self, farm_deployer, config, factory
+    ):
+        config['uniswap_pool_data']['tokenB'] = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' # noqa
+        config['uniswap_pool_data']['tokenA'] = '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a' # noqa
+        config['farm_admin'] = accounts[4]
+        fund_account(accounts[3], 'usds', 500*1e18)
+        receiver = factory.feeReceiver()
+        print('Fee receiver', receiver)
+        balBefore = token_obj('usds').balanceOf(receiver)
+        token_obj('usds').approve(
+            factory,
+            500*1e18,
+            {'from': accounts[3]}
+        )
+        print('Creating farm with ETH/GMX')
+        config['farm_start_time'] = chain.time()
+        create_tx = farm_deployer.createFarm(
+            (
+                config['farm_admin'],
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(
+                    map(
+                        lambda x: list(x.values()),
+                        config['reward_token_data']
+                    )
+                ),
+            ),
+            {'from': accounts[3]}
+        )
+        balAfter = token_obj('usds').balanceOf(receiver)
+        print('Checking if the receiver received the fees')
+        assert balAfter - balBefore == 500*1e18
+        print('Checking whether farm is deployed correctly or not')
+        farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FarmCreated']
+        assert farm == event['farm']
+        assert accounts[3] == event['creator']
+        print('Checking whether farm is added to factory or not')
+        assert farm == factory.farms(0)
+        assert factory.farmRegistered(farm)
+        print('Checking whether farm is properly initialized or not')
+        assert farm.lastFundUpdateTime() == config['farm_start_time']
+        assert farm.farmStartTime() == config['farm_start_time']
+        assert farm.owner() == accounts[4]
+        print('Everything looks good')
