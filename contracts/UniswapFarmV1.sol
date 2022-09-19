@@ -20,9 +20,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -222,12 +220,12 @@ contract UniswapFarmV1 is
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _uniswapPoolData - init data for UniswapV3 pool
-    /// @param _rewardData - init data for reward tokens
+    /// @param _rwdTokenData - init data for reward tokens
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
-        RewardTokenData[] memory _rewardData
+        RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
         _transferOwnership(msg.sender);
@@ -263,7 +261,7 @@ contract UniswapFarmV1 is
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
         }
-        _setupFarm(numFunds, _rewardData);
+        _setupFarm(numFunds, _rwdTokenData);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -276,12 +274,9 @@ contract UniswapFarmV1 is
         uint256 _tokenId,
         bytes calldata _data
     ) external override notPaused returns (bytes4) {
-        require(
-            msg.sender == NFPM,
-            "UniswapV3Staker::onERC721Received: not a univ3 nft"
-        );
+        require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
 
-        require(_data.length > 0, "UniswapV3Staker::onERC721Received: no data");
+        require(_data.length > 0, "onERC721Received: no data");
 
         bool lockup = abi.decode(_data, (bool));
         if (cooldownPeriod == 0) {
@@ -476,13 +471,13 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Add another reward token in the farm.
-    /// @param _rwdData Contains the rwdToken and tknManager address
-    function addRewardToken(RewardTokenData calldata _rwdData)
+    /// @param _rwdTokenData Contains the rwdToken and tknManager address
+    function addRewardToken(RewardTokenData calldata _rwdTokenData)
         external
         onlyOwner
     {
         require(
-            rewardData[_rwdData.token].tknManager == address(0),
+            rewardData[_rwdTokenData.token].tknManager == address(0),
             "Reward token already added"
         );
 
@@ -499,7 +494,7 @@ contract UniswapFarmV1 is
             rewardFunds[iFund].accRewardPerShare.push(0);
         }
 
-        _addRewardData(_rwdData.token, _rwdData.tknManager);
+        _addRewardData(_rwdTokenData.token, _rwdTokenData.tknManager);
     }
 
     /// @notice Pause / UnPause the deposit
@@ -571,8 +566,8 @@ contract UniswapFarmV1 is
         returns (uint256[] memory rewards)
     {
         _isValidDeposit(_account, _depositId);
-        Deposit storage userDeposit = deposits[_account][_depositId];
-        Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
+        Deposit memory userDeposit = deposits[_account][_depositId];
+        Subscription[] memory depositSubs = subscriptions[userDeposit.tokenId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numRewards = rewardTokens.length;
         rewards = new uint256[](numRewards);
@@ -833,7 +828,7 @@ contract UniswapFarmV1 is
         uint256 _depositId
     ) private {
         require(_fundId < rewardFunds.length, "Invalid fund id");
-        Deposit storage userDeposit = deposits[_account][_depositId];
+        Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
 
         // Unsubscribe from the reward fund
@@ -903,12 +898,12 @@ contract UniswapFarmV1 is
 
     /// @notice Function to setup the reward funds during construction.
     /// @param _numFunds - Number of reward funds to setup.
-    /// @param _rewardData - Reward data for each reward token.
-    function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rewardData)
+    /// @param _rwdTokenData - Reward data for each reward token.
+    function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rwdTokenData)
         private
     {
         // Setup reward related information.
-        uint256 numRewards = _rewardData.length;
+        uint256 numRewards = _rwdTokenData.length;
         require(
             numRewards > 0 && numRewards <= MAX_NUM_REWARDS,
             "Invalid reward data"
@@ -927,8 +922,8 @@ contract UniswapFarmV1 is
         // Initialize reward Data
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             _addRewardData(
-                _rewardData[iRwd].token,
-                _rewardData[iRwd].tknManager
+                _rwdTokenData[iRwd].token,
+                _rwdTokenData[iRwd].tknManager
             );
         }
     }
