@@ -90,11 +90,13 @@ contract UniswapFarmV1 is
         uint256[] totalRewardsClaimed;
     }
 
+    // Reward token related information
+    // tknManager Address that manages the rewardToken.
+    // accRewardBal The rewards accrued but pending to be claimed.
     struct RewardData {
         address tknManager;
         uint8 id;
-        uint256 accRewards;
-        uint256 supply;
+        uint256 accRewardBal;
     }
 
     // constants
@@ -179,6 +181,7 @@ contract UniswapFarmV1 is
     event RewardAdded(address rwdToken, uint256 amount);
     event EmergencyClaim(address indexed account);
     event FarmClosed();
+    event RecoveredERC20(address token, uint256 amount);
     event FundsRecovered(
         address indexed account,
         address rwdToken,
@@ -435,7 +438,6 @@ contract UniswapFarmV1 is
             "Invalid reward token"
         );
         _updateFarmRewardData();
-        rewardData[_rwdToken].supply += _amount;
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
     }
@@ -516,6 +518,21 @@ contract UniswapFarmV1 is
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
         }
         emit FarmClosed();
+    }
+
+    /// @notice Recover erc20 tokens other than the reward Tokens.
+    /// @param _token Address of token to be recovered
+    function recoverERC20(address _token) external onlyOwner nonReentrant {
+        require(
+            rewardData[_token].tknManager == address(0),
+            "Can't withdraw rewardToken"
+        );
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        require(balance > 0, "Can't withdraw 0 amount");
+
+        IERC20(_token).safeTransfer(owner(), balance);
+        emit RecoveredERC20(_token, balance);
     }
 
     // --------------------- Token Manager Functions ---------------------
@@ -674,8 +691,8 @@ contract UniswapFarmV1 is
         require(rewardTokens[rwdId] == _rwdToken, "Invalid _rwdToken");
 
         uint256 numFunds = rewardFunds.length;
-        uint256 rewardsAcc = rewardData[_rwdToken].accRewards;
-        uint256 supply = rewardData[_rwdToken].supply;
+        uint256 rewardsAcc = rewardData[_rwdToken].accRewardBal;
+        uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
             for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
@@ -735,6 +752,9 @@ contract UniswapFarmV1 is
 
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] > 0) {
+                rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
+                    iRwd
+                ];
                 // Update the total rewards earned for the deposit
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
                 IERC20(rewardTokens[iRwd]).safeTransfer(
@@ -759,7 +779,6 @@ contract UniswapFarmV1 is
             _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
         }
         if (amountToRecover > 0) {
-            rewardData[_rwdToken].supply -= amountToRecover;
             IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
             emit FundsRecovered(emergencyRet, _rwdToken, amountToRecover);
         }
@@ -883,7 +902,7 @@ contract UniswapFarmV1 is
                                 time
                             );
                             rewardData[rewardTokens[iRwd]]
-                                .accRewards += accRewards;
+                                .accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] +=
                                 (accRewards * PREC) /
                                 fund.totalLiquidity;
@@ -942,8 +961,7 @@ contract UniswapFarmV1 is
         rewardData[token] = RewardData({
             id: uint8(rewardTokens.length),
             tknManager: tknManager,
-            accRewards: 0,
-            supply: 0
+            accRewardBal: 0
         });
 
         // Add reward token in the list
@@ -959,8 +977,8 @@ contract UniswapFarmV1 is
     ) private view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         address rwdToken = rewardTokens[_rwdId];
-        uint256 rwdSupply = rewardData[rwdToken].supply;
-        uint256 rwdAccrued = rewardData[rwdToken].accRewards;
+        uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
+        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
 
         uint256 rwdBal = 0;
         if (rwdSupply > rwdAccrued) {
