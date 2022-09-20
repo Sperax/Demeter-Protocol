@@ -217,7 +217,6 @@ class TestRegisterFarm:
             factory.registerFarm(
                 farm,
                 accounts[5],
-                True,
                 {'from': accounts[5]}
             )
 
@@ -229,7 +228,6 @@ class TestRegisterFarm:
         tx = factory.registerFarm(
             farm,
             accounts[1],
-            False,
             {'from': accounts[1]}
         )
         event = tx.events['FarmRegistered']
@@ -238,32 +236,41 @@ class TestRegisterFarm:
         assert factory.farms(0) == farm
         assert factory.farmRegistered(farm)
 
-    def test_registerFarm_with_fees(self, factory, farm):
-        fund_account(accounts[2], 'usds', 500*1e18)
-        token_obj('usds').approve(
-            factory,
-            500*1e18,
-            {'from': accounts[2]}
-        )
-        factory.registerFarmDeployer(
-            accounts[2],
-            {'from': deployer}
-        )
-        tx = factory.registerFarm(
-            farm,
-            accounts[2],
-            True,
-            {'from': accounts[2]}
-        )
-        event = tx.events['FarmRegistered']
-        assert farm == event['farm']
-        assert accounts[2] == event['creator']
-        assert factory.farms(0) == farm
-        assert factory.farmRegistered(farm)
+    # def test_registerFarm_with_fees(self, factory, farm):
+    #     fund_account(accounts[2], 'usds', 500*1e18)
+    #     token_obj('usds').approve(
+    #         factory,
+    #         500*1e18,
+    #         {'from': accounts[2]}
+    #     )
+    #     factory.registerFarmDeployer(
+    #         accounts[2],
+    #         {'from': deployer}
+    #     )
+    #     tx = factory.registerFarm(
+    #         farm,
+    #         accounts[2],
+    #         True,
+    #         {'from': accounts[2]}
+    #     )
+    #     event = tx.events['FarmRegistered']
+    #     assert farm == event['farm']
+    #     assert accounts[2] == event['creator']
+    #     assert factory.farms(0) == farm
+    #     assert factory.farmRegistered(farm)
 
 
 # @pytest.mark.skip()
 class TestUpdateFeeParams:
+    def test_only_admin(self, factory):
+        with reverts('Ownable: caller is not the owner'):
+            factory.updateFeeParams(
+                accounts[3],
+                token_obj('usdc'),
+                100*1e18,
+                {'from': accounts[3]}
+            )
+
     def test_updateFeeParams(self, factory):
         tx = factory.updateFeeParams(
             accounts[3],
@@ -385,11 +392,11 @@ class TestCreateFarm:
         print('Everything looks good')
 
     def test_create_farm_with_spa_usds(self, farm_deployer, config, factory):
-        config['farm_start_time'] = chain.time()
         config['uniswap_pool_data']['tokenB'] = '0xD74f5255D557944cf7Dd0E45FF521520002D5748' # noqa
         config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B' # noqa
 
         print('Creating farm for SPA/USDs')
+        config['farm_start_time'] = chain.time()
         create_tx = farm_deployer.createFarm(
             (
                 config['farm_admin'],
@@ -430,7 +437,7 @@ class TestCreateFarm:
         print('Fee receiver', receiver)
         balBefore = token_obj('usds').balanceOf(receiver)
         token_obj('usds').approve(
-            factory,
+            farm_deployer,
             500*1e18,
             {'from': accounts[3]}
         )
@@ -467,3 +474,24 @@ class TestCreateFarm:
         assert farm.farmStartTime() == config['farm_start_time']
         assert farm.owner() == accounts[4]
         print('Everything looks good')
+
+    def test_create_farm_with_invalid_admin(
+        self, farm_deployer, config, factory
+    ):
+        config['farm_admin'] = ZERO_ADDRESS
+        with reverts('Invalid address'):
+            farm_deployer.createFarm(
+                (
+                    config['farm_admin'],
+                    config['farm_start_time'],
+                    config['cooldown_period'],
+                    list(config['uniswap_pool_data'].values()),
+                    list(
+                        map(
+                            lambda x: list(x.values()),
+                            config['reward_token_data']
+                        )
+                    ),
+                ),
+                {'from': accounts[3]}
+            )
