@@ -794,7 +794,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         uint256 _tokenId,
         uint256 _liquidity
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
@@ -826,7 +826,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         address _account,
         uint256 _depositId
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
@@ -865,7 +865,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Function to update the FarmRewardData for all funds
-    function _updateFarmRewardData() private {
+    function _updateFarmRewardData() public {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
@@ -928,7 +928,7 @@ contract UniswapFarmV1 is
         }
     }
 
-    function _addRewardData(address token, address tknManager) private {
+    function _addRewardData(address token, address tknManager) public {
         // Validate if addresses are correct
         _isNonZeroAddr(token);
         _isNonZeroAddr(tknManager);
@@ -956,7 +956,7 @@ contract UniswapFarmV1 is
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
-    ) private view returns (uint256) {
+    ) public view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = rewardData[rwdToken].supply;
@@ -977,7 +977,7 @@ contract UniswapFarmV1 is
     /// @param _tokenId The tokenId of the position
     /// @dev the position must adhere to the price ranges
     /// @dev Only allow specific pool token to be staked.
-    function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
+    function _getLiquidity(uint256 _tokenId) public view returns (uint256) {
         /// @dev Get the info of the required token
         (
             ,
@@ -1026,10 +1026,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate the deposit for account
-    function _isValidDeposit(address _account, uint256 _depositId)
-        private
-        view
-    {
+    function _isValidDeposit(address _account, uint256 _depositId) public view {
         require(
             _depositId < deposits[_account].length,
             "Deposit does not exist"
@@ -1037,7 +1034,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) private pure {
+    function _isNonZeroAddr(address _addr) public pure {
         require(_addr != address(0), "Invalid address");
     }
 }
