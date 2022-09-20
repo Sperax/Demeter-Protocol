@@ -67,9 +67,4 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     function _validateToken(address _token) private pure returns (bool) {
         return _token == SPA || _token == USDs;
     }
-
-    /// @notice Validate address
-    function _isNonZeroAddr(address _addr) private pure {
-        require(_addr != address(0), "Invalid address");
-    }
 }
