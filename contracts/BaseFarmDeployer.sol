@@ -17,7 +17,7 @@ abstract contract BaseFarmDeployer {
 
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
-    function _collectFee() internal returns (bool) {
+    function _collectFee() internal {
         (
             address feeReceiver,
             address feeToken,
@@ -25,5 +25,10 @@ abstract contract BaseFarmDeployer {
         ) = FarmFactory(factory).getFeeParams();
         IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
         emit FeeCollected(feeToken, feeAmount);
+    }
+
+    /// @notice Validate address
+    function _isNonZeroAddr(address _addr) internal pure {
+        require(_addr != address(0), "Invalid address");
     }
 }
