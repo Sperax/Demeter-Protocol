@@ -38,7 +38,7 @@ constants = {
         'reward_tokens': ['usds', 'spa'],
         'config': {
             'farm_start_time': chain.time()+1000,
-            'cooldown_period': 21,
+            'cooldown_period': 86400 * 21,
             'uniswap_pool_data': {
                 'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                 'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
