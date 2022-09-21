@@ -298,7 +298,7 @@ contract UniswapFarmV1 is
             tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
-            totalRewardsClaimed: new uint256[](rewardTokens.length),
+            totalRewardsClaimed: new uint256[](MAX_NUM_REWARDS),
             liquidity: liquidity
         });
 
@@ -479,23 +479,11 @@ contract UniswapFarmV1 is
         onlyOwner
     {
         require(
-            rewardData[_rwdTokenData.token].tknManager == address(0),
-            "Reward token already added"
-        );
-
-        require(
             rewardTokens.length + 1 <= MAX_NUM_REWARDS,
             "Max number of rewards reached!"
         );
         // Updating existing farm rewards
         _updateFarmRewardData();
-
-        // Update rewardFunds
-        for (uint8 iFund = 0; iFund < rewardFunds.length; iFund++) {
-            rewardFunds[iFund].rewardsPerSec.push(0);
-            rewardFunds[iFund].accRewardPerShare.push(0);
-        }
-
         _addRewardData(_rwdTokenData.token, _rwdTokenData.tknManager);
     }
 
@@ -820,8 +808,8 @@ contract UniswapFarmV1 is
         subscriptions[_tokenId].push(
             Subscription({
                 fundId: _fundId,
-                rewardDebt: new uint256[](numRewards),
-                rewardClaimed: new uint256[](numRewards)
+                rewardDebt: new uint256[](MAX_NUM_REWARDS),
+                rewardClaimed: new uint256[](MAX_NUM_REWARDS)
             })
         );
         uint256 subId = subscriptions[_tokenId].length - 1;
@@ -932,8 +920,8 @@ contract UniswapFarmV1 is
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards),
-                accRewardPerShare: new uint256[](numRewards)
+                rewardsPerSec: new uint256[](MAX_NUM_REWARDS),
+                accRewardPerShare: new uint256[](MAX_NUM_REWARDS)
             });
             rewardFunds.push(_rewardFund);
         }
@@ -947,27 +935,32 @@ contract UniswapFarmV1 is
         }
     }
 
-    function _addRewardData(address token, address tknManager) public {
+    function _addRewardData(address _token, address _tknManager) public {
         // Validate if addresses are correct
-        _isNonZeroAddr(token);
-        _isNonZeroAddr(tknManager);
+        _isNonZeroAddr(_token);
+        _isNonZeroAddr(_tknManager);
+
+        require(
+            rewardData[_token].tknManager == address(0),
+            "Reward token already added"
+        );
 
         // Update reward data
-        if (token == SPA) {
+        if (_token == SPA) {
             // @dev for SPA rewardToken override SPA_TOKEN_MANAGER
             //      as default token manager.
-            tknManager = SPA_TOKEN_MANAGER;
+            _tknManager = SPA_TOKEN_MANAGER;
         }
-        rewardData[token] = RewardData({
+        rewardData[_token] = RewardData({
             id: uint8(rewardTokens.length),
-            tknManager: tknManager,
+            tknManager: _tknManager,
             accRewardBal: 0
         });
 
         // Add reward token in the list
-        rewardTokens.push(token);
+        rewardTokens.push(_token);
 
-        emit RewardTokenAdded(token, tknManager);
+        emit RewardTokenAdded(_token, _tknManager);
     }
 
     function _getAccRewards(
