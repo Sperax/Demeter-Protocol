@@ -702,7 +702,7 @@ contract UniswapFarmV1 is
     /// @param _depositId The id of the deposit
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant
-    function _claimRewards(address _account, uint256 _depositId) private {
+    function _claimRewards(address _account, uint256 _depositId) public {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_account][_depositId];
@@ -758,7 +758,7 @@ contract UniswapFarmV1 is
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
-    function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
+    function _recoverRewardFunds(address _rwdToken, uint256 _amount) public {
         address emergencyRet = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
         uint256 amountToRecover = _amount;
@@ -776,7 +776,7 @@ contract UniswapFarmV1 is
     /// @param _rwdToken The reward token's address
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
-        private
+        public
     {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
@@ -907,7 +907,7 @@ contract UniswapFarmV1 is
     /// @param _numFunds - Number of reward funds to setup.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rwdTokenData)
-        private
+        public
     {
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
@@ -1022,7 +1022,7 @@ contract UniswapFarmV1 is
     }
 
     function _validateTickRange(int24 _tickLower, int24 _tickUpper)
-        private
+        public
         view
     {
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
