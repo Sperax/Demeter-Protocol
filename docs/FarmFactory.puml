@@ -1,0 +1,52 @@
+@startuml
+title Demeter Protocol
+
+
+class Ownable {}
+class OwnableUpgradeable {}
+class Initializable {}
+class CloneFactory {
+    + clone()
+}
+
+class FarmFactory implements OwnableUpgradeable, Initializable {
+    + address feeReceiver
+    + address feeToken
+    + uint256 feeAmount
+    + address[] farms
+    + string[] deployerList
+    + map[address -> bool] deployerRegistered
+    + map[address -> bool] farmRegistered
+
+    + registerFarm(address _farm, address _creator)
+    + getFarmDeployerList()
+    + getFarmList()
+    # updateFeeParams(address _receiver, address _token, uint256 amount)
+    # registerFarmDeployer(address _deployer)
+    # removeDeployer(uint16 _id)
+    - _isNonZeroAddr(address _addr)
+}
+
+abstract BaseFarmDeployer {
+    + address SPA
+    + address USDs
+    + address factory
+    + address farmImplementation
+
+    - _collectFee()
+    - _isNonZeroAddr(address _addr)
+}
+
+class FarmDeployer extends BaseFarmDeployer{
+    + createFarm(FarmData _data)
+    - _validateToken(address _token)
+}
+
+class Farm implements Initializable, Ownable{
+}
+
+CloneFactory -- FarmDeployer
+FarmFactory -- FarmDeployer
+FarmDeployer "1"-right->"many" Farm : clones
+
+@enduml
