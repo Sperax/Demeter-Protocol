@@ -298,7 +298,7 @@ contract UniswapFarmV1 is
             tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
-            totalRewardsClaimed: new uint256[](rewardTokens.length),
+            totalRewardsClaimed: new uint256[](MAX_NUM_REWARDS),
             liquidity: liquidity
         });
 
@@ -489,13 +489,6 @@ contract UniswapFarmV1 is
         );
         // Updating existing farm rewards
         _updateFarmRewardData();
-
-        // Update rewardFunds
-        for (uint8 iFund = 0; iFund < rewardFunds.length; iFund++) {
-            rewardFunds[iFund].rewardsPerSec.push(0);
-            rewardFunds[iFund].accRewardPerShare.push(0);
-        }
-
         _addRewardData(_rwdTokenData.token, _rwdTokenData.tknManager);
     }
 
@@ -820,8 +813,8 @@ contract UniswapFarmV1 is
         subscriptions[_tokenId].push(
             Subscription({
                 fundId: _fundId,
-                rewardDebt: new uint256[](numRewards),
-                rewardClaimed: new uint256[](numRewards)
+                rewardDebt: new uint256[](MAX_NUM_REWARDS),
+                rewardClaimed: new uint256[](MAX_NUM_REWARDS)
             })
         );
         uint256 subId = subscriptions[_tokenId].length - 1;
@@ -932,8 +925,8 @@ contract UniswapFarmV1 is
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards),
-                accRewardPerShare: new uint256[](numRewards)
+                rewardsPerSec: new uint256[](MAX_NUM_REWARDS),
+                accRewardPerShare: new uint256[](MAX_NUM_REWARDS)
             });
             rewardFunds.push(_rewardFund);
         }
