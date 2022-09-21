@@ -479,11 +479,6 @@ contract UniswapFarmV1 is
         onlyOwner
     {
         require(
-            rewardData[_rwdTokenData.token].tknManager == address(0),
-            "Reward token already added"
-        );
-
-        require(
             rewardTokens.length + 1 <= MAX_NUM_REWARDS,
             "Max number of rewards reached!"
         );
@@ -940,27 +935,32 @@ contract UniswapFarmV1 is
         }
     }
 
-    function _addRewardData(address token, address tknManager) private {
+    function _addRewardData(address _token, address _tknManager) private {
         // Validate if addresses are correct
-        _isNonZeroAddr(token);
-        _isNonZeroAddr(tknManager);
+        _isNonZeroAddr(_token);
+        _isNonZeroAddr(_tknManager);
+
+        require(
+            rewardData[_token].tknManager == address(0),
+            "Reward token already added"
+        );
 
         // Update reward data
-        if (token == SPA) {
+        if (_token == SPA) {
             // @dev for SPA rewardToken override SPA_TOKEN_MANAGER
             //      as default token manager.
-            tknManager = SPA_TOKEN_MANAGER;
+            _tknManager = SPA_TOKEN_MANAGER;
         }
-        rewardData[token] = RewardData({
+        rewardData[_token] = RewardData({
             id: uint8(rewardTokens.length),
-            tknManager: tknManager,
+            tknManager: _tknManager,
             accRewardBal: 0
         });
 
         // Add reward token in the list
-        rewardTokens.push(token);
+        rewardTokens.push(_token);
 
-        emit RewardTokenAdded(token, tknManager);
+        emit RewardTokenAdded(_token, _tknManager);
     }
 
     function _getAccRewards(
