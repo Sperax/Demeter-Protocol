@@ -1,6 +1,7 @@
 from brownie import (
     chain,
     accounts,
+    Farm,
     UniswapFarmV1,
 )
 import pytest
@@ -9,6 +10,7 @@ from math import isclose
 from conftest import (
     mint_position,
     GAS_LIMIT,
+    deploy,
     deploy_uni_farm,
     init_farm,
     false_init_farm,
@@ -23,7 +25,7 @@ token_id1 = None
 token_id2 = None
 
 
-farm_names = ['test_farm_with_lockup', 'test_farm_without_lockup']
+farm_names = ['test_farm_without_lockup', 'test_farm_with_lockup']
 
 
 def print_stats(farm, token_id):
@@ -55,7 +57,6 @@ def test_scenario_1(
     spa = token_obj('spa')
     usds = token_obj('usds')
     usdc = token_obj('usdc')
-    frax = token_obj('frax')
     farm_config = constants[farm_name]
     config = farm_config['config']
     farm = deploy_uni_farm(owner, UniswapFarmV1)
@@ -82,22 +83,25 @@ def test_scenario_1(
 
     init_farm(owner, farm, config)
     print('Initialized Farm.....')
-
     with brownie.reverts('Time < now'):
         farm.updateFarmStartTime(brownie.chain.time()-1, {'from': owner})
-    farm.updateFarmStartTime(brownie.chain.time()+2, {'from': owner})
+    farm.updateFarmStartTime(brownie.chain.time(), {'from': owner})
     print('farm started.........')
-    print('setup farm using invalid data.........')
-    with brownie.reverts('Invalid reward data'):
-        farm._setupFarm(5, [(brownie.ETH_ADDRESS, owner), (spa.address, owner),
-                            (usds.address, owner), (usdc, owner), (frax, owner)], {'from': owner})
-    with brownie.reverts('Invalid reward data'):
-        farm._setupFarm(5, [], {'from': owner})
+
     chain.snapshot()
     chain.mine(10, chain.time()+86400*7)
     chain.sleep(86400*7)
     with brownie.reverts('Farm already started'):
         farm.updateFarmStartTime(brownie.chain.time()+100, {'from': owner})
+    print('Adding Reward Tokens.....')
+    with brownie.reverts('Reward token already added'):
+        farm.addRewardToken(
+            [token_obj('usds').address, owner], {'from': owner})
+    farm.addRewardToken([token_obj('frax').address, owner], {'from': owner})
+    farm.addRewardToken([token_obj('dai').address, owner], {'from': owner})
+    with brownie.reverts('Max number of rewards reached!'):
+        farm.addRewardToken(
+            [token_obj('usdc').address, owner], {'from': owner})
 
     reward_token = token_obj(farm_config['reward_token_A'])
     reward_token_1 = token_obj(farm_config['reward_token_B'])
@@ -116,10 +120,12 @@ def test_scenario_1(
         print('balance of rewards is: ', tx)
     else:
         farm.getRewardBalance(usds, {'from': owner})
-    tx = farm.addRewards(usds, 1e22, {'from': owner})
-    tx = farm.addRewards(spa, 1e22, {'from': owner})
+    farm.addRewards(usds, 1e23, {'from': owner})
+    farm.addRewards(spa, 1e23, {'from': owner})
     with brownie.reverts('Invalid _rwdToken'):
         farm.getRewardBalance(usdc, {'from': owner})
+
+    farm.recoverRewardFunds(spa, 0, {'from': owner})
 
     # For Generic Farm Scenario
     # fund_account(
@@ -129,12 +135,7 @@ def test_scenario_1(
     # )
     # fund_account(owner, farm_config['token_A'],  5e4 * 10 ** token_a_dec)
     # fund_account(owner, farm_config['token_B'],  5e4 * 10 ** token_b_dec)
-    if (farm_name == 'test_farm_with_lockup'):
-        farm.setRewardRate(usds, [1e15, 2e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15, 2e15], {'from': owner})
-    elif (farm_name == 'test_farm_without_lockup'):
-        farm.setRewardRate(usds, [1e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15], {'from': owner})
+
     # User creates a position in uniswap pool
     # Register the token id
     token_id1 = mint_position(
@@ -144,11 +145,10 @@ def test_scenario_1(
         config['uniswap_pool_data']['fee_tier'],
         config['uniswap_pool_data']['lower_tick'],
         config['uniswap_pool_data']['upper_tick'],
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
-
     liquidity = farm._getLiquidity(token_id1, {'from': owner})
     with brownie.reverts('Invalid fund id'):
         farm._subscribeRewardFund(2, token_id1, liquidity, {'from': owner})
@@ -178,7 +178,6 @@ def test_scenario_1(
         '0x0000000000000000000000000000000000000000000000000000000000000000',
         {'from': owner, 'gas_limit': GAS_LIMIT},
     )
-
     lock_data = '0x0000000000000000000000000000000000000000000000000000000000000001'
     if(farm_name == 'test_farm_without_lockup'):
 
@@ -240,21 +239,6 @@ def test_scenario_1(
     chain.mine(10, chain.time() + 1000)
     # Withdraw the deposit
     print('\n ----Withdrawing the deposit---- ')
-
-    print('\n ----Farm is Paused---- ')
-    with brownie.reverts('Farm already in required state'):
-        farm.farmPauseSwitch(False, {'from': owner})
-    chain.mine(10, None, 86400)
-    farm.farmPauseSwitch(True, {'from': owner})
-    farm._updateFarmRewardData({'from': owner})
-
-    with brownie.reverts('Invalid address'):
-        farm._isNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
-    withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
-    farm._updateFarmRewardData({'from': owner})
-    farm.farmPauseSwitch(False, {'from': owner})
-    chain.undo(3)
-    print('\n ----Farm is running---- ')
     withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
     print_stats(farm, token_id1)
     r1 = withdraw_txn.events['RewardsClaimed']['rewardAmount']
@@ -268,37 +252,7 @@ def test_scenario_1(
     # tx=farm.getRewardBalance(usds, {'from': owner})
     # print("after rewards recovered balance: ",tx)
     assert farm.getNumDeposits(owner) == 0
-    # farm.recoverERC20(usds, {'from': owner})
-    with brownie.reverts("Can't withdraw 0 amount"):
-        farm.recoverERC20(usdc, {'from': owner})
-    with brownie.reverts("Can't withdraw rewardToken"):
-        farm.recoverERC20(usds, {'from': owner})
-    fund_account(farm, 'usdc', 1e9)
-    farm.recoverERC20(usdc, {'from': owner})
-    farm.recoverRewardFunds(spa, 0, {'from': owner})
-    print('Testing False Tick ranges......')
-    with brownie.reverts('Invalid tick range'):
-        farm._validateTickRange(-887220, -887220)
-    with brownie.reverts('Invalid tick range'):
-        farm._validateTickRange(-887221, 887210)
-    with brownie.reverts('Invalid tick range'):
-        farm._validateTickRange(-887219, 887210)
-    with brownie.reverts('Invalid tick range'):
-        farm._validateTickRange(-887220, 887221)
-    with brownie.reverts('Invalid tick range'):
-        farm._validateTickRange(-887220, 887219)
-    with brownie.reverts('Incorrect pool token'):
-        farm._getLiquidity(117684)
-    print('Adding Reward Tokens.....')
-    with brownie.reverts('Reward token already added'):
-        farm.addRewardToken(
-            [token_obj('usds').address, owner], {'from': owner})
-    farm.addRewardToken([token_obj('frax').address, owner], {'from': owner})
-    farm.addRewardToken([token_obj('dai').address, owner], {'from': owner})
-    with brownie.reverts('Max number of rewards reached!'):
-        farm.addRewardToken(
-            [token_obj('usdc').address, owner], {'from': owner})
-    farm._getAccRewards(0, 0, 1e10)
+
     chain.revert()
 
 
@@ -340,8 +294,8 @@ def test_scenario_2(
     usds.approve(farm, 1e24, {'from': owner})
     spa.approve(farm, 1e24, {'from': owner})
 
-    tx = farm.addRewards(usds, 1e23, {'from': owner})
-    tx = farm.addRewards(spa, 1e23, {'from': owner})
+    farm.addRewards(usds, 1e23, {'from': owner})
+    farm.addRewards(spa, 1e23, {'from': owner})
 
     # fund_account(
     #     farm,
@@ -358,8 +312,8 @@ def test_scenario_2(
         config['uniswap_pool_data']['fee_tier'],
         config['uniswap_pool_data']['lower_tick'],
         config['uniswap_pool_data']['upper_tick'],
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
 
@@ -370,8 +324,8 @@ def test_scenario_2(
         config['uniswap_pool_data']['fee_tier'],
         -20400,
         -16020,
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
     token_id4 = mint_position(
@@ -381,8 +335,8 @@ def test_scenario_2(
         config['uniswap_pool_data']['fee_tier'],
         config['uniswap_pool_data']['lower_tick'],
         -16020,
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
 
@@ -430,7 +384,7 @@ def test_scenario_2(
     #         {'from': owner, 'gas_limit': GAS_LIMIT},
     #     )
     # print('\n ----Invalid Deposit----')
-    with brownie.reverts('onERC721Received: no data'):
+    with brownie.reverts('UniswapV3Staker::onERC721Received: no data'):
         position_manager.safeTransferFrom(
             owner,
             farm.address,
@@ -456,9 +410,7 @@ def test_scenario_2(
             '0x0000000000000000000000000000000000000000000000000000000000000000',
             {'from': owner, 'gas_limit': GAS_LIMIT},
         )
-        computed_rewards = farm.computeRewards(owner, 0)
-        computed_rewards = farm.computeRewards(owner, 0)
-        with brownie.reverts('onERC721Received: not a univ3 nft'):
+        with brownie.reverts('UniswapV3Staker::onERC721Received: not a univ3 nft'):
             farm.onERC721Received(
                 accounts[2],
                 owner,
@@ -575,8 +527,8 @@ def test_scenario_2(
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
 
-    # # Move ahead in time.
-    # chain.mine(10, None, 1000)
+    # Move ahead in time.
+    chain.mine(10, chain.time() + 1000)
     if (farm_name == 'test_farm_with_lockup'):
         print('\n ----Initiating cooldown---- ')
         initiate_cooldown_txn = farm.initiateCooldown(
@@ -621,17 +573,26 @@ def test_scenario_2(
             1,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
-
     tx = farm.getRewardBalance(usds, {'from': owner})
     tx = farm.getRewardBalance(spa, {'from': owner})
-
     # Move ahead in time.
     chain.mine(10, farm.deposits(owner, 0)[4])
 
     # Withdraw the deposit
     print('\n ----Withdrawing the deposit---- ')
-    computed_rewards = farm.computeRewards(owner, 0)
-    computed_rewards = farm.computeRewards(owner, 0)
+    chain.snapshot()
+    print('\n ----Farm is Paused---- ')
+    with brownie.reverts('Farm already in required state'):
+        farm.farmPauseSwitch(False, {'from': owner})
+    chain.mine(10, 86400)
+    farm.farmPauseSwitch(True, {'from': owner})
+    farm._updateFarmRewardData({'from': owner})
+    withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
+    with brownie.reverts('Invalid address'):
+        farm._isNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
+    farm._updateFarmRewardData({'from': owner})
+    chain.revert()
+    print('\n ----Farm is running---- ')
     withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
     print_stats(farm, token_id1)
     r2 = withdraw_txn.events['RewardsClaimed']['rewardAmount']
