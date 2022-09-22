@@ -58,7 +58,7 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
             _collectFee();
         }
         FarmFactory(factory).registerFarm(farm, msg.sender);
-        emit FarmCreated(farm, msg.sender);
+        emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }
 
