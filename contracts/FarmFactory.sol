@@ -87,7 +87,7 @@ contract FarmFactory is OwnableUpgradeable {
 
     /// @notice Approve a list of reward tokens.
     /// @param _rwdTokens[]
-    function approveRewardToken(address[] calldata _rwdTokens)
+    function approveRewardTokens(address[] calldata _rwdTokens)
         external
         onlyOwner
     {
@@ -104,7 +104,7 @@ contract FarmFactory is OwnableUpgradeable {
 
     /// @notice Remove a list of reward tokens from approved list.
     /// @param _rwdTokens[]
-    function removeRewardToken(address[] calldata _rwdTokens)
+    function removeRewardTokens(address[] calldata _rwdTokens)
         external
         onlyOwner
     {
