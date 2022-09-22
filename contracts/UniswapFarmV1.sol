@@ -459,9 +459,8 @@ contract UniswapFarmV1 is
             _newCooldownPeriod > MIN_COOLDOWN_PERIOD,
             "Cooldown period too low"
         );
-        uint256 oldCooldownPeriod = cooldownPeriod;
+        emit CooldownPeriodUpdated(cooldownPeriod, _newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, cooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -496,7 +495,7 @@ contract UniswapFarmV1 is
     function farmPauseSwitch(bool _isPaused) external onlyOwner farmNotClosed {
         require(isPaused != _isPaused, "Farm already in required state");
         _updateFarmRewardData();
-        isPaused = !isPaused;
+        isPaused = _isPaused;
         emit FarmPaused(isPaused);
     }
 
@@ -674,6 +673,7 @@ contract UniswapFarmV1 is
         view
         returns (RewardFund memory)
     {
+        require(_fundId < rewardFunds.length, "Reward fund does not exist");
         return rewardFunds[_fundId];
     }
 
