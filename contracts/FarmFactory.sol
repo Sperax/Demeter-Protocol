@@ -72,11 +72,11 @@ contract FarmFactory is OwnableUpgradeable {
     /// @notice Remove an existing deployer from factory
     /// @param _id of the deployer to be removed (0 index based)
     function removeDeployer(uint16 _id) external onlyOwner {
-        require(_id < deployerList.length, "Invalid deployer id");
-        uint256 numDeployers = deployerList.length;
+        uint256 numDeployer = deployerList.length;
+        require(_id < numDeployer, "Invalid deployer id");
         address deployer = deployerList[_id];
         delete deployerRegistered[deployer];
-        deployerList[_id] = deployerList[numDeployers - 1];
+        deployerList[_id] = deployerList[numDeployer - 1];
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
