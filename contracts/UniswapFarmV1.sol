@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "./FarmFactory.sol";
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -121,6 +121,7 @@ contract UniswapFarmV1 is
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
+    address public farmFactory;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -225,11 +226,15 @@ contract UniswapFarmV1 is
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
+        address _farmFactory,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
+        _isNonZeroAddr(_farmFactory);
+        farmFactory = _farmFactory;
+
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
         _transferOwnership(msg.sender);
         // Initialize farm global params
@@ -454,9 +459,8 @@ contract UniswapFarmV1 is
             _newCooldownPeriod > MIN_COOLDOWN_PERIOD,
             "Cooldown period too low"
         );
-        uint256 oldCooldownPeriod = cooldownPeriod;
+        emit CooldownPeriodUpdated(cooldownPeriod, _newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, cooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -491,7 +495,7 @@ contract UniswapFarmV1 is
     function farmPauseSwitch(bool _isPaused) external onlyOwner farmNotClosed {
         require(isPaused != _isPaused, "Farm already in required state");
         _updateFarmRewardData();
-        isPaused = !isPaused;
+        isPaused = _isPaused;
         emit FarmPaused(isPaused);
     }
 
@@ -669,6 +673,7 @@ contract UniswapFarmV1 is
         view
         returns (RewardFund memory)
     {
+        require(_fundId < rewardFunds.length, "Reward fund does not exist");
         return rewardFunds[_fundId];
     }
 
@@ -683,6 +688,7 @@ contract UniswapFarmV1 is
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
+            // Compute the accrued reward balance for time
             for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
@@ -738,6 +744,7 @@ contract UniswapFarmV1 is
             );
         }
 
+        // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] > 0) {
                 rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
@@ -884,6 +891,7 @@ contract UniswapFarmV1 is
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
                         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                            // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
                                 iRwd,
                                 iFund,
@@ -935,7 +943,10 @@ contract UniswapFarmV1 is
         }
     }
 
-    function _addRewardData(address _token, address _tknManager) public {
+    /// @notice Adds new reward token to the farm
+    /// @param _token Address of the reward token to be added.
+    /// @param _tknManager Address of the reward token Manager.
+    function _addRewardData(address _token, address _tknManager) private {
         // Validate if addresses are correct
         _isNonZeroAddr(_token);
         _isNonZeroAddr(_tknManager);
@@ -943,6 +954,12 @@ contract UniswapFarmV1 is
         require(
             rewardData[_token].tknManager == address(0),
             "Reward token already added"
+        );
+
+        // Allow only pre-approved tokens to be added in the farm.
+        require(
+            FarmFactory(farmFactory).rewardTokenApproved(_token),
+            "Reward token not approved"
         );
 
         // Update reward data
@@ -963,6 +980,10 @@ contract UniswapFarmV1 is
         emit RewardTokenAdded(_token, _tknManager);
     }
 
+    /// @notice Computes the accrued reward for a given fund id and time interval.
+    /// @param _rwdId Id of the reward token.
+    /// @param _fundId Id of the reward fund.
+    /// @param _time Time interval for the reward computation.
     function _getAccRewards(
         uint8 _rwdId,
         uint8 _fundId,
@@ -974,10 +995,13 @@ contract UniswapFarmV1 is
         uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
 
         uint256 rwdBal = 0;
+        // Calculate the available reward funds in the farm.
         if (rwdSupply > rwdAccrued) {
             rwdBal = rwdSupply - rwdAccrued;
         }
+        // Calculate the rewards accrued in time.
         uint256 accRewards = fund.rewardsPerSec[_rwdId] * _time;
+        // Cap the reward with the available balance.
         if (accRewards > rwdBal) {
             accRewards = rwdBal;
         }

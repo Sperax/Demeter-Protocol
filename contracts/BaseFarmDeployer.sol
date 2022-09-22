@@ -12,7 +12,7 @@ abstract contract BaseFarmDeployer {
     // Stores the address of farmImplementation.
     address public farmImplementation;
 
-    event FarmCreated(address farm, address creator);
+    event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(address token, uint256 amount);
 
     /// @notice Collect fee and transfer it to feeReceiver.

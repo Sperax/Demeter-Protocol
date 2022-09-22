@@ -23,8 +23,11 @@ contract FarmFactory is OwnableUpgradeable {
     uint256 public feeAmount;
     address[] public farms;
     address[] public deployerList;
+    mapping(address => bool) public rewardTokenApproved;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
+
+    error InvalidReward(string _msg, address _rwdToken);
 
     event FarmRegistered(address farm, address creator);
     event FarmDeployerRegistered(address deployer);
@@ -72,14 +75,48 @@ contract FarmFactory is OwnableUpgradeable {
     /// @notice Remove an existing deployer from factory
     /// @param _id of the deployer to be removed (0 index based)
     function removeDeployer(uint16 _id) external onlyOwner {
-        require(_id < deployerList.length, "Invalid deployer id");
-        uint256 numDeployers = deployerList.length;
+        uint256 numDeployer = deployerList.length;
+        require(_id < numDeployer, "Invalid deployer id");
         address deployer = deployerList[_id];
         delete deployerRegistered[deployer];
-        deployerList[_id] = deployerList[numDeployers - 1];
+        deployerList[_id] = deployerList[numDeployer - 1];
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
+    }
+
+    /// @notice Approve a list of reward tokens.
+    /// @param _rwdTokens[]
+    function approveRewardTokens(address[] calldata _rwdTokens)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < _rwdTokens.length; i++) {
+            if (rewardTokenApproved[_rwdTokens[i]]) {
+                revert InvalidReward({
+                    _msg: "Reward already approved",
+                    _rwdToken: _rwdTokens[i]
+                });
+            }
+            rewardTokenApproved[_rwdTokens[i]] = true;
+        }
+    }
+
+    /// @notice Remove a list of reward tokens from approved list.
+    /// @param _rwdTokens[]
+    function removeRewardTokens(address[] calldata _rwdTokens)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < _rwdTokens.length; i++) {
+            if (!rewardTokenApproved[_rwdTokens[i]]) {
+                revert InvalidReward({
+                    _msg: "Reward not approved",
+                    _rwdToken: _rwdTokens[i]
+                });
+            }
+            delete rewardTokenApproved[_rwdTokens[i]];
+        }
     }
 
     /// @notice Get list of registered deployer
