@@ -14,7 +14,7 @@ from .utils import (
 import signal
 import json
 import eth_utils
-from .constants import factory_constants
+from .constants import factory_constants, approved_rwd_token_list1
 
 GAS_LIMIT = 80000000
 MULTI_SIG = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
@@ -57,6 +57,9 @@ def deploy(deployer, contract, config):
         config['fee_amount'],
         {'from': deployer}
     )
+
+    print('Approving reward tokens')
+    factory.approveRewardTokens(approved_rwd_token_list1)
 
     return {
         'factory_implementation': factory_impl.address,
