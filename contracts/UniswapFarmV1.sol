@@ -683,6 +683,7 @@ contract UniswapFarmV1 is
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
+            // Compute the accrued reward balance for time
             for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
@@ -738,6 +739,7 @@ contract UniswapFarmV1 is
             );
         }
 
+        // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] > 0) {
                 rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
@@ -884,6 +886,7 @@ contract UniswapFarmV1 is
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
                         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                            // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
                                 iRwd,
                                 iFund,
@@ -935,6 +938,9 @@ contract UniswapFarmV1 is
         }
     }
 
+    /// @notice Adds new reward token to the farm
+    /// @param _token Address of the reward token to be added.
+    /// @param _tknManager Address of the reward token Manager.
     function _addRewardData(address _token, address _tknManager) private {
         // Validate if addresses are correct
         _isNonZeroAddr(_token);
@@ -963,6 +969,10 @@ contract UniswapFarmV1 is
         emit RewardTokenAdded(_token, _tknManager);
     }
 
+    /// @notice Computes the accrued reward for a given fund id and time interval.
+    /// @param _rwdId Id of the reward token.
+    /// @param _fundId Id of the reward fund.
+    /// @param _time Time interval for the reward computation.
     function _getAccRewards(
         uint8 _rwdId,
         uint8 _fundId,
@@ -974,10 +984,13 @@ contract UniswapFarmV1 is
         uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
 
         uint256 rwdBal = 0;
+        // Calculate the available reward funds in the farm.
         if (rwdSupply > rwdAccrued) {
             rwdBal = rwdSupply - rwdAccrued;
         }
+        // Calculate the rewards accrued in time.
         uint256 accRewards = fund.rewardsPerSec[_rwdId] * _time;
+        // Cap the reward with the available balance.
         if (accRewards > rwdBal) {
             accRewards = rwdBal;
         }
