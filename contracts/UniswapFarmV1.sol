@@ -705,8 +705,8 @@ contract UniswapFarmV1 is
 
     /// @notice Claim rewards for the user.
     /// @param _account The user's address
-    /// @param _depositId The id of the deposit
-    /// @dev NOTE: any function calling this private
+    /// @param _depositId The id of the deposit.
+    /// @dev NOTE: any function calling this private.
     ///     function should be marked as non-reentrant
     function _claimRewards(address _account, uint256 _depositId) private {
         _updateFarmRewardData();
@@ -808,7 +808,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         uint256 _tokenId,
         uint256 _liquidity
-    ) public {
+    ) private {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
@@ -840,7 +840,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         address _account,
         uint256 _depositId
-    ) public {
+    ) private {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
@@ -879,7 +879,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Function to update the FarmRewardData for all funds
-    function _updateFarmRewardData() public {
+    function _updateFarmRewardData() private {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
@@ -988,7 +988,7 @@ contract UniswapFarmV1 is
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
-    ) public view returns (uint256) {
+    ) private view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
@@ -1012,7 +1012,7 @@ contract UniswapFarmV1 is
     /// @param _tokenId The tokenId of the position
     /// @dev the position must adhere to the price ranges
     /// @dev Only allow specific pool token to be staked.
-    function _getLiquidity(uint256 _tokenId) public view returns (uint256) {
+    function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
         /// @dev Get the info of the required token
         (
             ,
@@ -1061,7 +1061,10 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate the deposit for account
-    function _isValidDeposit(address _account, uint256 _depositId) public view {
+    function _isValidDeposit(address _account, uint256 _depositId)
+        private
+        view
+    {
         require(
             _depositId < deposits[_account].length,
             "Deposit does not exist"
@@ -1069,7 +1072,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) public pure {
+    function _isNonZeroAddr(address _addr) private pure {
         require(_addr != address(0), "Invalid address");
     }
 }
