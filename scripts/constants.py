@@ -49,12 +49,12 @@ demeter_farm_constants = {
             },
             'reward_token_data': [
                 {
-                   'reward_tkn': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
-                   'tkn_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
+                    'reward_tkn': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+                    'tkn_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
                 },
                 {
-                   'reward_tkn': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                   'tkn_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
+                    'reward_tkn': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
                 },
             ]
         }

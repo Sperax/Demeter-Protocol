@@ -1,50 +1,203 @@
 from brownie import (
+    FarmFactory,
+    TransparentUpgradeableProxy,
+    Contract,
+    accounts,
+    UniswapFarmV1Deployer,
+    reverts,
+    ZERO_ADDRESS,
     UniswapFarmV1,
+    chain,
+    ProxyAdmin,
+    reverts,
 )
+import brownie
 import pytest
+import eth_utils
 from conftest import (
-    deploy,
-    owner,
+    mint_position,
+    GAS_LIMIT,
+    deploy_farm_factory,
+    deploy_uni_farm,
+    init_farm,
+    false_init_farm,
     fund_account,
-    constants,
     token_obj,
+    constants,
+    OWNER as owner,
+    approved_rwd_token_list1,
 )
 
 # import scripts.deploy_farm as farm_deployer
 # from ..scripts.constants import demeter_farm_constants
 
 farm_names = ['test_farm_with_lockup', 'test_farm_without_lockup']
-global farm, token_A, token_B, rwd_token
+global farm, token_A, token_B, rwd_token, deployer
+
+
+@pytest.fixture(scope='module', autouse=True)
+def setUp():
+    global deployer
+    deployer = accounts[0]
 
 
 @pytest.fixture(scope='module', autouse=True, params=farm_names)
-def farm_setup(request):
+def config(request):
+    farm_name = request.param
+    farm_config = constants[farm_name]
+    config = farm_config['config']
+    return config
+
+
+@pytest.fixture(scope='module', autouse=True)
+def factory(setUp):
+    factory_impl = FarmFactory.deploy(
+        {'from': deployer}
+    )
+    print('Deploy Proxy Admin.')
+    # Deploy the proxy admin contract
+    proxy_admin = ProxyAdmin.deploy(
+        {'from': deployer, 'gas': GAS_LIMIT})
+    proxy = TransparentUpgradeableProxy.deploy(
+        factory_impl.address,
+        proxy_admin.address,
+        eth_utils.to_bytes(hexstr='0x'),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+
+    factory_contract = Contract.from_abi(
+        'FarmFactory',
+        proxy.address,
+        FarmFactory.abi
+    )
+
+    factory_contract.initialize(
+        deployer,
+        token_obj('usds'),
+        500e18,
+        {'from': deployer}
+    )
+    print("factory owner is:", factory_contract.owner())
+    return factory_contract
+
+
+# @pytest.fixture(scope='module')
+# def uni_farm():
+#     """Deploying Uniswap Farm Proxy Contract"""
+
+#     print('Deploy Uniswap Farm implementation.')
+#     farm = UniswapFarmV1.deploy(
+
+#         {'from': deployer, 'gas_limit': GAS_LIMIT},
+#     )
+#     print('Deploy Proxy Admin.')
+#     # Deploy the proxy admin contract
+#     proxy_admin = ProxyAdmin.deploy(
+#         {'from': deployer, 'gas': GAS_LIMIT})
+
+#     proxy = TransparentUpgradeableProxy.deploy(
+#         farm.address,
+#         proxy_admin.address,
+#         eth_utils.to_bytes(hexstr='0x'),
+#         {'from': deployer, 'gas_limit': GAS_LIMIT},
+#     )
+
+#     farm_contract = Contract.from_abi(
+#         'uniswapFarmV1',
+#         proxy.address,
+#         UniswapFarmV1.abi
+#     )
+#     print("farm owner is:", farm_contract.owner())
+#     return farm_contract
+@pytest.fixture(scope='module', autouse=True)
+def farm_deployer(factory):
+    """Deploying Uniswap Farm Proxy Contract"""
+    print('Deploy UniswapFarmV1Deployer contract.')
+    farm_deployer = UniswapFarmV1Deployer.deploy(factory, {'from': deployer})
+
+    print('Register the deployer contract with the Factory.')
+    factory.registerFarmDeployer(
+        farm_deployer,
+        {'from': deployer}
+    )
+    return farm_deployer
+
+
+@pytest.fixture(scope='module', autouse=True, params=farm_names)
+def uni_farm_setup(request):
     global farm, token_A, token_B, rwd_token
     farm_name = request.param
     farm_config = constants[farm_name]
+    config = farm_config['config']
+    farm_config = constants[farm_name]
+    usds = token_obj('usds')
     token_A = token_obj(farm_config['token_A'])
     token_B = token_obj(farm_config['token_B'])
-    rwd_token = map(lambda x: token_obj(x), farm_config['reward_tokens'])
+    rwd_token = list(map(lambda x: list(x.values()),
+                         config['reward_token_data'])),
     config = farm_config['config']
-    print('Deploying Farm')
-    farm = deploy(owner, UniswapFarmV1, config)
 
-    token_a_dec = token_A.decimals()
-    token_b_dec = token_B.decimals()
-    fund_account(owner, farm_config['token_A'], 2e5 * 10 ** token_a_dec)
-    fund_account(owner, farm_config['token_B'], 2e5 * 10 ** token_b_dec)
+    # print('Deploying Farm')
+    # farm = uni_farm()
+    # print('Approving rewardTokens.')
+    # factory.approveRewardTokens(approved_rwd_token_list1, {'from': owner})
+    # print('Initiating Farm')
+    # init_farm(owner, farm, factory, config)
+    # token_a_dec = token_A.decimals()
+    # token_b_dec = token_B.decimals()
+    # fund_account(owner, farm_config['token_A'], 2e5 * 10 ** token_a_dec)
+    # fund_account(owner, farm_config['token_B'], 2e5 * 10 ** token_b_dec)
 
-    token_A.approve(farm, 1e6 * 10 ** token_a_dec, {'from': owner})
-    token_B.approve(farm, 1e6 * 10 ** token_b_dec, {'from': owner})
+    # token_A.approve(farm, 1e6 * 10 ** token_a_dec, {'from': owner})
+    # token_B.approve(farm, 1e6 * 10 ** token_b_dec, {'from': owner})
 
-    print('Funding rewards to farm')
-    farm.addRewards(token_A, 1e5 * 10 ** token_a_dec, {'from': owner})
-    farm.addRewards(token_B, 1e5 * 10 ** token_b_dec, {'from': owner})
-    yield farm_setup
+    # print('Funding rewards to farm')
+    # farm.addRewards(token_A, 1e5 * 10 ** token_a_dec, {'from': owner})
+    # farm.addRewards(token_B, 1e5 * 10 ** token_b_dec, {'from': owner})
+    yield uni_farm_setup
 
 
-def test_intitialization():
-    pass
+class Test_initialization:
+    def test_intitialization_without_approving_reward_tokens(self, factory, farm_deployer, config):
+        with reverts('Reward token not approved'):
+            farm_deployer.createFarm(
+                (deployer,
+                 config['farm_start_time'],
+                 config['cooldown_period'],
+                 list(config['uniswap_pool_data'].values()),
+                 list(map(lambda x: list(x.values()),
+                          config['reward_token_data']))),
+                {'from': deployer, 'gas_limit': GAS_LIMIT},
+            )
+
+    def test_intitialization_invalid_farm_start_time(self, factory, farm_deployer, config):
+
+        with brownie.reverts('Invalid farm startTime'):
+            factory.approveRewardTokens(
+                approved_rwd_token_list1, {'from': owner})
+            farm_deployer.createFarm(
+                (deployer,
+                 brownie.chain.time()-1,
+                 config['cooldown_period'],
+                 list(config['uniswap_pool_data'].values()),
+                 list(map(lambda x: list(x.values()),
+                          config['reward_token_data']))),
+                {'from': deployer, 'gas_limit': GAS_LIMIT},
+            )
+
+    def test_intitialization_invalid_cooldown_period(self, factory, farm_deployer, config):
+        with brownie.reverts('Cooldown < MinCooldownPeriod'):
+            factory.approveRewardTokens(
+                approved_rwd_token_list1, {'from': deployer})
+            farm_deployer.createFarm(
+                (deployer,
+                 brownie.chain.time()+1000,
+                 1,
+                 list(config['uniswap_pool_data'].values()),
+                 list(map(lambda x: list(x.values()),
+                          config['reward_token_data']))),
+                {'from': deployer, 'gas_limit': GAS_LIMIT},
+            )
 
 
 class Test_admin_function:
@@ -272,7 +425,7 @@ class Test_initiate_cooldown:
 
 
 class Test_withdraw:
-    @pytest.fixture(scope='function')
+    @ pytest.fixture(scope='function')
     def setup(self):
         # create a deposit here
         pass
@@ -291,7 +444,7 @@ class Test_withdraw:
 
 
 class Test_claim_rewards:
-    @pytest.fixture(scope='function')
+    @ pytest.fixture(scope='function')
     def setup(self):
         # create a deposit here
         pass

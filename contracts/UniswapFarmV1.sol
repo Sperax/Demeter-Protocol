@@ -706,9 +706,9 @@ contract UniswapFarmV1 is
     /// @notice Claim rewards for the user.
     /// @param _account The user's address
     /// @param _depositId The id of the deposit.
-    /// @dev NOTE: any function calling this private.
+    /// @dev NOTE: any function calling this public.
     ///     function should be marked as non-reentrant
-    function _claimRewards(address _account, uint256 _depositId) private {
+    function _claimRewards(address _account, uint256 _depositId) public {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_account][_depositId];
@@ -765,7 +765,7 @@ contract UniswapFarmV1 is
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
-    function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
+    function _recoverRewardFunds(address _rwdToken, uint256 _amount) public {
         address emergencyRet = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
         uint256 amountToRecover = _amount;
@@ -783,7 +783,7 @@ contract UniswapFarmV1 is
     /// @param _rwdToken The reward token's address
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
-        private
+        public
     {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
@@ -808,7 +808,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         uint256 _tokenId,
         uint256 _liquidity
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
@@ -840,7 +840,7 @@ contract UniswapFarmV1 is
         uint8 _fundId,
         address _account,
         uint256 _depositId
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
@@ -879,7 +879,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Function to update the FarmRewardData for all funds
-    function _updateFarmRewardData() private {
+    function _updateFarmRewardData() public {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
@@ -915,7 +915,7 @@ contract UniswapFarmV1 is
     /// @param _numFunds - Number of reward funds to setup.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rwdTokenData)
-        private
+        public
     {
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
@@ -946,7 +946,7 @@ contract UniswapFarmV1 is
     /// @notice Adds new reward token to the farm
     /// @param _token Address of the reward token to be added.
     /// @param _tknManager Address of the reward token Manager.
-    function _addRewardData(address _token, address _tknManager) private {
+    function _addRewardData(address _token, address _tknManager) public {
         // Validate if addresses are correct
         _isNonZeroAddr(_token);
         _isNonZeroAddr(_tknManager);
@@ -988,7 +988,7 @@ contract UniswapFarmV1 is
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
-    ) private view returns (uint256) {
+    ) public view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
@@ -1012,7 +1012,7 @@ contract UniswapFarmV1 is
     /// @param _tokenId The tokenId of the position
     /// @dev the position must adhere to the price ranges
     /// @dev Only allow specific pool token to be staked.
-    function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
+    function _getLiquidity(uint256 _tokenId) public view returns (uint256) {
         /// @dev Get the info of the required token
         (
             ,
@@ -1046,7 +1046,7 @@ contract UniswapFarmV1 is
     }
 
     function _validateTickRange(int24 _tickLower, int24 _tickUpper)
-        private
+        public
         view
     {
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
@@ -1061,10 +1061,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate the deposit for account
-    function _isValidDeposit(address _account, uint256 _depositId)
-        private
-        view
-    {
+    function _isValidDeposit(address _account, uint256 _depositId) public view {
         require(
             _depositId < deposits[_account].length,
             "Deposit does not exist"
@@ -1072,7 +1069,7 @@ contract UniswapFarmV1 is
     }
 
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) private pure {
+    function _isNonZeroAddr(address _addr) public pure {
         require(_addr != address(0), "Invalid address");
     }
 }

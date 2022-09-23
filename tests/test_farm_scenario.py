@@ -3,24 +3,27 @@ from brownie import (
     accounts,
     UniswapFarmV1,
 )
+
 import pytest
 import brownie
 from math import isclose
 from conftest import (
     mint_position,
     GAS_LIMIT,
+    deploy_farm_factory,
     deploy_uni_farm,
     init_farm,
     false_init_farm,
     fund_account,
-    owner,
-    constants,
     token_obj,
+    constants,
+    OWNER as owner,
+    approved_rwd_token_list1,
 
 )
 
-token_id1 = None
-token_id2 = None
+# token_id1 = None
+# token_id2 = None
 
 
 farm_names = ['test_farm_with_lockup', 'test_farm_without_lockup']
@@ -58,13 +61,18 @@ def test_scenario_1(
     frax = token_obj('frax')
     farm_config = constants[farm_name]
     config = farm_config['config']
+    factory = deploy_farm_factory(owner, owner, usds, 500e18)
+    print('Approving rewardTokens.')
+    factory.approveRewardTokens(approved_rwd_token_list1, {'from': owner})
+
     farm = deploy_uni_farm(owner, UniswapFarmV1)
     print('Testing Initialization.....')
     with brownie.reverts('Invalid farm startTime'):
-        false_init_farm(owner, farm, config)
+        false_init_farm(owner, farm, factory, config)
     with brownie.reverts('Cooldown < MinCooldownPeriod'):
         print('Invalid Cooldown period.....')
         farm.initialize(
+            factory.address,
             brownie.chain.time()+1000,
             1,
             list(config['uniswap_pool_data'].values()),
@@ -73,6 +81,7 @@ def test_scenario_1(
         )
     with brownie.reverts('Invalid uniswap pool config'):
         farm.initialize(
+            factory.address,
             brownie.chain.time()+1000,
             86400,
             list(config['uniswap_pool_false_data'].values()),
@@ -80,7 +89,7 @@ def test_scenario_1(
             {'from': owner, 'gas_limit': GAS_LIMIT},
         )
 
-    init_farm(owner, farm, config)
+    init_farm(owner, farm, factory, config)
     print('Initialized Farm.....')
 
     with brownie.reverts('Time < now'):
@@ -144,8 +153,8 @@ def test_scenario_1(
         config['uniswap_pool_data']['fee_tier'],
         config['uniswap_pool_data']['lower_tick'],
         config['uniswap_pool_data']['upper_tick'],
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
 
@@ -178,7 +187,6 @@ def test_scenario_1(
         '0x0000000000000000000000000000000000000000000000000000000000000000',
         {'from': owner, 'gas_limit': GAS_LIMIT},
     )
-
     lock_data = '0x0000000000000000000000000000000000000000000000000000000000000001'
     if(farm_name == 'test_farm_without_lockup'):
 
@@ -215,7 +223,10 @@ def test_scenario_1(
 
     with brownie.reverts('Invalid fund id'):
         farm._unsubscribeRewardFund(2, owner, 0, {'from': owner})
-
+    reward_info = farm.getRewardFundInfo(0)
+    print("reward funds are: ", reward_info)
+    with brownie.reverts('Reward fund does not exist'):
+        farm.getRewardFundInfo(10)
     print('\n ----Claiming rewards---- ')
     claim_txn = farm.claimRewards(0, {'from': owner, 'gas_limit': GAS_LIMIT})
     print_stats(farm, token_id1)
@@ -294,10 +305,14 @@ def test_scenario_1(
         farm.addRewardToken(
             [token_obj('usds').address, owner], {'from': owner})
     farm.addRewardToken([token_obj('frax').address, owner], {'from': owner})
+    with brownie.reverts('Reward token not approved'):
+        farm.addRewardToken(
+            [token_obj('usdt').address, owner], {'from': owner})
     farm.addRewardToken([token_obj('dai').address, owner], {'from': owner})
     with brownie.reverts('Max number of rewards reached!'):
         farm.addRewardToken(
             [token_obj('usdc').address, owner], {'from': owner})
+
     farm._getAccRewards(0, 0, 1e10)
     chain.revert()
 
@@ -325,8 +340,11 @@ def test_scenario_2(
     usds = token_obj('usds')
     farm_config = constants[farm_name]
     config = farm_config['config']
+    factory = deploy_farm_factory(owner, owner, usds, 500e18)
+    print('Approving rewardTokens.')
+    factory.approveRewardTokens(approved_rwd_token_list1, {'from': owner})
     farm = deploy_uni_farm(owner, UniswapFarmV1)
-    init_farm(owner, farm, config)
+    init_farm(owner, farm, factory, config)
 
     reward_token = token_obj(farm_config['reward_token_A'])
     reward_token_1 = token_obj(farm_config['reward_token_B'])
@@ -358,8 +376,8 @@ def test_scenario_2(
         config['uniswap_pool_data']['fee_tier'],
         config['uniswap_pool_data']['lower_tick'],
         config['uniswap_pool_data']['upper_tick'],
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
 
@@ -370,8 +388,8 @@ def test_scenario_2(
         config['uniswap_pool_data']['fee_tier'],
         -20400,
         -16020,
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
+        1000 * 10 ** token_a_dec,
+        1000 * 10 ** token_b_dec,
         owner,
     )
     token_id4 = mint_position(

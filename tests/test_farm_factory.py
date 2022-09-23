@@ -315,7 +315,7 @@ class TestCreateFarm:
             'reward_token_data': [
                 {
                     'token_addr': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
-                    'token_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1' # noqa
+                    'token_manager': '0x5b12d9846F8612E439730d18E1C12634753B1bF1'  # noqa
                 }
             ]
         }
@@ -355,8 +355,8 @@ class TestCreateFarm:
 
     def test_create_farm_with_spa(self, farm_deployer, config, factory):
         config['farm_start_time'] = chain.time()
-        config['uniswap_pool_data']['tokenB'] = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8' # noqa
-        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B' # noqa
+        config['uniswap_pool_data']['tokenB'] = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'  # noqa
+        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'  # noqa
         config['uniswap_pool_data']['fee_tier'] = 10000
         config['uniswap_pool_data']['tick_lower'] = -322200
         config['uniswap_pool_data']['tick_upper'] = -318800
@@ -392,8 +392,8 @@ class TestCreateFarm:
         print('Everything looks good')
 
     def test_create_farm_with_spa_usds(self, farm_deployer, config, factory):
-        config['uniswap_pool_data']['tokenB'] = '0xD74f5255D557944cf7Dd0E45FF521520002D5748' # noqa
-        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B' # noqa
+        config['uniswap_pool_data']['tokenB'] = '0xD74f5255D557944cf7Dd0E45FF521520002D5748'  # noqa
+        config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'  # noqa
 
         print('Creating farm for SPA/USDs')
         config['farm_start_time'] = chain.time()
@@ -429,8 +429,8 @@ class TestCreateFarm:
     def test_create_farm_without_spa_usds(
         self, farm_deployer, config, factory
     ):
-        config['uniswap_pool_data']['tokenB'] = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' # noqa
-        config['uniswap_pool_data']['tokenA'] = '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a' # noqa
+        config['uniswap_pool_data']['tokenB'] = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'  # noqa
+        config['uniswap_pool_data']['tokenA'] = '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a'  # noqa
         config['farm_admin'] = accounts[4]
         fund_account(accounts[3], 'usds', 500*1e18)
         receiver = factory.feeReceiver()

@@ -5,9 +5,12 @@ import brownie
 from brownie import (
     interface,
     Farm,
+    FarmFactory,
     chain,
+    ProxyAdmin,
     TransparentUpgradeableProxy,
     Contract,
+    accounts,
 
 )
 import eth_utils
@@ -18,7 +21,7 @@ GAS_LIMIT = 1000000000
 NO_LOCKUP_REWARD_RATE = 1*1e18
 LOCKUP_REWARD_RATE = 2*1e18
 
-owner = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+OWNER = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +30,16 @@ def isolation(fn_isolation):
 
 
 """Add new farm configurations here to run the tests"""
+approved_rwd_token_list1 = [
+    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',  # SPA
+    '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',  # L2-Dao
+    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',  # USDs
+    '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',  # Frax
+    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',  # USDC
+    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',  # DAI
 
+
+]
 constants = {
     'test_farm_with_lockup': {
         'contract': Farm,
@@ -57,44 +69,44 @@ constants = {
                 {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
             ],
             'reward_token_over_data': [
                 {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
             ]
 
@@ -109,7 +121,7 @@ constants = {
         'reward_token_B': 'spa',
         'reward_tokens': ['usds', 'spa'],
         'config': {
-            'farm_start_time': chain.time()+1000,
+            'farm_start_time': chain.time()+2000,
             'cooldown_period': 0,
             'uniswap_pool_data': {
                 'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
@@ -129,12 +141,12 @@ constants = {
                 {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
 
                 },
             ],
@@ -142,12 +154,12 @@ constants = {
                 {
                     'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
                 {
                     'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': owner,
+                    'tkn_manager': OWNER,
                 },
 
             ]
@@ -160,6 +172,7 @@ constants = {
 
 
 def deploy(owner, contract, config):
+    """Deploying the Farm"""
     farm = contract.deploy(
         config['farm_start_time'],
         config['cooldown_period'],
@@ -170,44 +183,89 @@ def deploy(owner, contract, config):
     return farm
 
 
-def deploy_uni_farm(owner, contract):
-    farm = contract.deploy(
+def deploy_farm_factory(deployer, fee_receiver, fee_token, fee_amount):
+    """Deploying Farm Factory Proxy Contract"""
 
-        {'from': owner, 'gas_limit': GAS_LIMIT},
+    print('Deploy FarmFactory implementation.')
+    factory_impl = FarmFactory.deploy(
+        {'from': deployer}
     )
+    print('Deploy Proxy Admin.')
+    proxy_admin = ProxyAdmin.deploy(
+        {'from': deployer, 'gas': GAS_LIMIT})
+
+    print('Deploy FarmFactory Proxy contract.')
     proxy = TransparentUpgradeableProxy.deploy(
-        farm.address,
-        '0x3E49925A79CbFb68BAa5bc9DFb4f7D955D1ddF25',
+        factory_impl.address,
+        proxy_admin.address,
         eth_utils.to_bytes(hexstr='0x'),
-        {'from': owner, 'gas_limit': GAS_LIMIT},
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
-
     factory = Contract.from_abi(
-        'uniswapFarmV1',
+        'FarmFactory',
         proxy.address,
-        contract.abi
+        FarmFactory.abi
+    )
+    print('Initialize FarmFactory proxy contract.')
+    factory.initialize(
+        fee_receiver,
+        fee_token,
+        fee_amount,
+        {'from': deployer}
     )
     return factory
 
 
-def init_farm(owner, farm, config):
+def deploy_uni_farm(deployer, contract):
+    """Deploying Uniswap Farm Proxy Contract"""
+
+    print('Deploy Uniswap Farm implementation.')
+    farm = contract.deploy(
+
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+    print('Deploy Proxy Admin.')
+    # Deploy the proxy admin contract
+    proxy_admin = ProxyAdmin.deploy(
+        {'from': deployer, 'gas': GAS_LIMIT})
+
+    proxy = TransparentUpgradeableProxy.deploy(
+        farm.address,
+        proxy_admin.address,
+        eth_utils.to_bytes(hexstr='0x'),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+
+    uniswap_farm = Contract.from_abi(
+        'uniswapFarmV1',
+        proxy.address,
+        contract.abi
+    )
+    return uniswap_farm
+
+
+def init_farm(deployer, farm, factory, config):
+    """Init Uniswap Farm Proxy Contract"""
     init = farm.initialize(
+        factory.address,
         config['farm_start_time'],
         config['cooldown_period'],
         list(config['uniswap_pool_data'].values()),
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
-        {'from': owner, 'gas_limit': GAS_LIMIT},
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
     return init
 
 
-def false_init_farm(owner, farm, config):
+def false_init_farm(deployer, farm, factory, config):
+    """Init Uniswap Farm Proxy Contract using false params"""
     init = farm.initialize(
+        factory.address,
         brownie.chain.time()-1,
         config['cooldown_period'],
         list(config['uniswap_pool_data'].values()),
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
-        {'from': owner, 'gas_limit': GAS_LIMIT},
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
     return init
 
@@ -246,7 +304,7 @@ def fund_account(user, token_name, amount):
     )
 
 
-@pytest.fixture(scope='module', autouse=True)
+@ pytest.fixture(scope='module', autouse=True)
 def position_manager():
     position_mgr_address = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
     position_mgr = brownie.interface.INonfungiblePositionManager(
@@ -274,17 +332,17 @@ def mint_position(
     upper_tick,
     amount1,
     amount2,
-    owner,
+    OWNER,
 ):
     # provide initial liquidity
     t1, a1, t2, a2 = ordered_tokens(token1, amount1, token2, amount2)
-    print('t1: ', t1)
-    print('a1: ', a1)
-    print('t2: ', t2)
-    print('a2: ', a2)
+    print('Token A: ', t1)
+    print('Amount A: ', a1)
+    print('Token B: ', t2)
+    print('Amount B: ', a2)
 
-    t1.approve(position_manager.address, a1, {'from': owner})
-    t2.approve(position_manager.address, a2, {'from': owner})
+    t1.approve(position_manager.address, a1, {'from': OWNER})
+    t2.approve(position_manager.address, a2, {'from': OWNER})
     deadline = 1637632800 + brownie.chain.time()  # deadline: 2 hours
     params = [
         t1,
@@ -296,11 +354,11 @@ def mint_position(
         a2,
         0,  # minimum amount of spa expected
         0,  # minimum amount of mock_token expected
-        owner,
+        OWNER,
         deadline
     ]
     txn = position_manager.mint(
         params,
-        {'from': owner}
+        {'from': OWNER}
     )
     return txn.events['IncreaseLiquidity']['tokenId']
