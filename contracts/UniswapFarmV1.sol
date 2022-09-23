@@ -148,7 +148,6 @@ contract UniswapFarmV1 is
         address indexed account,
         uint256 tokenId,
         uint256 startTime,
-        uint256 endTime,
         uint256 liquidity,
         uint256[] totalRewardsClaimed
     );
@@ -165,7 +164,6 @@ contract UniswapFarmV1 is
         uint8 fundId,
         uint256 depositId,
         uint256 startTime,
-        uint256 endTime,
         uint256[] totalRewardsClaimed
     );
     event FarmStartTimeUpdated(uint256 newStartTime);
@@ -395,7 +393,6 @@ contract UniswapFarmV1 is
             account,
             userDeposit.tokenId,
             userDeposit.startTime,
-            block.timestamp,
             userDeposit.liquidity,
             totalRewards
         );
@@ -849,7 +846,6 @@ contract UniswapFarmV1 is
                     _fundId,
                     userDeposit.tokenId,
                     userDeposit.startTime,
-                    block.timestamp,
                     rewardClaimed
                 );
 
