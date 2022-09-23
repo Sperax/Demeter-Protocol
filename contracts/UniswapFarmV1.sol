@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./FarmFactory.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -121,7 +121,6 @@ contract UniswapFarmV1 is
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
-    address public farmFactory;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -226,15 +225,11 @@ contract UniswapFarmV1 is
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
-        address _farmFactory,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
-        _isNonZeroAddr(_farmFactory);
-        farmFactory = _farmFactory;
-
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
         _transferOwnership(msg.sender);
         // Initialize farm global params
@@ -954,12 +949,6 @@ contract UniswapFarmV1 is
         require(
             rewardData[_token].tknManager == address(0),
             "Reward token already added"
-        );
-
-        // Allow only pre-approved tokens to be added in the farm.
-        require(
-            FarmFactory(farmFactory).rewardTokenApproved(_token),
-            "Reward token not approved"
         );
 
         // Update reward data

@@ -6,12 +6,6 @@ from brownie import (
     accounts
 )
 
-approved_rwd_token_list1 = [
-    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',  # SPA
-    '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',  # L2-Dao
-    '0xD74f5255D557944cf7Dd0E45FF521520002D5748'  # USDs
-]
-
 factory_constants = {
     'FarmFactory_v1': {
         'contract': FarmFactory,

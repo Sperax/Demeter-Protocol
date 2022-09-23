@@ -23,11 +23,8 @@ contract FarmFactory is OwnableUpgradeable {
     uint256 public feeAmount;
     address[] public farms;
     address[] public deployerList;
-    mapping(address => bool) public rewardTokenApproved;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
-
-    error InvalidReward(string _msg, address _rwdToken);
 
     event FarmRegistered(address farm, address creator);
     event FarmDeployerRegistered(address deployer);
@@ -83,40 +80,6 @@ contract FarmFactory is OwnableUpgradeable {
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
-    }
-
-    /// @notice Approve a list of reward tokens.
-    /// @param _rwdTokens[]
-    function approveRewardTokens(address[] calldata _rwdTokens)
-        external
-        onlyOwner
-    {
-        for (uint256 i = 0; i < _rwdTokens.length; i++) {
-            if (rewardTokenApproved[_rwdTokens[i]]) {
-                revert InvalidReward({
-                    _msg: "Reward already approved",
-                    _rwdToken: _rwdTokens[i]
-                });
-            }
-            rewardTokenApproved[_rwdTokens[i]] = true;
-        }
-    }
-
-    /// @notice Remove a list of reward tokens from approved list.
-    /// @param _rwdTokens[]
-    function removeRewardTokens(address[] calldata _rwdTokens)
-        external
-        onlyOwner
-    {
-        for (uint256 i = 0; i < _rwdTokens.length; i++) {
-            if (!rewardTokenApproved[_rwdTokens[i]]) {
-                revert InvalidReward({
-                    _msg: "Reward not approved",
-                    _rwdToken: _rwdTokens[i]
-                });
-            }
-            delete rewardTokenApproved[_rwdTokens[i]];
-        }
     }
 
     /// @notice Get list of registered deployer
