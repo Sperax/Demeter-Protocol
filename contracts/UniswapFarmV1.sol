@@ -298,7 +298,7 @@ contract UniswapFarmV1 is
             tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
-            totalRewardsClaimed: new uint256[](MAX_NUM_REWARDS),
+            totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: liquidity
         });
 
@@ -469,21 +469,6 @@ contract UniswapFarmV1 is
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
-    }
-
-    /// @notice Add another reward token in the farm.
-    /// @param _rwdTokenData Contains the rwdToken and tknManager address
-    function addRewardToken(RewardTokenData calldata _rwdTokenData)
-        external
-        onlyOwner
-    {
-        require(
-            rewardTokens.length + 1 <= MAX_NUM_REWARDS,
-            "Max number of rewards reached!"
-        );
-        // Updating existing farm rewards
-        _updateFarmRewardData();
-        _addRewardData(_rwdTokenData.token, _rwdTokenData.tknManager);
     }
 
     /// @notice Pause / UnPause the deposit
@@ -810,8 +795,8 @@ contract UniswapFarmV1 is
         subscriptions[_tokenId].push(
             Subscription({
                 fundId: _fundId,
-                rewardDebt: new uint256[](MAX_NUM_REWARDS),
-                rewardClaimed: new uint256[](MAX_NUM_REWARDS)
+                rewardDebt: new uint256[](numRewards),
+                rewardClaimed: new uint256[](numRewards)
             })
         );
         uint256 subId = subscriptions[_tokenId].length - 1;
@@ -923,8 +908,8 @@ contract UniswapFarmV1 is
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](MAX_NUM_REWARDS),
-                accRewardPerShare: new uint256[](MAX_NUM_REWARDS)
+                rewardsPerSec: new uint256[](numRewards),
+                accRewardPerShare: new uint256[](numRewards)
             });
             rewardFunds.push(_rewardFund);
         }
