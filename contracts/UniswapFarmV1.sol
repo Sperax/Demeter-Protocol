@@ -899,10 +899,7 @@ contract UniswapFarmV1 is
     {
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
-        require(
-            numRewards > 0 && numRewards <= MAX_NUM_REWARDS,
-            "Invalid reward data"
-        );
+        require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
         for (uint8 i = 0; i < _numFunds; ++i) {
@@ -913,6 +910,9 @@ contract UniswapFarmV1 is
             });
             rewardFunds.push(_rewardFund);
         }
+
+        // Add SPA as default reward token in the farm
+        _addRewardData(SPA, SPA_TOKEN_MANAGER);
 
         // Initialize reward Data
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
@@ -936,12 +936,6 @@ contract UniswapFarmV1 is
             "Reward token already added"
         );
 
-        // Update reward data
-        if (_token == SPA) {
-            // @dev for SPA rewardToken override SPA_TOKEN_MANAGER
-            //      as default token manager.
-            _tknManager = SPA_TOKEN_MANAGER;
-        }
         rewardData[_token] = RewardData({
             id: uint8(rewardTokens.length),
             tknManager: _tknManager,
@@ -964,6 +958,9 @@ contract UniswapFarmV1 is
         uint256 _time
     ) private view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
+        if (fund.rewardsPerSec[_rwdId] == 0) {
+            return 0;
+        }
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
         uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
