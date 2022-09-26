@@ -1019,9 +1019,9 @@ contract UniswapFarmV1 is
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
         require(
             _tickLower < _tickUpper &&
-                _tickLower >= -887220 &&
+                _tickLower >= -887272 &&
                 _tickLower % spacing == 0 &&
-                _tickUpper <= 887220 &&
+                _tickUpper <= 887272 &&
                 _tickUpper % spacing == 0,
             "Invalid tick range"
         );
