@@ -71,44 +71,17 @@ constants = {
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': OWNER,
                 },
-                {
-                    'reward_tkn':
-                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': OWNER,
-                },
-            ],
-            'reward_token_over_data': [
-                {
-                    'reward_tkn':
-                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': OWNER,
-                },
-                {
-                    'reward_tkn':
-                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': OWNER,
-                },
+                # {
+                #     'reward_tkn':
+                #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                #     'tkn_manager': OWNER,
+                # },
                 {
                     'reward_tkn':
                     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
                     'tkn_manager': OWNER,
                 },
-                {
-                    'reward_tkn':
-                    '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
-                    'tkn_manager': OWNER,
-                },
-                {
-                    'reward_tkn':
-                    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
-                    'tkn_manager': OWNER,
-                },
-                {
-                    'reward_tkn':
-                    '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',
-                    'tkn_manager': OWNER,
-                },
-            ]
+            ],
 
         }
     },
@@ -143,26 +116,18 @@ constants = {
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': OWNER,
                 },
+                # {
+                #     'reward_tkn':
+                #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                #     'tkn_manager': OWNER,
+
+                # },
                 {
                     'reward_tkn':
-                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
                     'tkn_manager': OWNER,
-
                 },
             ],
-            'reward_token_over_data': [
-                {
-                    'reward_tkn':
-                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': OWNER,
-                },
-                {
-                    'reward_tkn':
-                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                    'tkn_manager': OWNER,
-                },
-
-            ]
 
         }
     },
@@ -183,37 +148,37 @@ def deploy(owner, contract, config):
     return farm
 
 
-def deploy_farm_factory(deployer, fee_receiver, fee_token, fee_amount):
-    """Deploying Farm Factory Proxy Contract"""
+# def deploy_farm_factory(deployer, fee_receiver, fee_token, fee_amount):
+#     """Deploying Farm Factory Proxy Contract"""
 
-    print('Deploy FarmFactory implementation.')
-    factory_impl = FarmFactory.deploy(
-        {'from': deployer}
-    )
-    print('Deploy Proxy Admin.')
-    proxy_admin = ProxyAdmin.deploy(
-        {'from': deployer, 'gas': GAS_LIMIT})
+#     print('Deploy FarmFactory implementation.')
+#     factory_impl = FarmFactory.deploy(
+#         {'from': deployer}
+#     )
+#     print('Deploy Proxy Admin.')
+#     proxy_admin = ProxyAdmin.deploy(
+#         {'from': deployer, 'gas': GAS_LIMIT})
 
-    print('Deploy FarmFactory Proxy contract.')
-    proxy = TransparentUpgradeableProxy.deploy(
-        factory_impl.address,
-        proxy_admin.address,
-        eth_utils.to_bytes(hexstr='0x'),
-        {'from': deployer, 'gas_limit': GAS_LIMIT},
-    )
-    factory = Contract.from_abi(
-        'FarmFactory',
-        proxy.address,
-        FarmFactory.abi
-    )
-    print('Initialize FarmFactory proxy contract.')
-    factory.initialize(
-        fee_receiver,
-        fee_token,
-        fee_amount,
-        {'from': deployer}
-    )
-    return factory
+#     print('Deploy FarmFactory Proxy contract.')
+#     proxy = TransparentUpgradeableProxy.deploy(
+#         factory_impl.address,
+#         proxy_admin.address,
+#         eth_utils.to_bytes(hexstr='0x'),
+#         {'from': deployer, 'gas_limit': GAS_LIMIT},
+#     )
+#     factory = Contract.from_abi(
+#         'FarmFactory',
+#         proxy.address,
+#         FarmFactory.abi
+#     )
+#     print('Initialize FarmFactory proxy contract.')
+#     factory.initialize(
+#         fee_receiver,
+#         fee_token,
+#         fee_amount,
+#         {'from': deployer}
+#     )
+#     return factory
 
 
 def deploy_uni_farm(deployer, contract):
@@ -244,10 +209,9 @@ def deploy_uni_farm(deployer, contract):
     return uniswap_farm
 
 
-def init_farm(deployer, farm, factory, config):
+def init_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract"""
     init = farm.initialize(
-        factory.address,
         config['farm_start_time'],
         config['cooldown_period'],
         list(config['uniswap_pool_data'].values()),
@@ -257,10 +221,9 @@ def init_farm(deployer, farm, factory, config):
     return init
 
 
-def false_init_farm(deployer, farm, factory, config):
+def false_init_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract using false params"""
     init = farm.initialize(
-        factory.address,
         brownie.chain.time()-1,
         config['cooldown_period'],
         list(config['uniswap_pool_data'].values()),
@@ -288,7 +251,8 @@ def funds(token):
     fund_dict = {
         'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
         'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # streetbeat
-        'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b'
+        'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
+        'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # random frax holder
     }
     return fund_dict[token]
 

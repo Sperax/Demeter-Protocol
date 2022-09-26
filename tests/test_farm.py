@@ -17,7 +17,6 @@ import eth_utils
 from conftest import (
     mint_position,
     GAS_LIMIT,
-    deploy_farm_factory,
     deploy_uni_farm,
     init_farm,
     false_init_farm,
@@ -158,23 +157,21 @@ def uni_farm_setup(request):
 
 
 class Test_initialization:
-    def test_intitialization_without_approving_reward_tokens(self, factory, farm_deployer, config):
-        with reverts('Reward token not approved'):
-            farm_deployer.createFarm(
-                (deployer,
-                 config['farm_start_time'],
-                 config['cooldown_period'],
-                 list(config['uniswap_pool_data'].values()),
-                 list(map(lambda x: list(x.values()),
-                          config['reward_token_data']))),
-                {'from': deployer, 'gas_limit': GAS_LIMIT},
-            )
+    # def test_intitialization_without_approving_reward_tokens(self, factory, farm_deployer, config):
+    #     with reverts('Reward token not approved'):
+    #         farm_deployer.createFarm(
+    #             (deployer,
+    #              config['farm_start_time'],
+    #              config['cooldown_period'],
+    #              list(config['uniswap_pool_data'].values()),
+    #              list(map(lambda x: list(x.values()),
+    #                       config['reward_token_data']))),
+    #             {'from': deployer, 'gas_limit': GAS_LIMIT},
+    #         )
 
     def test_intitialization_invalid_farm_start_time(self, factory, farm_deployer, config):
 
         with brownie.reverts('Invalid farm startTime'):
-            factory.approveRewardTokens(
-                approved_rwd_token_list1, {'from': owner})
             farm_deployer.createFarm(
                 (deployer,
                  brownie.chain.time()-1,
@@ -187,15 +184,15 @@ class Test_initialization:
 
     def test_intitialization_invalid_cooldown_period(self, factory, farm_deployer, config):
         with brownie.reverts('Cooldown < MinCooldownPeriod'):
-            factory.approveRewardTokens(
-                approved_rwd_token_list1, {'from': deployer})
             farm_deployer.createFarm(
-                (deployer,
-                 brownie.chain.time()+1000,
-                 1,
-                 list(config['uniswap_pool_data'].values()),
-                 list(map(lambda x: list(x.values()),
-                          config['reward_token_data']))),
+                (
+                    deployer,
+                    brownie.chain.time()+1000,
+                    1,
+                    list(config['uniswap_pool_data'].values()),
+                    list(map(lambda x: list(x.values()),
+                             config['reward_token_data']))
+                ),
                 {'from': deployer, 'gas_limit': GAS_LIMIT},
             )
 
