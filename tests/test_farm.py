@@ -6,6 +6,8 @@ from brownie import (
     UniswapFarmV1Deployer,
     ProxyAdmin,
     reverts,
+    UniswapFarmV1,
+    chain
 )
 import brownie
 import pytest
@@ -13,9 +15,8 @@ import eth_utils
 from conftest import (
     GAS_LIMIT,
     token_obj,
+    fund_account,
     constants,
-    OWNER as owner,
-    approved_rwd_token_list1,
 )
 
 # import scripts.deploy_farm as farm_deployer
@@ -33,6 +34,7 @@ def setUp():
 
 @pytest.fixture(scope='module', autouse=True, params=farm_names)
 def config(request):
+    global farm_name
     farm_name = request.param
     farm_config = constants[farm_name]
     config = farm_config['config']
@@ -95,18 +97,37 @@ def uni_farm_setup(request):
     token_A = token_obj(farm_config['token_A'])
     token_B = token_obj(farm_config['token_B'])
     rwd_token = list(map(lambda x: list(x.values()),
-                         config['reward_token_data'])),
+        config['reward_token_data'])),
     config = farm_config['config']
 
     yield uni_farm_setup
+
+
+@pytest.fixture(scope='module', autouse=True, params=farm_names)
+def farm(config, farm_deployer):
+    tx = farm_deployer.createFarm(
+        (
+            deployer,
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(config['uniswap_pool_data'].values()),
+            list(
+                map(
+                    lambda x: list(x.values()),
+                    config['reward_token_data']
+                )
+            ),
+        ),
+        {'from': deployer}
+    )
+    return UniswapFarmV1.at(tx.new_contracts[0])
 
 
 class Test_initialization:
     def test_intitialization_invalid_farm_start_time(
         self, farm_deployer, config
     ):
-
-        with brownie.reverts('Invalid farm startTime'):
+        with reverts('Invalid farm startTime'):
             farm_deployer.createFarm(
                 (deployer,
                  brownie.chain.time()-1,
@@ -120,7 +141,7 @@ class Test_initialization:
     def test_intitialization_invalid_cooldown_period(
         self, farm_deployer, config
     ):
-        with brownie.reverts('Cooldown < MinCooldownPeriod'):
+        with reverts('Cooldown < MinCooldownPeriod'):
             farm_deployer.createFarm(
                 (
                     deployer,
@@ -136,117 +157,122 @@ class Test_initialization:
 
 class Test_admin_function:
     class Test_update_cooldown:
-        def test_updateCooldownPeriod_only_admin(self):
-            # Should revert when called with a non owner account
-            pass
+        def test_updateCooldownPeriod_only_admin(self, farm):
+            with reverts('Ownable: caller is not the owner'):
+                farm.updateCooldownPeriod(
+                    1, {'from': accounts[1], 'gas_limit': GAS_LIMIT})
 
-        def test_farm_with_no_cooldown(self):
-            # Should revert
-            pass
+        def test_farm_with_no_cooldown(self, farm):
+            if (farm_name == 'test_farm_without_lockup'):
+                with reverts('Farm does not support lockup'):
+                    farm.updateCooldownPeriod(
+                        3, {'from': deployer, 'gas_limit': GAS_LIMIT})
 
-        def test_incorrect_cooldown(self):
-            # should revert
-            pass
+        def test_incorrect_cooldown(self, farm):
+            if (farm_name == 'test_farm_with_lockup'):
+                with reverts('Cooldown period too low'):
+                    farm.updateCooldownPeriod(
+                        1, {'from': deployer, 'gas_limit': GAS_LIMIT})
 
-        def test_cooldown(self):
-            pass
+        def test_cooldown(self, farm):
+            if (farm_name == 'test_farm_with_lockup'):
+                tx = farm.updateCooldownPeriod(
+                    5, {'from': deployer, 'gas_limit': GAS_LIMIT})
+                event = tx.events['CooldownPeriodUpdated']
+                assert event['newCooldownPeriod'] == 5
+                assert event['oldCooldownPeriod'] == 21
+                assert farm.cooldownPeriod() == 5
 
     class Test_update_farm_start_time:
-        def test_updateFarmStartTime_only_admin(self):
-            # Should revert when called with a non owner account
-            pass
+        def test_updateFarmStartTime_only_admin(self, farm):
+            with reverts('Ownable: caller is not the owner'):
+                farm.updateFarmStartTime(
+                    chain.time() + 2, {'from': accounts[2]})
 
-        def test_updateFarmStartTime_for_started_farm(self):
-            # Should revert if farm is already started
-            pass
+        def test_updateFarmStartTime_for_started_farm(self, farm):
+            chain.sleep(2500)
+            with reverts('Farm already started'):
+                farm.updateFarmStartTime(
+                    chain.time()+2, {'from': deployer})
 
-        def test_updateFarmStartTime_in_past(self):
-            # Should revert when _newStartTime is lesser than now
-            pass
+        def test_updateFarmStartTime_in_past(self, farm):
+            with reverts('Time < now'):
+                farm.updateFarmStartTime(
+                    chain.time()-2, {'from': deployer})
 
-        def test_updateFarmStartTime(self):
-            # Should pass when farmStartTime is > now and _newStartTime > now
-            pass
-
-    class Test_add_reward_token:
-        def test_addRewardToken_only_admin(self):
-            # Should revert when called with a non owner account
-            pass
-
-        def test_addRewardToken_more_than_max(self):
-            # Should revert when we try to add more than MAX_NUM_REWARDS
-            pass
-
-        def test_addRewardToken_invalid_token(self):
-            # Should revert When token is a zero address
-            pass
-
-        def test_addRewardToken_invalid_manager(self):
-            # Should revert When token manager is a zero address
-            pass
-
-        def test_addRewardToken_already_registered(self):
-            # Should revert when trying to register an already registered token
-            pass
-
-        def test_addRewardToken_spa(self):
-            # Should skip token manager passed and set SPA_TOKEN_MANAGER
-            # from the constants of the contract
-            pass
-
-        def test_addRewardToken(self):
-            # Should set data properly for tokens other than SPA
-            pass
+        def test_updateFarmStartTime(self, farm):
+            newTime = chain.time() + 100
+            tx = farm.updateFarmStartTime(
+                newTime, {'from': deployer})
+            event = tx.events['FarmStartTimeUpdated']
+            assert newTime == event['newStartTime']
+            assert newTime == farm.farmStartTime()
+            assert newTime == farm.lastFundUpdateTime()
 
     class Test_farm_pause_switch:
-        def test_farmPauseSwitch_only_admin(self):
-            # Should revert when called with a non owner account
-            pass
+        def test_farmPauseSwitch_only_admin(self, farm):
+            with reverts('Ownable: caller is not the owner'):
+                farm.farmPauseSwitch(
+                    True, {'from': accounts[2]})
 
-        def test_farmPauseSwitch_try_false(self):
-            # Should revert when isPaused is already paused and
-            # we again pass false
-            pass
+        def test_farmPauseSwitch_try_false(self, farm):
+            with reverts('Farm already in required state'):
+                farm.farmPauseSwitch(
+                    False, {'from': deployer})
 
-        def test_farmPauseSwitch_pause(self):
-            # Should pause the farm when passed _isPaused as true and
-            # other functions which use notPaused modifier should revert
-            pass
+        def test_farmPauseSwitch_pause(self, farm):
+            tx = farm.farmPauseSwitch(
+                    True, {'from': deployer})
+            event = tx.events['FarmPaused']
+            assert event['paused']
+            with reverts('Farm is paused'):
+                farm.initiateCooldown(2, {'from': accounts[2]})
 
-        def test_farmPauseSwitch_unpause(self):
-            # unpause a paused farm and try to do operations normally
-            pass
+        def test_farmPauseSwitch_unpause(self, farm):
+            farm.farmPauseSwitch(
+                True, {'from': deployer})
+            tx = farm.farmPauseSwitch(
+                    False, {'from': deployer})
+            event = tx.events['FarmPaused']
+            assert not event['paused']
 
     class Test_close_farm:
-        def test_closeFarm_only_admin(self):
-            # Should revert when called with a non owner account
-            pass
+        def test_closeFarm_only_admin(self, farm):
+            with reverts('Ownable: caller is not the owner'):
+                farm.closeFarm({'from': accounts[3]})
 
-        def test_closeFarm(self):
-            # Should close farm and other functions using farmNotClosed
-            # modifier should revert
-            pass
+        def test_closeFarm(self, farm):
+            farm.closeFarm({'from': deployer})
+            with reverts('Farm closed'):
+                farm.claimRewards(
+                    accounts[2], 2, {'from': accounts[2]})
 
     class Test_recover_ERC20:
-        def test_recoverERC20_only_admin(self):
-            # Should revert when called by a non owner account
-            pass
+        def test_recoverERC20_only_admin(self, farm):
+            with reverts('Ownable: caller is not the owner'):
+                farm.recoverERC20(token_obj('frax'), {'from': accounts[4]})
 
-        def test_recoverERC20_reward_token(self):
-            # Should revert when owner tries to withdraw an added reward token
-            pass
+        def test_recoverERC20_reward_token(self, farm):
+            with reverts('Can\'t withdraw rewardToken'):
+                farm.recoverERC20(token_obj('spa'), {'from': deployer})
 
-        def test_recoverERC20_zero_balance(self):
-            # Should revert when owner tries to withdraw a token
-            # whose balance is 0
-            pass
+        def test_recoverERC20_zero_balance(self, farm):
+            with reverts('Can\'t withdraw 0 amount'):
+                farm.recoverERC20(token_obj('frax'), {'from': deployer})
 
-        def test_recoverERC20(self):
-            # Owner should be able to withdraw any other ERC20 apart from
-            # reward tokens, sitting in the farm.
-            pass
+        def test_recoverERC20(self, farm):
+            balance = 100 * 1e18
+            fund_account(farm, 'frax', balance)
+            beforeRecovery = token_obj('frax').balanceOf(deployer)
+            tx = farm.recoverERC20(token_obj('frax'), {'from': deployer})
+            afterRecovery = token_obj('frax').balanceOf(deployer)
+            event = tx.events['RecoveredERC20']
+            assert event['token'] == token_obj('frax')
+            assert event['amount'] == balance
+            assert afterRecovery - beforeRecovery == balance
 
 
+@pytest.mark.skip()
 class Test_view_functions:
     class Test_compute_rewards:
         def test_computeRewards_invalid_deposit(self):
@@ -297,6 +323,7 @@ class Test_view_functions:
             pass
 
 
+@pytest.mark.skip()
 class Test_recover_reward_funds:
     def test_unauthorized_call(self):
         pass
@@ -305,6 +332,7 @@ class Test_recover_reward_funds:
         pass
 
 
+@pytest.mark.skip()
 class Test_set_reward_rate:
     def test_unauthorized_call(self):
         pass
@@ -313,6 +341,7 @@ class Test_set_reward_rate:
         pass
 
 
+@pytest.mark.skip()
 class Test_add_rewards:
     def test_invalid_reward(self):
         pass
@@ -321,6 +350,7 @@ class Test_add_rewards:
         pass
 
 
+@pytest.mark.skip()
 class Test_deposit:
     def test_not_paused(self):
         pass
@@ -342,6 +372,7 @@ class Test_deposit:
         pass
 
 
+@pytest.mark.skip()
 class Test_initiate_cooldown:
     # skip tests for no-lockup farm
     def test_not_in_emergency(self):
@@ -357,6 +388,7 @@ class Test_initiate_cooldown:
         pass
 
 
+@pytest.mark.skip()
 class Test_withdraw:
     @ pytest.fixture(scope='function')
     def setup(self):
@@ -376,6 +408,7 @@ class Test_withdraw:
         pass
 
 
+@pytest.mark.skip()
 class Test_claim_rewards:
     @ pytest.fixture(scope='function')
     def setup(self):
