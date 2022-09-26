@@ -906,8 +906,8 @@ contract UniswapFarmV1 is
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards),
-                accRewardPerShare: new uint256[](numRewards)
+                rewardsPerSec: new uint256[](numRewards + 1),
+                accRewardPerShare: new uint256[](numRewards + 1)
             });
             rewardFunds.push(_rewardFund);
         }
