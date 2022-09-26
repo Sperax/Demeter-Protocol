@@ -26,11 +26,12 @@ def deploy(deployer, contract, config):
     print('Deploy UniswapFarmV1Deployer contract.')
     farm_deployer = contract.deploy(factory, {'from': deployer})
 
-    print('Register the deployer contract with the Factory.')
-    factory.registerFarmDeployer(
-        farm_deployer,
-        {'from': deployer, 'gas_limit': GAS_LIMIT}
-    )
+    # To be done manually
+    # print('Register the deployer contract with the Factory.')
+    # factory.registerFarmDeployer(
+    #     farm_deployer,
+    #     {'from': deployer, 'gas_limit': GAS_LIMIT}
+    # )
 
     return {
         'farm_deployer': farm_deployer.address,
@@ -42,13 +43,13 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     # contract owner account
-    owner = get_account('owner account')
+    deployer = get_account('deployer account')
     config_name, contract, config = get_config(
         'Select farm_factory config:',
         farm_deployer_constants
     )
 
-    deployments = deploy(owner, contract, config)
+    deployments = deploy(deployer, contract, config)
 
     print(f'\n{network.show_active()}:\n')
     print(f'{config_name} deployment addresses:')
@@ -57,7 +58,8 @@ def main():
     data = dict(
         type='deployment_'+config_name,
         config=config,
-        owner=owner.address
+        deployer=deployer,
+        deployments=deployments
     )
 
     print(json.dumps(data, indent=4))

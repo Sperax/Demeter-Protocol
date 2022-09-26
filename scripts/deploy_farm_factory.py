@@ -17,7 +17,7 @@ import eth_utils
 from .constants import factory_constants
 
 GAS_LIMIT = 80000000
-MULTI_SIG = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+MULTI_SIG = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
 
 
 def deploy(deployer, contract, config):
@@ -58,11 +58,15 @@ def deploy(deployer, contract, config):
         {'from': deployer}
     )
 
+    print('Transferring ownership to MULTI_SIG:')
+    factory.transferOwnership(MULTI_SIG, {
+        'from': deployer
+    })
+
     return {
         'factory_implementation': factory_impl.address,
         'proxy_admin': proxy_admin.address,
         'factory_proxy': proxy.address,
-        'factory': factory.address,
     }
 
 
@@ -71,13 +75,13 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     # contract owner account
-    owner = get_account('owner account')
+    deployer = get_account('deployer account')
     config_name, contract, config = get_config(
         'Select farm_factory config:',
         factory_constants
     )
 
-    deployments = deploy(owner, contract, config)
+    deployments = deploy(deployer, contract, config)
 
     print(f'\n{network.show_active()}:\n')
     print(f'{config_name} deployment addresses:')
@@ -86,7 +90,9 @@ def main():
     data = dict(
         type='deployment_'+config_name,
         config=config,
-        owner=owner.address
+        deployer=deployer,
+        owner=MULTI_SIG.address,
+        deployments=deployments
     )
 
     print(json.dumps(data, indent=4))
