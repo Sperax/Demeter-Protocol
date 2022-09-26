@@ -376,6 +376,11 @@ contract UniswapFarmV1 is
         // unsubscribe the user from the common reward fund
         _unsubscribeRewardFund(COMMON_FUND_ID, account, _depositId);
 
+        if (subscriptions[userDeposit.tokenId].length > 0) {
+            // To handle a lockup withdraw without cooldown (during farmPause)
+            _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+        }
+
         // Update the user's deposit list
         deposits[account][_depositId] = deposits[account][
             deposits[account].length - 1
@@ -901,8 +906,8 @@ contract UniswapFarmV1 is
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards),
-                accRewardPerShare: new uint256[](numRewards)
+                rewardsPerSec: new uint256[](numRewards + 1),
+                accRewardPerShare: new uint256[](numRewards + 1)
             });
             rewardFunds.push(_rewardFund);
         }
