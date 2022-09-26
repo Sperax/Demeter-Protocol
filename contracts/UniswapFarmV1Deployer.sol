@@ -42,7 +42,6 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
             Clones.clone(farmImplementation)
         );
         farmInstance.initialize(
-            factory,
             _data.farmStartTime,
             _data.cooldownPeriod,
             _data.uniswapPoolData,

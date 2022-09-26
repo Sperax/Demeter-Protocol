@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./FarmFactory.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -121,7 +121,6 @@ contract UniswapFarmV1 is
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
-    address public farmFactory;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -149,7 +148,6 @@ contract UniswapFarmV1 is
         address indexed account,
         uint256 tokenId,
         uint256 startTime,
-        uint256 endTime,
         uint256 liquidity,
         uint256[] totalRewardsClaimed
     );
@@ -166,7 +164,6 @@ contract UniswapFarmV1 is
         uint8 fundId,
         uint256 depositId,
         uint256 startTime,
-        uint256 endTime,
         uint256[] totalRewardsClaimed
     );
     event FarmStartTimeUpdated(uint256 newStartTime);
@@ -226,15 +223,11 @@ contract UniswapFarmV1 is
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
-        address _farmFactory,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
-        _isNonZeroAddr(_farmFactory);
-        farmFactory = _farmFactory;
-
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
         _transferOwnership(msg.sender);
         // Initialize farm global params
@@ -303,7 +296,7 @@ contract UniswapFarmV1 is
             tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
-            totalRewardsClaimed: new uint256[](MAX_NUM_REWARDS),
+            totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: liquidity
         });
 
@@ -400,7 +393,6 @@ contract UniswapFarmV1 is
             account,
             userDeposit.tokenId,
             userDeposit.startTime,
-            block.timestamp,
             userDeposit.liquidity,
             totalRewards
         );
@@ -474,21 +466,6 @@ contract UniswapFarmV1 is
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
-    }
-
-    /// @notice Add another reward token in the farm.
-    /// @param _rwdTokenData Contains the rwdToken and tknManager address
-    function addRewardToken(RewardTokenData calldata _rwdTokenData)
-        external
-        onlyOwner
-    {
-        require(
-            rewardTokens.length + 1 <= MAX_NUM_REWARDS,
-            "Max number of rewards reached!"
-        );
-        // Updating existing farm rewards
-        _updateFarmRewardData();
-        _addRewardData(_rwdTokenData.token, _rwdTokenData.tknManager);
     }
 
     /// @notice Pause / UnPause the deposit
@@ -815,8 +792,8 @@ contract UniswapFarmV1 is
         subscriptions[_tokenId].push(
             Subscription({
                 fundId: _fundId,
-                rewardDebt: new uint256[](MAX_NUM_REWARDS),
-                rewardClaimed: new uint256[](MAX_NUM_REWARDS)
+                rewardDebt: new uint256[](numRewards),
+                rewardClaimed: new uint256[](numRewards)
             })
         );
         uint256 subId = subscriptions[_tokenId].length - 1;
@@ -869,7 +846,6 @@ contract UniswapFarmV1 is
                     _fundId,
                     userDeposit.tokenId,
                     userDeposit.startTime,
-                    block.timestamp,
                     rewardClaimed
                 );
 
@@ -919,20 +895,20 @@ contract UniswapFarmV1 is
     {
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
-        require(
-            numRewards > 0 && numRewards <= MAX_NUM_REWARDS,
-            "Invalid reward data"
-        );
+        require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](MAX_NUM_REWARDS),
-                accRewardPerShare: new uint256[](MAX_NUM_REWARDS)
+                rewardsPerSec: new uint256[](numRewards),
+                accRewardPerShare: new uint256[](numRewards)
             });
             rewardFunds.push(_rewardFund);
         }
+
+        // Add SPA as default reward token in the farm
+        _addRewardData(SPA, SPA_TOKEN_MANAGER);
 
         // Initialize reward Data
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
@@ -956,18 +932,6 @@ contract UniswapFarmV1 is
             "Reward token already added"
         );
 
-        // Allow only pre-approved tokens to be added in the farm.
-        require(
-            FarmFactory(farmFactory).rewardTokenApproved(_token),
-            "Reward token not approved"
-        );
-
-        // Update reward data
-        if (_token == SPA) {
-            // @dev for SPA rewardToken override SPA_TOKEN_MANAGER
-            //      as default token manager.
-            _tknManager = SPA_TOKEN_MANAGER;
-        }
         rewardData[_token] = RewardData({
             id: uint8(rewardTokens.length),
             tknManager: _tknManager,
@@ -990,6 +954,9 @@ contract UniswapFarmV1 is
         uint256 _time
     ) public view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
+        if (fund.rewardsPerSec[_rwdId] == 0) {
+            return 0;
+        }
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
         uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
@@ -1052,9 +1019,9 @@ contract UniswapFarmV1 is
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
         require(
             _tickLower < _tickUpper &&
-                _tickLower >= -887220 &&
+                _tickLower >= -887272 &&
                 _tickLower % spacing == 0 &&
-                _tickUpper <= 887220 &&
+                _tickUpper <= 887272 &&
                 _tickUpper % spacing == 0,
             "Invalid tick range"
         );

@@ -9,7 +9,6 @@ from brownie import (
     FarmFactory
 )
 import eth_utils
-from .constants import approved_rwd_token_list1
 GAS_LIMIT = 80000000
 
 
@@ -48,9 +47,6 @@ def main():
         500e18,
         {'from': deployer}
     )
-
-    print('Approving rewardTokens.')
-    factory.approveRewardTokens(approved_rwd_token_list1, {'from': deployer})
 
     print('Deploy UniswapFarmV1Deployer contract.')
     farm_deployer = UniswapFarmV1Deployer.deploy(factory, {'from': deployer})
