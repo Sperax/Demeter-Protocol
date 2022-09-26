@@ -101,9 +101,8 @@ contract UniswapFarmV1 is
 
     // constants
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    // @todo verify the default token manager!
     address public constant SPA_TOKEN_MANAGER =
-        0x5b12d9846F8612E439730d18E1C12634753B1bF1;
+        0x6d5240f086637fb408c7F727010A10cf57D51B62;
     address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
