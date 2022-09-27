@@ -10,6 +10,7 @@ from .utils import (
     signal_handler
 )
 import json
+from .constants import old_farm_constants
 
 GAS_LIMIT = 80000000
 
@@ -34,8 +35,11 @@ def main():
 
     # contract owner account
     deployer = get_account('deployer account')
-    config_name, contract, config = get_config('Select farm config:')
-    farm_owner_multisig = "0x6d5240f086637fb408c7F727010A10cf57D51B62"
+    config_name, contract, config = get_config(
+        'Select farm config:',
+        old_farm_constants
+    )
+    farm_owner_multisig = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
 
     farm = deploy(deployer, contract, config)
 
@@ -56,7 +60,4 @@ def main():
     data[config_name+'_farm'] = farm.address
     print(json.dumps(data, indent=4))
 
-    save_deployment_artifacts(data)
-
-    # fund the farm with SPA via addRewards() 
-    # fund the farm with L2DAO via addRewards() 
+    save_deployment_artifacts(data, config_name)

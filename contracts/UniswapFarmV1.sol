@@ -20,7 +20,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {INonfungiblePositionManager as INFPM, IUniswapV3Factory} from "../interfaces/UniswapV3.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -39,14 +40,17 @@ struct UniswapPoolData {
 // Defines the reward data for constructor.
 // token - Address of the token
 // tknManager - Authority to update rewardToken related Params.
-// rewardRates - Reward rates for fund types. (max length is 2)
-//               Only the first two elements would be considered
 struct RewardTokenData {
     address token;
     address tknManager;
 }
 
-contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
+contract UniswapFarmV1 is
+    Ownable,
+    ReentrancyGuard,
+    Initializable,
+    IERC721Receiver
+{
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
@@ -86,21 +90,26 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256[] totalRewardsClaimed;
     }
 
+    // Reward token related information
+    // tknManager Address that manages the rewardToken.
+    // accRewardBal The rewards accrued but pending to be claimed.
     struct RewardData {
         address tknManager;
         uint8 id;
-        uint256 accRewards;
-        uint256 supply;
+        uint256 accRewardBal;
     }
 
     // constants
+    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
+    address public constant SPA_TOKEN_MANAGER =
+        0x6d5240f086637fb408c7F727010A10cf57D51B62;
     address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
-    uint256 public constant MIN_COOLDOWN_PERIOD = 2 days;
+    uint256 public constant MIN_COOLDOWN_PERIOD = 1; // In days
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
@@ -110,7 +119,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
-    address public immutable uniswapPool;
+    address public uniswapPool;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -138,7 +147,6 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         address indexed account,
         uint256 tokenId,
         uint256 startTime,
-        uint256 endTime,
         uint256 liquidity,
         uint256[] totalRewardsClaimed
     );
@@ -155,7 +163,6 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         uint8 fundId,
         uint256 depositId,
         uint256 startTime,
-        uint256 endTime,
         uint256[] totalRewardsClaimed
     );
     event FarmStartTimeUpdated(uint256 newStartTime);
@@ -171,6 +178,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
     event RewardAdded(address rwdToken, uint256 amount);
     event EmergencyClaim(address indexed account);
     event FarmClosed();
+    event RecoveredERC20(address token, uint256 amount);
     event FundsRecovered(
         address indexed account,
         address rwdToken,
@@ -202,20 +210,25 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         _;
     }
 
+    // Disallow initialization of a implementation contract
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits
+    /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _uniswapPoolData - init data for UniswapV3 pool
-    /// @param _rewardData - init data for reward tokens
-    constructor(
+    /// @param _rwdTokenData - init data for reward tokens
+    function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
-        RewardTokenData[] memory _rewardData
-    ) {
+        RewardTokenData[] memory _rwdTokenData
+    ) external initializer {
         require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
-
+        _transferOwnership(msg.sender);
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
         farmStartTime = _farmStartTime;
@@ -223,15 +236,18 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         isClosed = false;
 
         // initialize uniswap related data
-        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
-        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(
             _uniswapPoolData.tokenB,
             _uniswapPoolData.tokenA,
             _uniswapPoolData.feeTier
         );
-
         require(uniswapPool != address(0), "Invalid uniswap pool config");
+        _validateTickRange(
+            _uniswapPoolData.tickLowerAllowed,
+            _uniswapPoolData.tickUpperAllowed
+        );
+        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
+        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -245,7 +261,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
         }
-        _setupFarm(numFunds, _rewardData);
+        _setupFarm(numFunds, _rwdTokenData);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -258,12 +274,9 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 _tokenId,
         bytes calldata _data
     ) external override notPaused returns (bytes4) {
-        require(
-            msg.sender == NFPM,
-            "UniswapV3Staker::onERC721Received: not a univ3 nft"
-        );
+        require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
 
-        require(_data.length > 0, "UniswapV3Staker::onERC721Received: no data");
+        require(_data.length > 0, "onERC721Received: no data");
 
         bool lockup = abi.decode(_data, (bool));
         if (cooldownPeriod == 0) {
@@ -316,7 +329,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         require(userDeposit.locked, "Can not initiate cooldown");
 
         // update the deposit expiry time & lock status
-        userDeposit.expiryDate = block.timestamp + cooldownPeriod;
+        userDeposit.expiryDate = block.timestamp + (cooldownPeriod * 1 days);
         userDeposit.locked = false;
 
         // claim the pending rewards for the user
@@ -362,6 +375,11 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         // unsubscribe the user from the common reward fund
         _unsubscribeRewardFund(COMMON_FUND_ID, account, _depositId);
 
+        if (subscriptions[userDeposit.tokenId].length > 0) {
+            // To handle a lockup withdraw without cooldown (during farmPause)
+            _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+        }
+
         // Update the user's deposit list
         deposits[account][_depositId] = deposits[account][
             deposits[account].length - 1
@@ -379,7 +397,6 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             account,
             userDeposit.tokenId,
             userDeposit.startTime,
-            block.timestamp,
             userDeposit.liquidity,
             totalRewards
         );
@@ -422,14 +439,13 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             "Invalid reward token"
         );
         _updateFarmRewardData();
-        rewardData[_rwdToken].supply += _amount;
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
     }
 
     // --------------------- Admin  Functions ---------------------
     /// @notice Update the cooldown period
-    /// @param _newCooldownPeriod The new cooldown period (in seconds)
+    /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod)
         external
         onlyOwner
@@ -439,9 +455,8 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             _newCooldownPeriod > MIN_COOLDOWN_PERIOD,
             "Cooldown period too low"
         );
-        uint256 oldCooldownPeriod = cooldownPeriod;
+        emit CooldownPeriodUpdated(cooldownPeriod, _newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -457,38 +472,11 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         emit FarmStartTimeUpdated(_newStartTime);
     }
 
-    /// @notice Add another reward token in the farm.
-    /// @param _rwdData Contains the rwdToken and tknManager address
-    function addRewardToken(RewardTokenData calldata _rwdData)
-        external
-        onlyOwner
-    {
-        require(
-            rewardData[_rwdData.token].tknManager == address(0),
-            "Reward token already added"
-        );
-
-        require(
-            rewardTokens.length + 1 <= MAX_NUM_REWARDS,
-            "Max number of rewards reached!"
-        );
-        // Updating existing farm rewards
-        _updateFarmRewardData();
-
-        // Update rewardFunds
-        for (uint8 iFund = 0; iFund < rewardFunds.length; iFund++) {
-            rewardFunds[iFund].rewardsPerSec.push(0);
-            rewardFunds[iFund].accRewardPerShare.push(0);
-        }
-
-        _addRewardData(_rwdData.token, _rwdData.tknManager);
-    }
-
     /// @notice Pause / UnPause the deposit
     function farmPauseSwitch(bool _isPaused) external onlyOwner farmNotClosed {
         require(isPaused != _isPaused, "Farm already in required state");
         _updateFarmRewardData();
-        isPaused = !isPaused;
+        isPaused = _isPaused;
         emit FarmPaused(isPaused);
     }
 
@@ -505,12 +493,26 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         emit FarmClosed();
     }
 
+    /// @notice Recover erc20 tokens other than the reward Tokens.
+    /// @param _token Address of token to be recovered
+    function recoverERC20(address _token) external onlyOwner nonReentrant {
+        require(
+            rewardData[_token].tknManager == address(0),
+            "Can't withdraw rewardToken"
+        );
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        require(balance > 0, "Can't withdraw 0 amount");
+
+        IERC20(_token).safeTransfer(owner(), balance);
+        emit RecoveredERC20(_token, balance);
+    }
+
     // --------------------- Token Manager Functions ---------------------
     /// @notice Get the remaining balance out of the  farm
     /// @param _rwdToken The reward token's address
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
-    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
     function recoverRewardFunds(address _rwdToken, uint256 _amount)
         external
         isTokenManager(_rwdToken)
@@ -554,8 +556,8 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         returns (uint256[] memory rewards)
     {
         _isValidDeposit(_account, _depositId);
-        Deposit storage userDeposit = deposits[_account][_depositId];
-        Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
+        Deposit memory userDeposit = deposits[_account][_depositId];
+        Subscription[] memory depositSubs = subscriptions[userDeposit.tokenId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numRewards = rewardTokens.length;
         rewards = new uint256[](numRewards);
@@ -652,6 +654,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         view
         returns (RewardFund memory)
     {
+        require(_fundId < rewardFunds.length, "Reward fund does not exist");
         return rewardFunds[_fundId];
     }
 
@@ -662,10 +665,11 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         require(rewardTokens[rwdId] == _rwdToken, "Invalid _rwdToken");
 
         uint256 numFunds = rewardFunds.length;
-        uint256 rewardsAcc = rewardData[_rwdToken].accRewards;
-        uint256 supply = rewardData[_rwdToken].supply;
+        uint256 rewardsAcc = rewardData[_rwdToken].accRewardBal;
+        uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
+            // Compute the accrued reward balance for time
             for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
@@ -721,8 +725,12 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             );
         }
 
+        // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] > 0) {
+                rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
+                    iRwd
+                ];
                 // Update the total rewards earned for the deposit
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
                 IERC20(rewardTokens[iRwd]).safeTransfer(
@@ -747,7 +755,6 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
             _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
         }
         if (amountToRecover > 0) {
-            rewardData[_rwdToken].supply -= amountToRecover;
             IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
             emit FundsRecovered(emergencyRet, _rwdToken, amountToRecover);
         }
@@ -816,7 +823,7 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         uint256 _depositId
     ) private {
         require(_fundId < rewardFunds.length, "Invalid fund id");
-        Deposit storage userDeposit = deposits[_account][_depositId];
+        Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
 
         // Unsubscribe from the reward fund
@@ -843,7 +850,6 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
                     _fundId,
                     userDeposit.tokenId,
                     userDeposit.startTime,
-                    block.timestamp,
                     rewardClaimed
                 );
 
@@ -865,13 +871,14 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
                         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                            // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
                                 iRwd,
                                 iFund,
                                 time
                             );
                             rewardData[rewardTokens[iRwd]]
-                                .accRewards += accRewards;
+                                .accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] +=
                                 (accRewards * PREC) /
                                 fund.totalLiquidity;
@@ -886,70 +893,86 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Function to setup the reward funds during construction.
     /// @param _numFunds - Number of reward funds to setup.
-    /// @param _rewardData - Reward data for each reward token.
-    function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rewardData)
+    /// @param _rwdTokenData - Reward data for each reward token.
+    function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rwdTokenData)
         private
     {
         // Setup reward related information.
-        uint256 numRewards = _rewardData.length;
-        require(
-            numRewards > 0 && numRewards <= MAX_NUM_REWARDS,
-            "Invalid reward data"
-        );
+        uint256 numRewards = _rwdTokenData.length;
+        require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
         for (uint8 i = 0; i < _numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards),
-                accRewardPerShare: new uint256[](numRewards)
+                rewardsPerSec: new uint256[](numRewards + 1),
+                accRewardPerShare: new uint256[](numRewards + 1)
             });
             rewardFunds.push(_rewardFund);
         }
 
+        // Add SPA as default reward token in the farm
+        _addRewardData(SPA, SPA_TOKEN_MANAGER);
+
         // Initialize reward Data
         for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
             _addRewardData(
-                _rewardData[iRwd].token,
-                _rewardData[iRwd].tknManager
+                _rwdTokenData[iRwd].token,
+                _rwdTokenData[iRwd].tknManager
             );
         }
     }
 
-    function _addRewardData(address token, address tknManager) private {
+    /// @notice Adds new reward token to the farm
+    /// @param _token Address of the reward token to be added.
+    /// @param _tknManager Address of the reward token Manager.
+    function _addRewardData(address _token, address _tknManager) private {
         // Validate if addresses are correct
-        _isNonZeroAddr(token);
-        _isNonZeroAddr(tknManager);
+        _isNonZeroAddr(_token);
+        _isNonZeroAddr(_tknManager);
 
-        // Update reward data
-        rewardData[token] = RewardData({
+        require(
+            rewardData[_token].tknManager == address(0),
+            "Reward token already added"
+        );
+
+        rewardData[_token] = RewardData({
             id: uint8(rewardTokens.length),
-            tknManager: tknManager,
-            accRewards: 0,
-            supply: 0
+            tknManager: _tknManager,
+            accRewardBal: 0
         });
 
         // Add reward token in the list
-        rewardTokens.push(token);
+        rewardTokens.push(_token);
 
-        emit RewardTokenAdded(token, tknManager);
+        emit RewardTokenAdded(_token, _tknManager);
     }
 
+    /// @notice Computes the accrued reward for a given fund id and time interval.
+    /// @param _rwdId Id of the reward token.
+    /// @param _fundId Id of the reward fund.
+    /// @param _time Time interval for the reward computation.
     function _getAccRewards(
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
     ) private view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
+        if (fund.rewardsPerSec[_rwdId] == 0) {
+            return 0;
+        }
         address rwdToken = rewardTokens[_rwdId];
-        uint256 rwdSupply = rewardData[rwdToken].supply;
-        uint256 rwdAccrued = rewardData[rwdToken].accRewards;
+        uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
+        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
 
         uint256 rwdBal = 0;
+        // Calculate the available reward funds in the farm.
         if (rwdSupply > rwdAccrued) {
             rwdBal = rwdSupply - rwdAccrued;
         }
+        // Calculate the rewards accrued in time.
         uint256 accRewards = fund.rewardsPerSec[_rwdId] * _time;
+        // Cap the reward with the available balance.
         if (accRewards > rwdBal) {
             accRewards = rwdBal;
         }
@@ -991,6 +1014,21 @@ contract UniswapFarmV1 is Ownable, ReentrancyGuard, IERC721Receiver {
         );
 
         return uint256(liquidity);
+    }
+
+    function _validateTickRange(int24 _tickLower, int24 _tickUpper)
+        private
+        view
+    {
+        int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
+        require(
+            _tickLower < _tickUpper &&
+                _tickLower >= -887272 &&
+                _tickLower % spacing == 0 &&
+                _tickUpper <= 887272 &&
+                _tickUpper % spacing == 0,
+            "Invalid tick range"
+        );
     }
 
     /// @notice Validate the deposit for account
