@@ -30,8 +30,10 @@ global token_A, token_B, rwd_token, deployer
 
 @pytest.fixture(scope='module', autouse=True)
 def setUp():
-    global deployer
+    global deployer, notRewardToken, rewardToken1
     deployer = accounts[0]
+    notRewardToken = token_obj('frax')
+    rewardToken1 = token_obj('spa')
 
 
 @pytest.fixture(scope='module', autouse=True, params=farm_names)
@@ -119,6 +121,11 @@ def farm(config, farm_contract):
 #     return UniswapFarmV1.at(tx.new_contracts[0])
 
 
+def deposit():
+    pass
+
+
+# @pytest.mark.skip()
 class Test_initialization:
     def test_intitialization_invalid_farm_start_time(
         self, config, farm_contract
@@ -146,7 +153,87 @@ class Test_initialization:
                 {'from': deployer, 'gas_limit': GAS_LIMIT},
             )
 
+    def test_initialization_rewards_more_than_four(
+        self, farm_contract, config
+    ):
+        rewardData = [
+                {
+                    'reward_tkn':
+                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    'tkn_manager': deployer,
+                },
+                {
+                    'reward_tkn':
+                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': deployer,
+                },
+                {
+                    'reward_tkn':
+                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                    'tkn_manager': deployer,
+                },
+                {
+                    'reward_tkn':
+                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': deployer,
+                },
+                {
+                    'reward_tkn':
+                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                    'tkn_manager': deployer,
+                },
+            ]
+        with reverts('Invalid reward data'):
+            farm_contract.initialize(
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(map(lambda x: list(x.values()),
+                     rewardData)),
+                {'from': deployer, 'gas_limit': GAS_LIMIT},
+            )
 
+    def test_initialization_reward_already_added(
+        self, farm_contract, config
+    ):
+        rewardData = [
+                {
+                    'reward_tkn':
+                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    'tkn_manager': deployer,
+                },
+                {
+                    'reward_tkn':
+                    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                    'tkn_manager': deployer,
+                },
+            ]
+        with reverts('Reward token already added'):
+            farm_contract.initialize(
+                config['farm_start_time'],
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(map(lambda x: list(x.values()),
+                     rewardData)),
+                {'from': deployer, 'gas_limit': GAS_LIMIT},
+            )
+
+    def test_initialization(self, farm):
+        assert farm.SPA() == '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'
+        manager = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+        assert farm.SPA_TOKEN_MANAGER() == manager
+        assert farm.NFPM() == '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
+        factory = '0x1F98431c8aD98523631AE4a59f267346ea31F984'
+        assert farm.UNIV3_FACTORY() == factory
+        assert farm.COMMON_FUND_ID() == 0
+        assert farm.LOCKUP_FUND_ID() == 1
+        assert farm.MIN_COOLDOWN_PERIOD() == 1
+        assert farm.MAX_NUM_REWARDS() == 4
+        assert not farm.isPaused()
+        assert not farm.isClosed()
+
+
+# @pytest.mark.skip()
 class Test_admin_function:
     class Test_update_cooldown:
         def test_updateCooldownPeriod_only_admin(self, farm):
@@ -242,29 +329,29 @@ class Test_admin_function:
     class Test_recover_ERC20:
         def test_recoverERC20_only_admin(self, farm):
             with reverts('Ownable: caller is not the owner'):
-                farm.recoverERC20(token_obj('frax'), {'from': accounts[4]})
+                farm.recoverERC20(notRewardToken, {'from': accounts[4]})
 
         def test_recoverERC20_reward_token(self, farm):
             with reverts('Can\'t withdraw rewardToken'):
-                farm.recoverERC20(token_obj('spa'), {'from': deployer})
+                farm.recoverERC20(rewardToken1, {'from': deployer})
 
         def test_recoverERC20_zero_balance(self, farm):
             with reverts('Can\'t withdraw 0 amount'):
-                farm.recoverERC20(token_obj('frax'), {'from': deployer})
+                farm.recoverERC20(notRewardToken, {'from': deployer})
 
         def test_recoverERC20(self, farm):
             balance = 100 * 1e18
             fund_account(farm, 'frax', balance)
-            beforeRecovery = token_obj('frax').balanceOf(deployer)
-            tx = farm.recoverERC20(token_obj('frax'), {'from': deployer})
-            afterRecovery = token_obj('frax').balanceOf(deployer)
+            beforeRecovery = notRewardToken.balanceOf(deployer)
+            tx = farm.recoverERC20(notRewardToken, {'from': deployer})
+            afterRecovery = notRewardToken.balanceOf(deployer)
             event = tx.events['RecoveredERC20']
-            assert event['token'] == token_obj('frax')
+            assert event['token'] == notRewardToken
             assert event['amount'] == balance
             assert afterRecovery - beforeRecovery == balance
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 class Test_view_functions:
     class Test_compute_rewards:
         def test_computeRewards_invalid_deposit(self):
@@ -299,8 +386,17 @@ class Test_view_functions:
     def test_getRewardRates(self):
         pass
 
-    def test_getRewardFundInfo(self):
-        pass
+    class Test_get_reward_fund_info:
+        def test_getRewardFundInfo_more_than_added(self, farm):
+            with reverts('Reward fund does not exist'):
+                farm.getRewardFundInfo(3)
+
+        def test_getRewardFundInfo(self, farm):
+            res = farm.getRewardFundInfo(0)
+            print(res)
+            if(farm_name == 'test_farm_with_lockup'):
+                res = farm.getRewardFundInfo(1)
+                print(res)
 
     class Test_get_reward_balance:
         def test_getRewardBalance_invalid_rwdToken(self):
