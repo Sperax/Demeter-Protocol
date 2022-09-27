@@ -5,12 +5,11 @@ import brownie
 from brownie import (
     interface,
     Farm,
-    FarmFactory,
     chain,
     ProxyAdmin,
     TransparentUpgradeableProxy,
     Contract,
-    accounts,
+
 
 )
 import eth_utils
@@ -45,9 +44,9 @@ constants = {
         'contract': Farm,
         'token_A': 'spa',
         'token_B': 'usds',
-        'reward_token_A': 'usds',
-        'reward_token_B': 'spa',
-        'reward_tokens': ['usds', 'spa'],
+        'reward_token_A': 'spa',
+        'reward_token_B': 'usds',
+        'reward_tokens': ['spa', 'usds'],
         'config': {
             'farm_start_time': chain.time()+1000,
             'cooldown_period': 21,
@@ -90,9 +89,9 @@ constants = {
         'contract': Farm,
         'token_A': 'spa',
         'token_B': 'usds',
-        'reward_token_A': 'usds',
-        'reward_token_B': 'spa',
-        'reward_tokens': ['usds', 'spa'],
+        'reward_token_A': 'spa',
+        'reward_token_B': 'usds',
+        'reward_tokens': ['spa', 'usds'],
         'config': {
             'farm_start_time': chain.time()+2000,
             'cooldown_period': 0,
@@ -252,7 +251,7 @@ def funds(token):
         'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
         'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # streetbeat
         'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
-        'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # random frax holder
+        'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
     }
     return fund_dict[token]
 

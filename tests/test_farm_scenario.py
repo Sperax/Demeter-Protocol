@@ -6,7 +6,6 @@ from brownie import (
 
 import pytest
 import brownie
-from math import isclose
 from conftest import (
     mint_position,
     GAS_LIMIT,
@@ -17,7 +16,6 @@ from conftest import (
     token_obj,
     constants,
     OWNER as owner,
-    approved_rwd_token_list1,
 
 )
 
@@ -42,317 +40,6 @@ def print_stats(farm, token_id):
 
 
 @pytest.mark.parametrize('farm_name', farm_names)
-def test_diffrent_tokens_positions(
-    fn_isolation,
-    farm_name,
-    position_manager,
-):
-    spa = token_obj('spa')
-    usds = token_obj('usds')
-    usdc = token_obj('usdc')
-    farm_config = constants[farm_name]
-    config = farm_config['config']
-
-    farm = deploy_uni_farm(owner, UniswapFarmV1)
-    init_farm(owner, farm, config)
-    if (farm_name == 'test_farm_with_lockup'):
-        farm.setRewardRate(usds, [1e15, 2e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15, 2e15], {'from': owner})
-        farm.setRewardRate(usdc, [1e3, 2e3], {'from': owner})
-    elif (farm_name == 'test_farm_without_lockup'):
-        farm.setRewardRate(usds, [1e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15], {'from': owner})
-        farm.setRewardRate(usdc, [1e3], {'from': owner})
-    reward_token = token_obj(farm_config['reward_token_A'])
-    reward_token_1 = token_obj(farm_config['reward_token_B'])
-    token_a = token_obj(farm_config['token_A'])
-    token_b = token_obj(farm_config['token_B'])
-    token_a_dec = token_a.decimals()
-    token_b_dec = token_b.decimals()
-    fund_account(owner, 'usds', 2e23)
-    fund_account(owner, 'usdc', 2e12)
-    fund_account(owner, 'spa', 2e23)
-    spa.approve(farm, 1e24, {'from': owner})
-    usds.approve(farm, 1e24, {'from': owner})
-    usdc.approve(farm, 1e12, {'from': owner})
-
-    tx = farm.addRewards(usds, 1e23, {'from': owner})
-    tx = farm.addRewards(spa, 1e23, {'from': owner})
-    tx = farm.addRewards(usdc, 1e12, {'from': owner})
-    token_id1 = mint_position(
-        position_manager,
-        token_a,
-        token_b,
-        config['uniswap_pool_data']['fee_tier'],
-        config['uniswap_pool_data']['lower_tick'],
-        config['uniswap_pool_data']['upper_tick'],
-        1000 * 10 ** token_a_dec,
-        1000 * 10 ** token_b_dec,
-        owner,
-    )
-
-    token_id3 = mint_position(
-        position_manager,
-        token_a,
-        token_b,
-        config['uniswap_pool_data']['fee_tier'],
-        -20400,
-        -16020,
-        1000 * 10 ** token_a_dec,
-        1000 * 10 ** token_b_dec,
-        owner,
-    )
-    token_id4 = mint_position(
-        position_manager,
-        token_a,
-        token_b,
-        config['uniswap_pool_data']['fee_tier'],
-        config['uniswap_pool_data']['lower_tick'],
-        -16020,
-        1000 * 10 ** 18,
-        1000 * 10 ** 18,
-        owner,
-    )
-
-    # check the initial number of deposit for the user.
-    num_deposits = farm.getNumDeposits(owner)
-
-    # Get position details
-    position = position_manager.positions(token_id1)
-
-    # print('\n ----Invalid Deposit : incorrect tick range----')
-    if (farm_name == 'test_farm_with_lockup'):
-        with brownie.reverts('Incorrect tick range'):
-            position_manager.safeTransferFrom(
-                owner,
-                farm.address,
-                token_id3,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',  # noqa
-                {'from': owner, 'gas_limit': GAS_LIMIT},
-            )
-        with brownie.reverts('Incorrect tick range'):
-            position_manager.safeTransferFrom(
-                owner,
-                farm.address,
-                token_id4,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',  # noqa
-                {'from': owner, 'gas_limit': GAS_LIMIT},
-            )
-
-    with brownie.reverts('onERC721Received: no data'):
-        position_manager.safeTransferFrom(
-            owner,
-            farm.address,
-            token_id1,
-            {'from': owner, 'gas_limit': GAS_LIMIT},
-        )
-
-    print('\n ----Depositing in Farm---- ')
-    # It's a lockup deposit
-    if (farm_name == 'test_farm_with_lockup'):
-        deposit_txn = position_manager.safeTransferFrom(
-            owner,
-            farm.address,
-            token_id1,
-            '0x0000000000000000000000000000000000000000000000000000000000000001',
-            {'from': owner, 'gas_limit': GAS_LIMIT},
-        )
-    elif (farm_name == 'test_farm_without_lockup'):
-        deposit_txn = position_manager.safeTransferFrom(
-            owner,
-            farm.address,
-            token_id1,
-            '0x0000000000000000000000000000000000000000000000000000000000000000',
-            {'from': owner, 'gas_limit': GAS_LIMIT},
-        )
-        computed_rewards = farm.computeRewards(owner, 0)
-        computed_rewards = farm.computeRewards(owner, 0)
-        with brownie.reverts('onERC721Received: not a univ3 nft'):
-            farm.onERC721Received(
-                accounts[2],
-                owner,
-                token_id1,
-                '0x0000000000000000000000000000000000000000000000000000000000000000',
-                {'from': owner, 'gas_limit': GAS_LIMIT},
-            )
-    print_stats(farm, token_id1)
-    #  if (farm_name == 'test_farm_with_lockup'):
-    assert farm.getNumDeposits(owner) == num_deposits + 1
-
-    assert deposit_txn.events['Deposited']['account'] == owner
-    assert deposit_txn.events['Deposited']['tokenId'] == token_id1
-
-    # Should have two subscriptions for the lockup deposit
-    if (farm_name == 'test_farm_with_lockup'):
-        assert farm.getNumSubscriptions(token_id1) == 2
-    else:
-        assert farm.getNumSubscriptions(token_id1) == 1
-
-    # no-lockup reward fund should be updated
-    assert farm.rewardFunds(0) == position[7]
-
-    # claim rewards for wrong deposit
-    with brownie.reverts('Deposit does not exist'):
-        txn = farm.claimRewards(  # noqa
-            1,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-    with brownie.reverts('Deposit does not exist'):
-        txn = farm.claimRewards(  # noqa
-            owner,
-            1,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-
-    # Move ahead in time.
-    chain.mine(10, chain.time() + 1000)
-    balance = reward_token.balanceOf(owner)
-    balance_usds = reward_token_1.balanceOf(owner)
-    total_rewards = 0
-
-    print('\n ----Claiming rewards---- ')
-    with brownie.reverts('Deposit does not exist'):
-        farm.computeRewards(owner, 3)
-    computed_rewards = farm.computeRewards(owner, 0)
-    claim_txn = farm.claimRewards(
-        owner,
-        0,
-        {'from': owner, 'gas_limit': GAS_LIMIT}
-    )
-    print_stats(farm, token_id1)
-
-    print('Computed Rewards: ', computed_rewards)
-
-    if (farm_name == 'test_farm_with_lockup'):
-        r0 = claim_txn.events['RewardsClaimed'][0]['rewardAmount'] + \
-            claim_txn.events['RewardsClaimed'][1]['rewardAmount']
-        print('Rewards Claimed: ', r0)
-        assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[3]) < 3  # noqa
-        # assert (r0[1]+r0[3]-(reward_token_1.balanceOf(owner) - balance_usds))  # noqa
-        total_rewards += r0[0]+r0[3]
-    else:
-        r0 = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
-        print('Rewards Claimed: ', r0)
-        assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3  # noqa
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)  # noqa
-        total_rewards += r0[0]
-    computed_rewards = farm.computeRewards(owner, 0)
-    tx = farm.getRewardBalance(usds, {'from': owner})
-    tx2 = farm.getRewardBalance(usdc, {'from': owner})
-    print('after rewards recovered balance: USDs: ', tx, ' SPA: ', tx2)
-    computed_rewards = farm.computeRewards(owner, 0)
-    print('Computed Rewards after recovering funds before claiming: ', computed_rewards)
-    claim_txn = farm.claimRewards(
-        owner,
-        0,
-        {'from': owner, 'gas_limit': GAS_LIMIT}
-    )
-    print_stats(farm, token_id1)
-    computed_rewards = farm.computeRewards(owner, 0)
-    print('Computed Rewards after recovering funds after claiming: ', computed_rewards)
-    if (farm_name == 'test_farm_with_lockup'):
-        rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount'] + \
-            claim_txn.events['RewardsClaimed'][1]['rewardAmount']
-        print('Rewards Claimed after recovered funds: ', rr)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[3]+rr[0]+rr[2]) < 3  # noqa
-        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds-rr[2], rel_tol=1e-18)  # noqa
-        total_rewards += rr[0]+rr[2]
-    else:
-        rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
-        print('Rewards Claimed after recovered funds: ', rr)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3  # noqa
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)  # noqa
-        total_rewards += rr[0]
-    # Withdraw the deposit without initiating cooldown
-    print('\n ----Withdrawing the deposit without cooldown---- ')
-    if (farm_name == 'test_farm_with_lockup'):
-        with brownie.reverts('Please initiate cooldown'):
-            txn = farm.withdraw(  # noqa
-                0,
-                {'from': owner, 'gas_limit': GAS_LIMIT}
-            )
-
-    # Try to initiate a cooldown for wrong deposit
-    with brownie.reverts('Deposit does not exist'):
-        txn = farm.initiateCooldown(  # noqa
-            1,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-
-    # # Move ahead in time.
-    # chain.mine(10, None, 1000)
-    if (farm_name == 'test_farm_with_lockup'):
-        print('\n ----Initiating cooldown---- ')
-        initiate_cooldown_txn = farm.initiateCooldown(
-            0,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-        print_stats(farm, token_id1)
-        r1 = initiate_cooldown_txn.events['RewardsClaimed'][0]['rewardAmount']\
-            + initiate_cooldown_txn.events['RewardsClaimed'][1]['rewardAmount']
-        print(
-            'Rewards Claimed: ',
-            r1
-        )
-
-        if (farm_name == 'test_farm_with_lockup'):
-            total_rewards += r1[0]+r1[2]
-            assert isclose(reward_token.balanceOf(owner),
-                           balance + r1[0] + r1[2], rel_tol=0.001)
-        else:
-            total_rewards += r1[0]
-            assert isclose(reward_token.balanceOf(owner),
-                           balance + r1[0], rel_tol=0.001)
-    # Try to initiate a cooldown for a deposit already in cooldown
-    with brownie.reverts('Can not initiate cooldown'):
-        txn = farm.initiateCooldown(  # noqa
-            0,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-
-    # Withdraw during the cooldown period
-    if (farm_name == 'test_farm_with_lockup'):
-        print('\n ----Withdrawing the deposit without cooldown---- ')
-        with brownie.reverts('Deposit is in cooldown'):
-            txn = farm.withdraw(  # noqa
-                0,
-                {'from': owner, 'gas_limit': GAS_LIMIT}
-            )
-
-    # Try to withdraw for wrong deposit
-    with brownie.reverts('Deposit does not exist'):
-        txn = farm.withdraw(  # noqa
-            1,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-
-    tx = farm.getRewardBalance(usds, {'from': owner})
-    tx = farm.getRewardBalance(usdc, {'from': owner})
-
-    # Move ahead in time.
-    chain.mine(10, farm.deposits(owner, 0)[4])
-
-    # Withdraw the deposit
-    print('\n ----Withdrawing the deposit---- ')
-    computed_rewards = farm.computeRewards(owner, 0)
-    computed_rewards = farm.computeRewards(owner, 0)
-    withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
-    print_stats(farm, token_id1)
-    r2 = withdraw_txn.events['RewardsClaimed']['rewardAmount']
-    print('Rewards Claimed: ', r2)
-    total_rewards += r2[0]
-    # assert total_rewards == \
-    #     withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0]
-    # assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r2[1]    # noqa
-
-    # assert reward_token.balanceOf(owner) - \
-    #     (balance + total_rewards) < 6
-    assert farm.getNumDeposits(owner) == 0
-
-    chain.revert()
-
-
-@pytest.mark.parametrize('farm_name', farm_names)
 def test_scenario_1(
     fn_isolation,
     farm_name,
@@ -363,7 +50,10 @@ def test_scenario_1(
     # User claims the rewards
     # User withdraws the deposit
     global token_id1
-    lock_data = '0x0000000000000000000000000000000000000000000000000000000000000001'
+    lock_data = (
+        '0x0000000000000000000000000000000000000000000000000000000000000001')
+    no_lock_data = (
+        '0x0000000000000000000000000000000000000000000000000000000000000000')
     chain.snapshot()
     nftm = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
     spa = token_obj('spa')
@@ -407,7 +97,9 @@ def test_scenario_1(
     print('setup farm using invalid data.........')
     with brownie.reverts('Invalid reward data'):
         farm._setupFarm(5, [(brownie.ETH_ADDRESS, owner), (spa.address, owner),
-                            (usds.address, owner), (usdc, owner), (frax, owner)], {'from': owner})
+                            (usds.address, owner),
+                            (usdc, owner), (frax, owner)],
+                        {'from': owner})
     # with brownie.reverts('Invalid reward data'):
     #     farm._setupFarm(5, [], {'from': owner})
     chain.snapshot()
@@ -418,6 +110,7 @@ def test_scenario_1(
 
     reward_token = token_obj(farm_config['reward_token_A'])
     reward_token_1 = token_obj(farm_config['reward_token_B'])
+    reward_token_2 = usdc
     token_a = token_obj(farm_config['token_A'])
     token_b = token_obj(farm_config['token_B'])
     # reward_token_dec = reward_token.decimals()
@@ -425,33 +118,32 @@ def test_scenario_1(
     token_b_dec = token_b.decimals()
     fund_account(owner, 'usds', 2e23)
     fund_account(owner, 'spa', 2e23)
+    fund_account(owner, 'usdc', 1e10)
     usds.approve(farm, 1e24, {'from': owner})
     spa.approve(farm, 1e24, {'from': owner})
+    usdc.approve(farm, 1e12, {'from': owner})
+
+    fund_account(accounts[1], 'usds', 2e23)
+    fund_account(accounts[1], 'spa', 2e23)
+    fund_account(accounts[1], 'usdc', 1e10)
+    usds.approve(farm, 1e24, {'from': accounts[1]})
+    spa.approve(farm, 1e24, {'from': accounts[1]})
+    usdc.approve(farm, 1e12, {'from': accounts[1]})
+
     if (farm_name == 'test_farm_with_lockup'):
 
         tx = farm.getRewardBalance(usds, {'from': owner})
         print('balance of rewards is: ', tx)
     else:
         farm.getRewardBalance(usds, {'from': owner})
-    tx = farm.addRewards(usds, 1e22, {'from': owner})
-    tx = farm.addRewards(spa, 1e22, {'from': owner})
+
+    tx = farm.addRewards(usds, 1e23, {'from': owner})
+    tx = farm.addRewards(spa, 1e23, {'from': owner})
+    tx = farm.addRewards(usdc, 1e10, {'from': owner})
+
     with brownie.reverts('Invalid _rwdToken'):
         farm.getRewardBalance(frax, {'from': owner})
 
-    # For Generic Farm Scenario
-    # fund_account(
-    #     farm,
-    #     farm_config['reward_token'],
-    #     1e7 * 10 ** reward_token_dec
-    # )
-    # fund_account(owner, farm_config['token_A'],  5e4 * 10 ** token_a_dec)
-    # fund_account(owner, farm_config['token_B'],  5e4 * 10 ** token_b_dec)
-    if (farm_name == 'test_farm_with_lockup'):
-        farm.setRewardRate(usds, [1e15, 2e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15, 2e15], {'from': owner})
-    elif (farm_name == 'test_farm_without_lockup'):
-        farm.setRewardRate(usds, [1e15], {'from': owner})
-        farm.setRewardRate(spa, [1e15], {'from': owner})
     # User creates a position in uniswap pool
     # Register the token id
     token_id1 = mint_position(
@@ -475,7 +167,7 @@ def test_scenario_1(
         config['uniswap_pool_data']['upper_tick'],
         2000 * 10 ** token_a_dec,
         2000 * 10 ** token_b_dec,
-        owner,
+        accounts[1],
     )
     liquidity = farm._getLiquidity(token_id1, {'from': owner})
 
@@ -490,47 +182,48 @@ def test_scenario_1(
         farm._addRewardData(spa, owner, {'from': owner})
 
     # check the initial number of deposit for the user.
-    num_deposits = farm.getNumDeposits(owner)
-    # with brownie.reverts
-    # ('UniswapV3Staker::onERC721Received: not a univ3 nft'):
-    #     farm.onERC721Received(
-    #         accounts[2],
-    #         owner,
-    #         token_id1,
-    #         '0x0000000000000000000000000000000000000000000000000000000000000000',
-    #         {'from': nftm, 'gas_limit': GAS_LIMIT},
-    #     )
-    # Successful deposit test
+    farm.getNumDeposits(owner)
+
     # It's a no-lockup deposit
     print('\n ----Depositing in Farm---- ')
-    deposit_txn = position_manager.safeTransferFrom(
-        owner,
-        farm.address,
-        token_id1,
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-        {'from': owner, 'gas_limit': GAS_LIMIT},
-    )
-    if(farm_name == 'test_farm_with_lockup'):
-        deposit_txn2 = position_manager.safeTransferFrom(
+
+    if (farm_name == 'test_farm_with_lockup'):
+        deposit_txn = position_manager.safeTransferFrom(
             owner,
             farm.address,
-            token_id2,
+            token_id1,
             lock_data,
             {'from': owner, 'gas_limit': GAS_LIMIT},
         )
-
+        position_manager.safeTransferFrom(
+            accounts[1],
+            farm.address,
+            token_id2,
+            no_lock_data,
+            {'from': accounts[1], 'gas_limit': GAS_LIMIT},
+        )
+        assert farm.rewardFunds(0) == position[7]+position2[7]
+        assert farm.getNumSubscriptions(token_id1) == 2
     # assert farm.getNumDeposits(owner) == num_deposits + 2
-    if(farm_name == 'test_farm_without_lockup'):
+    if (farm_name == 'test_farm_without_lockup'):
 
         with brownie.reverts('Lockup functionality is disabled'):
             farm.onERC721Received(
                 accounts[2],
                 owner,
-                token_id1,
+                token_id2,
                 lock_data,
                 {'from': nftm, 'gas_limit': GAS_LIMIT},
             )
-
+        deposit_txn = position_manager.safeTransferFrom(
+            owner,
+            farm.address,
+            token_id1,
+            no_lock_data,
+            {'from': owner, 'gas_limit': GAS_LIMIT},
+        )
+        assert farm.getNumSubscriptions(token_id1) == 1
+        assert farm.rewardFunds(0) == position[7]
     print_stats(farm, token_id1)
     print_stats(farm, token_id2)
 
@@ -538,50 +231,81 @@ def test_scenario_1(
     assert deposit_txn.events['Deposited']['tokenId'] == token_id1
 
     # Should have only one subscription for the no-lockup deposit
-    assert farm.getNumSubscriptions(token_id1) == 1
 
+    farm._getAccRewards(0, 0, 1e10)
+    if (farm_name == 'test_farm_with_lockup'):
+        farm.setRewardRate(usds, [1e15, 2e15], {'from': owner})
+        farm.setRewardRate(spa, [1e15, 2e15], {'from': owner})
+        farm.setRewardRate(usdc, [1e3, 2e3], {'from': owner})
+        print('reward funds LockUp: ', farm.rewardFunds(0))
+    elif (farm_name == 'test_farm_without_lockup'):
+        farm.setRewardRate(usds, [1e15], {'from': owner})
+        farm.setRewardRate(spa, [1e15], {'from': owner})
+        farm.setRewardRate(usdc, [1e3], {'from': owner})
     # no-lockup reward fund should be updated
-    # print("reward funds: ",farm.rewardFunds(0)[0],
-    # 'uniswap position: ',position)
-    # assert farm.rewardFunds(0) == position[7]+position2[7]
+        print('reward funds Non LockUp: ', farm.rewardFunds(0))
 
     # Move ahead in time.
-    chain.mine(10, chain.time() + 1000)
+    chain.mine(10, None, 86400)
 
     balance = reward_token.balanceOf(owner)
     balance_usds = reward_token_1.balanceOf(owner)
+    balance_usdc = reward_token_2.balanceOf(owner)
     print('\n ----Invalid Subscription---- ')
     with brownie.reverts('Subscription does not exist'):
         farm.getSubscriptionInfo(token_id1, 3)
-
     with brownie.reverts('Invalid fund id'):
         farm._unsubscribeRewardFund(2, owner, 0, {'from': owner})
     reward_info = farm.getRewardFundInfo(0)
-    print("reward funds are: ", reward_info)
+    print('reward funds are: ', reward_info)
     with brownie.reverts('Reward fund does not exist'):
         farm.getRewardFundInfo(10)
     print('\n ----Claiming rewards---- ')
+
     claim_txn = farm.claimRewards(0, {'from': owner, 'gas_limit': GAS_LIMIT})
+
+    r0 = claim_txn.events['RewardsClaimed']
     print_stats(farm, token_id1)
+    # print('Rewards Claimed: ', r0)
+    print('Asserting Claimed Rewards.....')
+    if(farm_name == 'test_farm_with_lockup'):
+        r0_0 = r0[0]['rewardAmount']
+        r0_1 = r0[1]['rewardAmount']
+
+        assert r0_0[0]+r0_1[0] - (reward_token.balanceOf(owner) - balance) < 2
+        assert r0_0[1] + \
+            r0_1[1] - (reward_token_1.balanceOf(owner) - balance_usds) < 2
+        assert r0_0[2] + \
+            r0_1[2] == (reward_token_2.balanceOf(owner) - balance_usdc)
+        print('SPA Reward claimed: ', (r0_0[0]+r0_1[0])/1e18)
+        print('USDs Reward claimed: ', (r0_0[1]+r0_1[1])/1e18)
+        print('USDC Reward claimed: ', (r0_0[2]+r0_1[2])/1e6)
+    elif (farm_name == 'test_farm_without_lockup'):
+        r0_0 = r0[0]['rewardAmount']
+        assert r0_0[0] - (reward_token.balanceOf(owner) - balance) >= 0 and (
+            r0_0[0] - (reward_token.balanceOf(owner) - balance)) < 2
+        assert r0_0[1] - (reward_token_1.balanceOf(
+            owner) - balance_usds) >= -2 and r0_0[1] - \
+            (reward_token_1.balanceOf(owner) - balance_usds) < 2
+        assert r0_0[2] == (reward_token_2.balanceOf(owner) - balance_usdc)
+        print('SPA Reward claimed: ', r0_0[0]/1e18)
+        print('USDs Reward claimed: ', r0_0[1]/1e18)
+        print('USDC Reward claimed: ', r0_0[2]/1e6)
+        # Try to initiate a cooldown for no-lockup deposit.
+        with brownie.reverts('Can not initiate cooldown'):
+            farm.initiateCooldown(
+                0,
+                {'from': owner, 'gas_limit': GAS_LIMIT}
+            )
+    print('Claimed Rewards Looks Correct..... 😀 ')
     r0 = claim_txn.events['RewardsClaimed']['rewardAmount']
-    print('Rewards Claimed: ', r0)
-    assert r0[0]-(reward_token.balanceOf(owner) - balance) < 3   # noqa
-    assert r0[1] == reward_token_1.balanceOf(owner) - balance_usds  # noqa
-    print('claim both rewards passed')
     # Reward Token 1
     assert farm.getSubscriptionInfo(token_id1, 0)[1][0] == r0[0]
     # Reward Token 2
     assert farm.getSubscriptionInfo(token_id1, 0)[1][1] == r0[1]
 
-    # Try to initiate a cooldown for no-lockup deposit.
-    with brownie.reverts('Can not initiate cooldown'):
-        txn = farm.initiateCooldown(  # noqa
-            0,
-            {'from': owner, 'gas_limit': GAS_LIMIT}
-        )
-
     # Move ahead in time.
-    chain.mine(10, chain.time() + 1000)
+    chain.mine(10, None, 86400)
     # Withdraw the deposit
     print('\n ----Withdrawing the deposit---- ')
 
@@ -594,26 +318,54 @@ def test_scenario_1(
 
     with brownie.reverts('Invalid address'):
         farm._isNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
-    withdraw_txn = farm.withdraw(1, {'from': owner, 'gas_limit': GAS_LIMIT})
-    subscription = farm.getNumSubscriptions(token_id2)
-    assert subscription == 0
+    if(farm_name == 'test_farm_with_lockup'):
+        withdraw_txn = farm.withdraw(
+            0, {'from': accounts[1], 'gas_limit': GAS_LIMIT})
+        subscription = farm.getNumSubscriptions(token_id2)
+        assert subscription == 0
     farm._updateFarmRewardData({'from': owner})
     farm.farmPauseSwitch(False, {'from': owner})
-    chain.undo(3)
+    chain.undo(2)
     print('\n ----Farm is running---- ')
     withdraw_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
     print_stats(farm, token_id1)
-    r1 = withdraw_txn.events['RewardsClaimed']['rewardAmount']
-    print('Rewards Claimed: ', r1)
-    assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0] == r0[0] + r1[0]
-    assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r0[1] + r1[1]   # noqa
+    r0 = claim_txn.events['RewardsClaimed']
+    r1 = withdraw_txn.events['RewardsClaimed']
 
-    assert isclose(reward_token.balanceOf(owner),
-                   balance + r0[0] + r1[0]+2, rel_tol=1e-18)
-    # farm.recoverRewardFunds(usds,farm.getRewardBalance(usds, {'from': owner}), {'from': owner})
-    # tx=farm.getRewardBalance(usds, {'from': owner})
-    # print("after rewards recovered balance: ",tx)
-    withdraw2_txn = farm.withdraw(0, {'from': owner, 'gas_limit': GAS_LIMIT})
+    if (farm_name == 'test_farm_with_lockup'):
+        r0_0 = r0[0]['rewardAmount']
+        r0_1 = r0[1]['rewardAmount']
+        r1_0 = r1[0]['rewardAmount']
+        r1_1 = r1[1]['rewardAmount']
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0] == r0_0[0] + \
+            r1_0[0]+r0_1[0] + r1_1[0]
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r0_0[1] + \
+            r1_0[1]+r0_1[1] + r1_1[1]
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][2] == r0_0[2] + \
+            r1_0[2] + r0_1[2] + r1_1[2]
+        print('SPA Withdrawn Reward : ',
+              (r0_0[0] + r1_0[0]+r0_1[0] + r1_1[0])/1e18)
+        print('USDs Withdrawn Reward: ',
+              (r0_0[1]+r1_0[1]+r0_1[1] + r1_1[1])/1e18)
+        print('USDC Withdrawn Reward : ',
+              (r0_0[2]+r1_0[2] + r0_1[2] + r1_1[2])/1e6)
+
+    elif (farm_name == 'test_farm_without_lockup'):
+        r0_0 = r0[0]['rewardAmount']
+        r1_0 = r1[0]['rewardAmount']
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0] == r0_0[0] + r1_0[0]
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r0_0[1] + r1_0[1]
+        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][2] == r0_0[2] + r1_0[2]
+        print('SPA Withdrawn Reward : ', (r0_0[0] + r1_0[0])/1e18)
+        print('USDs Withdrawn Reward: ', (r0_0[1] + r1_0[1])/1e18)
+        print('USDC Withdrawn Reward : ', (r0_0[2]+r1_0[2])/1e6)
+    print('Withdrawn Reward Check Completed 💪💪💪💪')
+    # assert isclose(reward_token.balanceOf(owner),
+    #                balance + r0[0] + r1[0]+2, rel_tol=1e-18)
+    farm.recoverRewardFunds(usds, farm.getRewardBalance(
+        usds, {'from': owner}), {'from': owner})
+    tx = farm.getRewardBalance(usds, {'from': owner})
+    print('after rewards recovered balance: ', tx)
     assert farm.getNumDeposits(owner) == 0
     # farm.recoverERC20(usds, {'from': owner})
     with brownie.reverts("Can't withdraw 0 amount"):
@@ -650,40 +402,38 @@ def test_scenario_2(
 
     spa = token_obj('spa')
     usds = token_obj('usds')
+    usdc = token_obj('usdc')
     farm_config = constants[farm_name]
     config = farm_config['config']
 
     farm = deploy_uni_farm(owner, UniswapFarmV1)
     init_farm(owner, farm, config)
 
-    reward_token = token_obj(farm_config['reward_token_A'])
-    reward_token_1 = token_obj(farm_config['reward_token_B'])
+    # reward_token = token_obj(farm_config['reward_token_A'])
+    # reward_token_1 = token_obj(farm_config['reward_token_B'])
     token_a = token_obj(farm_config['token_A'])
     token_b = token_obj(farm_config['token_B'])
     token_a_dec = token_a.decimals()
     token_b_dec = token_b.decimals()
     fund_account(owner, 'usds', 2e23)
     fund_account(owner, 'spa', 2e23)
-
+    fund_account(owner, 'usdc', 1e10)
     usds.approve(farm, 1e24, {'from': owner})
     spa.approve(farm, 1e24, {'from': owner})
+    usdc.approve(farm, 1e12, {'from': owner})
 
     tx = farm.addRewards(usds, 1e23, {'from': owner})
     tx = farm.addRewards(spa, 1e23, {'from': owner})
+    tx = farm.addRewards(usdc, 1e10, {'from': owner})
+
     if (farm_name == 'test_farm_with_lockup'):
         farm.setRewardRate(usds, [1e15, 2e15], {'from': owner})
         farm.setRewardRate(spa, [1e15, 2e15], {'from': owner})
+        farm.setRewardRate(usdc, [1e3, 2e3], {'from': owner})
     elif (farm_name == 'test_farm_without_lockup'):
         farm.setRewardRate(usds, [1e15], {'from': owner})
         farm.setRewardRate(spa, [1e15], {'from': owner})
-
-    # fund_account(
-    #     farm,
-    #     farm_config['reward_token'],
-    #     1e7 * 10 ** reward_token_dec
-    # )
-    # fund_account(owner, farm_config['token_A'],  5e4 * 10 ** token_a_dec)
-    # fund_account(owner, farm_config['token_B'],  5e4 * 10 ** token_b_dec)
+        farm.setRewardRate(usdc, [1e3], {'from': owner})
 
     token_id1 = mint_position(
         position_manager,
@@ -732,7 +482,7 @@ def test_scenario_2(
     #         owner,
     #         farm.address,
     #         token_id2,
-    #         '0x0000000000000000000000000000000000000000000000000000000000000001',  # noqa
+    #         '0x0000000000000000000000000000000000000000000000000000000000000001',
     #         {'from': owner, 'gas_limit': GAS_LIMIT},
     #     )
 
@@ -743,7 +493,7 @@ def test_scenario_2(
                 owner,
                 farm.address,
                 token_id3,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',  # noqa
+                '0x0000000000000000000000000000000000000000000000000000000000000001',
                 {'from': owner, 'gas_limit': GAS_LIMIT},
             )
         with brownie.reverts('Incorrect tick range'):
@@ -751,7 +501,7 @@ def test_scenario_2(
                 owner,
                 farm.address,
                 token_id4,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',  # noqa
+                '0x0000000000000000000000000000000000000000000000000000000000000001',
                 {'from': owner, 'gas_limit': GAS_LIMIT},
             )
 
@@ -818,21 +568,21 @@ def test_scenario_2(
 
     # claim rewards for wrong deposit
     with brownie.reverts('Deposit does not exist'):
-        txn = farm.claimRewards(  # noqa
+        farm.claimRewards(
             1,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
     with brownie.reverts('Deposit does not exist'):
-        txn = farm.claimRewards(  # noqa
+        farm.claimRewards(
             owner,
             1,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
 
     # Move ahead in time.
-    chain.mine(10, chain.time() + 1000)
-    balance = reward_token.balanceOf(owner)
-    balance_usds = reward_token_1.balanceOf(owner)
+    chain.mine(10, None, 86400)
+    # balance = reward_token.balanceOf(owner)
+    # balance_usds = reward_token_1.balanceOf(owner)
     total_rewards = 0
 
     print('\n ----Claiming rewards---- ')
@@ -852,14 +602,14 @@ def test_scenario_2(
         r0 = claim_txn.events['RewardsClaimed'][0]['rewardAmount'] + \
             claim_txn.events['RewardsClaimed'][1]['rewardAmount']
         print('Rewards Claimed: ', r0)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]) < 3  # noqa
-        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)  # noqa
+        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]) < 3
+        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
         total_rewards += r0[0]+r0[2]
     else:
         r0 = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
         print('Rewards Claimed: ', r0)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3  # noqa
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)  # noqa
+        # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3
+        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
         total_rewards += r0[0]
     print('\n ----Claiming rewards After recovering funds--- ')
     farm.recoverRewardFunds(usds, farm.getRewardBalance(
@@ -884,27 +634,27 @@ def test_scenario_2(
         rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount'] + \
             claim_txn.events['RewardsClaimed'][1]['rewardAmount']
         print('Rewards Claimed after recovered funds: ', rr)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]+rr[0]+rr[2]) < 3  # noqa
-        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds-rr[2], rel_tol=1e-18)  # noqa
+        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]+rr[0]+rr[2]) < 3
+        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds-rr[2], rel_tol=1e-18)
         total_rewards += rr[0]+rr[2]
     else:
         rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
         print('Rewards Claimed after recovered funds: ', rr)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3  # noqa
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)  # noqa
+        # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3
+        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
         total_rewards += rr[0]
     # Withdraw the deposit without initiating cooldown
     print('\n ----Withdrawing the deposit without cooldown---- ')
     if (farm_name == 'test_farm_with_lockup'):
         with brownie.reverts('Please initiate cooldown'):
-            txn = farm.withdraw(  # noqa
+            farm.withdraw(
                 0,
                 {'from': owner, 'gas_limit': GAS_LIMIT}
             )
 
     # Try to initiate a cooldown for wrong deposit
     with brownie.reverts('Deposit does not exist'):
-        txn = farm.initiateCooldown(  # noqa
+        farm.initiateCooldown(
             1,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
@@ -935,7 +685,7 @@ def test_scenario_2(
         #                    balance + r1[0], rel_tol=0.001)
     # Try to initiate a cooldown for a deposit already in cooldown
     with brownie.reverts('Can not initiate cooldown'):
-        txn = farm.initiateCooldown(  # noqa
+        farm.initiateCooldown(
             0,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
@@ -944,14 +694,14 @@ def test_scenario_2(
     if (farm_name == 'test_farm_with_lockup'):
         print('\n ----Withdrawing the deposit without cooldown---- ')
         with brownie.reverts('Deposit is in cooldown'):
-            txn = farm.withdraw(  # noqa
+            farm.withdraw(
                 0,
                 {'from': owner, 'gas_limit': GAS_LIMIT}
             )
 
     # Try to withdraw for wrong deposit
     with brownie.reverts('Deposit does not exist'):
-        txn = farm.withdraw(  # noqa
+        farm.withdraw(
             1,
             {'from': owner, 'gas_limit': GAS_LIMIT}
         )
@@ -973,7 +723,8 @@ def test_scenario_2(
     total_rewards += r2[0]
     # assert total_rewards == \
     #     withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0]
-    # assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r2[1]    # noqa
+    # assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == \
+    # r2[1]
 
     # assert reward_token.balanceOf(owner) - \
     #     (balance + total_rewards) < 6
