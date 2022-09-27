@@ -14,6 +14,8 @@ import pytest
 import eth_utils
 from conftest import (
     GAS_LIMIT,
+    deploy_uni_farm,
+    init_farm,
     token_obj,
     fund_account,
     constants,
@@ -23,7 +25,7 @@ from conftest import (
 # from ..scripts.constants import demeter_farm_constants
 
 farm_names = ['test_farm_with_lockup', 'test_farm_without_lockup']
-global farm, token_A, token_B, rwd_token, deployer
+global token_A, token_B, rwd_token, deployer
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -87,40 +89,30 @@ def farm_deployer(factory):
     return farm_deployer
 
 
-@pytest.fixture(scope='module', autouse=True, params=farm_names)
-def uni_farm_setup(request):
-    global farm, token_A, token_B, rwd_token
-    farm_name = request.param
-    farm_config = constants[farm_name]
-    config = farm_config['config']
-    farm_config = constants[farm_name]
-    token_A = token_obj(farm_config['token_A'])
-    token_B = token_obj(farm_config['token_B'])
-    rwd_token = list(map(lambda x: list(x.values()),
-        config['reward_token_data'])),
-    config = farm_config['config']
-
-    yield uni_farm_setup
+@pytest.fixture(scope='module', autouse=True)
+def farm(config):
+    uniswap_farm = deploy_uni_farm(deployer, UniswapFarmV1)
+    return init_farm(deployer, uniswap_farm, config)
 
 
-@pytest.fixture(scope='module', autouse=True, params=farm_names)
-def farm(config, farm_deployer):
-    tx = farm_deployer.createFarm(
-        (
-            deployer,
-            config['farm_start_time'],
-            config['cooldown_period'],
-            list(config['uniswap_pool_data'].values()),
-            list(
-                map(
-                    lambda x: list(x.values()),
-                    config['reward_token_data']
-                )
-            ),
-        ),
-        {'from': deployer}
-    )
-    return UniswapFarmV1.at(tx.new_contracts[0])
+# @pytest.fixture(scope='module', autouse=True)
+# def farm(config, farm_deployer):
+#     tx = farm_deployer.createFarm(
+#         (
+#             deployer,
+#             config['farm_start_time'],
+#             config['cooldown_period'],
+#             list(config['uniswap_pool_data'].values()),
+#             list(
+#                 map(
+#                     lambda x: list(x.values()),
+#                     config['reward_token_data']
+#                 )
+#             ),
+#         ),
+#         {'from': deployer}
+#     )
+#     return UniswapFarmV1.at(tx.new_contracts[0])
 
 
 class Test_initialization:

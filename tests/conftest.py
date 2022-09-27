@@ -202,7 +202,7 @@ def deploy_uni_farm(deployer, contract):
     )
 
     uniswap_farm = Contract.from_abi(
-        'uniswapFarmV1',
+        'UniswapFarmV1',
         proxy.address,
         contract.abi
     )
@@ -211,14 +211,14 @@ def deploy_uni_farm(deployer, contract):
 
 def init_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract"""
-    init = farm.initialize(
+    farm.initialize(
         config['farm_start_time'],
         config['cooldown_period'],
         list(config['uniswap_pool_data'].values()),
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
         {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
-    return init
+    return farm
 
 
 def false_init_farm(deployer, farm, config):
