@@ -9,7 +9,7 @@ factory_constants = {
     'FarmFactory_v1': {
         'contract': FarmFactory,
         'config': {
-            'fee_receiver': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
+            'fee_receiver': '0x4F987B24bD2194a574bB3F57b4e66B7f7eD36196',
             'fee_token': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
             'fee_amount': 500e18
         }
@@ -20,7 +20,7 @@ farm_deployer_constants = {
     'UniswapFarmV1_deployer': {
         'contract': UniswapFarmV1Deployer,
         'config': {
-            'farm_factory': ''
+            'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659'
         }
     }
 }

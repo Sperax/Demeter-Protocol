@@ -21,16 +21,16 @@ def deploy(deployer, contract, config):
     print(json.dumps(config, indent=4))
     confirm('Are the above configurations correct?')
 
-    factory = FarmFactory.at(config['farm_factory'])
-
+    factory = config['farm_factory']
+    
     print('Deploy UniswapFarmV1Deployer contract.')
     farm_deployer = contract.deploy(factory, {'from': deployer})
 
-    # To be done manually
+    # TODO To be done manually
     # print('Register the deployer contract with the Factory.')
     # factory.registerFarmDeployer(
     #     farm_deployer,
-    #     {'from': deployer, 'gas_limit': GAS_LIMIT}
+    #     {'from': MULTISIG, 'gas_limit': GAS_LIMIT}
     # )
 
     return {
@@ -58,7 +58,7 @@ def main():
     data = dict(
         type='deployment_'+config_name,
         config=config,
-        deployer=deployer,
+        deployer=deployer.address,
         deployments=deployments
     )
 
