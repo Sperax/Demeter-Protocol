@@ -90,9 +90,13 @@ def farm_deployer(factory):
 
 
 @pytest.fixture(scope='module', autouse=True)
-def farm(config):
-    uniswap_farm = deploy_uni_farm(deployer, UniswapFarmV1)
-    return init_farm(deployer, uniswap_farm, config)
+def farm_contract(config):
+    return deploy_uni_farm(deployer, UniswapFarmV1)
+
+
+@pytest.fixture(scope='module')
+def farm(config, farm_contract):
+    return init_farm(deployer, farm_contract, config)
 
 
 # @pytest.fixture(scope='module', autouse=True)
@@ -117,32 +121,28 @@ def farm(config):
 
 class Test_initialization:
     def test_intitialization_invalid_farm_start_time(
-        self, farm_deployer, config
+        self, config, farm_contract
     ):
         with reverts('Invalid farm startTime'):
-            farm_deployer.createFarm(
-                (deployer,
-                 brownie.chain.time()-1,
-                 config['cooldown_period'],
-                 list(config['uniswap_pool_data'].values()),
-                 list(map(lambda x: list(x.values()),
-                          config['reward_token_data']))),
+            farm_contract.initialize(
+                chain.time() - 1,
+                config['cooldown_period'],
+                list(config['uniswap_pool_data'].values()),
+                list(map(lambda x: list(x.values()),
+                     config['reward_token_data'])),
                 {'from': deployer, 'gas_limit': GAS_LIMIT},
             )
 
     def test_intitialization_invalid_cooldown_period(
-        self, farm_deployer, config
+        self, farm_contract, config
     ):
         with reverts('Cooldown < MinCooldownPeriod'):
-            farm_deployer.createFarm(
-                (
-                    deployer,
-                    brownie.chain.time()+1000,
-                    1,
-                    list(config['uniswap_pool_data'].values()),
-                    list(map(lambda x: list(x.values()),
-                             config['reward_token_data']))
-                ),
+            farm_contract.initialize(
+                config['farm_start_time'],
+                1,
+                list(config['uniswap_pool_data'].values()),
+                list(map(lambda x: list(x.values()),
+                     config['reward_token_data'])),
                 {'from': deployer, 'gas_limit': GAS_LIMIT},
             )
 
