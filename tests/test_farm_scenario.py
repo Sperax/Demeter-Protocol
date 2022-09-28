@@ -268,7 +268,7 @@ def test_scenario_1(
     print_stats(farm, token_id1)
     # print('Rewards Claimed: ', r0)
     print('Asserting Claimed Rewards.....')
-    if(farm_name == 'test_farm_with_lockup'):
+    if (farm_name == 'test_farm_with_lockup'):
         r0_0 = r0[0]['rewardAmount']
         r0_1 = r0[1]['rewardAmount']
 
@@ -337,12 +337,10 @@ def test_scenario_1(
         r0_1 = r0[1]['rewardAmount']
         r1_0 = r1[0]['rewardAmount']
         r1_1 = r1[1]['rewardAmount']
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0] == r0_0[0] + \
-            r1_0[0]+r0_1[0] + r1_1[0]
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r0_0[1] + \
-            r1_0[1]+r0_1[1] + r1_1[1]
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][2] == r0_0[2] + \
-            r1_0[2] + r0_1[2] + r1_1[2]
+        w_e = withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed']
+        assert w_e[0] == r0_0[0] + r1_0[0]+r0_1[0] + r1_1[0]
+        assert w_e[1] == r0_0[1] + r1_0[1]+r0_1[1] + r1_1[1]
+        assert w_e[2] == r0_0[2] + r1_0[2] + r0_1[2] + r1_1[2]
         print('SPA Withdrawn Reward : ',
               (r0_0[0] + r1_0[0]+r0_1[0] + r1_1[0])/1e18)
         print('USDs Withdrawn Reward: ',
@@ -353,9 +351,10 @@ def test_scenario_1(
     elif (farm_name == 'test_farm_without_lockup'):
         r0_0 = r0[0]['rewardAmount']
         r1_0 = r1[0]['rewardAmount']
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0] == r0_0[0] + r1_0[0]
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == r0_0[1] + r1_0[1]
-        assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][2] == r0_0[2] + r1_0[2]
+        w_e = withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed']
+        assert w_e[0] == r0_0[0] + r1_0[0]
+        assert w_e[1] == r0_0[1] + r1_0[1]
+        assert w_e[2] == r0_0[2] + r1_0[2]
         print('SPA Withdrawn Reward : ', (r0_0[0] + r1_0[0])/1e18)
         print('USDs Withdrawn Reward: ', (r0_0[1] + r1_0[1])/1e18)
         print('USDC Withdrawn Reward : ', (r0_0[2]+r1_0[2])/1e6)
@@ -399,7 +398,10 @@ def test_scenario_2(
     farm_name,
     position_manager,
 ):
-
+    lock_data = (
+        '0x0000000000000000000000000000000000000000000000000000000000000001')
+    no_lock_data = (
+        '0x0000000000000000000000000000000000000000000000000000000000000000')
     spa = token_obj('spa')
     usds = token_obj('usds')
     usdc = token_obj('usdc')
@@ -493,7 +495,7 @@ def test_scenario_2(
                 owner,
                 farm.address,
                 token_id3,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',
+                lock_data,
                 {'from': owner, 'gas_limit': GAS_LIMIT},
             )
         with brownie.reverts('Incorrect tick range'):
@@ -501,18 +503,10 @@ def test_scenario_2(
                 owner,
                 farm.address,
                 token_id4,
-                '0x0000000000000000000000000000000000000000000000000000000000000001',
+                lock_data,
                 {'from': owner, 'gas_limit': GAS_LIMIT},
             )
 
-    # if (farm_name == 'test_farm_without_lockup'):
-    #     position_manager.safeTransferFrom(
-    #         accounts[2],
-    #         owner,
-    #         token_id1,
-    #         '0x0000000000000000000000000000000000000000000000000000000000000001',
-    #         {'from': owner, 'gas_limit': GAS_LIMIT},
-    #     )
     # print('\n ----Invalid Deposit----')
     with brownie.reverts('onERC721Received: no data'):
         position_manager.safeTransferFrom(
@@ -529,7 +523,7 @@ def test_scenario_2(
             owner,
             farm.address,
             token_id1,
-            '0x0000000000000000000000000000000000000000000000000000000000000001',
+            lock_data,
             {'from': owner, 'gas_limit': GAS_LIMIT},
         )
     elif (farm_name == 'test_farm_without_lockup'):
@@ -537,7 +531,7 @@ def test_scenario_2(
             owner,
             farm.address,
             token_id1,
-            '0x0000000000000000000000000000000000000000000000000000000000000000',
+            no_lock_data,
             {'from': owner, 'gas_limit': GAS_LIMIT},
         )
         computed_rewards = farm.computeRewards(owner, 0)
@@ -547,7 +541,7 @@ def test_scenario_2(
                 accounts[2],
                 owner,
                 token_id1,
-                '0x0000000000000000000000000000000000000000000000000000000000000000',
+                no_lock_data,
                 {'from': owner, 'gas_limit': GAS_LIMIT},
             )
     print_stats(farm, token_id1)
@@ -585,7 +579,7 @@ def test_scenario_2(
     # balance_usds = reward_token_1.balanceOf(owner)
     total_rewards = 0
 
-    print('\n ----Claiming rewards---- ')
+    print('\n ------Claiming rewards---- ')
     with brownie.reverts('Deposit does not exist'):
         farm.computeRewards(owner, 3)
     computed_rewards = farm.computeRewards(owner, 0)
@@ -603,13 +597,15 @@ def test_scenario_2(
             claim_txn.events['RewardsClaimed'][1]['rewardAmount']
         print('Rewards Claimed: ', r0)
         # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]) < 3
-        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
+        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - \
+        # balance_usds, rel_tol=1e-18)
         total_rewards += r0[0]+r0[2]
     else:
         r0 = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
         print('Rewards Claimed: ', r0)
         # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
+        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds,
+        #  rel_tol=1e-18)
         total_rewards += r0[0]
     print('\n ----Claiming rewards After recovering funds--- ')
     farm.recoverRewardFunds(usds, farm.getRewardBalance(
@@ -621,7 +617,8 @@ def test_scenario_2(
     tx2 = farm.getRewardBalance(spa, {'from': owner})
     print('after rewards recovered balance: USDs: ', tx, ' SPA: ', tx2)
     computed_rewards = farm.computeRewards(owner, 0)
-    print('Computed Rewards after recovering funds before claiming: ', computed_rewards)
+    print('Computed Rewards after recovering funds before claiming: ',
+          computed_rewards)
     claim_txn = farm.claimRewards(
         owner,
         0,
@@ -629,19 +626,23 @@ def test_scenario_2(
     )
     print_stats(farm, token_id1)
     computed_rewards = farm.computeRewards(owner, 0)
-    print('Computed Rewards after recovering funds after claiming: ', computed_rewards)
+    print('Computed Rewards after recovering funds after claiming: ',
+          computed_rewards)
     if (farm_name == 'test_farm_with_lockup'):
         rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount'] + \
             claim_txn.events['RewardsClaimed'][1]['rewardAmount']
         print('Rewards Claimed after recovered funds: ', rr)
-        # assert reward_token.balanceOf(owner) - balance-(r0[0]+r0[2]+rr[0]+rr[2]) < 3
-        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - balance_usds-rr[2], rel_tol=1e-18)
+        # assert reward_token.balanceOf(
+        #    owner) - balance-(r0[0]+r0[2]+rr[0]+rr[2]) < 3
+        # assert isclose(r0[1]+r0[3], reward_token_1.balanceOf(owner) - \
+        #  balance_usds-rr[2], rel_tol=1e-18)
         total_rewards += rr[0]+rr[2]
     else:
         rr = claim_txn.events['RewardsClaimed'][0]['rewardAmount']
         print('Rewards Claimed after recovered funds: ', rr)
         # assert reward_token.balanceOf(owner) - balance-(r0[0]) < 3
-        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds, rel_tol=1e-18)
+        # assert isclose(r0[1], reward_token_1.balanceOf(owner) - balance_usds,
+        #  rel_tol=1e-18)
         total_rewards += rr[0]
     # Withdraw the deposit without initiating cooldown
     print('\n ----Withdrawing the deposit without cooldown---- ')
@@ -723,7 +724,8 @@ def test_scenario_2(
     total_rewards += r2[0]
     # assert total_rewards == \
     #     withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][0]
-    # assert withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == \
+    # assert
+    # withdraw_txn.events['DepositWithdrawn']['totalRewardsClaimed'][1] == \
     # r2[1]
 
     # assert reward_token.balanceOf(owner) - \
