@@ -55,12 +55,12 @@ def test_scenario_1(
     no_lock_data = (
         '0x0000000000000000000000000000000000000000000000000000000000000000')
     chain.snapshot()
-    nftm = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
+    nftm = position_manager.address
     spa = token_obj('spa')
     usds = token_obj('usds')
     usdc = token_obj('usdc')
     frax = token_obj('frax')
-    farm_config = constants[farm_name]
+    farm_config = constants()[farm_name]
     config = farm_config['config']
 
     farm = deploy_uni_farm(owner, UniswapFarmV1)
@@ -405,7 +405,7 @@ def test_scenario_2(
     spa = token_obj('spa')
     usds = token_obj('usds')
     usdc = token_obj('usdc')
-    farm_config = constants[farm_name]
+    farm_config = constants()[farm_name]
     config = farm_config['config']
 
     farm = deploy_uni_farm(owner, UniswapFarmV1)

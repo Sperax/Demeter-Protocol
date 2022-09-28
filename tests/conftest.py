@@ -29,110 +29,126 @@ def isolation(fn_isolation):
 
 
 """Add new farm configurations here to run the tests"""
-approved_rwd_token_list1 = [
-    '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',  # SPA
-    '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',  # L2-Dao
-    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',  # USDs
-    '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',  # Frax
-    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',  # USDC
-    '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',  # DAI
 
 
-]
-constants = {
-    'test_farm_with_lockup': {
-        'contract': Farm,
-        'token_A': 'spa',
-        'token_B': 'usds',
-        'reward_token_A': 'spa',
-        'reward_token_B': 'usds',
-        'reward_tokens': ['spa', 'usds'],
-        'config': {
-            'farm_start_time': chain.time()+1000,
-            'cooldown_period': 21,
-            'uniswap_pool_data': {
-                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                'fee_tier': 3000,
-                'lower_tick': -887220,
-                'upper_tick': 0,
+def approved_rwd_token_list():
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        approved_rwd_token_list1 = [
+            '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',  # SPA
+            '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',  # L2-Dao
+            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',  # USDs
+            '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F',  # Frax
+            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',  # USDC
+            '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',  # DAI
+        ]
+        return approved_rwd_token_list1
+
+
+def constants():
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        config = {
+            'test_farm_with_lockup': {
+                'contract': Farm,
+                'token_A': 'spa',
+                'token_B': 'usds',
+                'reward_token_A': 'spa',
+                'reward_token_B': 'usds',
+                'reward_tokens': ['spa', 'usds'],
+                'config': {
+                    'farm_start_time': chain.time()+1000,
+                    'cooldown_period': 21,
+                    'uniswap_pool_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+                    'uniswap_pool_false_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+                    'reward_token_data': [
+                        {
+                            'reward_tkn':
+                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            'tkn_manager': OWNER,
+                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     'tkn_manager': OWNER,
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
             },
-            'uniswap_pool_false_data': {
-                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
-                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
-                'fee_tier': 3000,
-                'lower_tick': -887220,
-                'upper_tick': 0,
+
+            'test_farm_without_lockup': {
+                'contract': Farm,
+                'token_A': 'spa',
+                'token_B': 'usds',
+                'reward_token_A': 'spa',
+                'reward_token_B': 'usds',
+                'reward_tokens': ['spa', 'usds'],
+                'config': {
+                    'farm_start_time': chain.time()+2000,
+                    'cooldown_period': 0,
+                    'uniswap_pool_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+                    'uniswap_pool_false_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+                    'reward_token_data': [
+                        {
+                            'reward_tkn':
+                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            'tkn_manager': OWNER,
+                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     'tkn_manager': OWNER,
+
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
             },
-            'reward_token_data': [
-                {
-                    'reward_tkn':
-                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': OWNER,
-                },
-                # {
-                #     'reward_tkn':
-                #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                #     'tkn_manager': OWNER,
-                # },
-                {
-                    'reward_tkn':
-                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                    'tkn_manager': OWNER,
-                },
-            ],
+
 
         }
-    },
-
-    'test_farm_without_lockup': {
-        'contract': Farm,
-        'token_A': 'spa',
-        'token_B': 'usds',
-        'reward_token_A': 'spa',
-        'reward_token_B': 'usds',
-        'reward_tokens': ['spa', 'usds'],
-        'config': {
-            'farm_start_time': chain.time()+2000,
-            'cooldown_period': 0,
-            'uniswap_pool_data': {
-                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                'fee_tier': 3000,
-                'lower_tick': -887220,
-                'upper_tick': 0,
-            },
-            'uniswap_pool_false_data': {
-                'token_A': '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
-                'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
-                'fee_tier': 3000,
-                'lower_tick': -887220,
-                'upper_tick': 0,
-            },
-            'reward_token_data': [
-                {
-                    'reward_tkn':
-                    '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                    'tkn_manager': OWNER,
-                },
-                # {
-                #     'reward_tkn':
-                #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                #     'tkn_manager': OWNER,
-
-                # },
-                {
-                    'reward_tkn':
-                    '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                    'tkn_manager': OWNER,
-                },
-            ],
-
-        }
-    },
-
-
-}
+        return config
 
 
 def deploy(owner, contract, config):
@@ -234,25 +250,33 @@ def false_init_farm(deployer, farm, config):
 
 def token_obj(token):
     """Add the token contract interface with the correct address"""
-    token_dict = {
-        'spa': interface.ERC20('0x5575552988A3A80504bBaeB1311674fCFd40aD4B'),
-        'usdc': interface.ERC20('0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
-        'usds': interface.ERC20('0xD74f5255D557944cf7Dd0E45FF521520002D5748'),
-        'usdt': interface.ERC20('0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
-        'dai': interface.ERC20('0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-        'frax': interface.ERC20('0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'),
-    }
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        token_dict = {
+            'spa':
+            interface.ERC20('0x5575552988A3A80504bBaeB1311674fCFd40aD4B'),
+            'usdc':
+            interface.ERC20('0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+            'usds':
+            interface.ERC20('0xD74f5255D557944cf7Dd0E45FF521520002D5748'),
+            'usdt':
+            interface.ERC20('0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            'dai':
+            interface.ERC20('0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+            'frax':
+            interface.ERC20('0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'),
+        }
     return token_dict[token]
 
 
 def funds(token):
     """"Add the address to be used for funding the user wallet and vault"""
-    fund_dict = {
-        'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
-        'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # streetbeat
-        'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
-        'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
-    }
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        fund_dict = {
+            'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
+            'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
+            'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
+            'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
+        }
     return fund_dict[token]
 
 
@@ -269,7 +293,9 @@ def fund_account(user, token_name, amount):
 
 @ pytest.fixture(scope='module', autouse=True)
 def position_manager():
-    position_mgr_address = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        position_mgr_address = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
+
     position_mgr = brownie.interface.INonfungiblePositionManager(
         position_mgr_address
     )

@@ -9,7 +9,6 @@ from brownie import (
     UniswapFarmV1,
     chain
 )
-import brownie
 import pytest
 import eth_utils
 from conftest import (
@@ -40,7 +39,7 @@ def setUp():
 def config(request):
     global farm_name
     farm_name = request.param
-    farm_config = constants[farm_name]
+    farm_config = constants()[farm_name]
     config = farm_config['config']
     return config
 
@@ -73,7 +72,7 @@ def factory(setUp):
         500e18,
         {'from': deployer}
     )
-    print("factory owner is:", factory_contract.owner())
+    print('factory owner is:', factory_contract.owner())
     return factory_contract
 
 
@@ -157,32 +156,32 @@ class Test_initialization:
         self, farm_contract, config
     ):
         rewardData = [
-                {
-                    'reward_tkn':
+            {
+                'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': deployer,
-                },
-                {
-                    'reward_tkn':
+            },
+            {
+                'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': deployer,
-                },
-                {
-                    'reward_tkn':
+            },
+            {
+                'reward_tkn':
                     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
                     'tkn_manager': deployer,
-                },
-                {
-                    'reward_tkn':
+            },
+            {
+                'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': deployer,
-                },
-                {
-                    'reward_tkn':
+            },
+            {
+                'reward_tkn':
                     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
                     'tkn_manager': deployer,
-                },
-            ]
+            },
+        ]
         with reverts('Invalid reward data'):
             farm_contract.initialize(
                 config['farm_start_time'],
@@ -197,17 +196,17 @@ class Test_initialization:
         self, farm_contract, config
     ):
         rewardData = [
-                {
-                    'reward_tkn':
+            {
+                'reward_tkn':
                     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'tkn_manager': deployer,
-                },
-                {
-                    'reward_tkn':
+            },
+            {
+                'reward_tkn':
                     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                     'tkn_manager': deployer,
-                },
-            ]
+            },
+        ]
         with reverts('Reward token already added'):
             farm_contract.initialize(
                 config['farm_start_time'],
@@ -301,7 +300,7 @@ class Test_admin_function:
 
         def test_farmPauseSwitch_pause(self, farm):
             tx = farm.farmPauseSwitch(
-                    True, {'from': deployer})
+                True, {'from': deployer})
             event = tx.events['FarmPaused']
             assert event['paused']
             with reverts('Farm is paused'):
@@ -311,7 +310,7 @@ class Test_admin_function:
             farm.farmPauseSwitch(
                 True, {'from': deployer})
             tx = farm.farmPauseSwitch(
-                    False, {'from': deployer})
+                False, {'from': deployer})
             event = tx.events['FarmPaused']
             assert not event['paused']
 
