@@ -55,7 +55,12 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
             !_validateToken(_data.uniswapPoolData.tokenA) &&
             !_validateToken(_data.uniswapPoolData.tokenB)
         ) {
-            _collectFee();
+            // No discount because none of the tokens are SPA or USDs
+            _collectFee(0);
+        }
+        else {
+            // 80% discount if either of the tokens are SPA or USDs
+            _collectFee(80);
         }
         FarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
