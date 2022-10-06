@@ -236,28 +236,28 @@ class TestRegisterFarm:
         assert factory.farms(0) == farm
         assert factory.farmRegistered(farm)
 
-    # def test_registerFarm_with_fees(self, factory, farm):
-    #     fund_account(accounts[2], 'usds', 500*1e18)
-    #     token_obj('usds').approve(
-    #         factory,
-    #         500*1e18,
-    #         {'from': accounts[2]}
-    #     )
-    #     factory.registerFarmDeployer(
-    #         accounts[2],
-    #         {'from': deployer}
-    #     )
-    #     tx = factory.registerFarm(
-    #         farm,
-    #         accounts[2],
-    #         True,
-    #         {'from': accounts[2]}
-    #     )
-    #     event = tx.events['FarmRegistered']
-    #     assert farm == event['farm']
-    #     assert accounts[2] == event['creator']
-    #     assert factory.farms(0) == farm
-    #     assert factory.farmRegistered(farm)
+    def test_registerFarm_with_fees(self, factory, farm):
+        fund_account(accounts[2], 'usds', 500*1e18)
+        token_obj('usds').approve(
+            factory,
+            500*1e18,
+            {'from': accounts[2]}
+        )
+        factory.registerFarmDeployer(
+            accounts[2],
+            {'from': deployer}
+        )
+        tx = factory.registerFarm(
+            farm,
+            accounts[2],
+            True,
+            {'from': accounts[2]}
+        )
+        event = tx.events['FarmRegistered']
+        assert farm == event['farm']
+        assert accounts[2] == event['creator']
+        assert factory.farms(0) == farm
+        assert factory.farmRegistered(farm)
 
 
 # @pytest.mark.skip()

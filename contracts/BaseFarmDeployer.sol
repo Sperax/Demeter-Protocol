@@ -17,12 +17,16 @@ abstract contract BaseFarmDeployer {
 
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
-    function _collectFee() internal {
+    function _collectFee(uint8 _discountPercentage) internal {
         (
             address feeReceiver,
             address feeToken,
             uint256 feeAmount
         ) = FarmFactory(factory).getFeeParams();
+        if (_discountPercentage > 0){
+            uint256 _discount = feeAmount * _discountPercentage / 100;
+            feeAmount = feeAmount - _discount;
+        }
         IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
         emit FeeCollected(feeToken, feeAmount);
     }
