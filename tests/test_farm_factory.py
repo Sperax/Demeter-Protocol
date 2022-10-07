@@ -250,7 +250,6 @@ class TestRegisterFarm:
         tx = factory.registerFarm(
             farm,
             accounts[2],
-            True,
             {'from': accounts[2]}
         )
         event = tx.events['FarmRegistered']
@@ -322,8 +321,10 @@ class TestCreateFarm:
         return config
 
     def test_create_farm_with_usds(self, farm_deployer, config, factory):
-        config['farm_start_time'] = chain.time()
         print('Creating farm with token B as USDs')
+        fund_account(deployer, 'usds', 1e20)
+        token_obj('usds').approve(farm_deployer, 1e20, {'from': deployer})
+        config['farm_start_time'] = chain.time()
         create_tx = farm_deployer.createFarm(
             (
                 config['farm_admin'],
@@ -341,6 +342,12 @@ class TestCreateFarm:
         )
         print('Checking whether farm is deployed correctly or not')
         farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FeeCollected']
+        assert event['claimable']
+        assert event['creator'] == deployer
+        assert event['token'] == token_obj('usds')
+        assert event['amount'] == 1e20
+        assert event['token'] == token_obj('usds')
         event = create_tx.events['FarmCreated']
         assert farm == event['farm']
         assert deployer == event['creator']
@@ -354,14 +361,15 @@ class TestCreateFarm:
         print('Everything looks good')
 
     def test_create_farm_with_spa(self, farm_deployer, config, factory):
-        config['farm_start_time'] = chain.time()
         config['uniswap_pool_data']['tokenB'] = '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'  # noqa
         config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'  # noqa
         config['uniswap_pool_data']['fee_tier'] = 10000
         config['uniswap_pool_data']['tick_lower'] = -322200
         config['uniswap_pool_data']['tick_upper'] = -318800
-
+        fund_account(deployer, 'usds', 1e20)
+        token_obj('usds').approve(farm_deployer, 1e20, {'from': deployer})
         print('Creating farm with token A as SPA')
+        config['farm_start_time'] = chain.time()
         create_tx = farm_deployer.createFarm(
             (
                 config['farm_admin'],
@@ -379,6 +387,11 @@ class TestCreateFarm:
         )
         print('Checking whether farm is deployed correctly or not')
         farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FeeCollected']
+        assert event['claimable']
+        assert event['creator'] == deployer
+        assert event['token'] == token_obj('usds')
+        assert event['amount'] == 1e20
         event = create_tx.events['FarmCreated']
         assert farm == event['farm']
         assert deployer == event['creator']
@@ -394,7 +407,8 @@ class TestCreateFarm:
     def test_create_farm_with_spa_usds(self, farm_deployer, config, factory):
         config['uniswap_pool_data']['tokenB'] = '0xD74f5255D557944cf7Dd0E45FF521520002D5748'  # noqa
         config['uniswap_pool_data']['tokenA'] = '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'  # noqa
-
+        fund_account(accounts[2], 'usds', 1e20)
+        token_obj('usds').approve(farm_deployer, 1e20, {'from': accounts[2]})
         print('Creating farm for SPA/USDs')
         config['farm_start_time'] = chain.time()
         create_tx = farm_deployer.createFarm(
@@ -414,6 +428,11 @@ class TestCreateFarm:
         )
         print('Checking whether farm is deployed correctly or not')
         farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FeeCollected']
+        assert event['claimable']
+        assert event['creator'] == accounts[2]
+        assert event['token'] == token_obj('usds')
+        assert event['amount'] == 1e20
         event = create_tx.events['FarmCreated']
         assert farm == event['farm']
         assert accounts[2] == event['creator']
@@ -463,6 +482,11 @@ class TestCreateFarm:
         assert balAfter - balBefore == 500*1e18
         print('Checking whether farm is deployed correctly or not')
         farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
+        event = create_tx.events['FeeCollected']
+        assert not event['claimable']
+        assert event['creator'] == accounts[3]
+        assert event['token'] == token_obj('usds')
+        assert event['amount'] == 5e20
         event = create_tx.events['FarmCreated']
         assert farm == event['farm']
         assert accounts[3] == event['creator']
