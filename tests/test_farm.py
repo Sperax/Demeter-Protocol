@@ -7,12 +7,14 @@ from brownie import (
     ProxyAdmin,
     reverts,
     UniswapFarmV1,
-    chain
+    chain,
+    ZERO_ADDRESS
 )
 import pytest
 import eth_utils
 from conftest import (
     GAS_LIMIT,
+    OWNER,
     deploy_uni_farm,
     init_farm,
     token_obj,
@@ -33,6 +35,8 @@ def setUp():
     deployer = accounts[0]
     notRewardToken = token_obj('frax')
     rewardToken1 = token_obj('spa')
+    # rewardToken2 = token_obj('usds')
+    # rewardToken3 = token_obj('usdc')
 
 
 @pytest.fixture(scope='module', autouse=True, params=farm_names)
@@ -374,6 +378,23 @@ class Test_view_functions:
     def test_getNumSubscriptions(self):
         pass
 
+    def test_invalid_uniswap_tick_ranges(self, farm):
+        with reverts('Invalid tick range'):
+            farm._validateTickRange(-887220, -887220)
+        with reverts('Invalid tick range'):
+            farm._validateTickRange(-887273, 887210)
+        with reverts('Invalid tick range'):
+            farm._validateTickRange(-887219, 887210)
+        with reverts('Invalid tick range'):
+            farm._validateTickRange(-887220, 887273)
+        with reverts('Invalid tick range'):
+            farm._validateTickRange(-887220, 887219)
+        pass
+
+    def test_zero_address(self, farm):
+        with reverts('Invalid address'):
+            farm._isNonZeroAddr(ZERO_ADDRESS, {'from': deployer})
+
     class Test_get_subscription_info:
         def test_getSubscriptionInfo_invalid_subscriptio(self):
             # Should revert with subscription does not exist
@@ -382,8 +403,61 @@ class Test_view_functions:
         def test_getSubscriptionInfo(self):
             pass
 
-    def test_getRewardRates(self):
-        pass
+    def test_invalid_reward_rates_length(self, farm):
+        if (farm_name == 'test_farm_with_lockup'):
+            with reverts('Invalid reward rates length'):
+                farm.setRewardRate(rewardToken1, [1000], {
+                                   'from': OWNER, 'gas_limit': GAS_LIMIT})
+        elif (farm_name == 'test_farm_without_lockup'):
+            with reverts('Invalid reward rates length'):
+                farm.setRewardRate(rewardToken1, [1000, 2000], {
+                                   'from': OWNER, 'gas_limit': GAS_LIMIT})
+
+    def test_reward_rates_data(self, farm):
+        rwd_rate_no_lock = 1e15
+        rwd_rate_lock = 2e15
+
+        if (farm_name == 'test_farm_with_lockup'):
+            tx = farm.setRewardRate(rewardToken1,
+                                    [rwd_rate_no_lock, rwd_rate_lock],
+                                    {'from': OWNER, 'gas_limit': GAS_LIMIT})
+
+            assert tx.events['RewardRateUpdated']['rwdToken'] == rewardToken1
+            assert tx.events['RewardRateUpdated']['newRewardRate'][0] == \
+                rwd_rate_no_lock
+            assert tx.events['RewardRateUpdated']['newRewardRate'][1] == \
+                rwd_rate_lock
+        elif (farm_name == 'test_farm_without_lockup'):
+            tx = farm.setRewardRate(rewardToken1, [rwd_rate_no_lock], {
+                'from': OWNER, 'gas_limit': GAS_LIMIT})
+            assert tx.events['RewardRateUpdated']['rwdToken'] == rewardToken1
+            assert tx.events['RewardRateUpdated']['newRewardRate'][0] == \
+                rwd_rate_no_lock
+        print('changing reward rates for the second time........ ')
+        new_rwd_rate_no_lock = 15e14
+        new_rwd_rate_lock = 3e15
+        if (farm_name == 'test_farm_with_lockup'):
+            tx = farm.setRewardRate(rewardToken1,
+                                    [new_rwd_rate_no_lock, new_rwd_rate_lock],
+                                    {'from': OWNER, 'gas_limit': GAS_LIMIT})
+
+            assert tx.events['RewardRateUpdated']['rwdToken'] == rewardToken1
+            assert tx.events['RewardRateUpdated']['oldRewardRate'][0] == \
+                rwd_rate_no_lock
+            assert tx.events['RewardRateUpdated']['oldRewardRate'][1] == \
+                rwd_rate_lock
+            assert tx.events['RewardRateUpdated']['newRewardRate'][0] == \
+                new_rwd_rate_no_lock
+            assert tx.events['RewardRateUpdated']['newRewardRate'][1] == \
+                new_rwd_rate_lock
+        elif (farm_name == 'test_farm_without_lockup'):
+            tx = farm.setRewardRate(rewardToken1, [new_rwd_rate_no_lock], {
+                'from': OWNER, 'gas_limit': GAS_LIMIT})
+            assert tx.events['RewardRateUpdated']['rwdToken'] == rewardToken1
+            assert tx.events['RewardRateUpdated']['oldRewardRate'][0] == \
+                rwd_rate_no_lock
+            assert tx.events['RewardRateUpdated']['newRewardRate'][0] == \
+                new_rwd_rate_no_lock
 
     class Test_get_reward_fund_info:
         def test_getRewardFundInfo_more_than_added(self, farm):
