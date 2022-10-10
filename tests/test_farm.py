@@ -8,18 +8,22 @@ from brownie import (
     reverts,
     UniswapFarmV1,
     chain,
+    interface,
     ZERO_ADDRESS
 )
+from random import randint
 import pytest
 import eth_utils
 from conftest import (
     GAS_LIMIT,
     OWNER,
+    mint_position,
     deploy_uni_farm,
     init_farm,
     token_obj,
     fund_account,
     constants,
+
 )
 
 # import scripts.deploy_farm as farm_deployer
@@ -103,6 +107,37 @@ def farm_contract(config):
 def farm(config, farm_contract):
     return init_farm(deployer, farm_contract, config)
 
+
+@pytest.fixture(scope='module', autouse=True)
+def funding_accounts(config):
+    token = list(config['funding_data'].keys())
+    amount = list(config['funding_data'].values())
+    for i in range(len(token)):
+        fund_account(deployer, token[i], amount[i])
+        print(token[i], 'is funded ', amount[i])
+
+
+@pytest.fixture(scope='module', autouse=True)
+def minted_position(config, position_manager):
+    token_id = list()
+    token_a_obj = interface.ERC20(config['uniswap_pool_data']['token_A'])
+    token_b_obj = interface.ERC20(config['uniswap_pool_data']['token_B'])
+    token_a_decimals = token_a_obj.decimals()
+    token_b_decimals = token_b_obj.decimals()
+    for i in range(config['number_of_deposits']):
+        minting = mint_position(
+            position_manager,
+            token_a_obj,
+            token_b_obj,
+            config['uniswap_pool_data']['fee_tier'],
+            config['uniswap_pool_data']['lower_tick'],
+            config['uniswap_pool_data']['upper_tick'],
+            randint(100, 1000) * 10 ** token_a_decimals,
+            randint(100, 1000) * 10 ** token_b_decimals,
+            deployer,
+        )
+        token_id.append(minting)
+    return token_id
 
 # @pytest.fixture(scope='module', autouse=True)
 # def farm(config, farm_deployer):
@@ -396,9 +431,11 @@ class Test_view_functions:
             farm._isNonZeroAddr(ZERO_ADDRESS, {'from': deployer})
 
     class Test_get_subscription_info:
-        def test_getSubscriptionInfo_invalid_subscriptio(self):
-            # Should revert with subscription does not exist
-            pass
+        def test_getSubscriptionInfo_invalid_subscription(self, farm,
+                                                          minted_position):
+            id_minted = minted_position
+            with reverts('Subscription does not exist'):
+                farm.getSubscriptionInfo(id_minted[0], 3)
 
         def test_getSubscriptionInfo(self):
             pass
@@ -472,9 +509,9 @@ class Test_view_functions:
                 print(res)
 
     class Test_get_reward_balance:
-        def test_getRewardBalance_invalid_rwdToken(self):
-            # Should revert when _rwdToken is invalid
-            pass
+        def test_getRewardBalance_invalid_rwdToken(self, farm):
+            with reverts('Invalid _rwdToken'):
+                farm.getRewardBalance(notRewardToken, {'from': deployer})
 
         def test_getRewardBalance_rewardsAcc_more_than_supply(self):
             pass

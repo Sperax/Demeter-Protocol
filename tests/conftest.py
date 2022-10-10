@@ -57,6 +57,12 @@ def constants():
                 'config': {
                     'farm_start_time': chain.time()+1000,
                     'cooldown_period': 21,
+                    'number_of_deposits': 2,
+                    'funding_data': {
+                        'spa': 10000e18,
+                        'usds': 10000e18,
+                        'usdc': 1000e6,
+                    },
                     'uniswap_pool_data': {
                         'token_A':
                         '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
@@ -106,6 +112,13 @@ def constants():
                 'config': {
                     'farm_start_time': chain.time()+2000,
                     'cooldown_period': 0,
+                    'number_of_deposits': 2,
+                    'funding_data': {
+                        'spa': 10000e18,
+                        'usds': 10000e18,
+                        'usdc': 1000e6,
+                    },
+
                     'uniswap_pool_data': {
                         'token_A':
                         '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
@@ -326,13 +339,17 @@ def mint_position(
     # provide initial liquidity
     t1, a1, t2, a2 = ordered_tokens(token1, amount1, token2, amount2)
     print('Token A: ', t1)
-    print('Amount A: ', a1)
+    print('Token A Name: ', t1.name())
+    print('Token A Precision: ', t1.decimals())
+    print('Amount A: ', a1/(10 ** t1.decimals()))
     print('Token B: ', t2)
-    print('Amount B: ', a2)
+    print('Token B Name: ', t2.name())
+    print('Token B Precision: ', t2.decimals())
+    print('Amount B: ', a2/(10 ** t2.decimals()))
 
     t1.approve(position_manager.address, a1, {'from': OWNER})
     t2.approve(position_manager.address, a2, {'from': OWNER})
-    deadline = 1637632800 + brownie.chain.time()  # deadline: 2 hours
+    deadline = 7200 + brownie.chain.time()  # deadline: 2 hours
     params = [
         t1,
         t2,
