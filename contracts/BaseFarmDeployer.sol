@@ -1,6 +1,6 @@
 pragma solidity 0.8.10;
 
-import "./FarmFactory.sol";
+import "./../interfaces/IFarmFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract BaseFarmDeployer {
@@ -27,10 +27,10 @@ abstract contract BaseFarmDeployer {
             address feeReceiver,
             address feeToken,
             uint256 feeAmount
-        ) = FarmFactory(factory).getFeeParams();
+        ) = IFarmFactory(factory).getFeeParams();
         bool _claimable;
-        if (_discountPercentage > 0){
-            uint256 _discount = feeAmount * _discountPercentage / 100;
+        if (_discountPercentage > 0) {
+            uint256 _discount = (feeAmount * _discountPercentage) / 100;
             feeAmount = feeAmount - _discount;
             _claimable = true;
         }
