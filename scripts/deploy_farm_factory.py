@@ -18,6 +18,7 @@ from .constants import factory_constants
 
 GAS_LIMIT = 80000000
 MULTI_SIG = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+ADMIN = '0xEeE35407BC8eAF4D82A7CD4876f87dD0De2f07B8'
 
 
 def deploy(deployer, contract, config):
@@ -63,6 +64,11 @@ def deploy(deployer, contract, config):
         'from': deployer
     })
 
+    print('Transferring admin ownership to ADMIN:')
+    proxy_admin.transferOwnership(ADMIN, {
+        'from': deployer
+    })
+
     return {
         'factory_implementation': factory_impl.address,
         'proxy_admin': proxy_admin.address,
@@ -90,8 +96,8 @@ def main():
     data = dict(
         type='deployment_'+config_name,
         config=config,
-        deployer=deployer,
-        owner=MULTI_SIG.address,
+        deployer=deployer.address,
+        owner=MULTI_SIG,
         deployments=deployments
     )
 
