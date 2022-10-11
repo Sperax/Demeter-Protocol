@@ -1,6 +1,6 @@
 pragma solidity 0.8.10;
 
-import "./FarmFactory.sol";
+import "./../interfaces/IFarmFactory.sol";
 import "./BaseFarmDeployer.sol";
 import {UniswapFarmV1, RewardTokenData, UniswapPoolData} from "./UniswapFarmV1.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -57,12 +57,11 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         ) {
             // No discount because none of the tokens are SPA or USDs
             _collectFee(0);
-        }
-        else {
+        } else {
             // 80% discount if either of the tokens are SPA or USDs
             _collectFee(80);
         }
-        FarmFactory(factory).registerFarm(farm, msg.sender);
+        IFarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }
