@@ -11,6 +11,9 @@ abstract contract BaseFarmDeployer {
     address public factory;
     // Stores the address of farmImplementation.
     address public farmImplementation;
+    address public owner;
+    // List of deployers for which fee won't be charged.
+    mapping(address => bool) public isPrivilegedDeployer;
 
     event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(
@@ -19,6 +22,7 @@ abstract contract BaseFarmDeployer {
         uint256 amount,
         bool indexed claimable
     );
+    event PrivilegeUpdated(address deployer, bool privilege);
 
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
