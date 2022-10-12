@@ -78,93 +78,6 @@ def farm():
 
 
 # @pytest.mark.skip()
-class TestUpdatePrivilege:
-    def checkEventData(self, event, account, bool):
-        assert event['deployer'] == account
-        assert event['privilege'] == bool
-
-    def test_updatePrivilege_onlyAdmin(self, farm_deployer):
-        with reverts('Ownable: caller is not the owner'):
-            farm_deployer.updatePrivilege(
-                accounts[1],
-                True,
-                {'from': accounts[5]}
-            )
-
-    def test_addPrivilege(self, farm_deployer):
-        tx = farm_deployer.updatePrivilege(
-            accounts[1],
-            True,
-            {'from': deployer}
-        )
-        assert farm_deployer.isPrivilegedDeployer(accounts[1])
-        self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], True)
-
-    def test_removePrivilege(self, farm_deployer):
-        farm_deployer.updatePrivilege(
-            accounts[1],
-            True,
-            {'from': deployer}
-        )
-        tx = farm_deployer.updatePrivilege(
-            accounts[1],
-            False,
-            {'from': deployer}
-        )
-        assert not farm_deployer.isPrivilegedDeployer(accounts[1])
-        self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], False)
-
-    def test_updateSamePrivilege_true(self, farm_deployer):
-        farm_deployer.updatePrivilege(
-            accounts[1],
-            True,
-            {'from': deployer}
-        )
-        with reverts('Privilege is same as desired'):
-            farm_deployer.updatePrivilege(
-                accounts[1],
-                True,
-                {'from': deployer}
-            )
-
-    def test_updateSamePrivilege_false(self, farm_deployer):
-        farm_deployer.updatePrivilege(
-            accounts[1],
-            True,
-            {'from': deployer}
-        )
-        farm_deployer.updatePrivilege(
-            accounts[1],
-            False,
-            {'from': deployer}
-        )
-        with reverts('Privilege is same as desired'):
-            farm_deployer.updatePrivilege(
-                accounts[1],
-                False,
-                {'from': deployer}
-            )
-
-    def test_updatePrivilege_noPrivilege(self, farm_deployer):
-        with reverts('Privilege is same as desired'):
-            farm_deployer.updatePrivilege(
-                accounts[1],
-                False,
-                {'from': deployer}
-            )
-
-    def test_updatePrivilege_multiple(self, farm_deployer):
-        for i in range(0, 10):
-            if (i % 2 == 0):
-                farm_deployer.updatePrivilege(
-                    accounts[i],
-                    True,
-                    {'from': deployer}
-                )
-            assert farm_deployer.isPrivilegedDeployer(accounts[i])
-
-
-# @pytest.mark.skip()
 class TestInitialization:
     def test_initialization_invalid_token(self, factory_contract):
         print('-------------------------------------------------')
@@ -384,6 +297,93 @@ class TestDeployerInitialization:
 
 
 # @pytest.mark.skip()
+class TestUpdatePrivilege:
+    def checkEventData(self, event, account, bool):
+        assert event['deployer'] == account
+        assert event['privilege'] == bool
+
+    def test_updatePrivilege_onlyAdmin(self, farm_deployer):
+        with reverts('Ownable: caller is not the owner'):
+            farm_deployer.updatePrivilege(
+                accounts[1],
+                True,
+                {'from': accounts[5]}
+            )
+
+    def test_addPrivilege(self, farm_deployer):
+        tx = farm_deployer.updatePrivilege(
+            accounts[1],
+            True,
+            {'from': deployer}
+        )
+        assert farm_deployer.isPrivilegedDeployer(accounts[1])
+        self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], True)
+
+    def test_removePrivilege(self, farm_deployer):
+        farm_deployer.updatePrivilege(
+            accounts[1],
+            True,
+            {'from': deployer}
+        )
+        tx = farm_deployer.updatePrivilege(
+            accounts[1],
+            False,
+            {'from': deployer}
+        )
+        assert not farm_deployer.isPrivilegedDeployer(accounts[1])
+        self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], False)
+
+    def test_updateSamePrivilege_true(self, farm_deployer):
+        farm_deployer.updatePrivilege(
+            accounts[1],
+            True,
+            {'from': deployer}
+        )
+        with reverts('Privilege is same as desired'):
+            farm_deployer.updatePrivilege(
+                accounts[1],
+                True,
+                {'from': deployer}
+            )
+
+    def test_updateSamePrivilege_false(self, farm_deployer):
+        farm_deployer.updatePrivilege(
+            accounts[1],
+            True,
+            {'from': deployer}
+        )
+        farm_deployer.updatePrivilege(
+            accounts[1],
+            False,
+            {'from': deployer}
+        )
+        with reverts('Privilege is same as desired'):
+            farm_deployer.updatePrivilege(
+                accounts[1],
+                False,
+                {'from': deployer}
+            )
+
+    def test_updatePrivilege_noPrivilege(self, farm_deployer):
+        with reverts('Privilege is same as desired'):
+            farm_deployer.updatePrivilege(
+                accounts[1],
+                False,
+                {'from': deployer}
+            )
+
+    def test_updatePrivilege_multiple(self, farm_deployer):
+        for i in range(0, 10):
+            if (i % 2 == 0):
+                farm_deployer.updatePrivilege(
+                    accounts[i],
+                    True,
+                    {'from': deployer}
+                )
+                assert farm_deployer.isPrivilegedDeployer(accounts[i])
+
+
+# @pytest.mark.skip()
 class TestCreateFarm:
     @pytest.fixture(scope='module')
     def config(self):
@@ -406,11 +406,6 @@ class TestCreateFarm:
             ]
         }
         return config
-
-    def test_create_farm_with_privileged_deployer(
-        self, farm_deployer, config, factory
-    ):
-        pass
 
     def test_create_farm_with_usds(self, farm_deployer, config, factory):
         print('Creating farm with token B as USDs')
@@ -537,21 +532,33 @@ class TestCreateFarm:
         assert farm.owner() == deployer
         print('Everything looks good')
 
+    @pytest.mark.parametrize('creator', ['normal', 'privileged'])
     def test_create_farm_without_spa_usds(
-        self, farm_deployer, config, factory
+        self, farm_deployer, config, factory, creator
     ):
         config['uniswap_pool_data']['tokenB'] = '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'  # noqa
         config['uniswap_pool_data']['tokenA'] = '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a'  # noqa
         config['farm_admin'] = accounts[4]
-        fund_account(accounts[3], 'usds', 500*1e18)
-        receiver = factory.feeReceiver()
-        print('Fee receiver', receiver)
-        balBefore = token_obj('usds').balanceOf(receiver)
-        token_obj('usds').approve(
-            farm_deployer,
-            500*1e18,
-            {'from': accounts[3]}
-        )
+        if (creator == 'normal'):
+            creator = accounts[3]
+        if (creator == 'privileged'):
+            creator = accounts[5]
+        if (creator == accounts[3]):
+            fund_account(creator, 'usds', 500*1e18)
+            receiver = factory.feeReceiver()
+            print('Fee receiver', receiver)
+            balBefore = token_obj('usds').balanceOf(receiver)
+            token_obj('usds').approve(
+                farm_deployer,
+                500*1e18,
+                {'from': creator}
+            )
+        else:
+            farm_deployer.updatePrivilege(
+                creator,
+                True,
+                {'from': deployer}
+            )
         print('Creating farm with ETH/GMX')
         config['farm_start_time'] = chain.time()
         create_tx = farm_deployer.createFarm(
@@ -567,21 +574,23 @@ class TestCreateFarm:
                     )
                 ),
             ),
-            {'from': accounts[3]}
+            {'from': creator}
         )
-        balAfter = token_obj('usds').balanceOf(receiver)
-        print('Checking if the receiver received the fees')
-        assert balAfter - balBefore == 500*1e18
+        if (creator == accounts[3]):
+            balAfter = token_obj('usds').balanceOf(receiver)
+            print('Checking if the receiver received the fees')
+            assert balAfter - balBefore == 500*1e18
         print('Checking whether farm is deployed correctly or not')
         farm = UniswapFarmV1.at(create_tx.new_contracts[0])  # noqa
-        event = create_tx.events['FeeCollected']
-        assert not event['claimable']
-        assert event['creator'] == accounts[3]
-        assert event['token'] == token_obj('usds')
-        assert event['amount'] == 5e20
+        if (creator == accounts[3]):
+            event = create_tx.events['FeeCollected']
+            assert not event['claimable']
+            assert event['creator'] == creator
+            assert event['token'] == token_obj('usds')
+            assert event['amount'] == 5e20
         event = create_tx.events['FarmCreated']
         assert farm == event['farm']
-        assert accounts[3] == event['creator']
+        assert creator == event['creator']
         print('Checking whether farm is added to factory or not')
         assert farm == factory.farms(0)
         assert factory.farmRegistered(farm)
