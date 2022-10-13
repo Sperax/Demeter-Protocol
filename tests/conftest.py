@@ -20,7 +20,7 @@ GAS_LIMIT = 1000000000
 NO_LOCKUP_REWARD_RATE = 1*1e18
 LOCKUP_REWARD_RATE = 2*1e18
 
-OWNER = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
+OWNER = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
 
 
 @pytest.fixture(autouse=True)
@@ -44,25 +44,36 @@ def approved_rwd_token_list():
         return approved_rwd_token_list1
 
 
+def test_constants():
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        config = {
+            'number_of_deposits': 2,
+            'funding_data': {
+                'spa': 10000e18,
+                'usds': 10000e18,
+                'usdc': 1000e6,
+            },
+            'uniswap_pool_false_data': {
+                'token_A':
+                '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+                'token_B':
+                '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
+                'fee_tier': 3000,
+                'lower_tick': -887220,
+                'upper_tick': 0,
+            },
+        }
+        return config
+
+
 def constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
             'test_farm_with_lockup': {
                 'contract': Farm,
-                'token_A': 'spa',
-                'token_B': 'usds',
-                'reward_token_A': 'spa',
-                'reward_token_B': 'usds',
-                'reward_tokens': ['spa', 'usds'],
                 'config': {
                     'farm_start_time': chain.time()+1000,
                     'cooldown_period': 21,
-                    'number_of_deposits': 2,
-                    'funding_data': {
-                        'spa': 10000e18,
-                        'usds': 10000e18,
-                        'usdc': 1000e6,
-                    },
                     'uniswap_pool_data': {
                         'token_A':
                         '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
@@ -72,15 +83,7 @@ def constants():
                         'lower_tick': -887220,
                         'upper_tick': 0,
                     },
-                    'uniswap_pool_false_data': {
-                        'token_A':
-                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
-                        'token_B':
-                        '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
-                        'fee_tier': 3000,
-                        'lower_tick': -887220,
-                        'upper_tick': 0,
-                    },
+
                     'reward_token_data': [
                         {
                             'reward_tkn':
@@ -89,7 +92,7 @@ def constants():
                         },
                         # {
                         #     'reward_tkn':
-                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
                         #     'tkn_manager': OWNER,
                         # },
                         {
@@ -104,35 +107,15 @@ def constants():
 
             'test_farm_without_lockup': {
                 'contract': Farm,
-                'token_A': 'spa',
-                'token_B': 'usds',
-                'reward_token_A': 'spa',
-                'reward_token_B': 'usds',
-                'reward_tokens': ['spa', 'usds'],
                 'config': {
                     'farm_start_time': chain.time()+2000,
                     'cooldown_period': 0,
-                    'number_of_deposits': 2,
-                    'funding_data': {
-                        'spa': 10000e18,
-                        'usds': 10000e18,
-                        'usdc': 1000e6,
-                    },
 
                     'uniswap_pool_data': {
                         'token_A':
                         '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                         'token_B':
                         '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                        'fee_tier': 3000,
-                        'lower_tick': -887220,
-                        'upper_tick': 0,
-                    },
-                    'uniswap_pool_false_data': {
-                        'token_A':
-                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
-                        'token_B':
-                        '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
                         'fee_tier': 3000,
                         'lower_tick': -887220,
                         'upper_tick': 0,
