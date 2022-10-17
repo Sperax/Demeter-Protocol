@@ -49,9 +49,9 @@ def test_constants():
         config = {
             'number_of_deposits': 2,
             'funding_data': {
-                'spa': 10000e18,
+                'spa': 100000e18,
                 'usds': 10000e18,
-                'usdc': 1000e6,
+                'usdc': 100000e6,
             },
             'uniswap_pool_false_data': {
                 'token_A':
@@ -270,6 +270,7 @@ def funds(token):
         fund_dict = {
             'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
             'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
+            # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
             'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
             'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
         }
@@ -280,11 +281,12 @@ def fund_account(user, token_name, amount):
     """Function to fund a wallet and approve tokens for vault to spend"""
 
     token = token_obj(token_name)
-    token.transfer(
+    tx = token.transfer(
         user,
         amount,
         {'from': funds(token_name)}
     )
+    return tx
 
 
 @ pytest.fixture(scope='module', autouse=True)
