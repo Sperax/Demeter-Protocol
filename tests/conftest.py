@@ -49,8 +49,8 @@ def test_constants():
         config = {
             'number_of_deposits': 2,
             'funding_data': {
-                'spa': 100000e18,
-                'usds': 10000e18,
+                'spa': 1000000e18,
+                'usds': 1000000e18,
                 'usdc': 100000e6,
             },
             'uniswap_pool_false_data': {
