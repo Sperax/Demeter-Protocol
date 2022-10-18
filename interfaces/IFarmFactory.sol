@@ -5,6 +5,7 @@ interface IFarmFactory {
 
     function getFeeParams()
         external
+        view
         returns (
             address feeFeceiver,
             address feeToken,

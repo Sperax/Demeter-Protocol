@@ -24,10 +24,16 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     string public constant DEPLOYER_NAME = "UniswapV3FarmDeployer";
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        _;
+    }
+
     constructor(address _factory) {
         owner = msg.sender;
         _isNonZeroAddr(_factory);
         factory = _factory;
+        discountOnSpaUSDsFarms = 80;
         farmImplementation = address(new UniswapFarmV1());
     }
 
@@ -50,20 +56,8 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        // A logic to check if fee collection is required for farm deployment
-        // Collect fee only if neither of the token is either SPA | USDs
-        if (!isPrivilegedDeployer[msg.sender]) {
-            if (
-                !_validateToken(_data.uniswapPoolData.tokenA) &&
-                !_validateToken(_data.uniswapPoolData.tokenB)
-            ) {
-                // No discount because none of the tokens are SPA or USDs
-                _collectFee(0);
-            } else {
-                // 80% discount if either of the tokens are SPA or USDs
-                _collectFee(80);
-            }
-        }
+        // Calculate and collect fee if required
+        _collectFee(_data.uniswapPoolData.tokenA, _data.uniswapPoolData.tokenB);
         IFarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
@@ -73,8 +67,10 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @param _deployer Deployer(address) to add to privileged deployers list
     /// @param _privilege Privilege(bool) whether true or false
     /// @dev to be only called by owner
-    function updatePrivilege(address _deployer, bool _privilege) external {
-        require(msg.sender == owner, "Ownable: caller is not the owner");
+    function updatePrivilege(address _deployer, bool _privilege)
+        external
+        onlyOwner
+    {
         require(
             isPrivilegedDeployer[_deployer] != _privilege,
             "Privilege is same as desired"
@@ -83,9 +79,32 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         emit PrivilegeUpdated(_deployer, _privilege);
     }
 
-    /// @notice Validate if a token is either SPA | USDs.
-    /// @param _token Address of the desired token.
-    function _validateToken(address _token) private pure returns (bool) {
-        return _token == SPA || _token == USDs;
+    /// @notice An external function to update discountOnSpaUSDsFarms
+    /// @param _discount New desired discount on Spa/ USDs farms
+    /// @dev _discount cannot be more than 100
+    function updateDiscountOnSpaUSDsFarms(uint256 _discount)
+        external
+        onlyOwner
+    {
+        require(
+            _discount <= MAX_DISCOUNT,
+            "Invalid discount: Greater than MAX_DISCOUNT"
+        );
+        emit DiscountOnSpaUSDsFarmsUpdated(discountOnSpaUSDsFarms, _discount);
+        discountOnSpaUSDsFarms = _discount;
+    }
+
+    /// @notice A public view function to calculate fees
+    /// @param _tokenA address of token A
+    /// @param _tokenB address of token B
+    /// @notice Order does not matter
+    /// @return Fees to be paid in feeToken set in FarmFactory (mostly USDs)
+    function calculateFees(address _tokenA, address _tokenB)
+        external
+        view
+        returns (uint256)
+    {
+        (, , uint256 fees, ) = _calculateFees(_tokenA, _tokenB);
+        return fees;
     }
 }
