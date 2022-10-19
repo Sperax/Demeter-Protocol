@@ -211,17 +211,17 @@ class TestRemoveDeployer:
 
 
 # @pytest.mark.skip()
-class TestCalculateFees:        
+class TestCalculateFees:
     def test_calculate_fees_invalid_tokenA(self, farm_deployer):
-        with reverts("Invalid address"):
+        with reverts('Invalid address'):
             farm_deployer.calculateFees(ZERO_ADDRESS, token_obj('usds'))
 
     def test_calculate_fees_invalid_tokenB(self, farm_deployer):
-        with reverts("Invalid address"):
+        with reverts('Invalid address'):
             farm_deployer.calculateFees(token_obj('usds'), ZERO_ADDRESS)
-    
+
     def test_calculate_fees_same_tokens(self, farm_deployer):
-        with reverts("Token A and Token B cannot be same"):
+        with reverts('Token A and Token B cannot be same'):
             farm_deployer.calculateFees(token_obj('usdc'), token_obj('usdc'))
 
     def test_calculate_fees(self, farm_deployer):
