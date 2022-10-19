@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -23,17 +24,17 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     string public constant DEPLOYER_NAME = "UniswapV3FarmDeployer";
+    uint256 public discount;
+    // List of deployers for which fee won't be charged.
+    mapping(address => bool) public isPrivilegedDeployer;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Ownable: caller is not the owner");
-        _;
-    }
+    event PrivilegeUpdated(address deployer, bool privilege);
+    event DiscountUpdated(uint256 oldDiscount, uint256 newDiscount);
 
     constructor(address _factory) {
-        owner = msg.sender;
         _isNonZeroAddr(_factory);
         factory = _factory;
-        discountOnSpaUSDsFarms = 80;
+        discount = 400e18; // 400 USDs
         farmImplementation = address(new UniswapFarmV1());
     }
 
@@ -82,16 +83,9 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @notice An external function to update discountOnSpaUSDsFarms
     /// @param _discount New desired discount on Spa/ USDs farms
     /// @dev _discount cannot be more than 100
-    function updateDiscountOnSpaUSDsFarms(uint256 _discount)
-        external
-        onlyOwner
-    {
-        require(
-            _discount <= MAX_DISCOUNT,
-            "Invalid discount: Greater than MAX_DISCOUNT"
-        );
-        emit DiscountOnSpaUSDsFarmsUpdated(discountOnSpaUSDsFarms, _discount);
-        discountOnSpaUSDsFarms = _discount;
+    function updateDiscount(uint256 _discount) external onlyOwner {
+        emit DiscountUpdated(discount, _discount);
+        discount = _discount;
     }
 
     /// @notice A public view function to calculate fees
@@ -102,9 +96,71 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     function calculateFees(address _tokenA, address _tokenB)
         external
         view
+        override
         returns (uint256)
     {
+        _isNonZeroAddr(_tokenA);
+        _isNonZeroAddr(_tokenB);
+        require(_tokenA != _tokenB, "Token A and Token B cannot be same");
         (, , uint256 fees, ) = _calculateFees(_tokenA, _tokenB);
         return fees;
+    }
+
+    /// @notice Collect fee and transfer it to feeReceiver.
+    /// @dev Function fetches all the fee params from farmFactory.
+    function _collectFee(address _tokenA, address _tokenB) internal override {
+        (
+            address feeReceiver,
+            address feeToken,
+            uint256 feeAmount,
+            bool claimable
+        ) = _calculateFees(_tokenA, _tokenB);
+        if (feeAmount > 0) {
+            IERC20(feeToken).safeTransferFrom(
+                msg.sender,
+                feeReceiver,
+                feeAmount
+            );
+            emit FeeCollected(msg.sender, feeToken, feeAmount, claimable);
+        }
+    }
+
+    /// @notice An internal function to calculate fees
+    /// @notice and return feeReceiver, feeToken, feeAmount and claimable
+    function _calculateFees(address _tokenA, address _tokenB)
+        internal
+        view
+        returns (
+            address,
+            address,
+            uint256,
+            bool
+        )
+    {
+        (
+            address feeReceiver,
+            address feeToken,
+            uint256 feeAmount
+        ) = IFarmFactory(factory).getFeeParams();
+        if (isPrivilegedDeployer[msg.sender]) {
+            // No fees for privileged deployers
+            feeAmount = 0;
+            return (feeReceiver, feeToken, feeAmount, false);
+        }
+        if (!_validateToken(_tokenA) && !_validateToken(_tokenB)) {
+            // No discount because none of the tokens are SPA or USDs
+            return (feeReceiver, feeToken, feeAmount, false);
+        } else {
+            // Discount if either of the tokens are SPA or USDs
+            // This fees is claimable
+            feeAmount = feeAmount - discount;
+            return (feeReceiver, feeToken, feeAmount, true);
+        }
+    }
+
+    /// @notice Validate if a token is either SPA | USDs.
+    /// @param _token Address of the desired token.
+    function _validateToken(address _token) private pure returns (bool) {
+        return _token == SPA || _token == USDs;
     }
 }
