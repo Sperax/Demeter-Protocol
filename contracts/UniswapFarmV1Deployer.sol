@@ -1,6 +1,6 @@
 pragma solidity 0.8.10;
 
-import "./../interfaces/IFarmFactory.sol";
+import "./interfaces/IFarmFactory.sol";
 import "./BaseFarmDeployer.sol";
 import {UniswapFarmV1, RewardTokenData, UniswapPoolData} from "./UniswapFarmV1.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -24,17 +24,20 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     string public constant DEPLOYER_NAME = "UniswapV3FarmDeployer";
-    uint256 public discount;
+    uint256 public discountedFee;
     // List of deployers for which fee won't be charged.
     mapping(address => bool) public isPrivilegedDeployer;
 
     event PrivilegeUpdated(address deployer, bool privilege);
-    event DiscountUpdated(uint256 oldDiscount, uint256 newDiscount);
+    event DiscountedFeeUpdated(
+        uint256 oldDiscountedFee,
+        uint256 newDiscountedFee
+    );
 
     constructor(address _factory) {
         _isNonZeroAddr(_factory);
         factory = _factory;
-        discount = 400e18; // 400 USDs
+        discountedFee = 100e18; // 100 USDs
         farmImplementation = address(new UniswapFarmV1());
     }
 
@@ -81,11 +84,11 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     /// @notice An external function to update discountOnSpaUSDsFarms
-    /// @param _discount New desired discount on Spa/ USDs farms
-    /// @dev _discount cannot be more than 100
-    function updateDiscount(uint256 _discount) external onlyOwner {
-        emit DiscountUpdated(discount, _discount);
-        discount = _discount;
+    /// @param _discountedFee New desired discount on Spa/ USDs farms
+    /// @dev _discountedFee cannot be more than 100
+    function updateDiscountedFee(uint256 _discountedFee) external onlyOwner {
+        emit DiscountedFeeUpdated(discountedFee, _discountedFee);
+        discountedFee = _discountedFee;
     }
 
     /// @notice A public view function to calculate fees
@@ -97,13 +100,17 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         external
         view
         override
-        returns (uint256)
+        returns (
+            address,
+            address,
+            uint256,
+            bool
+        )
     {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
-        require(_tokenA != _tokenB, "Token A and Token B cannot be same");
-        (, , uint256 fees, ) = _calculateFees(_tokenA, _tokenB);
-        return fees;
+        require(_tokenA != _tokenB, "Invalid token pair");
+        return _calculateFees(_tokenA, _tokenB);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.
@@ -151,10 +158,9 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
             // No discount because none of the tokens are SPA or USDs
             return (feeReceiver, feeToken, feeAmount, false);
         } else {
-            // Discount if either of the tokens are SPA or USDs
+            // DiscountedFee if either of the tokens are SPA or USDs
             // This fees is claimable
-            feeAmount = feeAmount - discount;
-            return (feeReceiver, feeToken, feeAmount, true);
+            return (feeReceiver, feeToken, discountedFee, true);
         }
     }
 
