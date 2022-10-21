@@ -1,6 +1,5 @@
 pragma solidity 0.8.10;
 
-import "./../interfaces/IFarmFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
