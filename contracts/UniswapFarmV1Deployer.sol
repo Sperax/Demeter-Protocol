@@ -97,13 +97,17 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         external
         view
         override
-        returns (uint256)
+        returns (
+            address,
+            address,
+            uint256,
+            bool
+        )
     {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
         require(_tokenA != _tokenB, "Token A and Token B cannot be same");
-        (, , uint256 fees, ) = _calculateFees(_tokenA, _tokenB);
-        return fees;
+        return _calculateFees(_tokenA, _tokenB);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.

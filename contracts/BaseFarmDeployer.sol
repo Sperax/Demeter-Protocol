@@ -18,12 +18,25 @@ abstract contract BaseFarmDeployer is Ownable {
         bool indexed claimable
     );
 
+    /// @notice A function to calculate fees based on the tokens
+    /// @param tokenA One token of the pool
+    /// @param tokenB Other token of the pool
+    /// @dev return feeReceiver, feeToken, feeAmount, bool claimable
     function calculateFees(address tokenA, address tokenB)
         external
         view
         virtual
-        returns (uint256);
+        returns (
+            address feeReceiver,
+            address feeToken,
+            uint256 feeAmount,
+            bool claimable
+        );
 
+    /// @notice A function to collect fees from the creator of the farm
+    /// @param tokenA One token of the pool
+    /// @param tokenB Other token of the pool
+    /// @dev Transfer fees from msg.sender to feeReceiver from FarmFactory in this function
     function _collectFee(address tokenA, address tokenB) internal virtual;
 
     /// @notice Validate address
