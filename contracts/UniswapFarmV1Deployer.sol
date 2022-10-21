@@ -109,7 +109,7 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
     {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
-        require(_tokenA != _tokenB, "Token A and Token B cannot be same");
+        require(_tokenA != _tokenB, "Invalid token pair");
         return _calculateFees(_tokenA, _tokenB);
     }
 
