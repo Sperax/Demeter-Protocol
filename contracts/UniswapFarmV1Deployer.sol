@@ -1,6 +1,6 @@
 pragma solidity 0.8.10;
 
-import "./../interfaces/IFarmFactory.sol";
+import "./interfaces/IFarmFactory.sol";
 import "./BaseFarmDeployer.sol";
 import {UniswapFarmV1, RewardTokenData, UniswapPoolData} from "./UniswapFarmV1.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
