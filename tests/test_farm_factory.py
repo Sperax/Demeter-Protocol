@@ -221,12 +221,29 @@ class TestCalculateFees:
             farm_deployer.calculateFees(token_obj('usds'), ZERO_ADDRESS)
 
     def test_calculate_fees_same_tokens(self, farm_deployer):
-        with reverts('Token A and Token B cannot be same'):
+        with reverts('Invalid token pair'):
             farm_deployer.calculateFees(token_obj('usdc'), token_obj('usdc'))
 
-    def test_calculate_fees(self, farm_deployer):
+    def test_calculate_fees_claimable(self, farm_deployer, factory):
         fees = farm_deployer.calculateFees(token_obj('usdc'), token_obj('spa'))
-        assert fees == 100e18
+        receiver = factory.feeReceiver()
+        token = factory.feeToken()
+        assert fees[0] == receiver
+        assert fees[1] == token
+        assert fees[2] == 100e18
+        assert fees[3]
+
+    def test_calculate_fees_unclaimable(self, farm_deployer, factory):
+        fees = farm_deployer.calculateFees(
+            token_obj('usdc'), token_obj('usdt')
+        )
+        receiver = factory.feeReceiver()
+        token = factory.feeToken()
+        amount = factory.feeAmount()
+        assert fees[0] == receiver
+        assert fees[1] == token
+        assert fees[2] == amount
+        assert not fees[3]
 
 
 # @pytest.mark.skip()
