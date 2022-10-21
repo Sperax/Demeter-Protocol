@@ -155,10 +155,10 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
             return (feeReceiver, feeToken, feeAmount, false);
         }
         if (!_validateToken(_tokenA) && !_validateToken(_tokenB)) {
-            // No discount because none of the tokens are SPA or USDs
+            // No discount because neither of the token is SPA or USDs
             return (feeReceiver, feeToken, feeAmount, false);
         } else {
-            // DiscountedFee if either of the tokens are SPA or USDs
+            // DiscountedFee if either of the token is SPA or USDs
             // This fees is claimable
             return (feeReceiver, feeToken, discountedFee, true);
         }
