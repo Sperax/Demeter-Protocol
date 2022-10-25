@@ -176,7 +176,6 @@ contract UniswapFarmV1 is
         uint256[] newRewardRate
     );
     event RewardAdded(address rwdToken, uint256 amount);
-    event EmergencyClaim(address indexed account);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
     event FundsRecovered(
@@ -647,6 +646,12 @@ contract UniswapFarmV1 is
         return rates;
     }
 
+    /// @notice Get list of reward tokens.
+    /// @return The list of reward tokens.
+    function getRewardTokens() external view returns (address[] memory) {
+        return rewardTokens;
+    }
+
     /// @notice get farm reward fund info.
     /// @param _fundId The fund's id
     function getRewardFundInfo(uint8 _fundId)
@@ -752,7 +757,6 @@ contract UniswapFarmV1 is
         uint256 amountToRecover = _amount;
         if (_amount >= rewardsLeft) {
             amountToRecover = rewardsLeft;
-            _setRewardRate(_rwdToken, new uint256[](rewardFunds.length));
         }
         if (amountToRecover > 0) {
             IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
