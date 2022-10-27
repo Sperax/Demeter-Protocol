@@ -43,8 +43,7 @@ def get_config(msg: str, constants):
     )
     return (
         config_name,
-        constants[config_name]['contract'],
-        constants[config_name]['config']
+        constants[config_name]
     )
 
 
@@ -90,21 +89,6 @@ def onlyDevelopment(func):
         func()  # can also just return t/f
 
 
-def getConstantsFromNetwork(testnetAddr, mainnetAddr):
-    """
-    Checks if network is in the list of testnets
-    If so, returns testnet address
-    If not, returns mainnet address
-    """
-    testnets = [
-        'arbitrum-rinkeby',
-        'rinkeby'
-    ]
-    if network.show_active() in testnets:
-        return testnetAddr
-    return mainnetAddr
-
-
 def save_deployment_artifacts(data, name):
     # Function to store deployment artifacts
     path = os.path.join('deployed', network.show_active())
@@ -114,5 +98,5 @@ def save_deployment_artifacts(data, name):
         name + '_' + time.strftime('%m-%d-%Y_%H:%M:%S') + '.json'
     )
     with open(file, 'w') as json_file:
-        json.dump(data, json_file, indent=4, sort_keys=True)
+        json.dump(data, json_file, default=lambda o: o.__dict__, indent=4)
     print(f'Artifacts stored at: {file}')
