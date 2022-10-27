@@ -1,0 +1,10 @@
+{
+    "config": {
+        "farm_factory": "0xC4fb09E0CD212367642974F6bA81D8e23780A659"
+    },
+    "deployer": "0xd79705A50b8337A09A434DEde11352cCEeb41D9C",
+    "deployments": {
+        "farm_deployer": "0xEF32e8c6C1D5aF0212308B03E777869408856521"
+    },
+    "type": "deployment_UniswapFarmV1_deployer"
+}
