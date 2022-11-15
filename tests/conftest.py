@@ -47,10 +47,10 @@ def approved_rwd_token_list():
 def test_constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
-            'number_of_deposits': 2,
+            'number_of_deposits': 1,
             'funding_data': {
                 'spa': 1000000e18,
-                'usds': 1000000e18,
+                'usds': 300000e18,
                 'usdc': 100000e6,
             },
             'uniswap_pool_false_data': {
@@ -120,6 +120,7 @@ def constants():
                         'lower_tick': -887220,
                         'upper_tick': 0,
                     },
+
                     'reward_token_data': [
                         {
                             'reward_tkn':
