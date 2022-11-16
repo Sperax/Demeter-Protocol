@@ -23,6 +23,13 @@ LOCKUP_REWARD_RATE = 2*1e18
 OWNER = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
 
 
+def check_function(farm, func_name):
+    for key in farm.selectors:
+        if func_name == farm.selectors[key]:
+            return True
+    return False
+
+
 @pytest.fixture(autouse=True)
 def isolation(fn_isolation):
     pass
@@ -47,7 +54,7 @@ def approved_rwd_token_list():
 def test_constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
-            'number_of_deposits': 1,
+            'number_of_deposits': 2,
             'funding_data': {
                 'spa': 1000000e18,
                 'usds': 300000e18,
@@ -221,6 +228,34 @@ def deploy_uni_farm(deployer, contract):
     return uniswap_farm
 
 
+def deploy_farm_deployer(deployer, contract):
+    """Deploying farm deployer Proxy Contract"""
+
+    print('Deploy farm deployer implementation.')
+    farm = contract.deploy(
+
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+    print('Deploy Proxy Admin farm deployer.')
+    # Deploy the proxy admin contract
+    proxy_admin = ProxyAdmin.deploy(
+        {'from': deployer, 'gas': GAS_LIMIT})
+
+    proxy = TransparentUpgradeableProxy.deploy(
+        farm.address,
+        proxy_admin.address,
+        eth_utils.to_bytes(hexstr='0x'),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+
+    uniswap_farm = Contract.from_abi(
+        'UniswapFarmV1Deployer',
+        proxy.address,
+        contract.abi
+    )
+    return uniswap_farm
+
+
 def init_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract"""
     farm.initialize(
@@ -230,6 +265,14 @@ def init_farm(deployer, farm, config):
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
         {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
+    return farm
+
+
+def create_deployer_farm(deployer, farm, config):
+    """Init Uniswap Farm Proxy Contract"""
+    farm.createFarm(config,
+                    {'from': deployer, 'gas_limit': GAS_LIMIT},
+                    )
     return farm
 
 
