@@ -33,11 +33,12 @@ abstract BaseFarmDeployer {
     + address factory
     + address farmImplementation
 
-    - _collectFee()
-    - _isNonZeroAddr(address _addr)
+    + calculateFees(address tokenA, address tokenB)
+    - _collectFee(address tokenA, address tokenB)
+    - _isNonZeroAddr(address addr)
 }
 
-class FarmDeployer extends BaseFarmDeployer{
+class FarmDeployer extends BaseFarmDeployer implements Ownable{
     + createFarm(FarmData _data)
     - _validateToken(address _token)
 }

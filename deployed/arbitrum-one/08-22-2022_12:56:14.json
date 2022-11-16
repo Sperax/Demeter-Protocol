@@ -1,0 +1,34 @@
+{
+    "config": {
+        "cooldown_period": 0,
+        "farm_start_time": 1661187203,
+        "reward_token_data": [
+            {
+                "emergency_r": "0x5318f07A3a20A2f8bb0DDf14F1DD58C517a76508",
+                "reward_rate": [
+                    6.4295e+16
+                ],
+                "reward_tkn": "0x2CaB3abfC1670D1a452dF502e216a66883cDf079",
+                "tkn_manager": "0x6d5240f086637fb408c7F727010A10cf57D51B62"
+            },
+            {
+                "emergency_r": "0xb56e5620A79cfe59aF7c0FcaE95aADbEA8ac32A1",
+                "reward_rate": [
+                    3.858e+17
+                ],
+                "reward_tkn": "0x5575552988A3A80504bBaeB1311674fCFd40aD4B",
+                "tkn_manager": "0x6d5240f086637fb408c7F727010A10cf57D51B62"
+            }
+        ],
+        "uniswap_pool_data": {
+            "fee_tier": 3000,
+            "lower_tick": -48960,
+            "token_A": "0x2CaB3abfC1670D1a452dF502e216a66883cDf079",
+            "token_B": "0xD74f5255D557944cf7Dd0E45FF521520002D5748",
+            "upper_tick": -6900
+        }
+    },
+    "l2dao_usds_farm": "0x39Eb38cf2cC8b4Ff77817e2Ada6bA64e40a4d8Ea",
+    "owner": "0x6d5240f086637fb408c7F727010A10cf57D51B62",
+    "type": "deployment_l2dao_usds_farm"
+}
