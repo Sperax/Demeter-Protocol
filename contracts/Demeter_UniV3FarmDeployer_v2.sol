@@ -2,11 +2,11 @@ pragma solidity 0.8.10;
 
 import "./interfaces/IFarmFactory.sol";
 import "./BaseFarmDeployer.sol";
-import {UniswapFarmV1, RewardTokenData, UniswapPoolData} from "./UniswapFarmV1.sol";
+import {Demeter_UniV3Farm_v2, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm_v2.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniswapV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
@@ -23,7 +23,7 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "UniswapV3FarmDeployer";
+    string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v2";
     uint256 public discountedFee;
     // List of deployers for which fee won't be charged.
     mapping(address => bool) public isPrivilegedDeployer;
@@ -38,7 +38,7 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         _isNonZeroAddr(_factory);
         factory = _factory;
         discountedFee = 100e18; // 100 USDs
-        farmImplementation = address(new UniswapFarmV1());
+        farmImplementation = address(new Demeter_UniV3Farm_v2());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -49,7 +49,7 @@ contract UniswapFarmV1Deployer is BaseFarmDeployer, ReentrancyGuard {
         returns (address)
     {
         _isNonZeroAddr(_data.farmAdmin);
-        UniswapFarmV1 farmInstance = UniswapFarmV1(
+        Demeter_UniV3Farm_v2 farmInstance = Demeter_UniV3Farm_v2(
             Clones.clone(farmImplementation)
         );
         farmInstance.initialize(

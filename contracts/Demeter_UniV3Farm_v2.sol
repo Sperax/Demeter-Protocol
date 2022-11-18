@@ -45,7 +45,7 @@ struct RewardTokenData {
     address tknManager;
 }
 
-contract UniswapFarmV1 is
+contract Demeter_UniV3Farm_v2 is
     Ownable,
     ReentrancyGuard,
     Initializable,
@@ -82,11 +82,11 @@ contract UniswapFarmV1 is
     // expiryDate - expiry time (if deposit is locked)
     // totalRewardsClaimed - total rewards claimed for the deposit
     struct Deposit {
-        bool locked;
         uint256 liquidity;
         uint256 tokenId;
         uint256 startTime;
         uint256 expiryDate;
+        uint256 cooldownPeriod;
         uint256[] totalRewardsClaimed;
     }
 
@@ -110,6 +110,7 @@ contract UniswapFarmV1 is
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
     uint256 public constant MIN_COOLDOWN_PERIOD = 1; // In days
+    uint256 public constant MAX_COOLDOWN_PERIOD = 30; // In days
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
@@ -254,8 +255,9 @@ contract UniswapFarmV1 is
         uint8 numFunds = 1;
         if (_cooldownPeriod > 0) {
             require(
-                _cooldownPeriod > MIN_COOLDOWN_PERIOD,
-                "Cooldown < MinCooldownPeriod"
+                _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
+                    _cooldownPeriod < MAX_COOLDOWN_PERIOD,
+                "Invalid cooldown period"
             );
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
@@ -290,23 +292,24 @@ contract UniswapFarmV1 is
 
         // Prepare data to be stored.
         Deposit memory userDeposit = Deposit({
-            locked: lockup,
+            cooldownPeriod: 0,
             tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
             totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: liquidity
         });
-
-        // @dev Add the deposit to the user's deposit list
-        deposits[_from].push(userDeposit);
         // Add common fund subscription to the user's deposit
         _subscribeRewardFund(COMMON_FUND_ID, _tokenId, liquidity);
 
         if (lockup) {
             // Add lockup fund subscription to the user's deposit
+            userDeposit.cooldownPeriod = cooldownPeriod;
             _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, liquidity);
         }
+
+        // @dev Add the deposit to the user's deposit list
+        deposits[_from].push(userDeposit);
 
         emit Deposited(_from, lockup, _tokenId, liquidity);
         return this.onERC721Received.selector;
@@ -325,11 +328,13 @@ contract UniswapFarmV1 is
         Deposit storage userDeposit = deposits[account][_depositId];
 
         // validate if the deposit is in locked state
-        require(userDeposit.locked, "Can not initiate cooldown");
+        require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
 
         // update the deposit expiry time & lock status
-        userDeposit.expiryDate = block.timestamp + (cooldownPeriod * 1 days);
-        userDeposit.locked = false;
+        userDeposit.expiryDate =
+            block.timestamp +
+            (userDeposit.cooldownPeriod * 1 days);
+        userDeposit.cooldownPeriod = 0;
 
         // claim the pending rewards for the user
         _claimRewards(account, _depositId);
@@ -354,7 +359,10 @@ contract UniswapFarmV1 is
         // Check for the withdrawal criteria
         // Note: If farm is paused, skip the cooldown check
         if (!isPaused) {
-            require(!userDeposit.locked, "Please initiate cooldown");
+            require(
+                userDeposit.cooldownPeriod == 0,
+                "Please initiate cooldown"
+            );
             if (userDeposit.expiryDate > 0) {
                 // Cooldown is initiated for the user
                 require(
@@ -451,8 +459,9 @@ contract UniswapFarmV1 is
     {
         require(cooldownPeriod != 0, "Farm does not support lockup");
         require(
-            _newCooldownPeriod > MIN_COOLDOWN_PERIOD,
-            "Cooldown period too low"
+            _newCooldownPeriod >= MIN_COOLDOWN_PERIOD &&
+                _newCooldownPeriod < MAX_COOLDOWN_PERIOD,
+            "Invalid cooldown period"
         );
         emit CooldownPeriodUpdated(cooldownPeriod, _newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
@@ -488,6 +497,10 @@ contract UniswapFarmV1 is
         isClosed = true;
         for (uint8 iRwd = 0; iRwd < rewardTokens.length; ++iRwd) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
+            _setRewardRate(
+                rewardTokens[iRwd],
+                new uint256[](rewardFunds.length)
+            );
         }
         emit FarmClosed();
     }
