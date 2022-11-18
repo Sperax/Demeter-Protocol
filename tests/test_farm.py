@@ -885,8 +885,11 @@ class Test_recover_reward_funds:
     def test_recover_reward_funds_uint256_max(self, reward_token, setup, farm):
         UINT256_MAX = \
             115792089237316195423570985008687907853269984665640564039457584007913129639935  # noqa
-        for _, tokens in enumerate(reward_token):
-            _ = farm.recoverRewardFunds(tokens, UINT256_MAX, {'from': OWNER})
+        for token in reward_token:
+            init_bal = farm.getRewardBalance(token)
+            tx = farm.recoverRewardFunds(token, UINT256_MAX, {'from': OWNER})
+            ev = tx.events['FundsRecovered']
+            assert ev['amount'] <= init_bal
 
 
 @pytest.mark.skip()
