@@ -1,4 +1,5 @@
-pragma solidity 0.8.10;
+// SPDX-License-Identifier: MIT
+pragma solidity <=0.8.10;
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
@@ -21,7 +22,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
+import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing, CollectParams} from "../interfaces/UniswapV3.sol";
+import "./libraries/PositionValue.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -179,6 +181,11 @@ contract Demeter_UniV3Farm_v2 is
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
+    event PoolFeeCollected(
+        address indexed recipient,
+        uint256 amt0Recv,
+        uint256 amt1Recv
+    );
     event FundsRecovered(
         address indexed account,
         address rwdToken,
@@ -191,24 +198,6 @@ contract Demeter_UniV3Farm_v2 is
     );
     event RewardTokenAdded(address rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
-
-    modifier notPaused() {
-        require(!isPaused, "Farm is paused");
-        _;
-    }
-
-    modifier farmNotClosed() {
-        require(!isClosed, "Farm closed");
-        _;
-    }
-
-    modifier isTokenManager(address _rwdToken) {
-        require(
-            msg.sender == rewardData[_rwdToken].tknManager,
-            "Not the token manager"
-        );
-        _;
-    }
 
     // Disallow initialization of a implementation contract
     constructor() {
@@ -274,7 +263,8 @@ contract Demeter_UniV3Farm_v2 is
         address _from,
         uint256 _tokenId,
         bytes calldata _data
-    ) external override notPaused returns (bytes4) {
+    ) external override returns (bytes4) {
+        _farmNotPaused();
         require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
 
         require(_data.length > 0, "onERC721Received: no data");
@@ -318,11 +308,8 @@ contract Demeter_UniV3Farm_v2 is
     /// @notice Function to lock a staked deposit
     /// @param _depositId The id of the deposit to be locked
     /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId)
-        external
-        notPaused
-        nonReentrant
-    {
+    function initiateCooldown(uint256 _depositId) external nonReentrant {
+        _farmNotPaused();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         Deposit storage userDeposit = deposits[account][_depositId];
@@ -415,23 +402,40 @@ contract Demeter_UniV3Farm_v2 is
     /// @dev Anyone can call this function to claim rewards for the user
     function claimRewards(address _account, uint256 _depositId)
         external
-        farmNotClosed
         nonReentrant
     {
+        _farmNotClosed();
         _isValidDeposit(_account, _depositId);
         _claimRewards(_account, _depositId);
     }
 
     /// @notice Claim rewards for the user.
     /// @param _depositId The id of the deposit
-    function claimRewards(uint256 _depositId)
-        external
-        farmNotClosed
-        nonReentrant
-    {
+    function claimRewards(uint256 _depositId) external nonReentrant {
+        _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         _claimRewards(account, _depositId);
+    }
+
+    function claimUniswapFee(uint256 _depositId) external nonReentrant {
+        address account = msg.sender;
+        _isValidDeposit(account, _depositId);
+        Deposit memory userDeposit = deposits[account][_depositId];
+        INFPM pm = INFPM(NFPM);
+        (uint256 amt0, uint256 amt1) = PositionValue.fees(
+            pm,
+            userDeposit.tokenId
+        );
+        (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
+            CollectParams({
+                tokenId: userDeposit.tokenId,
+                recipient: account,
+                amount0Max: uint128(amt0),
+                amount1Max: uint128(amt1)
+            })
+        );
+        emit PoolFeeCollected(account, amt0Recv, amt1Recv);
     }
 
     /// @notice Add rewards to the farm.
@@ -441,6 +445,7 @@ contract Demeter_UniV3Farm_v2 is
         external
         nonReentrant
     {
+        _farmNotClosed();
         require(
             rewardData[_rwdToken].tknManager != address(0),
             "Invalid reward token"
@@ -457,6 +462,7 @@ contract Demeter_UniV3Farm_v2 is
         external
         onlyOwner
     {
+        _farmNotClosed();
         require(cooldownPeriod != 0, "Farm does not support lockup");
         require(
             _newCooldownPeriod >= MIN_COOLDOWN_PERIOD &&
@@ -481,7 +487,8 @@ contract Demeter_UniV3Farm_v2 is
     }
 
     /// @notice Pause / UnPause the deposit
-    function farmPauseSwitch(bool _isPaused) external onlyOwner farmNotClosed {
+    function farmPauseSwitch(bool _isPaused) external onlyOwner {
+        _farmNotClosed();
         require(isPaused != _isPaused, "Farm already in required state");
         _updateFarmRewardData();
         isPaused = _isPaused;
@@ -492,7 +499,6 @@ contract Demeter_UniV3Farm_v2 is
     /// @dev Shuts down the farm completely
     function closeFarm() external onlyOwner nonReentrant {
         _updateFarmRewardData();
-        cooldownPeriod = 0;
         isPaused = true;
         isClosed = true;
         for (uint8 iRwd = 0; iRwd < rewardTokens.length; ++iRwd) {
@@ -527,9 +533,9 @@ contract Demeter_UniV3Farm_v2 is
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     function recoverRewardFunds(address _rwdToken, uint256 _amount)
         external
-        isTokenManager(_rwdToken)
         nonReentrant
     {
+        _isTokenManager(_rwdToken);
         _updateFarmRewardData();
         _recoverRewardFunds(_rwdToken, _amount);
     }
@@ -539,8 +545,9 @@ contract Demeter_UniV3Farm_v2 is
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
         external
-        isTokenManager(_rwdToken)
     {
+        _farmNotClosed();
+        _isTokenManager(_rwdToken);
         _updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
     }
@@ -551,8 +558,9 @@ contract Demeter_UniV3Farm_v2 is
     /// @param _newTknManager Address of the new token manager.
     function updateTokenManager(address _rwdToken, address _newTknManager)
         external
-        isTokenManager(_rwdToken)
     {
+        _farmNotClosed();
+        _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
         emit TokenManagerUpdated(_rwdToken, msg.sender, _newTknManager);
@@ -598,6 +606,20 @@ contract Demeter_UniV3Farm_v2 is
             }
         }
         return rewards;
+    }
+
+    /// @notice Get the accrued uniswap fee for a deposit.
+    /// @param _account Address of the user
+    /// @param _depositId deposit id
+    /// @return amount0 The amount of token0
+    /// @return amount1 The amount of token1
+    function computeUniswapFee(address _account, uint256 _depositId)
+        external
+        view
+        returns (uint256 amount0, uint256 amount1)
+    {
+        Deposit memory userDeposit = deposits[_account][_depositId];
+        return PositionValue.fees(INFPM(NFPM), userDeposit.tokenId);
     }
 
     /// @notice get number of deposits for an account
@@ -1056,6 +1078,24 @@ contract Demeter_UniV3Farm_v2 is
         require(
             _depositId < deposits[_account].length,
             "Deposit does not exist"
+        );
+    }
+
+    /// @notice Validate if farm is not closed
+    function _farmNotClosed() private view {
+        require(!isClosed, "Farm Closed");
+    }
+
+    /// @notice Validate if farm is not paused
+    function _farmNotPaused() private view {
+        require(!isPaused, "Farm Paused");
+    }
+
+    /// @notice Validate the caller is the token Manager.
+    function _isTokenManager(address _rwdToken) private view {
+        require(
+            msg.sender == rewardData[_rwdToken].tknManager,
+            "Not the token manager"
         );
     }
 
