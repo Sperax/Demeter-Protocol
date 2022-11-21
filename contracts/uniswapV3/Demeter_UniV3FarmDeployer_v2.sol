@@ -1,7 +1,7 @@
 pragma solidity 0.8.10;
 
-import "./interfaces/IFarmFactory.sol";
-import "./BaseFarmDeployer.sol";
+import "../interfaces/IFarmFactory.sol";
+import "../BaseFarmDeployer.sol";
 import {Demeter_UniV3Farm_v2, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm_v2.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
