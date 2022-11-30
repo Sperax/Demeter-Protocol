@@ -19,12 +19,13 @@ from conftest import (
     OWNER,
     mint_position,
     deploy_uni_farm,
-    init_farm,
+    init_farm,  # noqa
     token_obj,
     fund_account,
     constants,
     test_constants,
     check_function,
+    create_deployer_farm
 
 )
 
@@ -113,13 +114,13 @@ def farm_contract(config):
     return deploy_uni_farm(deployer, UniswapFarmV1)
 
 
-@pytest.fixture(scope='module')
-def farm(config, farm_contract):
-    return init_farm(deployer, farm_contract, config)
-
 # @pytest.fixture(scope='module')
-# def farm(config, farm_deployer):
-#     return create_deployer_farm(deployer, farm_deployer, config)
+# def farm(config, farm_contract):
+#     return init_farm(deployer, farm_contract, config)
+
+@pytest.fixture(scope='module')
+def farm(config, farm_deployer):
+    return create_deployer_farm(deployer, farm_deployer, config)
 
 
 @pytest.fixture(scope='module', autouse=True)

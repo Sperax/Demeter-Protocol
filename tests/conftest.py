@@ -21,6 +21,7 @@ NO_LOCKUP_REWARD_RATE = 1*1e18
 LOCKUP_REWARD_RATE = 2*1e18
 
 OWNER = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+deployer = brownie.accounts
 
 
 def check_function(farm, func_name):
@@ -57,7 +58,7 @@ def test_constants():
             'number_of_deposits': 2,
             'funding_data': {
                 'spa': 1000000e18,
-                'usds': 300000e18,
+                'usds': 100000e18,
                 'usdc': 100000e6,
             },
             'uniswap_pool_false_data': {
@@ -79,6 +80,7 @@ def constants():
             'test_farm_with_lockup': {
                 'contract': Farm,
                 'config': {
+                    'farm_admin': deployer[0].address,
                     'farm_start_time': chain.time()+1000,
                     'cooldown_period': 21,
                     'uniswap_pool_data': {
@@ -115,6 +117,7 @@ def constants():
             'test_farm_without_lockup': {
                 'contract': Farm,
                 'config': {
+                    'farm_admin': deployer[0].address,
                     'farm_start_time': chain.time()+2000,
                     'cooldown_period': 0,
 
@@ -270,9 +273,21 @@ def init_farm(deployer, farm, config):
 
 def create_deployer_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract"""
-    farm.createFarm(config,
-                    {'from': deployer, 'gas_limit': GAS_LIMIT},
-                    )
+    farm.createFarm(
+        (
+            config['farm_admin'],
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(config['uniswap_pool_data'].values()),
+            list(
+                map(
+                    lambda x: list(x.values()),
+                    config['reward_token_data']
+                )
+            ),
+        ),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
     return farm
 
 
@@ -315,7 +330,7 @@ def funds(token):
             'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
             'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
             # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
-            'usdc': '0x1714400ff23db4af24f9fd64e7039e6597f18c2b',
+            'usdc': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
             'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
         }
     return fund_dict[token]
