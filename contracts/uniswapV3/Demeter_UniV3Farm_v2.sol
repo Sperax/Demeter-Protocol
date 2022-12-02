@@ -243,11 +243,7 @@ contract Demeter_UniV3Farm_v2 is
         // the farm.
         uint8 numFunds = 1;
         if (_cooldownPeriod > 0) {
-            require(
-                _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
-                    _cooldownPeriod < MAX_COOLDOWN_PERIOD,
-                "Invalid cooldown period"
-            );
+            _isValidCooldownPeriod(_cooldownPeriod);
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
         }
@@ -464,11 +460,7 @@ contract Demeter_UniV3Farm_v2 is
     {
         _farmNotClosed();
         require(cooldownPeriod != 0, "Farm does not support lockup");
-        require(
-            _newCooldownPeriod >= MIN_COOLDOWN_PERIOD &&
-                _newCooldownPeriod < MAX_COOLDOWN_PERIOD,
-            "Invalid cooldown period"
-        );
+        _isValidCooldownPeriod(_newCooldownPeriod);
         emit CooldownPeriodUpdated(cooldownPeriod, _newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
     }
@@ -1078,6 +1070,14 @@ contract Demeter_UniV3Farm_v2 is
         require(
             _depositId < deposits[_account].length,
             "Deposit does not exist"
+        );
+    }
+
+    function _isValidCooldownPeriod(uint256 _cooldownPeriod) private view {
+        require(
+            _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
+                _cooldownPeriod < MAX_COOLDOWN_PERIOD,
+            "Invalid cooldown period"
         );
     }
 
