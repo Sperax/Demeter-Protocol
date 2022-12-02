@@ -9,7 +9,7 @@ from brownie import (
     ProxyAdmin,
     TransparentUpgradeableProxy,
     Contract,
-
+    UniswapFarmV1,
 
 )
 import eth_utils
@@ -80,7 +80,7 @@ def constants():
             'test_farm_with_lockup': {
                 'contract': Farm,
                 'config': {
-                    'farm_admin': deployer[0].address,
+                    'admin': deployer[0].address,
                     'farm_start_time': chain.time()+1000,
                     'cooldown_period': 21,
                     'uniswap_pool_data': {
@@ -117,7 +117,7 @@ def constants():
             'test_farm_without_lockup': {
                 'contract': Farm,
                 'config': {
-                    'farm_admin': deployer[0].address,
+                    'admin': deployer[0].address,
                     'farm_start_time': chain.time()+2000,
                     'cooldown_period': 0,
 
@@ -271,24 +271,29 @@ def init_farm(deployer, farm, config):
     return farm
 
 
-def create_deployer_farm(deployer, farm, config):
+def create_deployer_farm(deployer, farm_deployer, config):
     """Init Uniswap Farm Proxy Contract"""
-    farm.createFarm(
+    usds = token_obj('usds')
+
+    _ = usds.transfer(
+        deployer.address,
+        1000*10e18,
+        {'from': funds('usds')}
+    )
+    _ = usds.approve(farm_deployer, 1000e18, {'from': deployer})
+    create_tx = farm_deployer.createFarm(
         (
-            config['farm_admin'],
+            config['admin'],
             config['farm_start_time'],
             config['cooldown_period'],
-            list(config['uniswap_pool_data'].values()),
             list(
-                map(
-                    lambda x: list(x.values()),
-                    config['reward_token_data']
-                )
-            ),
+                config['uniswap_pool_data'].values()),
+            list(
+                map(lambda x: list(x.values()), config['reward_token_data'])),
         ),
-        {'from': deployer, 'gas_limit': GAS_LIMIT},
+        {'from': deployer.address},
     )
-    return farm
+    return UniswapFarmV1.at(create_tx.new_contracts[0])
 
 
 def false_init_farm(deployer, farm, config):
