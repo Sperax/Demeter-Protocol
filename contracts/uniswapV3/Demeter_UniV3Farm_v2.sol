@@ -423,6 +423,7 @@ contract Demeter_UniV3Farm_v2 is
             pm,
             userDeposit.tokenId
         );
+        require(amt0 > 0 || amt1 > 0, "No fee to claim");
         (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
             CollectParams({
                 tokenId: userDeposit.tokenId,
@@ -1076,19 +1077,19 @@ contract Demeter_UniV3Farm_v2 is
     function _isValidCooldownPeriod(uint256 _cooldownPeriod) private view {
         require(
             _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
-                _cooldownPeriod < MAX_COOLDOWN_PERIOD,
+                _cooldownPeriod <= MAX_COOLDOWN_PERIOD,
             "Invalid cooldown period"
         );
     }
 
     /// @notice Validate if farm is not closed
     function _farmNotClosed() private view {
-        require(!isClosed, "Farm Closed");
+        require(!isClosed, "Farm closed");
     }
 
     /// @notice Validate if farm is not paused
     function _farmNotPaused() private view {
-        require(!isPaused, "Farm Paused");
+        require(!isPaused, "Farm paused");
     }
 
     /// @notice Validate the caller is the token Manager.
