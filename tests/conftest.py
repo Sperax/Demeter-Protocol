@@ -4,12 +4,11 @@ import math
 import brownie
 from brownie import (
     interface,
-    Farm,
     chain,
     ProxyAdmin,
     TransparentUpgradeableProxy,
     Contract,
-    UniswapFarmV1,
+    Demeter_UniV3Farm_v2,
 
 )
 import eth_utils
@@ -78,7 +77,7 @@ def constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
             'test_farm_with_lockup': {
-                'contract': Farm,
+                'contract': Demeter_UniV3Farm_v2,
                 'config': {
                     'admin': deployer[0].address,
                     'farm_start_time': chain.time()+1000,
@@ -115,7 +114,7 @@ def constants():
             },
 
             'test_farm_without_lockup': {
-                'contract': Farm,
+                'contract': Demeter_UniV3Farm_v2,
                 'config': {
                     'admin': deployer[0].address,
                     'farm_start_time': chain.time()+2000,
@@ -224,7 +223,7 @@ def deploy_uni_farm(deployer, contract):
     )
 
     uniswap_farm = Contract.from_abi(
-        'UniswapFarmV1',
+        'Demeter_UniV3Farm_v2',
         proxy.address,
         contract.abi
     )
@@ -236,7 +235,6 @@ def deploy_farm_deployer(deployer, contract):
 
     print('Deploy farm deployer implementation.')
     farm = contract.deploy(
-
         {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
     print('Deploy Proxy Admin farm deployer.')
@@ -251,12 +249,12 @@ def deploy_farm_deployer(deployer, contract):
         {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
 
-    uniswap_farm = Contract.from_abi(
-        'UniswapFarmV1Deployer',
+    farm_deployer = Contract.from_abi(
+        'Demeter_UniswapV3FarmDeployer_v2',
         proxy.address,
         contract.abi
     )
-    return uniswap_farm
+    return farm_deployer
 
 
 def init_farm(deployer, farm, config):
@@ -293,7 +291,7 @@ def create_deployer_farm(deployer, farm_deployer, config):
         ),
         {'from': deployer.address},
     )
-    return UniswapFarmV1.at(create_tx.new_contracts[0])
+    return Demeter_UniV3Farm_v2.at(create_tx.new_contracts[0])
 
 
 def false_init_farm(deployer, farm, config):
@@ -354,7 +352,7 @@ def fund_account(user, token_name, amount):
 
 
 @ pytest.fixture(scope='module', autouse=True)
-def position_manager():
+def pm():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         position_mgr_address = '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
 

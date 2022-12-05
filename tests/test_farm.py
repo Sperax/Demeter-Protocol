@@ -3,10 +3,11 @@ from brownie import (
     TransparentUpgradeableProxy,
     Contract,
     accounts,
-    UniswapFarmV1Deployer,
+    Demeter_UniswapV3FarmDeployer_v2,
     ProxyAdmin,
     reverts,
-    UniswapFarmV1,
+    UniswapV3Test,
+    Demeter_UniV3Farm_v2,
     chain,
     interface,
     ZERO_ADDRESS
@@ -45,6 +46,12 @@ def setUp(config):
     lock_data = (
         '0x0000000000000000000000000000000000000000000000000000000000000001')
     manager = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+
+
+@pytest.fixture(scope='module', autouse=True)
+def uniswap_simulator():
+    uniswap_sim = UniswapV3Test.deploy({'from': deployer})
+    return uniswap_sim
 
 
 @pytest.fixture(scope='module', autouse=True, params=farm_names)
@@ -97,8 +104,11 @@ def factory(setUp):
 @pytest.fixture(scope='module', autouse=True)
 def farm_deployer(factory):
     """Deploying Uniswap Farm Proxy Contract"""
-    print('Deploy UniswapFarmV1Deployer contract.')
-    farm_deployer = UniswapFarmV1Deployer.deploy(factory, {'from': deployer})
+    print('Deploy Demeter_UniswapV3FarmDeployer_v2 contract.')
+    farm_deployer = Demeter_UniswapV3FarmDeployer_v2.deploy(
+        factory,
+        {'from': deployer}
+    )
 
     print('Register the deployer contract with the Factory.')
     factory.registerFarmDeployer(
@@ -110,7 +120,7 @@ def farm_deployer(factory):
 
 @pytest.fixture(scope='module', autouse=True)
 def farm_contract(config):
-    return deploy_uni_farm(deployer, UniswapFarmV1)
+    return deploy_uni_farm(deployer, Demeter_UniV3Farm_v2)
 
 
 # @pytest.fixture(scope='module')
@@ -214,77 +224,108 @@ def set_invalid_rewards_rate_length(farm, reward_token):
         return print('invalid non-lockup rewards rate length passed!')
 
 
-@ pytest.fixture(scope='module', autouse=True)
-def minted_position(config, test_config, position_manager):
-    global amount_a, amount_b
-    token_id = list()
-    amount_a = list()
-    amount_b = list()
+def simulate_swap(config, farm, uniswap_simulator, amtIn):
+    token_a_obj = interface.ERC20(config['uniswap_pool_data']['token_A'])
+    token_b_obj = interface.ERC20(config['uniswap_pool_data']['token_B'])
+    token_a_decimals = token_a_obj.decimals()
+    token_a_obj.transfer(
+        uniswap_simulator,
+        amtIn * 10 ** token_a_decimals,
+        {'from': deployer}
+    )
+
+    _ = uniswap_simulator.swap(
+        token_a_obj,
+        token_b_obj,
+        config['uniswap_pool_data']['fee_tier'],
+        amtIn * 10 ** token_a_decimals
+    )
+
+
+def mint_pos(config, pm):
     token_a_obj = interface.ERC20(config['uniswap_pool_data']['token_A'])
     token_b_obj = interface.ERC20(config['uniswap_pool_data']['token_B'])
     token_a_decimals = token_a_obj.decimals()
     token_b_decimals = token_b_obj.decimals()
 
+    amt_a = randint(100, 1000) * 10 ** token_a_decimals
+    amt_b = randint(100, 1000) * 10 ** token_b_decimals
+    pos = mint_position(
+        pm,
+        token_a_obj,
+        token_b_obj,
+        config['uniswap_pool_data']['fee_tier'],
+        config['uniswap_pool_data']['lower_tick'],
+        config['uniswap_pool_data']['upper_tick'],
+        amt_a,
+        amt_b,
+        deployer,
+    )
+    return pos, amt_a, amt_b
+
+
+@pytest.fixture(scope='module', autouse=True)
+def minted_positions(config, test_config, pm):
+    global amount_a, amount_b
+    token_id = list()
+    amount_a = list()
+    amount_b = list()
+
     for i in range(test_config['number_of_deposits']):
-        amount_a.append(randint(100, 1000) * 10 ** token_a_decimals)
-        amount_b.append(randint(100, 1000) * 10 ** token_b_decimals)
-        minting = mint_position(
-            position_manager,
-            token_a_obj,
-            token_b_obj,
-            config['uniswap_pool_data']['fee_tier'],
-            config['uniswap_pool_data']['lower_tick'],
-            config['uniswap_pool_data']['upper_tick'],
-            amount_a[i],
-            amount_b[i],
-            deployer,
-        )
-        token_id.append(minting)
+        pos, amt_a, amt_b = mint_pos(config, pm)
+        amount_a.append(amt_a)
+        amount_a.append(amt_b)
+        token_id.append(pos)
     print(token_id)
     return token_id
 
 
-def create_deposit(farm, minted_position, position_manager):
+def create_deposit(farm, pm, token_id, data, is_locked):
+    deposit_txn = pm.safeTransferFrom(
+        deployer,
+        farm.address,
+        token_id,
+        data,
+        {'from': deployer},
+    )
+    assert deposit_txn.events['Deposited']['account'] == deployer
+    assert deposit_txn.events['Deposited']['tokenId'] == token_id
+    assert deposit_txn.events['Transfer']['to'] == farm.address
+    assert deposit_txn.events['Deposited']['locked'] is is_locked
+    print('Deposit checks passed ✅✅')
+    return deposit_txn
+
+
+def create_deposits(farm, minted_positions, pm):
     """
     This helper function deposits into farms
     """
 
-    print('token Ids are: ', minted_position)
+    print('token Ids are: ', minted_positions)
     tx = list()
     if (farm.cooldownPeriod() != 0):
         print('lockup deposit')
-        for i, token_id in enumerate(minted_position):
-            deposit_txn = position_manager.safeTransferFrom(
-                deployer,
-                farm.address,
+        for i, token_id in enumerate(minted_positions):
+            deposit_txn = create_deposit(
+                farm,
+                pm,
                 token_id,
                 lock_data,
-                {'from': deployer},
+                True
             )
             tx.append(deposit_txn)
-            assert deposit_txn.events['Deposited']['account'] == deployer
-            assert deposit_txn.events['Deposited']['tokenId'] == token_id
-            assert deposit_txn.events['Transfer']['to'] == farm.address
-            assert deposit_txn.events['Deposited']['locked'] is True
-
-        print('Deposit checks passed ✅✅')
         return tx
     elif (farm.cooldownPeriod() == 0):
         print('no lockup deposit')
-        for i, token_id in enumerate(minted_position):
-            deposit_txn = position_manager.safeTransferFrom(
-                deployer,
-                farm.address,
+        for i, token_id in enumerate(minted_positions):
+            deposit_txn = create_deposit(
+                farm,
+                pm,
                 token_id,
                 no_lock_data,
-                {'from': deployer},
+                False
             )
             tx.append(deposit_txn)
-            assert deposit_txn.events['Deposited']['account'] == deployer
-            assert deposit_txn.events['Deposited']['tokenId'] == token_id
-            assert deposit_txn.events['Transfer']['to'] == farm.address
-            assert deposit_txn.events['Deposited']['locked'] is False
-        print('Deposit checks passed ✅✅')
         return tx
 
 
@@ -320,10 +361,11 @@ class Test_initialization:
     def test_intitialization_invalid_cooldown_period(
         self, farm_contract, config
     ):
-        with reverts('Cooldown < MinCooldownPeriod'):
+        # Test the case with max cooldown
+        with reverts('Invalid cooldown period'):
             farm_contract.initialize(
                 config['farm_start_time'],
-                1,
+                10000,
                 list(config['uniswap_pool_data'].values()),
                 list(map(lambda x: list(x.values()),
                      config['reward_token_data'])),
@@ -414,17 +456,17 @@ class Test_initialization:
 # @pytest.mark.skip()
 class Test_admin_function:
     @pytest.fixture()
-    def setup_rewards(self, fn_isolation, farm, minted_position,
-                      position_manager, reward_token, funding_accounts):
+    def setup_rewards(self, fn_isolation, farm, minted_positions,
+                      pm, reward_token, funding_accounts):
         _ = add_rewards(farm, reward_token, funding_accounts)
         _ = set_rewards_rate(farm, reward_token)
-        tx = create_deposit(farm, minted_position, position_manager)
+        tx = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
 
         return tx
 
-    # @pytest.mark.skip()
     class Test_update_cooldown:
+
         def test_updateCooldownPeriod_only_admin(self, farm):
             with reverts('Ownable: caller is not the owner'):
                 farm.updateCooldownPeriod(
@@ -438,18 +480,54 @@ class Test_admin_function:
 
         def test_incorrect_cooldown(self, farm):
             if (farm_name == 'test_farm_with_lockup'):
-                with reverts('Cooldown period too low'):
+                with reverts('Invalid cooldown period'):
                     farm.updateCooldownPeriod(
-                        1, {'from': deployer, 'gas_limit': GAS_LIMIT})
+                        farm.MIN_COOLDOWN_PERIOD() - 1,
+                        {'from': deployer, 'gas_limit': GAS_LIMIT}
+                    )
 
-        def test_cooldown(self, farm):
+                with reverts('Invalid cooldown period'):
+                    farm.updateCooldownPeriod(
+                        farm.MAX_COOLDOWN_PERIOD() + 1,
+                        {'from': deployer, 'gas_limit': GAS_LIMIT}
+                    )
+
+        def test_update_cooldown(
+            self,
+            fn_isolation,
+            farm,
+            config,
+            pm
+        ):
             if (farm_name == 'test_farm_with_lockup'):
+                old_cooldown = farm.cooldownPeriod()
+                new_cooldown = 5
+
+                # Create a deposit with initial cooldown period
+                pos1, _, _ = mint_pos(config, pm)
+                _ = create_deposit(
+                    farm, pm, pos1, lock_data, True
+                )
                 tx = farm.updateCooldownPeriod(
                     5, {'from': deployer, 'gas_limit': GAS_LIMIT})
+
                 event = tx.events['CooldownPeriodUpdated']
-                assert event['newCooldownPeriod'] == 5
-                assert event['oldCooldownPeriod'] == 21
-                assert farm.cooldownPeriod() == 5
+                assert event['newCooldownPeriod'] == new_cooldown
+                assert event['oldCooldownPeriod'] == old_cooldown
+                assert farm.cooldownPeriod() == new_cooldown
+
+                pos2, _, _ = mint_pos(config, pm)
+                _ = create_deposit(
+                    farm, pm, pos2, lock_data, True
+                )
+
+                print('\nAsserting positions before and after cooldown update')
+                n = farm.getNumDeposits(deployer)
+                d1 = farm.getDeposit(deployer, n - 2)
+                d2 = farm.getDeposit(deployer, n - 1)
+
+                assert d1.dict()['cooldownPeriod'] == old_cooldown
+                assert d2.dict()['cooldownPeriod'] == new_cooldown
 
     # @pytest.mark.skip()
     class Test_update_farm_start_time:
@@ -496,7 +574,7 @@ class Test_admin_function:
                 True, {'from': deployer})
             event = tx.events['FarmPaused']
             assert event['paused']
-            with reverts('Farm is paused'):
+            with reverts('Farm paused'):
                 farm.initiateCooldown(2, {'from': accounts[2]})
 
         def test_farmPauseSwitch_unpause(self, farm):
@@ -507,10 +585,10 @@ class Test_admin_function:
             event = tx.events['FarmPaused']
             assert not event['paused']
 
-    def test_deposit_paused(self, farm, minted_position, position_manager):
+    def test_deposit_paused(self, farm, minted_positions, pm):
         farm.farmPauseSwitch(True, {'from': deployer})
-        with reverts('Farm is paused'):
-            create_deposit(farm, minted_position, position_manager)
+        with reverts('Farm paused'):
+            create_deposits(farm, minted_positions, pm)
 
     def test_claim_rewards_paused(self, farm, setup_rewards, reward_token):
         chain.mine(10, None, 1000)
@@ -582,10 +660,10 @@ class Test_admin_function:
             with reverts('Ownable: caller is not the owner'):
                 farm.closeFarm({'from': accounts[3]})
 
-        def test_deposit_closed(self, farm, minted_position, position_manager):
+        def test_deposit_closed(self, farm, minted_positions, pm):
             farm.closeFarm({'from': deployer})
-            with reverts('Farm is paused'):
-                create_deposit(farm, minted_position, position_manager)
+            with reverts('Farm paused'):
+                create_deposits(farm, minted_positions, pm)
 
         def test_withdraw_closed_lockup_farm(self, farm, setup_rewards):
             if (farm.cooldownPeriod() != 0):
@@ -622,12 +700,16 @@ class Test_admin_function:
                         rewards_rate[i][0]-rewards_rate[i][1]
                     assert tx.events['FundsRecovered'][i]['account'] == manager
                     assert tx.events['FundsRecovered'][i]['rwdToken'] == token
+                    assert tx.events['RewardRateUpdated'][i]['newRewardRate'] \
+                        == [0, 0]
             if (farm_name == 'test_farm_without_lockup'):
                 for i, token in enumerate(reward_token):
                     assert tx.events['FundsRecovered'][i]['amount'] >= \
                         rewards_balance[i] - rewards_rate[i][0]
                     assert tx.events['FundsRecovered'][i]['account'] == manager
                     assert tx.events['FundsRecovered'][i]['rwdToken'] == token
+                    assert tx.events['RewardRateUpdated'][i]['newRewardRate'] \
+                        == [0]
 
         def test_close_farm_claim_rewards(self, farm):
             farm.closeFarm({'from': deployer})
@@ -663,22 +745,22 @@ class Test_admin_function:
 
 # @pytest.mark.skip()
 class Test_view_functions:
-    # ## @pytest.mark.skip()
+    # @pytest.mark.skip()
     class Test_compute_rewards:
-        def test_computeRewards_invalid_deposit(self, farm, minted_position,
-                                                position_manager):
-            deposit = create_deposit(farm, minted_position, position_manager)
+        def test_computeRewards_invalid_deposit(self, farm, minted_positions,
+                                                pm):
+            deposit = create_deposits(farm, minted_positions, pm)
             with reverts('Deposit does not exist'):
                 farm.computeRewards(deployer, len(deposit)+1)
 
-        def test_after_farm_starts(self, fn_isolation, farm, minted_position,
+        def test_after_farm_starts(self, fn_isolation, farm, minted_positions,
                                    funding_accounts,
-                                   position_manager,
+                                   pm,
                                    reward_token):
             rewards = list()
             _ = add_rewards(farm, reward_token, funding_accounts)
             _ = set_rewards_rate(farm, reward_token)
-            deposit = create_deposit(farm, minted_position, position_manager)
+            deposit = create_deposits(farm, minted_positions, pm)
             chain.mine(10, None, 86400)
             for i in range(len(deposit)):
                 tx = farm.computeRewards(deployer, i)
@@ -686,20 +768,19 @@ class Test_view_functions:
                 print('rewards calculated for deposit ',
                       i, 'are: ', rewards[i])
 
-    def test_getNumDeposits(self, farm, minted_position, position_manager):
+    def test_getNumDeposits(self, farm, minted_positions, pm):
 
-        deposit = create_deposit(farm, minted_position, position_manager)
+        deposit = create_deposits(farm, minted_positions, pm)
         assert farm.getNumDeposits(deployer) == len(deposit)
 
-    def test_getLiquidity(self, farm, minted_position, position_manager):
+    def test_getLiquidity(self, farm, minted_positions, pm):
         func_name = '_getLiquidity'
         if not check_function(farm, func_name):
             pytest.skip(f'NOTE: Function {func_name} needs to be made public')
-        for i, token_id in enumerate(minted_position):
+        for i, token_id in enumerate(minted_positions):
             liquidity = farm._getLiquidity(token_id,
                                            {'from': deployer})
-            assert liquidity == position_manager.positions(minted_position[i])[
-                7]
+            assert liquidity == pm.positions(minted_positions[i])[7]
         print('get liquidity checks passed')
 
     def test_getLiquidity_incorrect_pool_tkn(self, farm):
@@ -709,16 +790,16 @@ class Test_view_functions:
         with reverts('Incorrect pool token'):
             farm._getLiquidity(117684)
 
-    def test_getLiquidity_incorrect_tick_range(self, farm, position_manager):
+    def test_getLiquidity_incorrect_tick_range(self, farm, pm):
         func_name = '_getLiquidity'
         if not check_function(farm, func_name):
             pytest.skip(f'NOTE: Function {func_name} needs to be made public')
         with reverts('Incorrect pool token'):
             farm._getLiquidity(117684)
 
-    def test_getNumSubscriptions(self, farm, minted_position,
-                                 position_manager):
-        for i, token_id in enumerate(minted_position):
+    def test_getNumSubscriptions(self, farm, minted_positions,
+                                 pm):
+        for i, token_id in enumerate(minted_positions):
             tx = farm.getNumSubscriptions(token_id)
             print('Token ID subscriptions are: ', tx)
 
@@ -745,15 +826,15 @@ class Test_view_functions:
     # @pytest.mark.skip()
     class Test_get_subscription_info:
         def test_getSubscriptionInfo_invalid_subscription(self, farm,
-                                                          minted_position):
-            id_minted = minted_position
+                                                          minted_positions):
+            id_minted = minted_positions
             with reverts('Subscription does not exist'):
                 farm.getSubscriptionInfo(id_minted[0], 3)
 
-        def test_getSubscriptionInfo(self, farm, minted_position,
-                                     position_manager):
-            _ = create_deposit(farm, minted_position, position_manager)
-            _ = farm.getSubscriptionInfo(minted_position[0], 0)
+        def test_getSubscriptionInfo(self, farm, minted_positions,
+                                     pm):
+            _ = create_deposits(farm, minted_positions, pm)
+            _ = farm.getSubscriptionInfo(minted_positions[0], 0)
 
     def test_invalid_reward_rates_length(self, farm, reward_token):
         if (farm_name == 'test_farm_with_lockup'):
@@ -823,11 +904,11 @@ class Test_view_functions:
                 farm.getRewardFundInfo(3)
 
         def test_getRewardFundInfo(self, farm, funding_accounts, reward_token,
-                                   minted_position, position_manager):
+                                   minted_positions, pm):
             total_liquidity = 0
             _ = add_rewards(farm, reward_token, funding_accounts)
             rate = set_rewards_rate(farm, reward_token)
-            deposit = create_deposit(farm, minted_position, position_manager)
+            deposit = create_deposits(farm, minted_positions, pm)
             res = farm.getRewardFundInfo(0)
 
             if(farm_name == 'test_farm_with_lockup'):
@@ -836,7 +917,7 @@ class Test_view_functions:
 
             for rwd, _ in enumerate(reward_token):
                 assert res[1][rwd] == \
-                    rate[rwd].events['RewardRateUpdated']['newRewardRate'][1]
+                    rate[rwd].events['RewardRateUpdated']['newRewardRate'][0]
             for _, dep in enumerate(deposit):
                 total_liquidity += dep.events['Deposited']['liquidity']
             assert res[0] == total_liquidity
@@ -844,12 +925,12 @@ class Test_view_functions:
     # @pytest.mark.skip()
     class Test_get_reward_balance:
         @pytest.fixture()
-        def setup(self, fn_isolation, farm, minted_position,
-                  position_manager,
+        def setup(self, fn_isolation, farm, minted_positions,
+                  pm,
                   reward_token, funding_accounts):
             _ = add_rewards(farm, reward_token, funding_accounts)
             _ = set_rewards_rate(farm, reward_token)
-            tx = create_deposit(farm, minted_position, position_manager)
+            tx = create_deposits(farm, minted_positions, pm)
             chain.mine(10, None, 86400)
             return tx
 
@@ -873,12 +954,12 @@ class Test_view_functions:
 # @pytest.mark.skip()
 class Test_recover_reward_funds:
     @pytest.fixture()
-    def setup(self, fn_isolation, farm, minted_position,
-              position_manager,
+    def setup(self, fn_isolation, farm, minted_positions,
+              pm,
               reward_token, funding_accounts):
         _ = add_rewards(farm, reward_token, funding_accounts)
         _ = set_rewards_rate(farm, reward_token)
-        tx = create_deposit(farm, minted_position, position_manager)
+        tx = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
         return tx
 
@@ -941,8 +1022,8 @@ class Test_add_rewards:
 # @pytest.mark.skip()
 class Test_deposit:
 
-    def test_call_not_via_NFTM(self, farm, minted_position):
-        token_id = minted_position
+    def test_call_not_via_NFTM(self, farm, minted_positions):
+        token_id = minted_positions
         with reverts('onERC721Received: not a univ3 nft'):
             farm.onERC721Received(
                 accounts[2],
@@ -952,18 +1033,18 @@ class Test_deposit:
                 {'from': deployer},
             )
 
-    def test_empty_data(self, farm, minted_position, position_manager):
-        token_id = minted_position
+    def test_empty_data(self, farm, minted_positions, pm):
+        token_id = minted_positions
         if (farm.cooldownPeriod() != 0):
             with reverts('onERC721Received: no data'):
-                position_manager.safeTransferFrom(
+                pm.safeTransferFrom(
                     deployer,
                     farm.address,
                     token_id[0],
                     {'from': deployer})
 
-    def test_lockup_disabled(self, farm, minted_position, position_manager):
-        token_id = minted_position
+    def test_lockup_disabled(self, farm, minted_positions, pm):
+        token_id = minted_positions
         print('token Ids are: ', token_id)
         if (farm.cooldownPeriod() == 0):
             with reverts('Lockup functionality is disabled'):
@@ -972,33 +1053,71 @@ class Test_deposit:
                     deployer,
                     token_id[0],
                     lock_data,
-                    {'from': position_manager.address},
+                    {'from': pm.address},
                 )
 
     def test_successful_deposit_with_lockup(self, farm,
-                                            minted_position,
-                                            position_manager):
-        _ = create_deposit(farm, minted_position, position_manager)
+                                            minted_positions,
+                                            pm):
+        _ = create_deposits(farm, minted_positions, pm)
         print('amount A', amount_a)
         print('amount B', amount_b)
 
     def test_successful_deposit_without_lockup(self, farm,
-                                               minted_position,
-                                               position_manager):
+                                               minted_positions,
+                                               pm):
 
-        _ = create_deposit(farm, minted_position, position_manager)
+        _ = create_deposits(farm, minted_positions, pm)
         print('amount A', amount_a)
         print('amount B', amount_b)
+
+
+class Test_claim_uniswap_fee:
+    @pytest.fixture()
+    def setup(
+        self,
+        fn_isolation,
+        config,
+        uniswap_simulator,
+        farm,
+        minted_positions,
+        pm,
+        reward_token,
+        funding_accounts
+    ):
+        _ = add_rewards(farm, reward_token, funding_accounts)
+        _ = set_rewards_rate(farm, reward_token)
+        tx = create_deposits(farm, minted_positions, pm)
+        simulate_swap(config, farm, uniswap_simulator, 10000)
+        chain.mine(10, None, 86400)
+        return tx
+
+    def test_calculate_fee(self, farm, setup):
+        uniswap_fee = farm.computeUniswapFee(deployer, 0)
+        print(f'Uniswap fee collected: {uniswap_fee}')
+        assert uniswap_fee != (0, 0)
+
+    def test_claim_uniswap_fee(self, farm, setup):
+        uniswap_fee = farm.computeUniswapFee(deployer, 0)
+        tx = farm.claimUniswapFee(0, {'from': deployer})
+        claim_ev = tx.events['PoolFeeCollected']
+
+        assert claim_ev['amt0Recv'] <= uniswap_fee[0]
+        assert claim_ev['amt1Recv'] <= uniswap_fee[1]
+
+        # Should claim all the fees for the user.
+        with reverts('No fee to claim'):
+            _ = farm.claimUniswapFee(0, {'from': deployer})
 
 
 # @pytest.mark.skip()
 class Test_claim_rewards:
     @pytest.fixture()
-    def setup(self, fn_isolation, farm, minted_position, position_manager,
+    def setup(self, fn_isolation, farm, minted_positions, pm,
               reward_token, funding_accounts):
         _ = add_rewards(farm, reward_token, funding_accounts)
         _ = set_rewards_rate(farm, reward_token)
-        tx = create_deposit(farm, minted_position, position_manager)
+        tx = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
 
         return tx
@@ -1055,9 +1174,9 @@ class Test_claim_rewards:
         for i in range(len(setup)):
             _ = farm.claimRewards(i, {'from': deployer})
 
-    def test_claiming_without_rewards(self, farm, minted_position,
-                                      position_manager):
-        tx = create_deposit(farm, minted_position, position_manager)
+    def test_claiming_without_rewards(self, farm, minted_positions,
+                                      pm):
+        tx = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
         for i in range(len(tx)):
             tx = farm.claimRewards(i, {'from': deployer})
@@ -1066,11 +1185,11 @@ class Test_claim_rewards:
 # @pytest.mark.skip()
 class Test_initiate_cooldown:
     @ pytest.fixture(scope='function')
-    def setup(self, farm, minted_position, position_manager,
+    def setup(self, farm, minted_positions, pm,
               reward_token, funding_accounts, fn_isolation):
         _ = add_rewards(farm, reward_token, funding_accounts)
         _ = set_rewards_rate(farm, reward_token)
-        deposit = create_deposit(farm, minted_position, position_manager)
+        deposit = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
         for i in range(len(deposit)):
             _ = farm.claimRewards(i, {'from': deployer})
@@ -1108,15 +1227,15 @@ class Test_initiate_cooldown:
             )
 
 
-# # @pytest.mark.skip()
+# @pytest.mark.skip()
 class Test_withdraw:
-    @ pytest.fixture(scope='function')
-    def setup(self, farm, minted_position, position_manager,
+    @pytest.fixture(scope='function')
+    def setup(self, farm, minted_positions, pm,
               reward_token, funding_accounts, fn_isolation):
         claimed = list()
         _ = add_rewards(farm, reward_token, funding_accounts)
         _ = set_rewards_rate(farm, reward_token)
-        deposit = create_deposit(farm, minted_position, position_manager)
+        deposit = create_deposits(farm, minted_positions, pm)
         chain.mine(10, None, 86400)
         for i in range(len(deposit)):
             claimed.append(farm.claimRewards(i, {'from': deployer}))
