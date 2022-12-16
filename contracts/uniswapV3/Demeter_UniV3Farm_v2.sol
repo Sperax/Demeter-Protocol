@@ -585,7 +585,7 @@ contract Demeter_UniV3Farm_v2 is
         for (uint8 iSub = 0; iSub < depositSubs.length; ++iSub) {
             uint8 fundId = depositSubs[iSub].fundId;
             for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
-                if (funds[fundId].totalLiquidity > 0) {
+                if (funds[fundId].totalLiquidity > 0 && !isPaused) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] +=
