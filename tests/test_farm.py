@@ -747,6 +747,17 @@ class Test_admin_function:
 class Test_view_functions:
     # @pytest.mark.skip()
     class Test_compute_rewards:
+        def get_rewards(self, msg, farm, deposit):
+            print(f'\n{msg}')
+            rewards = []
+            chain.mine(10, None, 86400)
+            for i in range(len(deposit)):
+                tx = farm.computeRewards(deployer, i)
+                rewards.append(tx)
+                print('rewards calculated for deposit ',
+                      i, 'are: ', rewards[i])
+            return rewards
+
         def test_computeRewards_invalid_deposit(self, farm, minted_positions,
                                                 pm):
             deposit = create_deposits(farm, minted_positions, pm)
@@ -757,16 +768,44 @@ class Test_view_functions:
                                    funding_accounts,
                                    pm,
                                    reward_token):
-            rewards = list()
             _ = add_rewards(farm, reward_token, funding_accounts)
             _ = set_rewards_rate(farm, reward_token)
             deposit = create_deposits(farm, minted_positions, pm)
-            chain.mine(10, None, 86400)
-            for i in range(len(deposit)):
-                tx = farm.computeRewards(deployer, i)
-                rewards.append(tx)
-                print('rewards calculated for deposit ',
-                      i, 'are: ', rewards[i])
+            _ = self.get_rewards('Compute rwd after farm start', farm, deposit)
+
+        def test_during_farm_pause(
+            self,
+            fn_isolation,
+            farm,
+            minted_positions,
+            funding_accounts,
+            pm,
+            reward_token
+        ):
+            _ = add_rewards(farm, reward_token, funding_accounts)
+            _ = set_rewards_rate(farm, reward_token)
+            deposits = create_deposits(farm, minted_positions, pm)
+            chain.mine(1, None, 86400)
+
+            _ = farm.farmPauseSwitch(True, {'from': farm.owner()})
+            assert farm.isPaused()
+            initial_rwd = self.get_rewards(
+                'Compute rwd after farm pause day1', farm, deposits
+            )
+
+            rwd_after_pause = self.get_rewards(
+                'Compute rwd after farm paused day2', farm, deposits
+            )
+
+            assert initial_rwd == rwd_after_pause
+
+            _ = farm.closeFarm({'from': farm.owner()})
+            assert farm.isClosed()
+
+            rwd_after_close = self.get_rewards(
+                'Compute rwd after farm closed', farm, deposits
+            )
+            assert initial_rwd == rwd_after_close
 
     def test_getNumDeposits(self, farm, minted_positions, pm):
 
@@ -909,15 +948,16 @@ class Test_view_functions:
             _ = add_rewards(farm, reward_token, funding_accounts)
             rate = set_rewards_rate(farm, reward_token)
             deposit = create_deposits(farm, minted_positions, pm)
-            res = farm.getRewardFundInfo(0)
-
+            fund_id = 0
             if(farm_name == 'test_farm_with_lockup'):
-                res = farm.getRewardFundInfo(1)
-                print(res)
+                fund_id = 1
+            res = farm.getRewardFundInfo(fund_id)
 
             for rwd, _ in enumerate(reward_token):
                 assert res[1][rwd] == \
-                    rate[rwd].events['RewardRateUpdated']['newRewardRate'][0]
+                    rate[rwd].events[
+                        'RewardRateUpdated'
+                    ]['newRewardRate'][fund_id]
             for _, dep in enumerate(deposit):
                 total_liquidity += dep.events['Deposited']['liquidity']
             assert res[0] == total_liquidity
@@ -1281,7 +1321,7 @@ class Test_withdraw:
                     0,
                     {'from': deployer}
                 )
-                chain.mine(10, farm.deposits(deployer, 0)[4])
+                chain.mine(10, farm.deposits(deployer, 0)['expiryDate'] + 10)
                 withdraws.append(farm.withdraw(0, {'from': deployer}))
 
         if (farm.cooldownPeriod() == 0):
