@@ -1154,7 +1154,7 @@ class Test_claim_uniswap_fee:
         assert claim_ev['amt0Recv'] > 0 or claim_ev['amt1Recv'] > 0
 
         # Should claim all the fees for the user.
-        assert farm.computeUniswapFee(deployer, 0) == (0, 0)
+        assert farm.computeUniswapFee(token_id) == (0, 0)
         with reverts('No fee to claim'):
             _ = farm.claimUniswapFee(0, {'from': deployer})
 
