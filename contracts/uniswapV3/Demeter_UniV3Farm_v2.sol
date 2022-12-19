@@ -414,6 +414,9 @@ contract Demeter_UniV3Farm_v2 is
         _claimRewards(account, _depositId);
     }
 
+    /// @notice Claim uniswap pool fee for a deposit.
+    /// @dev Only the deposit owner can claim the fee.
+    /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
@@ -602,17 +605,16 @@ contract Demeter_UniV3Farm_v2 is
     }
 
     /// @notice Get the accrued uniswap fee for a deposit.
-    /// @param _account Address of the user
-    /// @param _depositId deposit id
     /// @return amount0 The amount of token0
     /// @return amount1 The amount of token1
-    function computeUniswapFee(address _account, uint256 _depositId)
+    function computeUniswapFee(uint256 _tokenId)
         external
         view
         returns (uint256 amount0, uint256 amount1)
     {
-        Deposit memory userDeposit = deposits[_account][_depositId];
-        return PositionValue.fees(INFPM(NFPM), userDeposit.tokenId);
+        // Validate token.
+        _getLiquidity(_tokenId);
+        return PositionValue.fees(INFPM(NFPM), _tokenId);
     }
 
     /// @notice get number of deposits for an account
