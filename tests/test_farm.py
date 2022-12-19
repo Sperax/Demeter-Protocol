@@ -1133,13 +1133,19 @@ class Test_claim_uniswap_fee:
         chain.mine(10, None, 86400)
         return tx
 
+    def test_calculate_fee_invalid_token(self, farm, setup):
+        with reverts():
+            _ = farm.computeUniswapFee(250812)
+
     def test_calculate_fee(self, farm, setup):
-        uniswap_fee = farm.computeUniswapFee(deployer, 0)
+        token_id = farm.getDeposit(deployer, 0)['tokenId']
+        uniswap_fee = farm.computeUniswapFee(token_id)
         print(f'Uniswap fee collected: {uniswap_fee}')
         assert uniswap_fee != (0, 0)
 
     def test_claim_uniswap_fee(self, farm, setup):
-        uniswap_fee = farm.computeUniswapFee(deployer, 0)
+        token_id = farm.getDeposit(deployer, 0)['tokenId']
+        uniswap_fee = farm.computeUniswapFee(token_id)
         tx = farm.claimUniswapFee(0, {'from': deployer})
         claim_ev = tx.events['PoolFeeCollected']
 
