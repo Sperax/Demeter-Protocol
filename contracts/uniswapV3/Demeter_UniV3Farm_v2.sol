@@ -497,12 +497,16 @@ contract Demeter_UniV3Farm_v2 is
         _updateFarmRewardData();
         isPaused = true;
         isClosed = true;
-        for (uint8 iRwd = 0; iRwd < rewardTokens.length; ++iRwd) {
+        uint256 numRewards = rewardTokens.length;
+        for (uint8 iRwd = 0; iRwd < numRewards; ) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
             _setRewardRate(
                 rewardTokens[iRwd],
                 new uint256[](rewardFunds.length)
             );
+            unchecked {
+                ++iRwd;
+            }
         }
         emit FarmClosed();
     }
@@ -585,9 +589,9 @@ contract Demeter_UniV3Farm_v2 is
         }
 
         // Update the two reward funds.
-        for (uint8 iSub = 0; iSub < depositSubs.length; ++iSub) {
+        for (uint8 iSub = 0; iSub < depositSubs.length; ) {
             uint8 fundId = depositSubs[iSub].fundId;
-            for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+            for (uint8 iRwd = 0; iRwd < numRewards; ) {
                 if (funds[fundId].totalLiquidity > 0 && !isPaused) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
@@ -599,6 +603,12 @@ contract Demeter_UniV3Farm_v2 is
                     ((userDeposit.liquidity *
                         funds[fundId].accRewardPerShare[iRwd]) / PREC) -
                     depositSubs[iSub].rewardDebt[iRwd];
+                unchecked {
+                    ++iRwd;
+                }
+            }
+            unchecked {
+                ++iSub;
             }
         }
         return rewards;
@@ -670,8 +680,11 @@ contract Demeter_UniV3Farm_v2 is
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
-        for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
+        for (uint8 iFund = 0; iFund < numFunds; ) {
             rates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
+            unchecked {
+                ++iFund;
+            }
         }
         return rates;
     }
@@ -705,11 +718,14 @@ contract Demeter_UniV3Farm_v2 is
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
             // Compute the accrued reward balance for time
-            for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
+            for (uint8 iFund = 0; iFund < numFunds; ) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
                         rewardFunds[iFund].rewardsPerSec[rwdId] *
                         time;
+                }
+                unchecked {
+                    ++iFund;
                 }
             }
         }
@@ -734,10 +750,10 @@ contract Demeter_UniV3Farm_v2 is
         uint256 numSubs = depositSubs.length;
         uint256[] memory totalRewards = new uint256[](numRewards);
         // Compute the rewards for each subscription.
-        for (uint8 iSub = 0; iSub < numSubs; ++iSub) {
+        for (uint8 iSub = 0; iSub < numSubs; ) {
             uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
-            for (uint256 iRwd = 0; iRwd < numRewards; ++iRwd) {
+            for (uint256 iRwd = 0; iRwd < numRewards; ) {
                 // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
                 uint256 accRewards = (userDeposit.liquidity *
                     rewardFunds[fundId].accRewardPerShare[iRwd]) / PREC;
@@ -748,6 +764,9 @@ contract Demeter_UniV3Farm_v2 is
                 // Update userRewardDebt for the subscriptions
                 // rewardDebt = liquidity * accRewardPerShare
                 depositSubs[iSub].rewardDebt[iRwd] = accRewards;
+                unchecked {
+                    ++iRwd;
+                }
             }
 
             emit RewardsClaimed(
@@ -758,10 +777,13 @@ contract Demeter_UniV3Farm_v2 is
                 rewardFunds[fundId].totalLiquidity,
                 rewards
             );
+            unchecked {
+                ++iSub;
+            }
         }
 
         // Transfer the claimed rewards to the User if any.
-        for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+        for (uint8 iRwd = 0; iRwd < numRewards; ) {
             if (totalRewards[iRwd] > 0) {
                 rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
                     iRwd
@@ -772,6 +794,9 @@ contract Demeter_UniV3Farm_v2 is
                     _account,
                     totalRewards[iRwd]
                 );
+            }
+            unchecked {
+                ++iRwd;
             }
         }
     }
@@ -808,9 +833,12 @@ contract Demeter_UniV3Farm_v2 is
         );
         uint256[] memory oldRewardRates = new uint256[](numFunds);
         // Update the reward rate
-        for (uint8 iFund = 0; iFund < numFunds; ++iFund) {
+        for (uint8 iFund = 0; iFund < numFunds; ) {
             oldRewardRates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
             rewardFunds[iFund].rewardsPerSec[id] = _newRewardRates[iFund];
+            unchecked {
+                ++iFund;
+            }
         }
         emit RewardRateUpdated(_rwdToken, oldRewardRates, _newRewardRates);
     }
@@ -837,10 +865,13 @@ contract Demeter_UniV3Farm_v2 is
         uint256 subId = subscriptions[_tokenId].length - 1;
 
         // initialize user's reward debt
-        for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+        for (uint8 iRwd = 0; iRwd < numRewards; ) {
             subscriptions[_tokenId][subId].rewardDebt[iRwd] =
                 (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) /
                 PREC;
+            unchecked {
+                ++iRwd;
+            }
         }
         // Update the totalLiquidity for the fund
         rewardFunds[_fundId].totalLiquidity += _liquidity;
@@ -863,13 +894,16 @@ contract Demeter_UniV3Farm_v2 is
         // Unsubscribe from the reward fund
         Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
         uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ++iSub) {
+        for (uint256 iSub = 0; iSub < numSubs; ) {
             if (depositSubs[iSub].fundId == _fundId) {
                 // Persist the reward information
                 uint256[] memory rewardClaimed = new uint256[](numRewards);
 
-                for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                for (uint8 iRwd = 0; iRwd < numRewards; ) {
                     rewardClaimed[iRwd] = depositSubs[iSub].rewardClaimed[iRwd];
+                    unchecked {
+                        ++iRwd;
+                    }
                 }
 
                 // Delete the subscription from the list
@@ -889,6 +923,9 @@ contract Demeter_UniV3Farm_v2 is
 
                 break;
             }
+            unchecked {
+                ++iSub;
+            }
         }
     }
 
@@ -901,10 +938,10 @@ contract Demeter_UniV3Farm_v2 is
                 uint256 time = block.timestamp - lastFundUpdateTime;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
-                for (uint8 iFund = 0; iFund < rewardFunds.length; ++iFund) {
+                for (uint8 iFund = 0; iFund < rewardFunds.length; ) {
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
-                        for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+                        for (uint8 iRwd = 0; iRwd < numRewards; ) {
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
                                 iRwd,
@@ -916,9 +953,16 @@ contract Demeter_UniV3Farm_v2 is
                             fund.accRewardPerShare[iRwd] +=
                                 (accRewards * PREC) /
                                 fund.totalLiquidity;
+
+                            unchecked {
+                                ++iRwd;
+                            }
                         }
                     }
                     rewardFunds[iFund] = fund;
+                    unchecked {
+                        ++iFund;
+                    }
                 }
             }
             lastFundUpdateTime = block.timestamp;
@@ -936,24 +980,30 @@ contract Demeter_UniV3Farm_v2 is
         require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
-        for (uint8 i = 0; i < _numFunds; ++i) {
+        for (uint8 i = 0; i < _numFunds; ) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
                 rewardsPerSec: new uint256[](numRewards + 1),
                 accRewardPerShare: new uint256[](numRewards + 1)
             });
             rewardFunds.push(_rewardFund);
+            unchecked {
+                ++i;
+            }
         }
 
         // Add SPA as default reward token in the farm
         _addRewardData(SPA, SPA_TOKEN_MANAGER);
 
         // Initialize reward Data
-        for (uint8 iRwd = 0; iRwd < numRewards; ++iRwd) {
+        for (uint8 iRwd = 0; iRwd < numRewards; ) {
             _addRewardData(
                 _rwdTokenData[iRwd].token,
                 _rwdTokenData[iRwd].tknManager
             );
+            unchecked {
+                ++iRwd;
+            }
         }
     }
 
