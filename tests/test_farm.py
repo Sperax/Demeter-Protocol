@@ -3,7 +3,7 @@ from brownie import (
     TransparentUpgradeableProxy,
     Contract,
     accounts,
-    Demeter_UniswapV3FarmDeployer_v2,
+    Demeter_UniV3FarmDeployer_v2,
     ProxyAdmin,
     reverts,
     UniswapV3Test,
@@ -104,8 +104,8 @@ def factory(setUp):
 @pytest.fixture(scope='module', autouse=True)
 def farm_deployer(factory):
     """Deploying Uniswap Farm Proxy Contract"""
-    print('Deploy Demeter_UniswapV3FarmDeployer_v2 contract.')
-    farm_deployer = Demeter_UniswapV3FarmDeployer_v2.deploy(
+    print('Deploy Demeter_UniV3FarmDeployer_v2 contract.')
+    farm_deployer = Demeter_UniV3FarmDeployer_v2.deploy(
         factory,
         {'from': deployer}
     )

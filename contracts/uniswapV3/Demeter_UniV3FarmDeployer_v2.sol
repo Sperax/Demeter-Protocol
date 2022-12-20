@@ -6,7 +6,7 @@ import {Demeter_UniV3Farm_v2, RewardTokenData, UniswapPoolData} from "./Demeter_
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniswapV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
