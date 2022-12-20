@@ -418,6 +418,7 @@ contract Demeter_UniV3Farm_v2 is
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
+        _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         Deposit memory userDeposit = deposits[account][_depositId];
