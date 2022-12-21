@@ -16,6 +16,7 @@ from .constants import (
 )
 from .utils import (
     get_config,
+    print_dict,
     _getYorN,
     confirm,
     save_deployment_artifacts
@@ -47,7 +48,7 @@ def resolve_args(args, contract_obj, caller):
     return args, res
 
 
-def call_func(contract_obj, func_name, args, transact, caller):
+def call_func(contract_obj, func_name, args, transact, caller=None):
     """Interact with a contract
 
     Args:
@@ -73,7 +74,6 @@ def call_func(contract_obj, func_name, args, transact, caller):
         tx = None
         val = func.call(
             *res,
-            {'from': caller}
         )
     return args, val, tx
 
@@ -123,7 +123,10 @@ def get_user(msg):
         address: Returns address of the deployer
     """
     # simulate transacting with vault core from deployer address on fork
-    if network.show_active() == 'arbitrum-main-fork':
+    if network.show_active() in [
+        'arbitrum-main-fork',
+        'arbitrum-main-fork-server'
+    ]:
         deployer = accounts.at(
             input(msg),
             force=True
@@ -261,13 +264,12 @@ def deploy(configuration, deployer):
                 get_tx_info('Post_deployment_step', tx)
             )
 
-    print('\n Printing deployment data:')
-    print(json.dumps(deployment_data, indent=2))
+    print_dict('Printing deployment data', deployment_data, 20)
     deployment_data['type'] = 'Deployment'
     deployment_data['transactions'] = tx_list
     deployment_data['config_name'] = config_name
     deployment_data['config'] = conf
-    save_deployment_artifacts(deployment_data, config_name)
+    save_deployment_artifacts(deployment_data, config_name, 'Deployment')
 
 
 def upgrade(configuration, deployer):
@@ -340,13 +342,12 @@ def upgrade(configuration, deployer):
         print('\nPlease switch to Gnosis to perform upgrade!\n')
 
     upgrade_data['new_impl'] = new_impl.address
-    print('\n Printing Upgrade data:')
-    print(json.dumps(upgrade_data, indent=2))
+    print_dict('Printing Upgrade data', upgrade_data, 20)
     upgrade_data['type'] = 'Upgrade'
     upgrade_data['transactions'] = tx_list
     upgrade_data['config_name'] = config_name
     upgrade_data['config'] = conf
-    save_deployment_artifacts(upgrade_data, config_name)
+    save_deployment_artifacts(upgrade_data, config_name, 'Upgrade')
     return upgrade_data
 
 
@@ -404,11 +405,12 @@ def create_farm(configuration, deployer):
             )
 
     deployment_data['farm_addr'] = create_tx.new_contracts[0]
+    print_dict('Printing Upgrade data', deployment_data, 20)
     deployment_data['type'] = 'CreateFarm'
     deployment_data['transactions'] = tx_list
     deployment_data['config_name'] = config_name
     deployment_data['config'] = conf
-    save_deployment_artifacts(deployment_data, config_name)
+    save_deployment_artifacts(deployment_data, config_name, 'FarmCreation')
 
 
 def main():

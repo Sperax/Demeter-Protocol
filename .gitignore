@@ -134,10 +134,8 @@ dmypy.json
 build/
 reports/
 node_modules
-deployed/arbitrum-main-fork
-deployed/polygon-main-fork
-deployed/optimism-main-fork
-deployed/development
+deployed/*
+!deployed/arbitrum-one
 .vscode
 .deps/
 artifacts/

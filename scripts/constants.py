@@ -1,7 +1,7 @@
 from brownie import (
     FarmFactory,
-    UniswapFarmV1Deployer,
-    UniswapFarmV1,
+    Demeter_UniV3FarmDeployer_v2,
+    Demeter_UniV3Farm_v2,
     chain,
 )
 
@@ -118,8 +118,8 @@ deployment_config = {
             ]
         )
     ),
-    'UniswapFarmV1_deployer_v2': Deployment_data(
-        contract=UniswapFarmV1Deployer,
+    'UniV3FarmDeployer_v2': Deployment_data(
+        contract=Demeter_UniV3FarmDeployer_v2,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -133,7 +133,7 @@ deployment_config = {
                         'new_owner':
                             '0x6d5240f086637fb408c7F727010A10cf57D51B62'
                     }
-                )
+                ),
             ]
         )
     ),
@@ -143,9 +143,9 @@ upgrade_config = {}
 
 farm_config = {
     'l2dao_usds_v1': Create_Farm_data(
-        contract=UniswapFarmV1,
-        deployer_contract=UniswapFarmV1Deployer,
-        deployer_address='0xEF32e8c6C1D5aF0212308B03E777869408856521',
+        contract=Demeter_UniV3Farm_v2,
+        deployer_contract=Demeter_UniV3FarmDeployer_v2,
+        deployer_address='0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0',
         config=Farm_config(
             deployment_params={
                 'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
