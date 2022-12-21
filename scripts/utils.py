@@ -35,12 +35,17 @@ def get_account(msg: str):
 
 
 def get_config(msg: str, constants):
-    config_name = (
-        click.prompt(
-            msg,
-            type=click.Choice(list(constants.keys()))
-        )
-    )
+    configs = list(constants.keys())
+    menu = '\nPlease select config: \n'
+    for i, k in enumerate(configs):
+        menu += str(i) + '. ' + k + '\n'
+    menu += '-> '
+    config_id = int(input(menu))
+    config_name = configs[config_id]
+    print()
+    print('-'*60, f'\nConfig selected: {config_name}')
+    print('-'*60)
+
     return (
         config_name,
         constants[config_name]
@@ -89,13 +94,23 @@ def onlyDevelopment(func):
         func()  # can also just return t/f
 
 
-def save_deployment_artifacts(data, name):
+def print_dict(msg, data, col=40):
+    print('-'*70, f'\n{msg}:')
+    print('-'*70)
+    s = '{:<' + str(col) + '} -> {:<' + str(col//2) + '}'
+    for k in data.keys():
+        print(s.format(k, data[k]))
+    print('-'*70, '\n')
+
+
+def save_deployment_artifacts(data, name, operation_type=''):
     # Function to store deployment artifacts
     path = os.path.join('deployed', network.show_active())
     os.makedirs(path, exist_ok=True)
     file = os.path.join(
         path,
-        name + '_' + time.strftime('%m-%d-%Y_%H:%M:%S') + '.json'
+        operation_type + '_' + name + '_' +
+        time.strftime('%m-%d-%Y_%H:%M:%S') + '.json'
     )
     with open(file, 'w') as json_file:
         json.dump(data, json_file, default=lambda o: o.__dict__, indent=4)
