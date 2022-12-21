@@ -118,14 +118,23 @@ deployment_config = {
             ]
         )
     ),
-    'UniswapFarmV1_deployer': Deployment_data(
+    'UniswapFarmV1_deployer_v2': Deployment_data(
         contract=UniswapFarmV1Deployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
                 'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659'
             },
-            post_deployment_steps=[]
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
+                )
+            ]
         )
     ),
 }

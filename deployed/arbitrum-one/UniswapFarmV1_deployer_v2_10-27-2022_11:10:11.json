@@ -1,0 +1,45 @@
+{
+    "contract_addr": "0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Deployment_transaction",
+            "tx_hash": "0x5f7423064bc99a77427935386d2ccf8ec977212f352d7d25fd9c933dc6d9bed8",
+            "contract": "UniswapFarmV1Deployer",
+            "contract_addr": "0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0",
+            "tx_func": "constructor",
+            "blocknumber": 33077620,
+            "gas_used": 24719169,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0xca6607cc185df3c83074de9347ee51c6129d693e312438436bf26716ee3169c9",
+            "contract": "UniswapFarmV1Deployer",
+            "contract_addr": null,
+            "tx_func": "transferOwnership",
+            "blocknumber": 33077660,
+            "gas_used": 231494,
+            "gas_limit": 40000000
+        }
+    ],
+    "config_name": "UniswapFarmV1_deployer_v2",
+    "config": {
+        "deployment_params": {
+            "farm_factory": "0xC4fb09E0CD212367642974F6bA81D8e23780A659"
+        },
+        "post_deployment_steps": [
+            {
+                "func": "transferOwnership",
+                "args": {
+                    "new_owner": "0x6d5240f086637fb408c7F727010A10cf57D51B62"
+                },
+                "transact": true,
+                "contract": "UniswapFarmV1Deployer",
+                "contract_addr": "0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0"
+            }
+        ],
+        "upgradeable": false,
+        "proxy_admin": null
+    }
+}
