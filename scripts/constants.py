@@ -125,7 +125,16 @@ deployment_config = {
             deployment_params={
                 'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659'
             },
-            post_deployment_steps=[]
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
+                ),
+            ]
         )
     ),
 }
