@@ -608,11 +608,12 @@ class Test_admin_function:
         print('checked reward claimed for second time = 0')
 
     def test_withdraw_paused_lockup_farm(self, farm, setup_rewards):
-        if (farm.cooldownPeriod() != 0):
-            chain.mine(10, None, 1000)
-            farm.farmPauseSwitch(True, {'from': deployer})
-            chain.mine(10, None, 1000)
-            _ = farm.withdraw(0, {'from': deployer})
+        chain.mine(10, None, 1000)
+        farm.farmPauseSwitch(True, {'from': deployer})
+        chain.mine(10, None, 1000)
+        tx = farm.withdraw(0, {'from': deployer})
+        if(farm.cooldownPeriod() > 0):
+            assert len(tx.events['PoolUnsubscribed']) == 2
 
     def test_change_reward_rates_paused(self, farm, reward_token):
         rwd_rate_no_lock = 2e15
