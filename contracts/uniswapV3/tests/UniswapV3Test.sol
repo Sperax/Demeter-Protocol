@@ -4,7 +4,7 @@ pragma solidity 0.8.10;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/ISwapRouter.sol";
+import "./ISwapRouter.sol";
 import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
 
 /**
