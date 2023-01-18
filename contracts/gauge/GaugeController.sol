@@ -460,7 +460,7 @@ contract GaugeController is Ownable {
     /// @param _gAddr Gauge Address
     /// @param _weight for gauge.
     function _changeGaugeWeight(address _gAddr, uint256 _weight) private {
-        uint128 gType = gaugeTypes[_gAddr] - 1;
+        uint128 gType = _getGaugeType(_gAddr);
         uint256 oldGaugeWeight = _getWeight(_gAddr);
         uint256 typeWeight = _getTypeWeight(gType);
         uint256 oldSum = _getSum(gType);
@@ -498,8 +498,7 @@ contract GaugeController is Ownable {
         uint256 lockEnd,
         address _gAddr
     ) private {
-        uint128 gType = gaugeTypes[_gAddr] - 1;
-        require(gType >= 0, "Gauge not added");
+        uint128 gType = _getGaugeType(_gAddr);
         uint256 old_dt = 0;
         if (_oldVoteData.end > _nextTime) {
             old_dt = _oldVoteData.end - _nextTime;
@@ -555,16 +554,22 @@ contract GaugeController is Ownable {
         view
         returns (uint256)
     {
+        uint128 gType = _getGaugeType(_gAddr);
         uint256 t = (_time / WEEK) * WEEK;
         uint256 totalWeight = totalWtAtTime[t];
 
         if (totalWeight > 0) {
-            uint128 gType = gaugeTypes[_gAddr] - 1;
             uint256 typeWeight = typeWtAtTime[gType][t];
             uint256 gaugeWeight = gaugePoints[_gAddr][t].bias;
             return (MULTIPLIER * typeWeight * gaugeWeight) / totalWeight;
         }
         return 0;
+    }
+
+    function _getGaugeType(address _gAddr) private view returns (uint128) {
+        uint128 gType = gaugeTypes[_gAddr];
+        require(gType > 0, "Gauge not added");
+        return gType - 1;
     }
 
     function _max(uint256 _a, uint256 _b) private pure returns (uint256) {
