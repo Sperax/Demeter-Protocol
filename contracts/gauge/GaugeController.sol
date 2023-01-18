@@ -12,7 +12,7 @@ contract GaugeController is Ownable {
         uint256 slope;
     }
 
-    struct VotedSlope {
+    struct VoteData {
         uint256 slope;
         uint256 power;
         uint256 end;
@@ -35,8 +35,8 @@ contract GaugeController is Ownable {
     // time -> total weight
     mapping(uint256 => uint256) public totalWtAtTime;
 
-    // user -> gauge_addr -> VotedSlope
-    mapping(address => mapping(address => VotedSlope)) public userVoteData;
+    // user -> gauge_addr -> VoteData
+    mapping(address => mapping(address => VoteData)) public userVoteData;
     // Total vote power used by user
     mapping(address => uint256) public userVotePower;
 
@@ -191,13 +191,13 @@ contract GaugeController is Ownable {
             "All voting pover used"
         );
         // Prepare slopes and biases in memory
-        VotedSlope memory oldVoteData = userVoteData[msg.sender][_gAddr];
+        VoteData memory oldVoteData = userVoteData[msg.sender][_gAddr];
         require(
             block.timestamp >= oldVoteData.voteTime + WEIGHT_VOTE_DELAY,
             "Can't vote so often"
         );
 
-        VotedSlope memory newVoteData = VotedSlope({
+        VoteData memory newVoteData = VoteData({
             slope: (slope * _userWeight) / 10000,
             end: lockEnd,
             power: _userWeight,
@@ -492,8 +492,8 @@ contract GaugeController is Ownable {
     }
 
     function _updateScheduledChanges(
-        VotedSlope memory _oldVoteData,
-        VotedSlope memory _newVoteData,
+        VoteData memory _oldVoteData,
+        VoteData memory _newVoteData,
         uint256 _nextTime,
         uint256 lockEnd,
         address _gAddr
