@@ -116,9 +116,8 @@ contract GaugeController is Ownable {
         require(_gType >= 0 && _gType < nGaugeTypes, "Invalid gauge type");
         require(gaugeTypes[_addr] == 0); /// @dev can't add the same gauge twice
         require(nGauges < MAX_NUM, "Can't add more gauges");
-        uint128 n = nGauges;
-        nGauges = n + 1;
-        gauges[n] = _addr;
+        gauges.push(_addr);
+        nGauges += 1;
 
         gaugeTypes[_addr] = _gType + 1;
         uint256 nextTime = ((block.timestamp + WEEK) / WEEK) * WEEK;
