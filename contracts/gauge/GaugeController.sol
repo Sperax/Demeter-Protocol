@@ -30,7 +30,7 @@ contract GaugeController is Ownable {
     // last scheduled time;
     uint256 public timeTotal;
 
-    address[MAX_NUM] public gauges;
+    address[] public gauges;
 
     // time -> total weight
     mapping(uint256 => uint256) public totalWtAtTime;
@@ -115,7 +115,7 @@ contract GaugeController is Ownable {
     ) external onlyOwner {
         require(_gType >= 0 && _gType < nGaugeTypes, "Invalid gauge type");
         require(gaugeTypes[_addr] == 0); /// @dev can't add the same gauge twice
-
+        require(nGauges < MAX_NUM, "Can't add more gauges");
         uint128 n = nGauges;
         nGauges = n + 1;
         gauges[n] = _addr;
@@ -304,6 +304,11 @@ contract GaugeController is Ownable {
         returns (uint256)
     {
         return typePoints[_gType][timeSum[_gType]].bias;
+    }
+
+    /// @notice Returns address of all registered gauges.
+    function getGaugeList() external view returns (address[] memory) {
+        return gauges;
     }
 
     /// @notice Fill historic type weights week-over-week for missed checkins
