@@ -1,5 +1,6 @@
 from brownie import (
     FarmFactory,
+    GaugeController,
     Demeter_UniV3FarmDeployer_v2,
     Demeter_UniV3Farm_v2,
     chain,
@@ -86,6 +87,27 @@ class Create_Farm_data():
         self.config = config
 
 
+vespa_constants = {
+    'arbitrum-main-fork': {
+        'veSPA': '0x2e2071180682Ce6C247B1eF93d382D509F5F6A17',
+        'spa': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+        'emergency_return': '0x3702E3e2DB2b5d037c1dbB23Ab7A51d0Cc90BD0e',
+    },
+    'arbitrum-one': {
+        'veSPA': '0x2e2071180682Ce6C247B1eF93d382D509F5F6A17',
+        'spa': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+        'emergency_return': '0x3702E3e2DB2b5d037c1dbB23Ab7A51d0Cc90BD0e',
+        # Arbitrum staking-multisig
+    },
+    'mainnet': {
+        'veSPA': '0xbF82a3212e13b2d407D10f5107b5C8404dE7F403',
+        'spa': '0xB4A3B0Faf0Ab53df58001804DdA5Bfc6a3D59008',
+        'emergency_return': '0xCD1B1ce6ce877a9315E73E2E4Ba3137228068A59',
+        # Ethereum staking-multisig
+    }
+}
+
+
 deployment_config = {
     'FarmFactory_v1': Deployment_data(
         contract=FarmFactory,
@@ -137,6 +159,15 @@ deployment_config = {
             ]
         )
     ),
+    'gauge_controller_v1': Deployment_data(
+        contract=GaugeController,
+        config=Deployment_config(
+            deployment_params={
+                'veSPA': vespa_constants['arbitrum-one']['veSPA']
+            },
+            upgradeable=False,
+        )
+    )
 }
 
 upgrade_config = {}
