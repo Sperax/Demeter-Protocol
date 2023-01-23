@@ -18,25 +18,25 @@ contract GaugeRewardManager is Ownable, ReentrancyGuard {
     address public immutable EMERGENCY_RETURN;
     address public gaugeController;
     uint256 public globalSPAEmission; // SPA Emissions per week
-    // @todo Should we have a commonFundSplit as a global param | at a gauge level
-    // @todo Should we decide the split based on the %liquidity locked?
-    uint256 public commonFundSplit; // 500 for 5%
 
     mapping(address => uint256) public nextRewardTime; // Tracks the last reward time for a gauge.
+
+    // Essential for lockup farm
+    // If not set a 100% will go to common fund
+    mapping(address => uint256) public lockupFundSplit; // 500 for 5%
 
     event RewardsRecovered(address _recoveryAddr, uint256 _amount);
     event RewardsDistributed(address _gAddr, uint256 _amount);
     event DistributionsToggled(bool _distributionsOn);
+    event LockupFundSplitUpdated(uint256 _oldSplit, uint256 _newSplit);
 
     constructor(
         uint256 _globalEmissionRate,
-        uint256 _commonFundSplit,
         address _gaugeController,
         address _emergencyReturn
     ) public {
         gaugeController = _gaugeController;
         globalSPAEmission = _globalEmissionRate;
-        commonFundSplit = _commonFundSplit;
         EMERGENCY_RETURN = _emergencyReturn;
         distributionsOn = true;
     }
@@ -58,6 +58,22 @@ contract GaugeRewardManager is Ownable, ReentrancyGuard {
     function toggleDistributions() external onlyOwner {
         distributionsOn = !distributionsOn;
         emit DistributionsToggled(distributionsOn);
+    }
+
+    /// @notice Updates the reward split for lockup and no-lockup reward funds.
+    /// @param _gAddr Gauge address
+    /// @param _newSplit new split percent
+    /// @dev _newSplit = 500 for 5%
+    function updateLockupRewardSplit(address _gAddr, uint256 _newSplit)
+        external
+        onlyOwner
+    {
+        IFarm farm = IFarm(_gAddr);
+        require(farm.cooldownPeriod() != 0, "Lockup not enabled.");
+        require(_newSplit <= PREC, "Invalid split value");
+        uint256 oldSplit = lockupFundSplit[_gAddr];
+        lockupFundSplit[_gAddr] = _newSplit;
+        emit LockupFundSplitUpdated(oldSplit, _newSplit);
     }
 
     /// @notice Transfer SPA token management to new Address.
@@ -142,8 +158,8 @@ contract GaugeRewardManager is Ownable, ReentrancyGuard {
             if (farm.cooldownPeriod() == 0) {
                 rewardRates[0] = rewardRate;
             } else {
-                rewardRates[0] = (rewardRate * commonFundSplit) / PREC; // common-reward fund
-                rewardRates[1] = rewardRate - rewardRates[0];
+                rewardRates[1] = (rewardRate * lockupFundSplit[_gAddr]) / PREC; // lockup-reward fund
+                rewardRates[0] = rewardRate - rewardRates[1];
             }
             farm.setRewardRate(SPA, rewardRates);
             emit RewardsDistributed(_gAddr, rewards);
