@@ -363,8 +363,10 @@ def create_farm(configuration, deployer):
     print(json.dumps(conf, default=lambda o: o.__dict__, indent=2))
     confirm('Are the above configurations correct?')
 
-    deployer_contract = config_data.deployer_contract.at(
-        config_data.deployer_address
+    deployer_contract = Contract.from_abi(
+        'Deployer_contract',
+        config_data.deployer_address,
+        config_data.deployer_contract.abi
     )
     deployment_data = {}
     tx_list = []
@@ -375,7 +377,7 @@ def create_farm(configuration, deployer):
                 conf.deployment_params['farm_admin'],
                 conf.deployment_params['farm_start_time'],
                 conf.deployment_params['cooldown_period'],
-                list(conf.deployment_params['uniswap_pool_data'].values()),
+                list(conf.deployment_params['pool_data'].values()),
                 list(
                     map(
                         lambda x: list(x.values()),
