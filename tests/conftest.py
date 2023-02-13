@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from scripts.constants import Create_Farm_data
 import pytest
 import math
 import brownie
@@ -9,9 +10,14 @@ from brownie import (
     TransparentUpgradeableProxy,
     Contract,
     Demeter_UniV3Farm_v2,
+    Demeter_E20_farm,
+    accounts
 
 )
+import json
+import sys
 import eth_utils
+sys.path.append('../scripts')
 
 
 MIN_BALANCE = 1000000000000000000
@@ -21,7 +27,7 @@ LOCKUP_REWARD_RATE = 2*1e18
 
 OWNER = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
 deployer = brownie.accounts
-
+USDs_Owner = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
 
 def check_function(farm, func_name):
     for key in farm.selectors:
@@ -54,7 +60,7 @@ def approved_rwd_token_list():
 def test_constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
-            'number_of_deposits': 2,
+            'number_of_deposits': 1,
             'funding_data': {
                 'spa': 1000000e18,
                 'usds': 100000e18,
@@ -68,6 +74,35 @@ def test_constants():
                 'fee_tier': 3000,
                 'lower_tick': -887220,
                 'upper_tick': 0,
+            },
+            'uniswap_V2_pool_false_data': {
+                'token_A':
+                '0x0000000000000000000000000000000000000000'
+            },
+        }
+        return config
+
+
+def deployer_constants():
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        config = {
+            'CamelotFarmDeployer_v1':  {
+                'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+                'protocol_factory':
+                    '0x6EcCab422D763aC031210895C81787E87B43A652',
+                'deployer_name': 'Demeter_Camelot_Farm'
+            },
+            'SushiSwapFarmDeployer_v1': {
+                'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+                'protocol_factory':
+                    '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+                'deployer_name': 'Demeter_SushiSwap_Farm'
+            },
+            'TraderJoeFarmDeployer_v1': {
+                'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+                'protocol_factory':
+                    '0xaE4EC9901c3076D0DdBe76A520F9E90a6227aCB7',
+                'deployer_name': 'Demeter_TraderJoe_Farm'
             },
         }
         return config
@@ -86,7 +121,7 @@ def constants():
                         'token_A':
                         '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                         'token_B':
-                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
                         'fee_tier': 3000,
                         'lower_tick': -887220,
                         'upper_tick': 0,
@@ -95,7 +130,7 @@ def constants():
                     'reward_token_data': [
                         {
                             'reward_tkn':
-                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                             'tkn_manager': OWNER,
                         },
                         # {
@@ -155,6 +190,82 @@ def constants():
 
         }
         return config
+
+
+def e20_constants():
+    if (brownie.network.show_active() == 'arbitrum-main-fork'):
+        config = {
+            'test_farm_with_lockup': {
+                'contract': Demeter_E20_farm,
+                'config': {
+                    'admin': deployer[0].address,
+                    'farm_start_time': chain.time()+1000,
+                    'cooldown_period': 21,
+                    'uniswap_pool_data': {
+                    'token_A': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    },
+                    'camelot_pool_data': {
+                    'token_A': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                    'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                },
+                    'reward_token_data': [
+                        # {
+                        #     'reward_tkn':
+                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     'tkn_manager': OWNER,
+                        # },
+                        # {
+                        #     'reward_tkn':
+                        #     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+                        #     'tkn_manager': OWNER,
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
+            },
+
+            'test_farm_without_lockup': {
+                'contract': Demeter_E20_farm,
+                'config': {
+                    'admin': deployer[0].address,
+                    'farm_start_time': chain.time()+2000,
+                    'cooldown_period': 0,
+
+                    'uniswap_pool_data': {
+                    'token_A': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    },
+
+                    'reward_token_data': [
+                        {
+                            'reward_tkn':
+                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            'tkn_manager': OWNER,
+                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     'tkn_manager': OWNER,
+
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
+            },
+
+
+        }
+        return config
+
 
 
 def deploy(owner, contract, config):
@@ -294,6 +405,36 @@ def create_deployer_farm(deployer, farm_deployer, config):
     return Demeter_UniV3Farm_v2.at(create_tx.new_contracts[0])
 
 
+def create_deployer_farm_e20 (deployer, farm_deployer, config, factory):
+    user_deployer= accounts[1]
+    """Init Uniswap Farm Proxy Contract"""
+    usds = token_obj('usds')
+
+    _ = usds.transfer(
+        user_deployer,
+        10000*1e18,
+        {'from': funds('usds')}
+    )
+
+    _ = usds.approve(farm_deployer, 100000*1e18, {'from': user_deployer})
+
+
+
+    create_tx = farm_deployer.createFarm(
+        (
+            config['admin'],
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(
+                config['camelot_pool_data'].values()),
+            list(
+                map(lambda x: list(x.values()), config['reward_token_data'])),
+        ),
+        {'from': user_deployer.address},
+    )
+    return Demeter_E20_farm.at(create_tx.new_contracts[0])
+
+
 def false_init_farm(deployer, farm, config):
     """Init Uniswap Farm Proxy Contract using false params"""
     init = farm.initialize(
@@ -331,7 +472,7 @@ def funds(token):
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         fund_dict = {
             'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
-            'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
+            'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # unknown wallet
             # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
             'usdc': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
             'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax

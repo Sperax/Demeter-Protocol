@@ -31,7 +31,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    address public immutable PROTOCOL_FACTORY;
+    address public  PROTOCOL_FACTORY;
     string public DEPLOYER_NAME;
     uint256 public discountedFee;
     // List of deployers for which fee won't be charged.
