@@ -60,7 +60,7 @@ def approved_rwd_token_list():
 def test_constants():
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         config = {
-            'number_of_deposits': 1,
+            'number_of_deposits': 2,
             'funding_data': {
                 'spa': 1000000e18,
                 'usds': 100000e18,
@@ -202,7 +202,7 @@ def e20_constants():
                     'farm_start_time': chain.time()+1000,
                     'cooldown_period': 21,
                     'uniswap_pool_data': {
-                    'token_A': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'token_A': '0x495dabd6506563ce892b8285704bd28f9ddcae65',
                     },
                     'camelot_pool_data': {
                     'token_A': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
@@ -219,11 +219,11 @@ def e20_constants():
                         #     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
                         #     'tkn_manager': OWNER,
                         # },
-                        {
-                            'reward_tkn':
-                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                            'tkn_manager': OWNER,
-                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                        #     'tkn_manager': OWNER,
+                        # },
                     ],
 
                 }
@@ -237,26 +237,29 @@ def e20_constants():
                     'cooldown_period': 0,
 
                     'uniswap_pool_data': {
-                    'token_A': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'token_A': '0x495dabd6506563ce892b8285704bd28f9ddcae65',
                     },
-
+                    'camelot_pool_data': {
+                        'token_A': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                        'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                    },
                     'reward_token_data': [
-                        {
-                            'reward_tkn':
-                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                            'tkn_manager': OWNER,
-                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        #     'tkn_manager': OWNER,
+                        # },
                         # {
                         #     'reward_tkn':
                         #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
                         #     'tkn_manager': OWNER,
 
                         # },
-                        {
-                            'reward_tkn':
-                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                            'tkn_manager': OWNER,
-                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                        #     'tkn_manager': OWNER,
+                        # },
                     ],
 
                 }
@@ -380,6 +383,16 @@ def init_farm(deployer, farm, config):
     return farm
 
 
+def init_farm_e20(deployer, farm, config):
+    """Init Uniswap Farm Proxy Contract"""
+    farm.initialize(
+        config['farm_start_time'],
+        config['cooldown_period'],
+        config['uniswap_pool_data']['token_A'],
+        list(map(lambda x: list(x.values()), config['reward_token_data'])),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+    return farm
 def create_deployer_farm(deployer, farm_deployer, config):
     """Init Uniswap Farm Proxy Contract"""
     usds = token_obj('usds')
@@ -475,7 +488,8 @@ def funds(token):
             'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # unknown wallet
             # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
             'usdc': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
-            'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
+            'frax': '0x5a9bef8cea603aac78a523fb245c1a9264d50706',  # frax
+            'Camelot-LP': '0x85054ed5a0722117deee9411f2f1ef780cc97056'
         }
     return fund_dict[token]
 

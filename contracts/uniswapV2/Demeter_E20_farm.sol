@@ -778,7 +778,7 @@ contract Demeter_E20_farm is Ownable, ReentrancyGuard, Initializable {
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
-    function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
+    function _recoverRewardFunds(address _rwdToken, uint256 _amount) publid {
         address emergencyRet = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
         uint256 amountToRecover = _amount;
@@ -823,7 +823,7 @@ contract Demeter_E20_farm is Ownable, ReentrancyGuard, Initializable {
         uint8 _fundId,
         uint256 _tokenId,
         uint256 _liquidity
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
@@ -858,7 +858,7 @@ contract Demeter_E20_farm is Ownable, ReentrancyGuard, Initializable {
         uint8 _fundId,
         address _account,
         uint256 _depositId
-    ) private {
+    ) public {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
@@ -1064,7 +1064,7 @@ contract Demeter_E20_farm is Ownable, ReentrancyGuard, Initializable {
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
-    ) private view returns (uint256) {
+    ) public view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         if (fund.rewardsPerSec[_rwdId] == 0) {
             return 0;
