@@ -132,7 +132,6 @@ dmypy.json
 .history
 .hypothesis/
 build/
-reports/
 node_modules
 deployed/*
 !deployed/arbitrum-one
