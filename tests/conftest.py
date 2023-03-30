@@ -330,8 +330,8 @@ def funds(token):
     """"Add the address to be used for funding the user wallet and vault"""
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         fund_dict = {
-            'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
-            'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
+            'spa': '0xe10b88d70b01b956782dc98d7d4f3a931ff59fc7',
+            'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # STB
             # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
             'usdc': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
             'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
