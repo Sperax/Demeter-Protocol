@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
 
-contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // @dev the token Order is not important
