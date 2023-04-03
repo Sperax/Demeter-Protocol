@@ -90,7 +90,6 @@ contract Demeter_CamelotFarm is
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant SPA_TOKEN_MANAGER =
         0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
-    address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant NFTPoolFactory =
         0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
     uint8 public constant COMMON_FUND_ID = 0;
@@ -391,7 +390,7 @@ contract Demeter_CamelotFarm is
     /// @notice Claim uniswap pool fee for a deposit.
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
-    function claimCamelotRewards(uint256 _depositId) external nonReentrant {
+    function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
@@ -579,7 +578,7 @@ contract Demeter_CamelotFarm is
 
     /// @notice Get the accrued uniswap fee for a deposit.
     /// @return amount Grail rewards.
-    function ComputeCamelotRewards(uint256 _tokenId)
+    function computePoolRewards(uint256 _tokenId)
         external
         view
         returns (uint256 amount)
