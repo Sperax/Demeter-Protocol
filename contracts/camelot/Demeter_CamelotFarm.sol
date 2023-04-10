@@ -17,12 +17,11 @@ pragma solidity 0.8.10;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {INFTPoolFactory, INFTPool} from "./interfaces/CamelotInterfaces.sol";
+import {INFTPoolFactory, INFTPool, INFTHandler} from "./interfaces/CamelotInterfaces.sol";
 
 // Defines the reward data for constructor.
 // token - Address of the token
@@ -36,7 +35,7 @@ contract Demeter_CamelotFarm is
     Ownable,
     ReentrancyGuard,
     Initializable,
-    IERC721Receiver
+    INFTHandler
 {
     using SafeERC20 for IERC20;
 
@@ -163,7 +162,7 @@ contract Demeter_CamelotFarm is
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
-    event CamelotPoolRewardsCollected(
+    event PoolRewardsCollected(
         address indexed recipient,
         uint256 indexed tokenId
     );
@@ -396,8 +395,17 @@ contract Demeter_CamelotFarm is
         _isValidDeposit(account, _depositId);
         Deposit memory userDeposit = deposits[account][_depositId];
         INFTPool(nftPool).harvestPositionTo(userDeposit.tokenId, account);
+    }
 
-        emit CamelotPoolRewardsCollected(account, userDeposit.tokenId);
+    function onNFTHarvest(
+        address _operator,
+        address _to,
+        uint256 _tokenId,
+        uint256 _grailAmount,
+        uint256 _xGrailAmount
+    ) external override returns (bool) {
+        emit PoolRewardsCollected(_to, _tokenId);
+        return true;
     }
 
     /// @notice Add rewards to the farm.
