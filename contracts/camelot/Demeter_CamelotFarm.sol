@@ -164,7 +164,9 @@ contract Demeter_CamelotFarm is
     event RecoveredERC20(address token, uint256 amount);
     event PoolRewardsCollected(
         address indexed recipient,
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 grailAmt,
+        uint256 xGrailAmt
     );
     event FundsRecovered(
         address indexed account,
@@ -397,14 +399,16 @@ contract Demeter_CamelotFarm is
         INFTPool(nftPool).harvestPositionTo(userDeposit.tokenId, account);
     }
 
+    /// @notice callback function for harvestPosition().
     function onNFTHarvest(
-        address _operator,
+        address,
         address _to,
         uint256 _tokenId,
         uint256 _grailAmount,
         uint256 _xGrailAmount
     ) external override returns (bool) {
-        emit PoolRewardsCollected(_to, _tokenId);
+        require(msg.sender == nftPool, "Not Allowed");
+        emit PoolRewardsCollected(_to, _tokenId, _grailAmount, _xGrailAmount);
         return true;
     }
 
