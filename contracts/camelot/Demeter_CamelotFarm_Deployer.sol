@@ -1,6 +1,5 @@
 pragma solidity 0.8.10;
 
-import "../interfaces/IFarmFactory.sol";
 import "../BaseFarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -8,8 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
 
 contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;
@@ -33,15 +30,6 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
     address public PROTOCOL_FACTORY;
-    uint256 public discountedFee;
-    // List of deployers for which fee won't be charged.
-    mapping(address => bool) public isPrivilegedDeployer;
-
-    event PrivilegeUpdated(address deployer, bool privilege);
-    event DiscountedFeeUpdated(
-        uint256 oldDiscountedFee,
-        uint256 newDiscountedFee
-    );
 
     constructor(address _factory, address _protocolFactory) {
         _isNonZeroAddr(_factory);
@@ -84,52 +72,6 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         return farm;
     }
 
-    /// @notice A function to add/ remove privileged deployer
-    /// @param _deployer Deployer(address) to add to privileged deployers list
-    /// @param _privilege Privilege(bool) whether true or false
-    /// @dev to be only called by owner
-    function updatePrivilege(address _deployer, bool _privilege)
-        external
-        onlyOwner
-    {
-        require(
-            isPrivilegedDeployer[_deployer] != _privilege,
-            "Privilege is same as desired"
-        );
-        isPrivilegedDeployer[_deployer] = _privilege;
-        emit PrivilegeUpdated(_deployer, _privilege);
-    }
-
-    /// @notice An external function to update discountOnSpaUSDsFarms
-    /// @param _discountedFee New desired discount on Spa/ USDs farms
-    /// @dev _discountedFee cannot be more than 100
-    function updateDiscountedFee(uint256 _discountedFee) external onlyOwner {
-        emit DiscountedFeeUpdated(discountedFee, _discountedFee);
-        discountedFee = _discountedFee;
-    }
-
-    /// @notice A public view function to calculate fees
-    /// @param _tokenA address of token A
-    /// @param _tokenB address of token B
-    /// @notice Order does not matter
-    /// @return Fees to be paid in feeToken set in FarmFactory (mostly USDs)
-    function calculateFees(address _tokenA, address _tokenB)
-        external
-        view
-        override
-        returns (
-            address,
-            address,
-            uint256,
-            bool
-        )
-    {
-        _isNonZeroAddr(_tokenA);
-        _isNonZeroAddr(_tokenB);
-        require(_tokenA != _tokenB, "Invalid token pair");
-        return _calculateFees(_tokenA, _tokenB);
-    }
-
     function validatePool(address _tokenA, address _tokenB)
         public
         returns (address pool)
@@ -137,62 +79,5 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;
-    }
-
-    /// @notice Collect fee and transfer it to feeReceiver.
-    /// @dev Function fetches all the fee params from sfarmFactory.
-    function _collectFee(address _tokenA, address _tokenB) internal override {
-        (
-            address feeReceiver,
-            address feeToken,
-            uint256 feeAmount,
-            bool claimable
-        ) = _calculateFees(_tokenA, _tokenB);
-        if (feeAmount > 0) {
-            IERC20(feeToken).safeTransferFrom(
-                msg.sender,
-                feeReceiver,
-                feeAmount
-            );
-            emit FeeCollected(msg.sender, feeToken, feeAmount, claimable);
-        }
-    }
-
-    /// @notice An internal function to calculate fees
-    /// @notice and return feeReceiver, feeToken, feeAmount and claimable
-    function _calculateFees(address _tokenA, address _tokenB)
-        internal
-        view
-        returns (
-            address,
-            address,
-            uint256,
-            bool
-        )
-    {
-        (
-            address feeReceiver,
-            address feeToken,
-            uint256 feeAmount
-        ) = IFarmFactory(factory).getFeeParams();
-        if (isPrivilegedDeployer[msg.sender]) {
-            // No fees for privileged deployers
-            feeAmount = 0;
-            return (feeReceiver, feeToken, feeAmount, false);
-        }
-        if (!_validateToken(_tokenA) && !_validateToken(_tokenB)) {
-            // No discount because neither of the token is SPA or USDs
-            return (feeReceiver, feeToken, feeAmount, false);
-        } else {
-            // DiscountedFee if either of the token is SPA or USDs
-            // This fees is claimable
-            return (feeReceiver, feeToken, discountedFee, true);
-        }
-    }
-
-    /// @notice Validate if a token is either SPA | USDs.
-    /// @param _token Address of the desired token.
-    function _validateToken(address _token) private pure returns (bool) {
-        return _token == SPA || _token == USDs;
     }
 }

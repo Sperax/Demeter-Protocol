@@ -2,14 +2,22 @@ pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IFarmFactory.sol";
 
 abstract contract BaseFarmDeployer is Ownable {
+    using SafeERC20 for IERC20;
+
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant USDs = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
     address public factory;
     // Stores the address of farmImplementation.
     address public farmImplementation;
+    uint256 public discountedFee;
 
+    // List of deployers for which fee won't be charged.
+    mapping(address => bool) public isPrivilegedDeployer;
+
+    event PrivilegeUpdated(address deployer, bool privilege);
     event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(
         address indexed creator,
@@ -17,27 +25,121 @@ abstract contract BaseFarmDeployer is Ownable {
         uint256 amount,
         bool indexed claimable
     );
+    event FarmImplementationUpdated(address newFarmImplementation);
+    event DiscountedFeeUpdated(
+        uint256 oldDiscountedFee,
+        uint256 newDiscountedFee
+    );
 
-    /// @notice A function to calculate fees based on the tokens
-    /// @param tokenA One token of the pool
-    /// @param tokenB Other token of the pool
-    /// @dev return feeReceiver, feeToken, feeAmount, bool claimable
-    function calculateFees(address tokenA, address tokenB)
+    function updateFarmImplementation(address _newFarmImplementation)
+        external
+        onlyOwner
+    {
+        farmImplementation = _newFarmImplementation;
+        emit FarmImplementationUpdated(_newFarmImplementation);
+    }
+
+    /// @notice A function to add/ remove privileged deployer
+    /// @param _deployer Deployer(address) to add to privileged deployers list
+    /// @param _privilege Privilege(bool) whether true or false
+    /// @dev to be only called by owner
+    function updatePrivilege(address _deployer, bool _privilege)
+        external
+        onlyOwner
+    {
+        require(
+            isPrivilegedDeployer[_deployer] != _privilege,
+            "Privilege is same as desired"
+        );
+        isPrivilegedDeployer[_deployer] = _privilege;
+        emit PrivilegeUpdated(_deployer, _privilege);
+    }
+
+    /// @notice An external function to update discountOnSpaUSDsFarms
+    /// @param _discountedFee New desired discount on Spa/ USDs farms
+    /// @dev _discountedFee cannot be more than 100
+    function updateDiscountedFee(uint256 _discountedFee) external onlyOwner {
+        emit DiscountedFeeUpdated(discountedFee, _discountedFee);
+        discountedFee = _discountedFee;
+    }
+
+    /// @notice A public view function to calculate fees
+    /// @param _tokenA address of token A
+    /// @param _tokenB address of token B
+    /// @notice Order does not matter
+    /// @return Fees to be paid in feeToken set in FarmFactory (mostly USDs)
+    function calculateFees(address _tokenA, address _tokenB)
         external
         view
-        virtual
         returns (
+            address,
+            address,
+            uint256,
+            bool
+        )
+    {
+        _isNonZeroAddr(_tokenA);
+        _isNonZeroAddr(_tokenB);
+        require(_tokenA != _tokenB, "Invalid token pair");
+        return _calculateFees(_tokenA, _tokenB);
+    }
+
+    /// @notice Collect fee and transfer it to feeReceiver.
+    /// @dev Function fetches all the fee params from sfarmFactory.
+    function _collectFee(address _tokenA, address _tokenB) internal virtual {
+        (
             address feeReceiver,
             address feeToken,
             uint256 feeAmount,
             bool claimable
-        );
+        ) = _calculateFees(_tokenA, _tokenB);
+        if (feeAmount > 0) {
+            IERC20(feeToken).safeTransferFrom(
+                msg.sender,
+                feeReceiver,
+                feeAmount
+            );
+            emit FeeCollected(msg.sender, feeToken, feeAmount, claimable);
+        }
+    }
 
-    /// @notice A function to collect fees from the creator of the farm
-    /// @param tokenA One token of the pool
-    /// @param tokenB Other token of the pool
-    /// @dev Transfer fees from msg.sender to feeReceiver from FarmFactory in this function
-    function _collectFee(address tokenA, address tokenB) internal virtual;
+    /// @notice An internal function to calculate fees
+    /// @notice and return feeReceiver, feeToken, feeAmount and claimable
+    function _calculateFees(address _tokenA, address _tokenB)
+        internal
+        view
+        returns (
+            address,
+            address,
+            uint256,
+            bool
+        )
+    {
+        (
+            address feeReceiver,
+            address feeToken,
+            uint256 feeAmount
+        ) = IFarmFactory(factory).getFeeParams();
+        if (isPrivilegedDeployer[msg.sender]) {
+            // No fees for privileged deployers
+            feeAmount = 0;
+            return (feeReceiver, feeToken, feeAmount, false);
+        }
+        if (!_validateToken(_tokenA) && !_validateToken(_tokenB)) {
+            // No discount because neither of the token is SPA or USDs
+            return (feeReceiver, feeToken, feeAmount, false);
+        } else {
+            // DiscountedFee if either of the token is SPA or USDs
+            // This fees is claimable
+            return (feeReceiver, feeToken, discountedFee, true);
+        }
+    }
+
+    /// @notice Validate if a token is either SPA | USDs.
+    /// @param _token Address of the desired token.
+    function _validateToken(address _token) internal pure returns (bool) {
+        return _token == SPA || _token == USDs;
+    }
 
     /// @notice Validate address
     function _isNonZeroAddr(address _addr) internal pure {
