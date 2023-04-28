@@ -86,6 +86,7 @@ contract Demeter_CamelotFarm is
     }
 
     // constants
+    string public constant farmId = "Demeter_Camelot_v1";
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant SPA_TOKEN_MANAGER =
         0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
