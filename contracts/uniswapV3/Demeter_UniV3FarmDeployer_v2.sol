@@ -51,8 +51,8 @@ contract Demeter_UniV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
         address farm = address(farmInstance);
         // Calculate and collect fee if required
         _collectFee(_data.uniswapPoolData.tokenA, _data.uniswapPoolData.tokenB);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
+        IFarmFactory(factory).registerFarm(farm, msg.sender);
         return farm;
     }
 }
