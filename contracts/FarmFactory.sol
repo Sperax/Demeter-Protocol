@@ -26,7 +26,11 @@ contract FarmFactory is OwnableUpgradeable {
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
 
-    event FarmRegistered(address farm, address creator);
+    event FarmRegistered(
+        address indexed farm,
+        address indexed deployer,
+        address creator
+    );
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
@@ -56,7 +60,7 @@ contract FarmFactory is OwnableUpgradeable {
         require(deployerRegistered[msg.sender], "Deployer not registered");
         farms.push(_farm);
         farmRegistered[_farm] = true;
-        emit FarmRegistered(_farm, _creator);
+        emit FarmRegistered(_farm, msg.sender, _creator);
     }
 
     /// @notice Register a new farm deployer.
