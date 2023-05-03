@@ -1,6 +1,7 @@
 from brownie import (
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
+    Demeter_UniV3FarmDeployer_v2,
     FarmFactory,
     chain,
     interface,
@@ -58,8 +59,15 @@ def main():
         {'from': OWNER}
     )
 
+    uniV3_deployer = Demeter_UniV3FarmDeployer_v2.deploy(
+        DEMETER_FACTORY,
+        {'from': OWNER}
+    )
+
     farm_factory = FarmFactory.at(DEMETER_FACTORY)
 
+    farm_factory.removeDeployer(0, {'from': OWNER})
+    farm_factory.registerFarmDeployer(uniV3_deployer, {'from': OWNER})
     farm_factory.registerFarmDeployer(deployer, {'from': OWNER})
 
     farm_config = Create_Farm_data(
