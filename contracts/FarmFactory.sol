@@ -25,6 +25,8 @@ contract FarmFactory is OwnableUpgradeable {
     address[] public deployerList;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
+    // List of deployers for which fee won't be charged.
+    mapping(address => bool) public isPrivilegedDeployer;
 
     event FarmRegistered(
         address indexed farm,
@@ -34,22 +36,11 @@ contract FarmFactory is OwnableUpgradeable {
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
+    event PrivilegeUpdated(address deployer, bool privilege);
 
     // Disable initialization for the implementation contract
     constructor() {
         _disableInitializers();
-    }
-
-    /// @notice constructor
-    /// @param _feeToken The fee token for farm creation.
-    /// @param _feeAmount The fee amount to be paid by the creator.
-    function initialize(
-        address _feeReceiver,
-        address _feeToken,
-        uint256 _feeAmount
-    ) external initializer {
-        OwnableUpgradeable.__Ownable_init();
-        updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
     }
 
     /// @notice Register a farm created by registered Deployer
@@ -84,6 +75,22 @@ contract FarmFactory is OwnableUpgradeable {
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
+    }
+
+    /// @notice A function to add/ remove privileged deployer
+    /// @param _deployer Deployer(address) to add to privileged deployers list
+    /// @param _privilege Privilege(bool) whether true or false
+    /// @dev to be only called by owner
+    function updatePrivilege(address _deployer, bool _privilege)
+        external
+        onlyOwner
+    {
+        require(
+            isPrivilegedDeployer[_deployer] != _privilege,
+            "Privilege is same as desired"
+        );
+        isPrivilegedDeployer[_deployer] = _privilege;
+        emit PrivilegeUpdated(_deployer, _privilege);
     }
 
     /// @notice Get list of registered deployer

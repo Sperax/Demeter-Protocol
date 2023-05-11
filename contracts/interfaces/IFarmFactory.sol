@@ -11,4 +11,6 @@ interface IFarmFactory {
             address feeToken,
             uint256 feeAmount
         );
+
+    function isPrivilegedDeployer(address _user) external view returns (bool);
 }

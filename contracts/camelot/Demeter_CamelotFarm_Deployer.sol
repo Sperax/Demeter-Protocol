@@ -29,13 +29,13 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
-    address public PROTOCOL_FACTORY;
+    address public protocolFactory;
 
     constructor(address _factory, address _protocolFactory) {
         _isNonZeroAddr(_factory);
         _isNonZeroAddr(_protocolFactory);
         factory = _factory;
-        PROTOCOL_FACTORY = _protocolFactory;
+        protocolFactory = _protocolFactory;
         discountedFee = 100e18; // 100 USDs
         farmImplementation = address(new Demeter_CamelotFarm());
     }
@@ -76,7 +76,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         public
         returns (address pool)
     {
-        pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
+        pool = ICamelotFactory(protocolFactory).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;
     }

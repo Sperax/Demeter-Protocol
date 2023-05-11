@@ -14,10 +14,6 @@ abstract contract BaseFarmDeployer is Ownable {
     address public farmImplementation;
     uint256 public discountedFee;
 
-    // List of deployers for which fee won't be charged.
-    mapping(address => bool) public isPrivilegedDeployer;
-
-    event PrivilegeUpdated(address deployer, bool privilege);
     event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(
         address indexed creator,
@@ -37,22 +33,6 @@ abstract contract BaseFarmDeployer is Ownable {
     {
         farmImplementation = _newFarmImplementation;
         emit FarmImplementationUpdated(_newFarmImplementation);
-    }
-
-    /// @notice A function to add/ remove privileged deployer
-    /// @param _deployer Deployer(address) to add to privileged deployers list
-    /// @param _privilege Privilege(bool) whether true or false
-    /// @dev to be only called by owner
-    function updatePrivilege(address _deployer, bool _privilege)
-        external
-        onlyOwner
-    {
-        require(
-            isPrivilegedDeployer[_deployer] != _privilege,
-            "Privilege is same as desired"
-        );
-        isPrivilegedDeployer[_deployer] = _privilege;
-        emit PrivilegeUpdated(_deployer, _privilege);
     }
 
     /// @notice An external function to update discountOnSpaUSDsFarms
@@ -120,7 +100,7 @@ abstract contract BaseFarmDeployer is Ownable {
             address feeToken,
             uint256 feeAmount
         ) = IFarmFactory(factory).getFeeParams();
-        if (isPrivilegedDeployer[msg.sender]) {
+        if (IFarmFactory(factory).isPrivilegedDeployer(msg.sender)) {
             // No fees for privileged deployers
             feeAmount = 0;
             return (feeReceiver, feeToken, feeAmount, false);
