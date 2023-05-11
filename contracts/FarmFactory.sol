@@ -30,8 +30,8 @@ contract FarmFactory is OwnableUpgradeable {
 
     event FarmRegistered(
         address indexed farm,
-        address indexed deployer,
-        address creator
+        address indexed creator,
+        address indexed deployer
     );
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
