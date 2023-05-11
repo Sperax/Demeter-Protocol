@@ -63,7 +63,7 @@ contract FarmFactory is OwnableUpgradeable {
         require(deployerRegistered[msg.sender], "Deployer not registered");
         farms.push(_farm);
         farmRegistered[_farm] = true;
-        emit FarmRegistered(_farm, msg.sender, _creator);
+        emit FarmRegistered(_farm, _creator, msg.sender);
     }
 
     /// @notice Register a new farm deployer.
