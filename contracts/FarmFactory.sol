@@ -43,6 +43,18 @@ contract FarmFactory is OwnableUpgradeable {
         _disableInitializers();
     }
 
+    /// @notice constructor
+    /// @param _feeToken The fee token for farm creation.
+    /// @param _feeAmount The fee amount to be paid by the creator.
+    function initialize(
+        address _feeReceiver,
+        address _feeToken,
+        uint256 _feeAmount
+    ) external initializer {
+        OwnableUpgradeable.__Ownable_init();
+        updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
+    }
+
     /// @notice Register a farm created by registered Deployer
     /// @dev Only registered deployer can register a farm.
     /// @param _farm Address of the created farm contract
