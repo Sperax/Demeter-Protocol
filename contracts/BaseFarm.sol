@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity <=0.8.10;
+pragma solidity 0.8.16;
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
@@ -966,14 +966,6 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
     }
 
-    function _isValidCooldownPeriod(uint256 _cooldownPeriod) internal view {
-        require(
-            _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
-                _cooldownPeriod <= MAX_COOLDOWN_PERIOD,
-            "Invalid cooldown period"
-        );
-    }
-
     /// @notice Validate if farm is not closed
     function _farmNotClosed() internal view {
         require(!isClosed, "Farm closed");
@@ -989,6 +981,14 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         require(
             msg.sender == rewardData[_rwdToken].tknManager,
             "Not the token manager"
+        );
+    }
+
+    function _isValidCooldownPeriod(uint256 _cooldownPeriod) internal pure {
+        require(
+            _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
+                _cooldownPeriod <= MAX_COOLDOWN_PERIOD,
+            "Invalid cooldown period"
         );
     }
 

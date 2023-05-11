@@ -1,15 +1,6 @@
-pragma solidity 0.8.10;
-
+// SPDX-License-Identifier: MIT Line
+pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-
-// Camelot position helper: https://arbiscan.io/address/0xe458018Ad4283C90fB7F5460e24C4016F81b8175#code
-// NFTPoolFactory: 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d https://arbiscan.io/address/0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d
-// Factory: 0x6EcCab422D763aC031210895C81787E87B43A652 https://arbiscan.io/address/0x6EcCab422D763aC031210895C81787E87B43A652#code
-// Router: 0xc873fEcbd354f5A56E00E710B90EF4201db2448d https://arbiscan.io/address/0xc873fEcbd354f5A56E00E710B90EF4201db2448d
-// USDs: 0xD74f5255D557944cf7Dd0E45FF521520002D5748
-// USDC: 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8
-// USDs-USDC lp: 0x495DABd6506563Ce892B8285704bD28F9DdCAE65 https://arbiscan.io/address/0x495DABd6506563Ce892B8285704bD28F9DdCAE65
-// USDs-USDC nft pool: 0x85054ED5a0722117deEE9411f2f1ef780CC97056
 
 interface INFTPoolFactory {
     function getPool(address _lpTokenAddr) external view returns (address);

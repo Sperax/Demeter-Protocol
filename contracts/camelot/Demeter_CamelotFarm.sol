@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.10;
+pragma solidity 0.8.16;
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
@@ -22,7 +22,7 @@ import "../BaseFarm.sol";
 
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // constants
-    string public constant farmId = "Demeter_Camelot_v1";
+    string public constant FARM_ID = "Demeter_Camelot_v1";
     address public constant NFTPoolFactory =
         0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
 
