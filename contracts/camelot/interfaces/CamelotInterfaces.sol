@@ -26,6 +26,8 @@ interface INFTPool {
     function withdrawFromPosition(uint256 tokenId, uint256 amountToWithdraw)
         external;
 
+    function updatePool() external;
+
     /**
      * @dev Harvest from a staking position to "to" address
      *

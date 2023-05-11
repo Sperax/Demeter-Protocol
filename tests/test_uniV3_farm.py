@@ -3,13 +3,14 @@ from brownie import (
     TransparentUpgradeableProxy,
     Contract,
     accounts,
-    Demeter_UniV3FarmDeployer_v2,
+    Demeter_UniV3FarmDeployer,
     ProxyAdmin,
     reverts,
     UniswapV3Test,
-    Demeter_UniV3Farm_v2,
+    Demeter_UniV3Farm,
     chain,
     interface,
+    network,
     ZERO_ADDRESS
 )
 from random import randint
@@ -18,21 +19,63 @@ import eth_utils
 from conftest import (
     GAS_LIMIT,
     OWNER,
-    mint_position,
-    deploy_uni_farm,
+    ordered_tokens,
     token_obj,
     fund_account,
-    constants,
-    test_constants,
     check_function,
-    create_deployer_farm
-
 )
 
 # import scripts.deploy_farm as farm_deployer
 # from ..scripts.constants import demeter_farm_constants
-
+global deployer
 farm_names = ['test_farm_with_lockup', 'test_farm_without_lockup']
+
+
+def create_deployer_farm(deployer, farm_deployer, config):
+    """Init Uniswap Farm Proxy Contract"""
+    usds = token_obj('usds')
+    fund_account(deployer.address, 'usds', 1000e18)
+    _ = usds.approve(farm_deployer, 1000e18, {'from': deployer})
+    create_tx = farm_deployer.createFarm(
+        (
+            config['admin'],
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(
+                config['uniswap_pool_data'].values()),
+            list(
+                map(lambda x: list(x.values()), config['reward_token_data'])),
+        ),
+        {'from': deployer},
+    )
+    return Demeter_UniV3Farm.at(create_tx.new_contracts[0])
+
+
+def deploy_uni_farm(deployer, contract):
+    """Deploying Uniswap Farm Proxy Contract"""
+
+    print('Deploy Uniswap Farm implementation.')
+    farm = contract.deploy(
+        {'from': deployer},
+    )
+    print('Deploy Proxy Admin.')
+    # Deploy the proxy admin contract
+    proxy_admin = ProxyAdmin.deploy(
+        {'from': deployer, 'gas': GAS_LIMIT})
+
+    proxy = TransparentUpgradeableProxy.deploy(
+        farm.address,
+        proxy_admin.address,
+        eth_utils.to_bytes(hexstr='0x'),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+
+    uniswap_farm = Contract.from_abi(
+        'Demeter_UniV3Farm',
+        proxy.address,
+        contract.abi
+    )
+    return uniswap_farm
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -45,7 +88,7 @@ def setUp(config):
         '0x0000000000000000000000000000000000000000000000000000000000000000')
     lock_data = (
         '0x0000000000000000000000000000000000000000000000000000000000000001')
-    manager = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+    manager = '0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188'
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -65,7 +108,23 @@ def config(request):
 
 @pytest.fixture(scope='module', autouse=True)
 def test_config(request):
-    test_config = test_constants()
+    test_config = {
+        'number_of_deposits': 2,
+        'funding_data': {
+            'spa': 1000000e18,
+            'usds': 100000e18,
+            'usdc': 100000e6,
+        },
+        'uniswap_pool_false_data': {
+            'token_A':
+            '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
+            'token_B':
+            '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
+            'fee_tier': 3000,
+            'lower_tick': -887220,
+            'upper_tick': 0,
+        },
+    }
     return test_config
 
 
@@ -104,8 +163,8 @@ def factory(setUp):
 @pytest.fixture(scope='module', autouse=True)
 def farm_deployer(factory):
     """Deploying Uniswap Farm Proxy Contract"""
-    print('Deploy Demeter_UniV3FarmDeployer_v2 contract.')
-    farm_deployer = Demeter_UniV3FarmDeployer_v2.deploy(
+    print('Deploy Demeter_UniV3FarmDeployer contract.')
+    farm_deployer = Demeter_UniV3FarmDeployer.deploy(
         factory,
         {'from': deployer}
     )
@@ -118,19 +177,31 @@ def farm_deployer(factory):
     return farm_deployer
 
 
+def init_farm(deployer, farm, config):
+    """Init Uniswap Farm Proxy Contract"""
+    farm.initialize(
+        config['farm_start_time'],
+        config['cooldown_period'],
+        list(config['uniswap_pool_data'].values()),
+        list(map(lambda x: list(x.values()), config['reward_token_data'])),
+        {'from': deployer, 'gas_limit': GAS_LIMIT},
+    )
+    return farm
+
+
 @pytest.fixture(scope='module', autouse=True)
 def farm_contract(config):
-    return deploy_uni_farm(deployer, Demeter_UniV3Farm_v2)
+    return deploy_uni_farm(deployer, Demeter_UniV3Farm)
 
-
-# @pytest.fixture(scope='module')
-# def farm(config, farm_contract):
-#     return init_farm(deployer, farm_contract, config)
 
 @pytest.fixture(scope='module')
-def farm(config, farm_deployer):
-    tx = create_deployer_farm(deployer, farm_deployer, config)
-    return tx
+def farm(config, farm_contract):
+    return init_farm(deployer, farm_contract, config)
+
+# @pytest.fixture(scope='module')
+# def farm(config, farm_deployer):
+#     tx = create_deployer_farm(deployer, farm_deployer, config)
+#     return tx
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -151,7 +222,7 @@ def funding_accounts(test_config):
     return token, amount
 
 
-@ pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope='module', autouse=True)
 def reward_token(config):
     reward_tkn = list()
     reward_tkn.append(token_obj('spa'))  # Default reward token
@@ -162,6 +233,136 @@ def reward_token(config):
         rwd_token_name = tkn.name()
         print('reward token name is: ', rwd_token_name)
     return reward_tkn
+
+
+def constants():
+    deployer = accounts[0]
+    if (network.show_active() == 'arbitrum-main-fork'):
+        config = {
+            'test_farm_with_lockup': {
+                'contract': Demeter_UniV3Farm,
+                'config': {
+                    'admin': deployer,
+                    'farm_start_time': chain.time()+1000,
+                    'cooldown_period': 21,
+                    'uniswap_pool_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+
+                    'reward_token_data': [
+                        {
+                            'reward_tkn':
+                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            'tkn_manager': OWNER,
+                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+                        #     'tkn_manager': OWNER,
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
+            },
+
+            'test_farm_without_lockup': {
+                'contract': Demeter_UniV3Farm,
+                'config': {
+                    'admin': deployer,
+                    'farm_start_time': chain.time()+2000,
+                    'cooldown_period': 0,
+
+                    'uniswap_pool_data': {
+                        'token_A':
+                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'token_B':
+                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                        'fee_tier': 3000,
+                        'lower_tick': -887220,
+                        'upper_tick': 0,
+                    },
+
+                    'reward_token_data': [
+                        {
+                            'reward_tkn':
+                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                            'tkn_manager': OWNER,
+                        },
+                        # {
+                        #     'reward_tkn':
+                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        #     'tkn_manager': OWNER,
+
+                        # },
+                        {
+                            'reward_tkn':
+                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
+                            'tkn_manager': OWNER,
+                        },
+                    ],
+
+                }
+            },
+
+
+        }
+        return config
+
+
+def mint_position(
+    position_manager,
+    token1,
+    token2,
+    fee,
+    lower_tick,
+    upper_tick,
+    amount1,
+    amount2,
+    OWNER,
+):
+    # provide initial liquidity
+    t1, a1, t2, a2 = ordered_tokens(token1, amount1, token2, amount2)
+    print('Token A: ', t1)
+    print('Token A Name: ', t1.name())
+    print('Token A Precision: ', t1.decimals())
+    print('Amount A: ', a1/(10 ** t1.decimals()))
+    print('Token B: ', t2)
+    print('Token B Name: ', t2.name())
+    print('Token B Precision: ', t2.decimals())
+    print('Amount B: ', a2/(10 ** t2.decimals()))
+
+    t1.approve(position_manager.address, a1, {'from': OWNER})
+    t2.approve(position_manager.address, a2, {'from': OWNER})
+    deadline = 7200 + chain.time()  # deadline: 2 hours
+    params = [
+        t1,
+        t2,
+        fee,
+        lower_tick,  # tickLower
+        upper_tick,  # tickUpper
+        a1,
+        a2,
+        0,  # minimum amount of spa expected
+        0,  # minimum amount of mock_token expected
+        OWNER,
+        deadline
+    ]
+    txn = position_manager.mint(
+        params,
+        {'from': OWNER}
+    )
+    return txn.events['IncreaseLiquidity']['tokenId']
 
 
 def add_rewards(farm, reward_token, funding_accounts):
@@ -440,7 +641,7 @@ class Test_initialization:
     def test_initialization(self, farm):
 
         assert farm.SPA() == '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'
-        manager = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+        manager = '0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188'
         assert farm.SPA_TOKEN_MANAGER() == manager
         assert farm.NFPM() == '0xC36442b4a4522E871399CD717aBDD847Ab11FE88'
         factory = '0x1F98431c8aD98523631AE4a59f267346ea31F984'
@@ -698,7 +899,7 @@ class Test_admin_function:
                 for i, token in enumerate(reward_token):
                     assert tx.events['FundsRecovered'][i]['amount'] >= \
                         rewards_balance[i] - \
-                        rewards_rate[i][0]-rewards_rate[i][1]
+                        (rewards_rate[i][0] + rewards_rate[i][1])
                     assert tx.events['FundsRecovered'][i]['account'] == manager
                     assert tx.events['FundsRecovered'][i]['rwdToken'] == token
                     assert tx.events['RewardRateUpdated'][i]['newRewardRate'] \
@@ -706,7 +907,8 @@ class Test_admin_function:
             if (farm_name == 'test_farm_without_lockup'):
                 for i, token in enumerate(reward_token):
                     assert tx.events['FundsRecovered'][i]['amount'] >= \
-                        rewards_balance[i] - rewards_rate[i][0]
+                        rewards_balance[i] - (rewards_rate[i]
+                                              [0])  # 5 seconds of rewards
                     assert tx.events['FundsRecovered'][i]['account'] == manager
                     assert tx.events['FundsRecovered'][i]['rwdToken'] == token
                     assert tx.events['RewardRateUpdated'][i]['newRewardRate'] \
@@ -836,6 +1038,8 @@ class Test_view_functions:
             pytest.skip(f'NOTE: Function {func_name} needs to be made public')
         with reverts('Incorrect pool token'):
             farm._getLiquidity(117684)
+        with reverts('Incorrect tick range'):
+            farm._getLiquidity(33301)
 
     def test_getNumSubscriptions(self, farm, minted_positions,
                                  pm):
@@ -856,12 +1060,29 @@ class Test_view_functions:
         with reverts('Invalid tick range'):
             farm._validateTickRange(lower_tick, higer_tick)
 
+    def test_subcribe_reward_fund(self, farm):
+        func_name = '_subscribeRewardFund'
+        if not check_function(farm, func_name):
+            pytest.skip(f'NOTE: Function {func_name} needs to be made public')
+        with reverts('Invalid fund id'):
+            farm._subscribeRewardFund(4, 1, 1, {'from': deployer})
+
+    def test_unsubcribe_reward_fund(self, farm):
+        func_name = '_unsubscribeRewardFund'
+        if not check_function(farm, func_name):
+            pytest.skip(f'NOTE: Function {func_name} needs to be made public')
+        with reverts('Invalid fund id'):
+            farm._unsubscribeRewardFund(4, deployer, 1, {'from': deployer})
+
     def test_zero_address(self, farm):
         func_name = '_validateTickRange'
         if not check_function(farm, func_name):
             pytest.skip(f'NOTE: Function {func_name} needs to be made public')
         with reverts('Invalid address'):
-            farm._isNonZeroAddr(ZERO_ADDRESS, {'from': deployer})
+            farm.updateTokenManager(farm.SPA(), ZERO_ADDRESS, {'from': OWNER})
+        with reverts('Not the token manager'):
+            farm.updateTokenManager(farm.SPA(),
+                                    ZERO_ADDRESS, {'from': deployer})
 
     # @pytest.mark.skip()
     class Test_get_subscription_info:
@@ -991,6 +1212,13 @@ class Test_view_functions:
                 tx = farm.getRewardBalance(tkn, {'from': deployer})
                 print(tx, 'is reward balance')
 
+        def test_getRewardBalance_zero_liquidity(self,
+                                                 reward_token,
+                                                 farm):
+            for _, tkn in enumerate(reward_token):
+                tx = farm.getRewardBalance(tkn, {'from': deployer})
+                print(tx, 'is reward balance')
+
 
 # @pytest.mark.skip()
 class Test_recover_reward_funds:
@@ -1006,7 +1234,9 @@ class Test_recover_reward_funds:
 
     def test_recover_reward_funds(self, reward_token, setup, farm):
         recovered_funds = list()
+
         for i, tkn in enumerate(reward_token):
+            _ = farm.recoverRewardFunds(tkn, 1, {'from': OWNER})
             tx = farm.recoverRewardFunds(tkn, farm.getRewardBalance(
                 tkn, {'from': OWNER}), {'from': OWNER})
             recovered_funds.append(tx)
@@ -1017,6 +1247,9 @@ class Test_recover_reward_funds:
                 OWNER
             # Reward Accrual Stopped
             assert farm.getRewardBalance(tkn, {'from': OWNER}) == 0
+            farm.computeRewards(deployer, 0)
+            farm.computeRewards(deployer, 0)
+            farm.computeRewards(deployer, 0)
 
     def test_recover_reward_funds_uint256_max(self, reward_token, setup, farm):
         UINT256_MAX = \
@@ -1084,6 +1317,17 @@ class Test_deposit:
                     token_id[0],
                     {'from': deployer})
 
+    def test_no_liquidity_in_position(self, farm, pm):
+        if (farm.cooldownPeriod() != 0):
+            with reverts('No liquidity in position'):
+                _ = farm.onERC721Received(
+                        deployer,
+                        '0x95c14c058aaffda687780eb60ef8658ef1166578',
+                        101244,
+                        lock_data,
+                        {'from': pm.address},
+                    )
+
     def test_lockup_disabled(self, farm, minted_positions, pm):
         token_id = minted_positions
         print('token Ids are: ', token_id)
@@ -1146,6 +1390,7 @@ class Test_claim_uniswap_fee:
 
     def test_claim_uniswap_fee(self, farm, setup):
         token_id = farm.getDeposit(deployer, 0)['tokenId']
+        chain.mine(10, None, 86400*7)
         uniswap_fee = farm.computeUniswapFee(token_id)
         tx = farm.claimUniswapFee(0, {'from': deployer})
         claim_ev = tx.events['PoolFeeCollected']
@@ -1332,6 +1577,8 @@ class Test_withdraw:
                     {'from': deployer}
                 )
                 chain.mine(10, farm.deposits(deployer, 0)['expiryDate'] + 10)
+                farm.computeRewards(deployer, 0, {'from': deployer})
+                farm.computeRewards(deployer, 0, {'from': deployer})
                 withdraws.append(farm.withdraw(0, {'from': deployer}))
 
         if (farm.cooldownPeriod() == 0):
