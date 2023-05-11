@@ -36,9 +36,9 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract Demeter_UniV3Farm_v2 is BaseFarm, IERC721Receiver {
+contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     // constants
-    string public constant farmId = "Demeter_UniV3_v2";
+    string public constant farmId = "Demeter_UniV3_v3";
     address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;

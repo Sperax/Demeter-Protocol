@@ -1,11 +1,11 @@
 pragma solidity 0.8.10;
 
 import "../BaseFarmDeployer.sol";
-import {Demeter_UniV3Farm_v2, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm_v2.sol";
+import {Demeter_UniV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -21,13 +21,13 @@ contract Demeter_UniV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v2";
+    string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v3";
 
     constructor(address _factory) {
         _isNonZeroAddr(_factory);
         factory = _factory;
         discountedFee = 100e18; // 100 USDs
-        farmImplementation = address(new Demeter_UniV3Farm_v2());
+        farmImplementation = address(new Demeter_UniV3Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -38,7 +38,7 @@ contract Demeter_UniV3FarmDeployer_v2 is BaseFarmDeployer, ReentrancyGuard {
         returns (address)
     {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_UniV3Farm_v2 farmInstance = Demeter_UniV3Farm_v2(
+        Demeter_UniV3Farm farmInstance = Demeter_UniV3Farm(
             Clones.clone(farmImplementation)
         );
         farmInstance.initialize(
