@@ -142,9 +142,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         (uint256 liquidity, , , , , , , ) = INFTPool(nftPool)
             .getStakingPosition(_tokenId);
 
-        /// @dev Check if the token belongs to correct pool
-        // @todo add any validation if required
-
         return uint256(liquidity);
     }
 }
