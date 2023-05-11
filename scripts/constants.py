@@ -1,7 +1,7 @@
 from brownie import (
     FarmFactory,
-    Demeter_UniV3FarmDeployer_v2,
-    Demeter_UniV3Farm_v2,
+    Demeter_UniV3FarmDeployer,
+    Demeter_UniV3Farm,
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
     chain,
@@ -120,8 +120,8 @@ deployment_config = {
             ]
         )
     ),
-    'UniV3FarmDeployer_v2': Deployment_data(
-        contract=Demeter_UniV3FarmDeployer_v2,
+    'UniV3FarmDeployer_v3': Deployment_data(
+        contract=Demeter_UniV3FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -162,12 +162,20 @@ deployment_config = {
     ),
 }
 
-upgrade_config = {}
+upgrade_config = {
+    'farm_factory_v2': Upgrade_data(
+        contract=FarmFactory,
+        config=Upgrade_config(
+            proxy_address='0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+            proxy_admin='0x474b9be3998Ab278b2846dB7C667497f16F83e0C'
+        )
+    )
+}
 
 farm_config = {
     'l2dao_usds_v1': Create_Farm_data(
-        contract=Demeter_UniV3Farm_v2,
-        deployer_contract=Demeter_UniV3FarmDeployer_v2,
+        contract=Demeter_UniV3Farm,
+        deployer_contract=Demeter_UniV3FarmDeployer,
         deployer_address='0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0',
         config=Farm_config(
             deployment_params={

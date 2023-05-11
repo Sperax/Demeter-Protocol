@@ -1,7 +1,7 @@
 from brownie import (
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
-    Demeter_UniV3FarmDeployer_v2,
+    Demeter_UniV3FarmDeployer,
     FarmFactory,
     chain,
     interface,
@@ -59,7 +59,7 @@ def main():
         {'from': OWNER}
     )
 
-    uniV3_deployer = Demeter_UniV3FarmDeployer_v2.deploy(
+    uniV3_deployer = Demeter_UniV3FarmDeployer.deploy(
         DEMETER_FACTORY,
         {'from': OWNER}
     )
