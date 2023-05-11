@@ -475,13 +475,20 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return (supply - rewardsAcc);
     }
 
+    /// @notice Common logic for deposit in the demeter farm.
+    /// @param _account Address of the user
+    /// @param _lockup lockup option for the deposit.
+    /// @param _tokenId generated | provided id of position to be deposited.
+    /// @param _liquidity Liquidity amount to be added to the pool.
     function _deposit(
-        address _user,
+        address _account,
         bool _lockup,
         uint256 _tokenId,
         uint256 _liquidity
     ) internal {
+        // Allow deposit only when farm is not paused.
         _farmNotPaused();
+
         if (cooldownPeriod == 0) {
             require(!_lockup, "Lockup functionality is disabled");
         }
@@ -509,11 +516,13 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         // @dev Add the deposit to the user's deposit list
-        deposits[_user].push(userDeposit);
+        deposits[_account].push(userDeposit);
 
-        emit Deposited(_user, _lockup, _tokenId, _liquidity);
+        emit Deposited(_account, _lockup, _tokenId, _liquidity);
     }
 
+    /// @notice Common logic for initiating cooldown.
+    /// @param _depositId user's deposit Id.
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
         address account = msg.sender;
@@ -542,6 +551,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
     }
 
+    /// @notice Common logic for withdraw.
+    /// @param _account address of the user.
+    /// @param _depositId user's deposit id.
+    /// @param _userDeposit userDeposit struct.
     function _withdraw(
         address _account,
         uint256 _depositId,
