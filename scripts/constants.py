@@ -1,7 +1,9 @@
 from brownie import (
     FarmFactory,
-    Demeter_UniV3FarmDeployer_v2,
-    Demeter_UniV3Farm_v2,
+    Demeter_UniV3FarmDeployer,
+    Demeter_UniV3Farm,
+    Demeter_CamelotFarm,
+    Demeter_CamelotFarm_Deployer,
     chain,
 )
 
@@ -118,8 +120,8 @@ deployment_config = {
             ]
         )
     ),
-    'UniV3FarmDeployer_v2': Deployment_data(
-        contract=Demeter_UniV3FarmDeployer_v2,
+    'UniV3FarmDeployer_v3': Deployment_data(
+        contract=Demeter_UniV3FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -137,21 +139,50 @@ deployment_config = {
             ]
         )
     ),
+    'CamelotFarmDeployer_v1': Deployment_data(
+        contract=Demeter_CamelotFarm_Deployer,
+        config=Deployment_config(
+            upgradeable=False,
+            deployment_params={
+                'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+                'protocol_factory':
+                    '0x6EcCab422D763aC031210895C81787E87B43A652'
+            },
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
+                ),
+            ]
+        )
+    ),
 }
 
-upgrade_config = {}
+upgrade_config = {
+    'farm_factory_v2': Upgrade_data(
+        contract=FarmFactory,
+        config=Upgrade_config(
+            proxy_address='0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+            proxy_admin='0x474b9be3998Ab278b2846dB7C667497f16F83e0C'
+        )
+    )
+}
 
 farm_config = {
     'l2dao_usds_v1': Create_Farm_data(
-        contract=Demeter_UniV3Farm_v2,
-        deployer_contract=Demeter_UniV3FarmDeployer_v2,
+        contract=Demeter_UniV3Farm,
+        deployer_contract=Demeter_UniV3FarmDeployer,
         deployer_address='0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0',
         config=Farm_config(
             deployment_params={
                 'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
                 'farm_start_time': chain.time() + 100,
                 'cooldown_period': 0,
-                'uniswap_pool_data': {
+                'pool_data': {
                     'token_A': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
                     'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
                     'fee_tier': 3000,
@@ -168,5 +199,22 @@ farm_config = {
                 ]
             }
         )
-    )
+    ),
+    'usds_usdc_camelot_Farm': Create_Farm_data(
+        contract=Demeter_CamelotFarm,
+        deployer_contract=Demeter_CamelotFarm_Deployer,
+        deployer_address='0x1a85c90cfEE9eD499C598a11ea56A8E5a16c307f',
+        config=Farm_config(
+            deployment_params={
+                'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
+                'farm_start_time': chain.time() + 100,
+                'cooldown_period': 0,
+                'pool_data': {
+                    'token_A': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
+                    'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
+                },
+                'reward_token_data': []
+            }
+        )
+    ),
 }

@@ -25,6 +25,12 @@ repos:
         entry: bash ./dev-utils/restricted-user.sh
         language: system
 
+
+      - id: branch-name
+        name: Enforce branch naming convention
+        entry: bash ./dev-utils/branch-name.sh
+        language: system
+
       - id: compile-contracts
         name: Brownie compile contracts
         entry: brownie compile

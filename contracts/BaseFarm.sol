@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity <=0.8.10;
+pragma solidity 0.8.16;
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
@@ -17,27 +17,10 @@ pragma solidity <=0.8.10;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing, CollectParams} from "./interfaces/UniswapV3.sol";
-import "./libraries/PositionValue.sol";
-
-// Defines the Uniswap pool init data for constructor.
-// tokenA - Address of tokenA
-// tokenB - Address of tokenB
-// feeTier - Fee tier for the Uniswap pool
-// tickLowerAllowed - Lower bound of the tick range for farm
-// tickUpperAllowed - Upper bound of the tick range for farm
-struct UniswapPoolData {
-    address tokenA;
-    address tokenB;
-    uint24 feeTier;
-    int24 tickLowerAllowed;
-    int24 tickUpperAllowed;
-}
 
 // Defines the reward data for constructor.
 // token - Address of the token
@@ -47,12 +30,7 @@ struct RewardTokenData {
     address tknManager;
 }
 
-contract Demeter_UniV3Farm_v2 is
-    Ownable,
-    ReentrancyGuard,
-    Initializable,
-    IERC721Receiver
-{
+contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
@@ -104,10 +82,7 @@ contract Demeter_UniV3Farm_v2 is
     // constants
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant SPA_TOKEN_MANAGER =
-        0x6d5240f086637fb408c7F727010A10cf57D51B62;
-    address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
-    address public constant UNIV3_FACTORY =
-        0x1F98431c8aD98523631AE4a59f267346ea31F984;
+        0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188; // GaugeSPARewarder
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
@@ -118,11 +93,6 @@ contract Demeter_UniV3Farm_v2 is
     // Global Params
     bool public isPaused;
     bool public isClosed;
-
-    // UniswapV3 params
-    int24 public tickLowerAllowed;
-    int24 public tickUpperAllowed;
-    address public uniswapPool;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
@@ -181,11 +151,6 @@ contract Demeter_UniV3Farm_v2 is
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
-    event PoolFeeCollected(
-        address indexed recipient,
-        uint256 amt0Recv,
-        uint256 amt1Recv
-    );
     event FundsRecovered(
         address indexed account,
         address rwdToken,
@@ -202,194 +167,6 @@ contract Demeter_UniV3Farm_v2 is
     // Disallow initialization of a implementation contract
     constructor() {
         _disableInitializers();
-    }
-
-    /// @notice constructor
-    /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days
-    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _uniswapPoolData - init data for UniswapV3 pool
-    /// @param _rwdTokenData - init data for reward tokens
-    function initialize(
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        UniswapPoolData memory _uniswapPoolData,
-        RewardTokenData[] memory _rwdTokenData
-    ) external initializer {
-        require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
-        _transferOwnership(msg.sender);
-        // Initialize farm global params
-        lastFundUpdateTime = _farmStartTime;
-        farmStartTime = _farmStartTime;
-        isPaused = false;
-        isClosed = false;
-
-        // initialize uniswap related data
-        uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(
-            _uniswapPoolData.tokenB,
-            _uniswapPoolData.tokenA,
-            _uniswapPoolData.feeTier
-        );
-        require(uniswapPool != address(0), "Invalid uniswap pool config");
-        _validateTickRange(
-            _uniswapPoolData.tickLowerAllowed,
-            _uniswapPoolData.tickUpperAllowed
-        );
-        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
-        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
-
-        // Check for lockup functionality
-        // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
-        // the farm.
-        uint8 numFunds = 1;
-        if (_cooldownPeriod > 0) {
-            _isValidCooldownPeriod(_cooldownPeriod);
-            cooldownPeriod = _cooldownPeriod;
-            numFunds = 2;
-        }
-        _setupFarm(numFunds, _rwdTokenData);
-    }
-
-    /// @notice Function is called when user transfers the NFT to the contract.
-    /// @param _from The address of the owner.
-    /// @param _tokenId nft Id generated by uniswap v3.
-    /// @param _data The data should be the lockup flag (bool).
-    function onERC721Received(
-        address, // unused variable. not named
-        address _from,
-        uint256 _tokenId,
-        bytes calldata _data
-    ) external override returns (bytes4) {
-        _farmNotPaused();
-        require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
-
-        require(_data.length > 0, "onERC721Received: no data");
-
-        bool lockup = abi.decode(_data, (bool));
-        if (cooldownPeriod == 0) {
-            require(!lockup, "Lockup functionality is disabled");
-        }
-
-        // update the reward funds
-        _updateFarmRewardData();
-
-        // Validate the position and get the liquidity
-        uint256 liquidity = _getLiquidity(_tokenId);
-
-        // Prepare data to be stored.
-        Deposit memory userDeposit = Deposit({
-            cooldownPeriod: 0,
-            tokenId: _tokenId,
-            startTime: block.timestamp,
-            expiryDate: 0,
-            totalRewardsClaimed: new uint256[](rewardTokens.length),
-            liquidity: liquidity
-        });
-        // Add common fund subscription to the user's deposit
-        _subscribeRewardFund(COMMON_FUND_ID, _tokenId, liquidity);
-
-        if (lockup) {
-            // Add lockup fund subscription to the user's deposit
-            userDeposit.cooldownPeriod = cooldownPeriod;
-            _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, liquidity);
-        }
-
-        // @dev Add the deposit to the user's deposit list
-        deposits[_from].push(userDeposit);
-
-        emit Deposited(_from, lockup, _tokenId, liquidity);
-        return this.onERC721Received.selector;
-    }
-
-    /// @notice Function to lock a staked deposit
-    /// @param _depositId The id of the deposit to be locked
-    /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId) external nonReentrant {
-        _farmNotPaused();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit storage userDeposit = deposits[account][_depositId];
-
-        // validate if the deposit is in locked state
-        require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
-
-        // update the deposit expiry time & lock status
-        userDeposit.expiryDate =
-            block.timestamp +
-            (userDeposit.cooldownPeriod * 1 days);
-        userDeposit.cooldownPeriod = 0;
-
-        // claim the pending rewards for the user
-        _claimRewards(account, _depositId);
-
-        // Unsubscribe the deposit from the lockup reward fund
-        _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
-
-        emit CooldownInitiated(
-            account,
-            userDeposit.tokenId,
-            userDeposit.expiryDate
-        );
-    }
-
-    /// @notice Function to withdraw a deposit from the farm.
-    /// @param _depositId The id of the deposit to be withdrawn
-    function withdraw(uint256 _depositId) external nonReentrant {
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
-
-        // Check for the withdrawal criteria
-        // Note: If farm is paused, skip the cooldown check
-        if (!isPaused) {
-            require(
-                userDeposit.cooldownPeriod == 0,
-                "Please initiate cooldown"
-            );
-            if (userDeposit.expiryDate > 0) {
-                // Cooldown is initiated for the user
-                require(
-                    userDeposit.expiryDate <= block.timestamp,
-                    "Deposit is in cooldown"
-                );
-            }
-        }
-
-        // Compute the user's unclaimed rewards
-        _claimRewards(account, _depositId);
-
-        // Store the total rewards earned
-        uint256[] memory totalRewards = deposits[account][_depositId]
-            .totalRewardsClaimed;
-
-        // unsubscribe the user from the common reward fund
-        _unsubscribeRewardFund(COMMON_FUND_ID, account, _depositId);
-
-        if (subscriptions[userDeposit.tokenId].length > 0) {
-            // To handle a lockup withdraw without cooldown (during farmPause)
-            _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
-        }
-
-        // Update the user's deposit list
-        deposits[account][_depositId] = deposits[account][
-            deposits[account].length - 1
-        ];
-        deposits[account].pop();
-
-        // Transfer the nft back to the user.
-        INFPM(NFPM).safeTransferFrom(
-            address(this),
-            account,
-            userDeposit.tokenId
-        );
-
-        emit DepositWithdrawn(
-            account,
-            userDeposit.tokenId,
-            userDeposit.startTime,
-            userDeposit.liquidity,
-            totalRewards
-        );
     }
 
     /// @notice Claim rewards for the user.
@@ -412,31 +189,6 @@ contract Demeter_UniV3Farm_v2 is
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         _claimRewards(account, _depositId);
-    }
-
-    /// @notice Claim uniswap pool fee for a deposit.
-    /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit
-    function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
-        INFPM pm = INFPM(NFPM);
-        (uint256 amt0, uint256 amt1) = PositionValue.fees(
-            pm,
-            userDeposit.tokenId
-        );
-        require(amt0 > 0 || amt1 > 0, "No fee to claim");
-        (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
-            CollectParams({
-                tokenId: userDeposit.tokenId,
-                recipient: account,
-                amount0Max: uint128(amt0),
-                amount1Max: uint128(amt1)
-            })
-        );
-        emit PoolFeeCollected(account, amt0Recv, amt1Recv);
     }
 
     /// @notice Add rewards to the farm.
@@ -615,19 +367,6 @@ contract Demeter_UniV3Farm_v2 is
         return rewards;
     }
 
-    /// @notice Get the accrued uniswap fee for a deposit.
-    /// @return amount0 The amount of token0
-    /// @return amount1 The amount of token1
-    function computeUniswapFee(uint256 _tokenId)
-        external
-        view
-        returns (uint256 amount0, uint256 amount1)
-    {
-        // Validate token.
-        _getLiquidity(_tokenId);
-        return PositionValue.fees(INFPM(NFPM), _tokenId);
-    }
-
     /// @notice get number of deposits for an account
     /// @param _account The user's address
     function getNumDeposits(address _account) external view returns (uint256) {
@@ -736,12 +475,143 @@ contract Demeter_UniV3Farm_v2 is
         return (supply - rewardsAcc);
     }
 
+    /// @notice Common logic for deposit in the demeter farm.
+    /// @param _account Address of the user
+    /// @param _lockup lockup option for the deposit.
+    /// @param _tokenId generated | provided id of position to be deposited.
+    /// @param _liquidity Liquidity amount to be added to the pool.
+    function _deposit(
+        address _account,
+        bool _lockup,
+        uint256 _tokenId,
+        uint256 _liquidity
+    ) internal {
+        // Allow deposit only when farm is not paused.
+        _farmNotPaused();
+
+        if (cooldownPeriod == 0) {
+            require(!_lockup, "Lockup functionality is disabled");
+        }
+
+        require(_liquidity > 0, "No liquidity in position");
+        // update the reward funds
+        _updateFarmRewardData();
+
+        // Prepare data to be stored.
+        Deposit memory userDeposit = Deposit({
+            cooldownPeriod: 0,
+            tokenId: _tokenId,
+            startTime: block.timestamp,
+            expiryDate: 0,
+            totalRewardsClaimed: new uint256[](rewardTokens.length),
+            liquidity: _liquidity
+        });
+        // Add common fund subscription to the user's deposit
+        _subscribeRewardFund(COMMON_FUND_ID, _tokenId, _liquidity);
+
+        if (_lockup) {
+            // Add lockup fund subscription to the user's deposit
+            userDeposit.cooldownPeriod = cooldownPeriod;
+            _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, _liquidity);
+        }
+
+        // @dev Add the deposit to the user's deposit list
+        deposits[_account].push(userDeposit);
+
+        emit Deposited(_account, _lockup, _tokenId, _liquidity);
+    }
+
+    /// @notice Common logic for initiating cooldown.
+    /// @param _depositId user's deposit Id.
+    function _initiateCooldown(uint256 _depositId) internal {
+        _farmNotPaused();
+        address account = msg.sender;
+        _isValidDeposit(account, _depositId);
+        Deposit storage userDeposit = deposits[account][_depositId];
+
+        // validate if the deposit is in locked state
+        require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
+
+        // update the deposit expiry time & lock status
+        userDeposit.expiryDate =
+            block.timestamp +
+            (userDeposit.cooldownPeriod * 1 days);
+        userDeposit.cooldownPeriod = 0;
+
+        // claim the pending rewards for the user
+        _claimRewards(account, _depositId);
+
+        // Unsubscribe the deposit from the lockup reward fund
+        _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+
+        emit CooldownInitiated(
+            account,
+            userDeposit.tokenId,
+            userDeposit.expiryDate
+        );
+    }
+
+    /// @notice Common logic for withdraw.
+    /// @param _account address of the user.
+    /// @param _depositId user's deposit id.
+    /// @param _userDeposit userDeposit struct.
+    function _withdraw(
+        address _account,
+        uint256 _depositId,
+        Deposit memory _userDeposit
+    ) internal {
+        // Check for the withdrawal criteria
+        // Note: If farm is paused, skip the cooldown check
+        if (!isPaused) {
+            require(
+                _userDeposit.cooldownPeriod == 0,
+                "Please initiate cooldown"
+            );
+            if (_userDeposit.expiryDate > 0) {
+                // Cooldown is initiated for the user
+                require(
+                    _userDeposit.expiryDate <= block.timestamp,
+                    "Deposit is in cooldown"
+                );
+            }
+        }
+
+        // Compute the user's unclaimed rewards
+        _claimRewards(_account, _depositId);
+
+        // Store the total rewards earned
+        uint256[] memory totalRewards = deposits[_account][_depositId]
+            .totalRewardsClaimed;
+
+        // unsubscribe the user from the common reward fund
+        _unsubscribeRewardFund(COMMON_FUND_ID, _account, _depositId);
+
+        if (subscriptions[_userDeposit.tokenId].length > 0) {
+            // To handle a lockup withdraw without cooldown (during farmPause)
+            _unsubscribeRewardFund(LOCKUP_FUND_ID, _account, _depositId);
+        }
+
+        // Update the user's deposit list
+        deposits[_account][_depositId] = deposits[_account][
+            deposits[_account].length - 1
+        ];
+        deposits[_account].pop();
+
+        emit DepositWithdrawn(
+            _account,
+            _userDeposit.tokenId,
+            _userDeposit.startTime,
+            _userDeposit.liquidity,
+            totalRewards
+        );
+    }
+
     /// @notice Claim rewards for the user.
     /// @param _account The user's address
     /// @param _depositId The id of the deposit
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant
-    function _claimRewards(address _account, uint256 _depositId) private {
+    function _claimRewards(address _account, uint256 _depositId) internal {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_account][_depositId];
@@ -807,7 +677,7 @@ contract Demeter_UniV3Farm_v2 is
     /// @param _amount The amount of the reward token to be withdrawn
     /// @dev Function recovers minOf(_amount, rewardsLeft)
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
-    function _recoverRewardFunds(address _rwdToken, uint256 _amount) private {
+    function _recoverRewardFunds(address _rwdToken, uint256 _amount) internal {
         address emergencyRet = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
         uint256 amountToRecover = _amount;
@@ -824,7 +694,7 @@ contract Demeter_UniV3Farm_v2 is
     /// @param _rwdToken The reward token's address
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
-        private
+        internal
     {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
@@ -852,7 +722,7 @@ contract Demeter_UniV3Farm_v2 is
         uint8 _fundId,
         uint256 _tokenId,
         uint256 _liquidity
-    ) private {
+    ) internal {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
@@ -887,7 +757,7 @@ contract Demeter_UniV3Farm_v2 is
         uint8 _fundId,
         address _account,
         uint256 _depositId
-    ) private {
+    ) internal {
         require(_fundId < rewardFunds.length, "Invalid fund id");
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
@@ -931,7 +801,7 @@ contract Demeter_UniV3Farm_v2 is
     }
 
     /// @notice Function to update the FarmRewardData for all funds
-    function _updateFarmRewardData() private {
+    function _updateFarmRewardData() internal {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
@@ -971,17 +841,38 @@ contract Demeter_UniV3Farm_v2 is
     }
 
     /// @notice Function to setup the reward funds during construction.
-    /// @param _numFunds - Number of reward funds to setup.
+    /// @param _farmStartTime - Time of farm start.
+    /// @param _cooldownPeriod - cooldown period for locked deposits.
     /// @param _rwdTokenData - Reward data for each reward token.
-    function _setupFarm(uint8 _numFunds, RewardTokenData[] memory _rwdTokenData)
-        private
-    {
+    function _setupFarm(
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        RewardTokenData[] memory _rwdTokenData
+    ) internal {
+        require(_farmStartTime >= block.timestamp, "Invalid farm startTime");
+        _transferOwnership(msg.sender);
+        // Initialize farm global params
+        lastFundUpdateTime = _farmStartTime;
+        farmStartTime = _farmStartTime;
+        isPaused = false;
+        isClosed = false;
+
+        // Check for lockup functionality
+        // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
+        // the farm.
+        uint8 numFunds = 1;
+        if (_cooldownPeriod > 0) {
+            _isValidCooldownPeriod(_cooldownPeriod);
+            cooldownPeriod = _cooldownPeriod;
+            numFunds = 2;
+        }
+
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
         require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
-        for (uint8 i = 0; i < _numFunds; ) {
+        for (uint8 i = 0; i < numFunds; ) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
                 rewardsPerSec: new uint256[](numRewards + 1),
@@ -1011,7 +902,7 @@ contract Demeter_UniV3Farm_v2 is
     /// @notice Adds new reward token to the farm
     /// @param _token Address of the reward token to be added.
     /// @param _tknManager Address of the reward token Manager.
-    function _addRewardData(address _token, address _tknManager) private {
+    function _addRewardData(address _token, address _tknManager) internal {
         // Validate if addresses are correct
         _isNonZeroAddr(_token);
         _isNonZeroAddr(_tknManager);
@@ -1041,7 +932,7 @@ contract Demeter_UniV3Farm_v2 is
         uint8 _rwdId,
         uint8 _fundId,
         uint256 _time
-    ) private view returns (uint256) {
+    ) internal view returns (uint256) {
         RewardFund memory fund = rewardFunds[_fundId];
         if (fund.rewardsPerSec[_rwdId] == 0) {
             return 0;
@@ -1064,61 +955,9 @@ contract Demeter_UniV3Farm_v2 is
         return accRewards;
     }
 
-    /// @notice Validate the position for the pool and get Liquidity
-    /// @param _tokenId The tokenId of the position
-    /// @dev the position must adhere to the price ranges
-    /// @dev Only allow specific pool token to be staked.
-    function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
-        /// @dev Get the info of the required token
-        (
-            ,
-            ,
-            address token0,
-            address token1,
-            uint24 fee,
-            int24 tickLower,
-            int24 tickUpper,
-            uint128 liquidity,
-            ,
-            ,
-            ,
-
-        ) = INFPM(NFPM).positions(_tokenId);
-
-        /// @dev Check if the token belongs to correct pool
-        require(
-            uniswapPool ==
-                IUniswapV3Factory(UNIV3_FACTORY).getPool(token0, token1, fee),
-            "Incorrect pool token"
-        );
-
-        /// @dev Check if the token adheres to the tick range
-        require(
-            tickLower == tickLowerAllowed && tickUpper == tickUpperAllowed,
-            "Incorrect tick range"
-        );
-
-        return uint256(liquidity);
-    }
-
-    function _validateTickRange(int24 _tickLower, int24 _tickUpper)
-        private
-        view
-    {
-        int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
-        require(
-            _tickLower < _tickUpper &&
-                _tickLower >= -887272 &&
-                _tickLower % spacing == 0 &&
-                _tickUpper <= 887272 &&
-                _tickUpper % spacing == 0,
-            "Invalid tick range"
-        );
-    }
-
     /// @notice Validate the deposit for account
     function _isValidDeposit(address _account, uint256 _depositId)
-        private
+        internal
         view
     {
         require(
@@ -1127,7 +966,25 @@ contract Demeter_UniV3Farm_v2 is
         );
     }
 
-    function _isValidCooldownPeriod(uint256 _cooldownPeriod) private view {
+    /// @notice Validate if farm is not closed
+    function _farmNotClosed() internal view {
+        require(!isClosed, "Farm closed");
+    }
+
+    /// @notice Validate if farm is not paused
+    function _farmNotPaused() internal view {
+        require(!isPaused, "Farm paused");
+    }
+
+    /// @notice Validate the caller is the token Manager.
+    function _isTokenManager(address _rwdToken) internal view {
+        require(
+            msg.sender == rewardData[_rwdToken].tknManager,
+            "Not the token manager"
+        );
+    }
+
+    function _isValidCooldownPeriod(uint256 _cooldownPeriod) internal pure {
         require(
             _cooldownPeriod >= MIN_COOLDOWN_PERIOD &&
                 _cooldownPeriod <= MAX_COOLDOWN_PERIOD,
@@ -1135,26 +992,8 @@ contract Demeter_UniV3Farm_v2 is
         );
     }
 
-    /// @notice Validate if farm is not closed
-    function _farmNotClosed() private view {
-        require(!isClosed, "Farm closed");
-    }
-
-    /// @notice Validate if farm is not paused
-    function _farmNotPaused() private view {
-        require(!isPaused, "Farm paused");
-    }
-
-    /// @notice Validate the caller is the token Manager.
-    function _isTokenManager(address _rwdToken) private view {
-        require(
-            msg.sender == rewardData[_rwdToken].tknManager,
-            "Not the token manager"
-        );
-    }
-
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) private pure {
+    function _isNonZeroAddr(address _addr) internal pure {
         require(_addr != address(0), "Invalid address");
     }
 }
