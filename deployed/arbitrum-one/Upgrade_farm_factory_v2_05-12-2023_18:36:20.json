@@ -1,0 +1,23 @@
+{
+    "new_impl": "0xbB14ED437c66F45f2018135089F0725059E80D56",
+    "type": "Upgrade",
+    "transactions": [
+        {
+            "step": "New_implementation_deployment",
+            "tx_hash": "0x4b6534a8246f3dff75c96d6191cf6a697a33045fd66da9460637f8087754e8c7",
+            "contract": "FarmFactory",
+            "contract_addr": "0xbB14ED437c66F45f2018135089F0725059E80D56",
+            "tx_func": "constructor",
+            "blocknumber": 89946600,
+            "gas_used": 10357483,
+            "gas_limit": 20000000
+        }
+    ],
+    "config_name": "farm_factory_v2",
+    "config": {
+        "proxy_address": "0xC4fb09E0CD212367642974F6bA81D8e23780A659",
+        "gnosis_upgrade": true,
+        "proxy_admin": "0x474b9be3998Ab278b2846dB7C667497f16F83e0C",
+        "post_upgrade_steps": []
+    }
+}
