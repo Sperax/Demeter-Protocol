@@ -4,7 +4,7 @@
 # to commit on the restricted branches
 
 BRANCHES=(main) # space separated branch names
-USERS=(JoeYu0524) # space separated users
+USERS=() # space separated users
 GIT_USER=$(git config --get user.name)
 GIT_BRANCH=$(git branch --show-current)
 if [[ ${BRANCHES[@]} =~ $GIT_BRANCH ]]

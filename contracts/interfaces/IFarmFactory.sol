@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.16;
 
 interface IFarmFactory {
     function registerFarm(address farm, address creator) external;
@@ -11,4 +11,6 @@ interface IFarmFactory {
             address feeToken,
             uint256 feeAmount
         );
+
+    function isPrivilegedDeployer(address _user) external view returns (bool);
 }

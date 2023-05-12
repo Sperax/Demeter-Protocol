@@ -4,14 +4,17 @@ import math
 import brownie
 from brownie import (
     interface,
-    chain,
     ProxyAdmin,
     TransparentUpgradeableProxy,
     Contract,
-    Demeter_UniV3Farm_v2,
+    Demeter_CamelotFarm,
+    Demeter_CamelotFarm_Deployer,
+    accounts
 
 )
+import sys
 import eth_utils
+sys.path.append('../scripts')
 
 
 MIN_BALANCE = 1000000000000000000
@@ -19,8 +22,13 @@ GAS_LIMIT = 1000000000
 NO_LOCKUP_REWARD_RATE = 1*1e18
 LOCKUP_REWARD_RATE = 2*1e18
 
-OWNER = '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+OWNER = '0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188'
+DEMETER_FACTORY = '0xC4fb09E0CD212367642974F6bA81D8e23780A659'
+CAMELOT_FACTORY = '0x6EcCab422D763aC031210895C81787E87B43A652'
+CAMELOT_NFT_FACTORY = '0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d'
+CAMELOT_POSITION_HELPER = '0xe458018Ad4283C90fB7F5460e24C4016F81b8175'
 deployer = brownie.accounts
+USDs_Owner = '0x5b12d9846F8612E439730d18E1C12634753B1bF1'
 
 
 def check_function(farm, func_name):
@@ -56,103 +64,16 @@ def test_constants():
         config = {
             'number_of_deposits': 2,
             'funding_data': {
-                'spa': 1000000e18,
-                'usds': 100000e18,
+                'spa': 100000e18,
+                'usds': 10000e18,
                 'usdc': 100000e6,
             },
-            'uniswap_pool_false_data': {
+            'camelot_pool_false_data': {
                 'token_A':
                 '0x5575552988A3A80504bBaeB1311674fCFd40aD4C',
                 'token_B':
                 '0xD74f5255D557944cf7Dd0E45FF521520002D5747',
-                'fee_tier': 3000,
-                'lower_tick': -887220,
-                'upper_tick': 0,
             },
-        }
-        return config
-
-
-def constants():
-    if (brownie.network.show_active() == 'arbitrum-main-fork'):
-        config = {
-            'test_farm_with_lockup': {
-                'contract': Demeter_UniV3Farm_v2,
-                'config': {
-                    'admin': deployer[0].address,
-                    'farm_start_time': chain.time()+1000,
-                    'cooldown_period': 21,
-                    'uniswap_pool_data': {
-                        'token_A':
-                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                        'token_B':
-                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                        'fee_tier': 3000,
-                        'lower_tick': -887220,
-                        'upper_tick': 0,
-                    },
-
-                    'reward_token_data': [
-                        {
-                            'reward_tkn':
-                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                            'tkn_manager': OWNER,
-                        },
-                        # {
-                        #     'reward_tkn':
-                        #     '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
-                        #     'tkn_manager': OWNER,
-                        # },
-                        {
-                            'reward_tkn':
-                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                            'tkn_manager': OWNER,
-                        },
-                    ],
-
-                }
-            },
-
-            'test_farm_without_lockup': {
-                'contract': Demeter_UniV3Farm_v2,
-                'config': {
-                    'admin': deployer[0].address,
-                    'farm_start_time': chain.time()+2000,
-                    'cooldown_period': 0,
-
-                    'uniswap_pool_data': {
-                        'token_A':
-                        '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                        'token_B':
-                        '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                        'fee_tier': 3000,
-                        'lower_tick': -887220,
-                        'upper_tick': 0,
-                    },
-
-                    'reward_token_data': [
-                        {
-                            'reward_tkn':
-                            '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                            'tkn_manager': OWNER,
-                        },
-                        # {
-                        #     'reward_tkn':
-                        #     '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
-                        #     'tkn_manager': OWNER,
-
-                        # },
-                        {
-                            'reward_tkn':
-                            '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',
-                            'tkn_manager': OWNER,
-                        },
-                    ],
-
-                }
-            },
-
-
         }
         return config
 
@@ -162,72 +83,11 @@ def deploy(owner, contract, config):
     farm = contract.deploy(
         config['farm_start_time'],
         config['cooldown_period'],
-        list(config['uniswap_pool_data'].values()),
+        list(config['camelot_pool_data'].values()),
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
         {'from': owner, 'gas_limit': GAS_LIMIT},
     )
     return farm
-
-
-# def deploy_farm_factory(deployer, fee_receiver, fee_token, fee_amount):
-#     """Deploying Farm Factory Proxy Contract"""
-
-#     print('Deploy FarmFactory implementation.')
-#     factory_impl = FarmFactory.deploy(
-#         {'from': deployer}
-#     )
-#     print('Deploy Proxy Admin.')
-#     proxy_admin = ProxyAdmin.deploy(
-#         {'from': deployer, 'gas': GAS_LIMIT})
-
-#     print('Deploy FarmFactory Proxy contract.')
-#     proxy = TransparentUpgradeableProxy.deploy(
-#         factory_impl.address,
-#         proxy_admin.address,
-#         eth_utils.to_bytes(hexstr='0x'),
-#         {'from': deployer, 'gas_limit': GAS_LIMIT},
-#     )
-#     factory = Contract.from_abi(
-#         'FarmFactory',
-#         proxy.address,
-#         FarmFactory.abi
-#     )
-#     print('Initialize FarmFactory proxy contract.')
-#     factory.initialize(
-#         fee_receiver,
-#         fee_token,
-#         fee_amount,
-#         {'from': deployer}
-#     )
-#     return factory
-
-
-def deploy_uni_farm(deployer, contract):
-    """Deploying Uniswap Farm Proxy Contract"""
-
-    print('Deploy Uniswap Farm implementation.')
-    farm = contract.deploy(
-
-        {'from': deployer, 'gas_limit': GAS_LIMIT},
-    )
-    print('Deploy Proxy Admin.')
-    # Deploy the proxy admin contract
-    proxy_admin = ProxyAdmin.deploy(
-        {'from': deployer, 'gas': GAS_LIMIT})
-
-    proxy = TransparentUpgradeableProxy.deploy(
-        farm.address,
-        proxy_admin.address,
-        eth_utils.to_bytes(hexstr='0x'),
-        {'from': deployer, 'gas_limit': GAS_LIMIT},
-    )
-
-    uniswap_farm = Contract.from_abi(
-        'Demeter_UniV3Farm_v2',
-        proxy.address,
-        contract.abi
-    )
-    return uniswap_farm
 
 
 def deploy_farm_deployer(deployer, contract):
@@ -257,18 +117,6 @@ def deploy_farm_deployer(deployer, contract):
     return farm_deployer
 
 
-def init_farm(deployer, farm, config):
-    """Init Uniswap Farm Proxy Contract"""
-    farm.initialize(
-        config['farm_start_time'],
-        config['cooldown_period'],
-        list(config['uniswap_pool_data'].values()),
-        list(map(lambda x: list(x.values()), config['reward_token_data'])),
-        {'from': deployer, 'gas_limit': GAS_LIMIT},
-    )
-    return farm
-
-
 def create_deployer_farm(deployer, farm_deployer, config):
     """Init Uniswap Farm Proxy Contract"""
     usds = token_obj('usds')
@@ -285,13 +133,41 @@ def create_deployer_farm(deployer, farm_deployer, config):
             config['farm_start_time'],
             config['cooldown_period'],
             list(
-                config['uniswap_pool_data'].values()),
+                config['camelot_pool_data'].values()),
             list(
                 map(lambda x: list(x.values()), config['reward_token_data'])),
         ),
         {'from': deployer.address},
     )
-    return Demeter_UniV3Farm_v2.at(create_tx.new_contracts[0])
+    return Demeter_CamelotFarm.at(create_tx.new_contracts[0])
+
+
+def create_deployer_farm_e20(deployer, farm_deployer, config, factory):
+    user_deployer = accounts[1]
+    """Init Uniswap Farm Proxy Contract"""
+    usds = token_obj('usds')
+
+    _ = usds.transfer(
+        user_deployer,
+        10000*1e18,
+        {'from': funds('usds')}
+    )
+
+    _ = usds.approve(farm_deployer, 100000*1e18, {'from': user_deployer})
+
+    create_tx = farm_deployer.createFarm(
+        (
+            config['admin'],
+            config['farm_start_time'],
+            config['cooldown_period'],
+            list(
+                config['camelot_pool_data'].values()),
+            list(
+                map(lambda x: list(x.values()), config['reward_token_data'])),
+        ),
+        {'from': user_deployer.address},
+    )
+    return Demeter_CamelotFarm_Deployer.at(create_tx.new_contracts[0])
 
 
 def false_init_farm(deployer, farm, config):
@@ -299,7 +175,7 @@ def false_init_farm(deployer, farm, config):
     init = farm.initialize(
         brownie.chain.time()-1,
         config['cooldown_period'],
-        list(config['uniswap_pool_data'].values()),
+        list(config['camelot_pool_data'].values()),
         list(map(lambda x: list(x.values()), config['reward_token_data'])),
         {'from': deployer, 'gas_limit': GAS_LIMIT},
     )
@@ -331,10 +207,11 @@ def funds(token):
     if (brownie.network.show_active() == 'arbitrum-main-fork'):
         fund_dict = {
             'spa': '0xb56e5620a79cfe59af7c0fcae95aadbea8ac32a1',
-            'usds': '0x3944b24f768030d41cbcbdcd23cb8b4263290fad',  # STB
-            # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',  # 2nd
+            'usds': '0xf2839e0b30b5e96083085f498b14bbc12530b734',
+            # 'usds': '0x50450351517117cb58189edba6bbad6284d45902',
             'usdc': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
-            'frax': '0xae0f77c239f72da36d4da20a4bbdaae4ca48e03f'  # frax
+            'frax': '0x5a9bef8cea603aac78a523fb245c1a9264d50706',
+            'Camelot-LP': '0x85054ed5a0722117deee9411f2f1ef780cc97056'
         }
     return fund_dict[token]
 
@@ -372,19 +249,43 @@ def ordered_tokens(token1, amount1, token2, amount2):
     return token2, amount2, token1, amount1
 
 
+def get_lp_token(token1, token2):
+    camelot_factory = Contract.from_abi(
+        'Camelot factory',
+        CAMELOT_FACTORY,
+        interface.ICamelotFactory.abi
+    )
+    lp_token = camelot_factory.getPair(token1, token2)
+    nft_pool_factory = Contract.from_abi(
+        'Camelot: NFTpoolFactory',
+        CAMELOT_NFT_FACTORY,
+        interface.INFTPoolFactory.abi
+    )
+    nft_pool_addr = nft_pool_factory.getPool(lp_token)
+
+    pool = interface.INFTPool(nft_pool_addr)
+    return lp_token, nft_pool_addr, pool
+
+
 def mint_position(
-    position_manager,
     token1,
     token2,
-    fee,
-    lower_tick,
-    upper_tick,
     amount1,
     amount2,
-    OWNER,
+    deposit_index,
+    user,
+
 ):
     # provide initial liquidity
+
+    position_helper = Contract.from_abi(
+        'PositionHelper',
+        CAMELOT_POSITION_HELPER,
+        interface.IPositionHelper.abi
+    )
     t1, a1, t2, a2 = ordered_tokens(token1, amount1, token2, amount2)
+    _, nft_pool_addr, pool = get_lp_token(token1, token2)
+    print('pool address is:', nft_pool_addr)
     print('Token A: ', t1)
     print('Token A Name: ', t1.name())
     print('Token A Precision: ', t1.decimals())
@@ -394,24 +295,22 @@ def mint_position(
     print('Token B Precision: ', t2.decimals())
     print('Amount B: ', a2/(10 ** t2.decimals()))
 
-    t1.approve(position_manager.address, a1, {'from': OWNER})
-    t2.approve(position_manager.address, a2, {'from': OWNER})
+    t1.approve(position_helper, a1, {'from': user})
+    t2.approve(position_helper, a2, {'from': user})
     deadline = 7200 + brownie.chain.time()  # deadline: 2 hours
-    params = [
+    _ = position_helper.addLiquidityAndCreatePosition(
         t1,
         t2,
-        fee,
-        lower_tick,  # tickLower
-        upper_tick,  # tickUpper
         a1,
         a2,
-        0,  # minimum amount of spa expected
-        0,  # minimum amount of mock_token expected
-        OWNER,
-        deadline
-    ]
-    txn = position_manager.mint(
-        params,
-        {'from': OWNER}
+        0,  # minimum amount of token1 expected
+        0,  # minimum amount of token2 expected
+        deadline,
+        user,
+        nft_pool_addr,
+        0,
+        {'from': user}
     )
-    return txn.events['IncreaseLiquidity']['tokenId']
+
+    token_id = pool.tokenOfOwnerByIndex(user, deposit_index)
+    return token_id
