@@ -2,6 +2,7 @@ from brownie import (
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
     Demeter_UniV3FarmDeployer,
+    ProxyAdmin,
     FarmFactory,
     chain,
     interface,
@@ -45,6 +46,36 @@ def create_farm(config: Create_Farm_data, farm_deployer, user):
     return config.contract.at(tx.new_contracts[0])
 
 
+def upgrade_contract(
+    contract_name,
+    contract,
+    deployer,
+    proxy_addr,
+    proxy_admin,
+    impl='',
+    calldata='',
+):
+    print(f'Upgrading {contract_name}')
+    print('Deploying new implementation')
+    if(impl == ''):
+        impl = contract.deploy({'from': deployer})
+    pa = ProxyAdmin.at(proxy_admin)
+    print('Upgrading the contract')
+    if (calldata == ''):
+        pa.upgrade(
+            proxy_addr,
+            impl,
+            {'from': pa.owner()}
+        )
+    else:
+        pa.upgradeAndCall(
+            proxy_addr,
+            impl,
+            calldata,
+            {'from': pa.owner()}
+        )
+
+
 def main():
     user = str(input('Enter user wallet address: '))
     usds = token_obj('usds')
@@ -52,6 +83,16 @@ def main():
 
     fund_account(user, 'spa', 1e23)
     fund_account(user, 'usds', 1e23)
+
+    farm_factory = FarmFactory.at(DEMETER_FACTORY)
+
+    upgrade_contract(
+        'FarmFactory',
+        FarmFactory,
+        OWNER,
+        farm_factory,
+        '0x474b9be3998Ab278b2846dB7C667497f16F83e0C',
+    )
 
     deployer = Demeter_CamelotFarm_Deployer.deploy(
         DEMETER_FACTORY,
@@ -63,8 +104,6 @@ def main():
         DEMETER_FACTORY,
         {'from': OWNER}
     )
-
-    farm_factory = FarmFactory.at(DEMETER_FACTORY)
 
     farm_factory.removeDeployer(0, {'from': OWNER})
     farm_factory.registerFarmDeployer(uniV3_deployer, {'from': OWNER})
