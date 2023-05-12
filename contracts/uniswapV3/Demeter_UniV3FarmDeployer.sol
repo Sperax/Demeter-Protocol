@@ -43,7 +43,7 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     constructor(address _factory) {
         _isNonZeroAddr(_factory);
         factory = _factory;
-        discountedFee = 100e18; // 100 USDs
+        discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_UniV3Farm());
     }
 

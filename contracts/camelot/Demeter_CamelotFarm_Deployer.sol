@@ -52,7 +52,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         _isNonZeroAddr(_protocolFactory);
         factory = _factory;
         protocolFactory = _protocolFactory;
-        discountedFee = 100e18; // 100 USDs
+        discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_CamelotFarm());
     }
 
