@@ -106,7 +106,7 @@ abstract contract BaseFarmDeployer is Ownable {
             feeAmount = 0;
             return (feeReceiver, feeToken, feeAmount, false);
         }
-        if (!_validateToken(_tokenA) && !_validateToken(_tokenB)) {
+        if (!_checkToken(_tokenA) && !_checkToken(_tokenB)) {
             // No discount because neither of the token is SPA or USDs
             return (feeReceiver, feeToken, feeAmount, false);
         } else {
@@ -116,9 +116,9 @@ abstract contract BaseFarmDeployer is Ownable {
         }
     }
 
-    /// @notice Validate if a token is either SPA | USDs.
+    /// @notice Check if a token is either SPA | USDs.
     /// @param _token Address of the desired token.
-    function _validateToken(address _token) internal pure returns (bool) {
+    function _checkToken(address _token) internal pure returns (bool) {
         return _token == SPA || _token == USDs;
     }
 

@@ -90,6 +90,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     function validatePool(address _tokenA, address _tokenB)
         public
+        view
         returns (address pool)
     {
         pool = ICamelotFactory(protocolFactory).getPair(_tokenA, _tokenB);
