@@ -5,7 +5,6 @@ from brownie import (
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
     Demeter_UniV2FarmDeployer,
-    Demeter_E20_farm,
     chain,
 )
 
@@ -229,7 +228,6 @@ farm_config = {
                 'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
                 'farm_start_time': chain.time() + 100,
                 'cooldown_period': 0,
-                'pool_data': {
                 'pool_data': {
                     'token_A': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
                     'token_B': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
