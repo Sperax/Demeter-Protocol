@@ -205,6 +205,20 @@ deployment_config = {
                 ),
             ]
         )
+    ),
+    'Demeter_UniV3Farm_implementation': Deployment_data(
+        contract=Demeter_UniV3Farm,
+        config=Deployment_config(
+            upgradeable=False,
+            deployment_params={},
+            post_deployment_steps=[
+                Step(
+                    func='renounceOwnership',
+                    transact=True,
+                    args={}
+                ),
+            ]
+        )
     )
 }
 
