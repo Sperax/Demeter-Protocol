@@ -3,6 +3,8 @@ pragma solidity 0.8.16;
 interface IFarmFactory {
     function registerFarm(address farm, address creator) external;
 
+    function registerFarmDeployer(address _deployer) external;
+
     function getFeeParams()
         external
         view

@@ -23,7 +23,7 @@ import {Demeter_BalancerFarm, RewardTokenData} from "./Demeter_BalancerFarm.sol"
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_BalancerFarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
