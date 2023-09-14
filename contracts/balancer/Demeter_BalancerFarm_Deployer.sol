@@ -23,6 +23,10 @@ import {Demeter_BalancerFarm, RewardTokenData} from "./Demeter_BalancerFarm.sol"
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+/// @title Deployer for Balancer farm
+/// @author Sperax Foundation
+/// @notice This contract allows anyone to calculate fees and create farms
+/// @dev It consults Balancer's vault to validate the pool
 contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -30,7 +34,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // poolTokens - Tokens of the pool, can be 2 to 8.
+    // poolId - ID of the pool, can be 2 to 8.
     //                  (tokenA, tokenB)
     // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
     struct FarmData {
@@ -42,9 +46,14 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     // All the pool actions happen on Balancer's vault
-    address public BALANCER_VAULT;
+    address public immutable BALANCER_VAULT;
     string public DEPLOYER_NAME;
 
+    /// @notice Constructor of the contract
+    /// @param _factory Address of Sperax Farm Factory
+    /// @param _balancerVault Address of Balancer's Vault
+    /// @param _deployerName String containing a name of the deployer
+    /// @dev Deploys one farm so that it can be cloned later
     constructor(
         address _factory,
         address _balancerVault,
@@ -61,6 +70,8 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice Deploys a new Balancer farm.
     /// @param _data data for deployment.
+    /// @return Address of the new farm
+    /// @dev The caller of this function should approve feeAmount (USDs) for this contract
     function createFarm(FarmData memory _data)
         external
         nonReentrant
@@ -74,6 +85,9 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
             _data.poolId
         );
 
+        // Calculate and collect fee if required
+        _collectFee(tokens);
+
         Demeter_BalancerFarm farmInstance = Demeter_BalancerFarm(
             Clones.clone(farmImplementation)
         );
@@ -85,8 +99,6 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        // Calculate and collect fee if required
-        _collectFee(tokens);
         IFarmFactory(factory).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
@@ -94,6 +106,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice An external function to calculate fees when pool tokens are in array.
     /// @param _tokens Array of addresses of tokens
+    /// @return feeReceiver's address, feeToken's address, feeAmount, boolean claimable
     function calculateFees(IERC20[] memory _tokens)
         external
         view
@@ -116,6 +129,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice An internal function to calculate fees when tokens are passed as an array
     /// @param _tokens Array of token addresses
+    /// @return feeReceiver's address, feeToken's address, feeAmount, boolean claimable
     function _calculateFees(IERC20[] memory _tokens)
         internal
         view
