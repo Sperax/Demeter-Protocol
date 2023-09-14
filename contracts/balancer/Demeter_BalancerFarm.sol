@@ -20,6 +20,9 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../BaseFarm.sol";
 
+/// @title Demeter Balancer Farm
+/// @author Sperax Foundation
+/// @notice An ERC20 farm to support all kinds of Balancer V2 pools
 contract Demeter_BalancerFarm is BaseFarm {
     using SafeERC20 for IERC20;
 
