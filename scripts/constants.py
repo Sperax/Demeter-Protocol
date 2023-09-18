@@ -5,6 +5,7 @@ from brownie import (
     Demeter_CamelotFarm,
     Demeter_CamelotFarm_Deployer,
     Demeter_UniV2FarmDeployer,
+    Demeter_BalancerFarm_Deployer,
     chain,
 )
 
@@ -216,6 +217,28 @@ deployment_config = {
                     func='renounceOwnership',
                     transact=True,
                     args={}
+                ),
+            ]
+        )
+    ),
+    'Demeter_BalancerFarmDeployer': Deployment_data(
+        contract=Demeter_BalancerFarm_Deployer,
+        config=Deployment_config(
+            upgradeable=False,
+            deployment_params={
+                'farm_factory': '0xC4fb09E0CD212367642974F6bA81D8e23780A659',
+                'Balancer_Vault':
+                    '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+                'deployer_name': 'Demeter_Balancer_Farm'
+            },
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
                 ),
             ]
         )

@@ -1,8 +1,8 @@
 from brownie import (
     Contract,
     network,
-    ProxyAdmin,
-    TransparentUpgradeableProxy,
+    PA,
+    TUP,
     accounts
 )
 from .constants import (
@@ -201,7 +201,7 @@ def deploy(configuration, deployer):
 
         if(proxy_admin is None):
             print('\nDeploying proxy admin contract')
-            pa_deployment = ProxyAdmin.deploy(
+            pa_deployment = PA.deploy(
                 {'from': deployer, 'gas_limit': GAS_LIMIT}
             )
             tx_list.append(
@@ -210,7 +210,7 @@ def deploy(configuration, deployer):
             proxy_admin = pa_deployment.address
 
         print('\nDeploying proxy contract')
-        proxy = TransparentUpgradeableProxy.deploy(
+        proxy = TUP.deploy(
             impl.address,
             proxy_admin,
             eth_utils.to_bytes(hexstr='0x'),
@@ -312,7 +312,7 @@ def upgrade(configuration, deployer):
         proxy_admin = Contract.from_abi(
             'PA',
             conf.proxy_admin,
-            ProxyAdmin.abi
+            PA.abi
         )
         print('\nPerforming upgrade!')
         upgrade_tx = proxy_admin.upgrade(
