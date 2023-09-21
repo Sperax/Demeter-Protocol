@@ -15,7 +15,7 @@ def createFarm(farmDeployer):
     creator = input('Enter user\'s address: ')
     params = {
         'farm-admin': OWNER,
-        'farm-start-time': chain.time() + 10,
+        'farm-start-time': chain.time() + 120,
         'cooldown-period': 0,
         'pool-id': '0x32df62dc3aed2cd6224193052ce665dc181658410002000000000000000003bd',  # noqa
         'reward-token-data': []
@@ -47,6 +47,3 @@ def main():
     print('Creating farm ...')
     tx = createFarm(farmDeployer)
     print(tx)
-
-
-main()
