@@ -139,3 +139,7 @@ deployed/*
 .vscode
 .deps/
 artifacts/
+
+# Foundry
+out/
+forge-cache/
