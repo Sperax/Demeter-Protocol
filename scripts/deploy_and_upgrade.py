@@ -375,7 +375,7 @@ def create_farm(configuration, deployer):
                 conf.deployment_params['farm_admin'],
                 conf.deployment_params['farm_start_time'],
                 conf.deployment_params['cooldown_period'],
-                list(conf.deployment_params['uniswap_pool_data'].values()),
+                list(conf.deployment_params['pool_data'].values()),
                 list(
                     map(
                         lambda x: list(x.values()),

@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
 //@@@@@@........../@@@@@@@........../@@@@@@//
@@ -25,11 +25,18 @@ contract FarmFactory is OwnableUpgradeable {
     address[] public deployerList;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
+    // List of deployers for which fee won't be charged.
+    mapping(address => bool) public isPrivilegedDeployer;
 
-    event FarmRegistered(address farm, address creator);
+    event FarmRegistered(
+        address indexed farm,
+        address indexed creator,
+        address indexed deployer
+    );
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
+    event PrivilegeUpdated(address deployer, bool privilege);
 
     // Disable initialization for the implementation contract
     constructor() {
@@ -56,7 +63,7 @@ contract FarmFactory is OwnableUpgradeable {
         require(deployerRegistered[msg.sender], "Deployer not registered");
         farms.push(_farm);
         farmRegistered[_farm] = true;
-        emit FarmRegistered(_farm, _creator);
+        emit FarmRegistered(_farm, _creator, msg.sender);
     }
 
     /// @notice Register a new farm deployer.
@@ -80,6 +87,22 @@ contract FarmFactory is OwnableUpgradeable {
         deployerList.pop();
 
         emit FarmDeployerRemoved(deployer);
+    }
+
+    /// @notice A function to add/ remove privileged deployer
+    /// @param _deployer Deployer(address) to add to privileged deployers list
+    /// @param _privilege Privilege(bool) whether true or false
+    /// @dev to be only called by owner
+    function updatePrivilege(address _deployer, bool _privilege)
+        external
+        onlyOwner
+    {
+        require(
+            isPrivilegedDeployer[_deployer] != _privilege,
+            "Privilege is same as desired"
+        );
+        isPrivilegedDeployer[_deployer] = _privilege;
+        emit PrivilegeUpdated(_deployer, _privilege);
     }
 
     /// @notice Get list of registered deployer

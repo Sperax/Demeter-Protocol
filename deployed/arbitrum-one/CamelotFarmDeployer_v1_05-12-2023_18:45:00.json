@@ -1,0 +1,47 @@
+{
+    "contract_addr": "0x5740DE935df8Ea751d95334C8FC8AB68205E3cb6",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Deployment_transaction",
+            "tx_hash": "0x28fb61ea7c18a4091ec4d58469950802619afdb2754a0c3d6b0a780d8ddd7053",
+            "contract": "Demeter_CamelotFarm_Deployer",
+            "contract_addr": "0x5740DE935df8Ea751d95334C8FC8AB68205E3cb6",
+            "tx_func": "constructor",
+            "blocknumber": 89949687,
+            "gas_used": 73119677,
+            "gas_limit": 80000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0xea11398df0b45725ff8219b37f89ea01af53cf1482bfb0727a985e108a5bc7d6",
+            "contract": "Demeter_CamelotFarm_Deployer",
+            "contract_addr": null,
+            "tx_func": "transferOwnership",
+            "blocknumber": 89949805,
+            "gas_used": 773543,
+            "gas_limit": 1127517
+        }
+    ],
+    "config_name": "Demeter_CamelotFarm_Deployer_v1",
+    "config": {
+        "deployment_params": {
+            "farm_factory": "0xC4fb09E0CD212367642974F6bA81D8e23780A659",
+            "protocol_factory":
+                    "0x6EcCab422D763aC031210895C81787E87B43A652"
+        },
+        "post_deployment_steps": [
+            {
+                "func": "transferOwnership",
+                "args": {
+                    "new_owner": "0x6d5240f086637fb408c7F727010A10cf57D51B62"
+                },
+                "transact": true,
+                "contract": "Demeter_CamelotFarm_Deployer",
+                "contract_addr": "0x5740DE935df8Ea751d95334C8FC8AB68205E3cb6"
+            }
+        ],
+        "upgradeable": false,
+        "proxy_admin": null
+    }
+}
