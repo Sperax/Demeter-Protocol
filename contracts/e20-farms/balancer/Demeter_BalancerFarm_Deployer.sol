@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../BaseFarmDeployer.sol";
+import "../../BaseFarmDeployer.sol";
 import "./interfaces/IBalancerVault.sol";
 import {Demeter_BalancerFarm, RewardTokenData} from "./Demeter_BalancerFarm.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -122,7 +122,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice A function to validate Balancer pool
     /// @param _poolId bytes32 Id of the pool
-    function validatePool(bytes32 _poolId) public returns (address pool) {
+    function validatePool(bytes32 _poolId) public view returns (address pool) {
         (pool, ) = IBalancerVault(BALANCER_VAULT).getPool(_poolId);
         _isNonZeroAddr(pool);
     }

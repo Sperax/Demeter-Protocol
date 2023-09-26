@@ -46,4 +46,4 @@ def main():
     print('Demeter balancer farm deployer deployed', farmDeployer)
     print('Creating farm ...')
     tx = createFarm(farmDeployer)
-    print(tx)
+    print(tx.events)

@@ -17,12 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../uniswapV2/Demeter_E20_farm.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../BaseE20Farm.sol";
 
-/// @title Demeter Balancer Farm
-/// @author Sperax Foundation
-/// @notice An ERC20 farm to support all kinds of Balancer V2 pools
-/// @dev Inherits Demeter E20 base farm
-contract Demeter_BalancerFarm is Demeter_E20_farm {
-
-}
+contract Demeter_E20_farm is BaseE20Farm {}

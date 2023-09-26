@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../BaseFarmDeployer.sol";
+import "../../BaseFarmDeployer.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import {Demeter_E20_farm, RewardTokenData} from "./Demeter_E20_farm.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
@@ -98,6 +98,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     function validatePool(address _tokenA, address _tokenB)
         public
+        view
         returns (address pool)
     {
         pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
