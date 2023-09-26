@@ -24,5 +24,5 @@ import "../BaseE20Farm.sol";
 /// @notice An ERC20 farm to support all kinds of Balancer V2 pools
 /// @dev Inherits Demeter E20 base farm
 contract Demeter_BalancerFarm is BaseE20Farm {
-
+    string public constant FARM_ID = "Demeter_BalancerV2_v1";
 }
