@@ -142,3 +142,4 @@ artifacts/
 # Foundry
 out/
 forge-cache/
+tests/
