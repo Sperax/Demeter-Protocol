@@ -634,9 +634,9 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 uint256 accRewards = (userDeposit.liquidity *
                     fund.accRewardPerShare[iRwd]) / PREC;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
-                depositSubs[iSub].rewardClaimed[iRwd] += rewards[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
 
+                depositSubs[iSub].rewardClaimed[iRwd] += rewards[iRwd];
                 // Update userRewardDebt for the subscriptions
                 // rewardDebt = liquidity * accRewardPerShare
                 depositSubs[iSub].rewardDebt[iRwd] = accRewards;
@@ -816,7 +816,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 uint256 numFunds = rewardFunds.length;
                 // Update the reward funds.
                 for (uint8 iFund; iFund < numFunds; ) {
-                    RewardFund memory fund = rewardFunds[iFund];
+                    RewardFund storage fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
                         for (uint8 iRwd; iRwd < numRewards; ) {
                             // Get the accrued rewards for the time.
@@ -836,7 +836,6 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                             }
                         }
                     }
-                    rewardFunds[iFund] = fund;
                     unchecked {
                         ++iFund;
                     }
