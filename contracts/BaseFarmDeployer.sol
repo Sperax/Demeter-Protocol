@@ -106,13 +106,13 @@ abstract contract BaseFarmDeployer is Ownable {
             feeAmount = 0;
             return (feeReceiver, feeToken, feeAmount, false);
         }
-        if (!_checkToken(_tokenA) && !_checkToken(_tokenB)) {
-            // No discount because neither of the token is SPA or USDs
-            return (feeReceiver, feeToken, feeAmount, false);
-        } else {
+        if (_checkToken(_tokenA) || _checkToken(_tokenB)) {
             // DiscountedFee if either of the token is SPA or USDs
             // This fees is claimable
             return (feeReceiver, feeToken, discountedFee, true);
+        } else {
+            // No discount because neither of the token is SPA or USDs
+            return (feeReceiver, feeToken, feeAmount, false);
         }
     }
 

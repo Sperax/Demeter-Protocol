@@ -96,11 +96,10 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     ) external override returns (bytes4) {
         require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
         require(_data.length > 0, "onERC721Received: no data");
-        bool lockup = abi.decode(_data, (bool));
         uint256 liquidity = _getLiquidity(_tokenId);
         // Validate the position and get the liquidity
 
-        _deposit(_from, lockup, _tokenId, liquidity);
+        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
         return this.onERC721Received.selector;
     }
 
@@ -134,22 +133,20 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        uint256 tokenId = deposits[account][_depositId].tokenId;
+
         INFPM pm = INFPM(NFPM);
-        (uint256 amt0, uint256 amt1) = PositionValue.fees(
-            pm,
-            userDeposit.tokenId
-        );
+        (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
         require(amt0 > 0 || amt1 > 0, "No fee to claim");
         (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
             CollectParams({
-                tokenId: userDeposit.tokenId,
+                tokenId: tokenId,
                 recipient: account,
                 amount0Max: uint128(amt0),
                 amount1Max: uint128(amt1)
             })
         );
-        emit PoolFeeCollected(account, userDeposit.tokenId, amt0Recv, amt1Recv);
+        emit PoolFeeCollected(account, tokenId, amt0Recv, amt1Recv);
     }
 
     /// @notice Get the accrued uniswap fee for a deposit.

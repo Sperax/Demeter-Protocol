@@ -67,10 +67,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     ) external override returns (bytes4) {
         require(msg.sender == nftPool, "onERC721Received: incorrect nft");
         require(_data.length > 0, "onERC721Received: no data");
-        bool lockup = abi.decode(_data, (bool));
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
-        _deposit(_from, lockup, _tokenId, liquidity);
+        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
         return this.onERC721Received.selector;
     }
 
@@ -104,8 +103,10 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
-        INFTPool(nftPool).harvestPositionTo(userDeposit.tokenId, account);
+        INFTPool(nftPool).harvestPositionTo(
+            deposits[account][_depositId].tokenId,
+            account
+        );
     }
 
     /// @notice callback function for harvestPosition().
