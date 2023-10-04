@@ -110,7 +110,7 @@ def save_deployment_artifacts(data, name, operation_type=''):
     file = os.path.join(
         path,
         operation_type + '_' + name + '_' +
-        time.strftime('%m-%d-%Y_%H:%M:%S') + '.json'
+        time.strftime('%m-%d-%Y_%H-%M-%S') + '.json'
     )
     with open(file, 'w') as json_file:
         json.dump(data, json_file, default=lambda o: o.__dict__, indent=4)
