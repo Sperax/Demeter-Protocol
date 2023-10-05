@@ -11,7 +11,8 @@
     "install-husky": "husky install",
     "prepare": "npm-run-all install-husky install-pip-packages",
     "lint-contract": "solhint 'contracts/**/*.sol' 'test/**/*.sol' -f table",
-    "lint-contract:fix": "prettier --write 'contracts/**/*.sol' 'test/**/*.sol'",
+    "prettier": "forge fmt",
+    "prettier-check": "forge fmt --check",
     "slither-analyze": "slither ."
   },
   "dependencies": {
