@@ -373,7 +373,9 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 time = 0;
         // In case the reward is not updated
         if (block.timestamp > lastFundUpdateTime) {
-            time = block.timestamp - lastFundUpdateTime;
+            unchecked {
+                time = block.timestamp - lastFundUpdateTime;
+            }
         }
 
         // Update the two reward funds.
@@ -494,7 +496,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 rewardsAcc = rewardData[_rwdToken].accRewardBal;
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
-            uint256 time = block.timestamp - lastFundUpdateTime;
+            uint256 time;
+            unchecked {
+                time = block.timestamp - lastFundUpdateTime;
+            }
             // Compute the accrued reward balance for time
             for (uint8 iFund = 0; iFund < numFunds; ) {
                 if (rewardFunds[iFund].totalLiquidity != 0) {
@@ -851,7 +856,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
             if (!isPaused) {
-                uint256 time = block.timestamp - lastFundUpdateTime;
+                uint256 time;
+                unchecked {
+                    time = block.timestamp - lastFundUpdateTime;
+                }
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
                 for (uint8 iFund = 0; iFund < rewardFunds.length; ) {
@@ -992,7 +1000,9 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 rwdBal = 0;
         // Calculate the available reward funds in the farm.
         if (rwdSupply > rwdAccrued) {
-            rwdBal = rwdSupply - rwdAccrued;
+            unchecked {
+                rwdBal = rwdSupply - rwdAccrued;
+            }
         }
         // Calculate the rewards accrued in time.
         uint256 accRewards = fund.rewardsPerSec[_rwdId] * _time;
