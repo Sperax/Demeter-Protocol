@@ -17,10 +17,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing, CollectParams} from "./interfaces/UniswapV3.sol";
-import "./libraries/PositionValue.sol";
-import "../BaseFarm.sol";
+import {PositionValue} from "./libraries/PositionValue.sol";
+import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA

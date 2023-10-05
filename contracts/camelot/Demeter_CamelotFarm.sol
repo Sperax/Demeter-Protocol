@@ -18,7 +18,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {INFTPoolFactory, INFTPool, INFTHandler} from "./interfaces/CamelotInterfaces.sol";
-import "../BaseFarm.sol";
+import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // constants
