@@ -80,7 +80,7 @@ abstract contract BaseFarmDeployer is Ownable {
             uint256 feeAmount,
             bool claimable
         ) = _calculateFees(_tokenA, _tokenB);
-        if (feeAmount > 0) {
+        if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(
                 msg.sender,
                 feeReceiver,

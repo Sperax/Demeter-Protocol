@@ -380,7 +380,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         for (uint8 iSub = 0; iSub < depositSubs.length; ) {
             uint8 fundId = depositSubs[iSub].fundId;
             for (uint8 iRwd = 0; iRwd < numRewards; ) {
-                if (funds[fundId].totalLiquidity > 0 && !isPaused) {
+                if (funds[fundId].totalLiquidity != 0 && !isPaused) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] +=
@@ -497,7 +497,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             uint256 time = block.timestamp - lastFundUpdateTime;
             // Compute the accrued reward balance for time
             for (uint8 iFund = 0; iFund < numFunds; ) {
-                if (rewardFunds[iFund].totalLiquidity > 0) {
+                if (rewardFunds[iFund].totalLiquidity != 0) {
                     rewardsAcc +=
                         rewardFunds[iFund].rewardsPerSec[rwdId] *
                         time;
@@ -610,7 +610,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             if (_userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCoolDown();
             }
-            if (_userDeposit.expiryDate > 0) {
+            if (_userDeposit.expiryDate != 0) {
                 // Cooldown is initiated for the user
                 if (_userDeposit.expiryDate > block.timestamp) {
                     revert DepositIsInCoolDown();
@@ -628,7 +628,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // unsubscribe the user from the common reward fund
         _unsubscribeRewardFund(COMMON_FUND_ID, _account, _depositId);
 
-        if (subscriptions[_userDeposit.tokenId].length > 0) {
+        if (subscriptions[_userDeposit.tokenId].length != 0) {
             // To handle a lockup withdraw without cooldown (during farmPause)
             _unsubscribeRewardFund(LOCKUP_FUND_ID, _account, _depositId);
         }
@@ -697,7 +697,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd = 0; iRwd < numRewards; ) {
-            if (totalRewards[iRwd] > 0) {
+            if (totalRewards[iRwd] != 0) {
                 rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
                     iRwd
                 ];
@@ -726,7 +726,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (_amount >= rewardsLeft) {
             amountToRecover = rewardsLeft;
         }
-        if (amountToRecover > 0) {
+        if (amountToRecover != 0) {
             IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
             emit FundsRecovered(emergencyRet, _rwdToken, amountToRecover);
         }
@@ -856,7 +856,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 // Update the reward funds.
                 for (uint8 iFund = 0; iFund < rewardFunds.length; ) {
                     RewardFund memory fund = rewardFunds[iFund];
-                    if (fund.totalLiquidity > 0) {
+                    if (fund.totalLiquidity != 0) {
                         for (uint8 iRwd = 0; iRwd < numRewards; ) {
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
@@ -908,7 +908,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
         // the farm.
         uint8 numFunds = 1;
-        if (_cooldownPeriod > 0) {
+        if (_cooldownPeriod != 0) {
             _isValidCooldownPeriod(_cooldownPeriod);
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
