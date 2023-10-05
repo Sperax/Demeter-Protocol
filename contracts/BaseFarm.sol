@@ -363,6 +363,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         Deposit memory userDeposit = deposits[_account][_depositId];
         Subscription[] memory depositSubs = subscriptions[userDeposit.tokenId];
         RewardFund[] memory funds = rewardFunds;
+        uint256 numDepositSubs = depositSubs.length;
         uint256 numRewards = rewardTokens.length;
         rewards = new uint256[](numRewards);
 
@@ -375,7 +376,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         // Update the two reward funds.
-        for (uint8 iSub = 0; iSub < depositSubs.length; ) {
+        for (uint8 iSub = 0; iSub < numDepositSubs; ) {
             uint8 fundId = depositSubs[iSub].fundId;
             for (uint8 iRwd = 0; iRwd < numRewards; ) {
                 if (funds[fundId].totalLiquidity != 0 && !isPaused) {
@@ -854,9 +855,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 unchecked {
                     time = block.timestamp - lastFundUpdateTime;
                 }
+                uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
-                for (uint8 iFund = 0; iFund < rewardFunds.length; ) {
+                for (uint8 iFund = 0; iFund < numFunds; ) {
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity != 0) {
                         for (uint8 iRwd = 0; iRwd < numRewards; ) {
