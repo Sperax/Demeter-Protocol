@@ -28,6 +28,10 @@ abstract contract BaseFarmDeployer is Ownable {
         uint256 newDiscountedFee
     );
 
+    // Custom Errors
+    error InvalidTokenPair();
+    error InvalidAddress();
+
     function updateFarmImplementation(address _newFarmImplementation)
         external
         onlyOwner
@@ -61,7 +65,9 @@ abstract contract BaseFarmDeployer is Ownable {
     {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
-        require(_tokenA != _tokenB, "Invalid token pair");
+        if (_tokenA == _tokenB) {
+            revert InvalidTokenPair();
+        }
         return _calculateFees(_tokenA, _tokenB);
     }
 
@@ -124,6 +130,8 @@ abstract contract BaseFarmDeployer is Ownable {
 
     /// @notice Validate address
     function _isNonZeroAddr(address _addr) internal pure {
-        require(_addr != address(0), "Invalid address");
+        if (_addr == address(0)) {
+            revert InvalidAddress();
+        }
     }
 }

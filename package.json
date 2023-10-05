@@ -10,8 +10,8 @@
     "install-pip-packages": "pip3 install -r requirements.txt",
     "initialize-pre-commit": "pre-commit install -c ./dev-utils/.pre-commit-config.yaml",
     "prepare": "npm-run-all install-pip-packages initialize-pre-commit",
-    "solhint": "./node_modules/.bin/solhint -f table -c ./dev-utils/.solhint.json",
-    "prettier:solidity": "./node_modules/.bin/prettier --write **/*.sol"
+    "solhint": "solhint -f table -c ./dev-utils/.solhint.json",
+    "prettier:solidity": "prettier --write **/*.sol"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",

@@ -36,6 +36,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 xGrailAmt
     );
 
+    // Custom Errors
+    error InvalidCamelotPoolConfig();
+    error NotACamelotNFT();
+    error NoData();
+    error NotAllowed();
+
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
@@ -50,7 +56,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     ) external initializer {
         // initialize uniswap related data
         nftPool = INFTPoolFactory(NFTPoolFactory).getPool(_camelotPairPool);
-        require(nftPool != address(0), "Invalid camelot pool config");
+        if (nftPool == address(0)) {
+            revert InvalidCamelotPoolConfig();
+        }
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
     }
@@ -65,8 +73,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 _tokenId,
         bytes calldata _data
     ) external override returns (bytes4) {
-        require(msg.sender == nftPool, "onERC721Received: incorrect nft");
-        require(_data.length > 0, "onERC721Received: no data");
+        if (msg.sender != nftPool) {
+            revert NotACamelotNFT();
+        }
+        if (_data.length == 0) {
+            revert NoData();
+        }
         bool lockup = abi.decode(_data, (bool));
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
@@ -116,7 +128,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 _grailAmount,
         uint256 _xGrailAmount
     ) external override returns (bool) {
-        require(msg.sender == nftPool, "Not Allowed");
+        if (msg.sender != nftPool) {
+            revert NotAllowed();
+        }
         emit PoolRewardsCollected(_to, _tokenId, _grailAmount, _xGrailAmount);
         return true;
     }
