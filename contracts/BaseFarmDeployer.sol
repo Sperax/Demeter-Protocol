@@ -9,7 +9,7 @@ abstract contract BaseFarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant USDs = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
+    address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
     address public factory;
     // Stores the address of farmImplementation.
     address public farmImplementation;
@@ -119,7 +119,7 @@ abstract contract BaseFarmDeployer is Ownable {
     /// @notice Check if a token is either SPA | USDs.
     /// @param _token Address of the desired token.
     function _checkToken(address _token) internal pure returns (bool) {
-        return _token == SPA || _token == USDs;
+        return _token == SPA || _token == USDS;
     }
 
     /// @notice Validate address

@@ -23,7 +23,7 @@ import "../BaseFarm.sol";
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // constants
     string public constant FARM_ID = "Demeter_Camelot_v1";
-    address public constant NFTPoolFactory =
+    address public constant NFT_POOL_FACTORY =
         0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
 
     // Camelot nft pool
@@ -49,7 +49,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize uniswap related data
-        nftPool = INFTPoolFactory(NFTPoolFactory).getPool(_camelotPairPool);
+        nftPool = INFTPoolFactory(NFT_POOL_FACTORY).getPool(_camelotPairPool);
         require(nftPool != address(0), "Invalid camelot pool config");
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
