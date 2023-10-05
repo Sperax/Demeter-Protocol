@@ -7,25 +7,27 @@
     "test": "tests"
   },
   "scripts": {
-    "install-pip-packages": "pip3 install -r requirements.txt",
-    "initialize-pre-commit": "pre-commit install -c ./dev-utils/.pre-commit-config.yaml",
-    "prepare": "npm-run-all install-pip-packages initialize-pre-commit",
-    "solhint": "./node_modules/.bin/solhint -f table -c ./dev-utils/.solhint.json",
-    "prettier:solidity": "./node_modules/.bin/prettier --write **/*.sol"
+    "install-pip-packages": "pip install -r pip-requirements.txt",
+    "install-husky": "husky install",
+    "prepare": "npm-run-all install-husky install-pip-packages",
+    "lint-contract": "solhint 'contracts/**/*.sol' 'test/**/*.sol' -f table",
+    "lint-contract:fix": "prettier --write 'contracts/**/*.sol' 'test/**/*.sol'",
+    "slither-analyze": "slither ."
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
-    "@uniswap/v3-periphery": "^1.3.0",
-    "@uniswap/v3-core": "^1.0.0"
+    "@uniswap/v3-core": "^1.0.0",
+    "@uniswap/v3-periphery": "^1.3.0"
   },
   "devDependencies": {
+    "ethers": "^5.7.2",
+    "husky": "^8.0.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.6",
-    "solhint-plugin-prettier": "^0.0.5",
-    "ethers": "^5.7.2"
+    "solhint-plugin-prettier": "^0.0.5"
   },
   "repository": {
     "type": "git",
