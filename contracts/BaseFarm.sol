@@ -143,11 +143,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 oldCooldownPeriod,
         uint256 newCooldownPeriod
     );
-    event RewardRateUpdated(
-        address rwdToken,
-        uint256[] oldRewardRate,
-        uint256[] newRewardRate
-    );
+    event RewardRateUpdated(address rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
@@ -748,16 +744,14 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (_newRewardRates.length != numFunds) {
             revert InvalidRewardRatesLength();
         }
-        uint256[] memory oldRewardRates = new uint256[](numFunds);
         // Update the reward rate
         for (uint8 iFund = 0; iFund < numFunds; ) {
-            oldRewardRates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
             rewardFunds[iFund].rewardsPerSec[id] = _newRewardRates[iFund];
             unchecked {
                 ++iFund;
             }
         }
-        emit RewardRateUpdated(_rwdToken, oldRewardRates, _newRewardRates);
+        emit RewardRateUpdated(_rwdToken, _newRewardRates);
     }
 
     /// @notice Add subscription to the reward fund for a deposit
