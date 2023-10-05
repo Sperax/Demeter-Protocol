@@ -170,25 +170,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     /// @notice Claim rewards for the user.
-    /// @param _account The user's address
     /// @param _depositId The id of the deposit
-    /// @dev Anyone can call this function to claim rewards for the user
-    function claimRewards(address _account, uint256 _depositId)
-        external
-        nonReentrant
-    {
-        _farmNotClosed();
-        _isValidDeposit(_account, _depositId);
-        _claimRewards(_account, _depositId);
-    }
-
-    /// @notice Claim rewards for the user.
-    /// @param _depositId The id of the deposit
-    function claimRewards(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
+    function claimRewards(uint256 _depositId) external {
         address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        _claimRewards(account, _depositId);
+        claimRewards(account, _depositId);
     }
 
     /// @notice Add rewards to the farm.
@@ -446,6 +431,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     {
         require(_fundId < rewardFunds.length, "Reward fund does not exist");
         return rewardFunds[_fundId];
+    }
+
+    /// @notice Claim rewards for the user.
+    /// @param _account The user's address
+    /// @param _depositId The id of the deposit
+    /// @dev Anyone can call this function to claim rewards for the user
+    function claimRewards(address _account, uint256 _depositId)
+        public
+        nonReentrant
+    {
+        _farmNotClosed();
+        _isValidDeposit(_account, _depositId);
+        _claimRewards(_account, _depositId);
     }
 
     /// @notice Get the remaining reward balance for the farm.
