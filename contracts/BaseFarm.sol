@@ -97,7 +97,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
-    uint256 public farmStartTime;
 
     // Reward info
     RewardFund[] public rewardFunds;
@@ -229,9 +228,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
-        require(block.timestamp < farmStartTime, "Farm already started");
+        require(lastFundUpdateTime > block.timestamp, "Farm already started");
         require(_newStartTime >= block.timestamp, "Time < now");
-        farmStartTime = _newStartTime;
+
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
@@ -859,7 +858,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _transferOwnership(msg.sender);
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
-        farmStartTime = _farmStartTime;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -901,6 +899,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 ++iRwd;
             }
         }
+
+        emit FarmStartTimeUpdated(_farmStartTime);
     }
 
     /// @notice Adds new reward token to the farm
