@@ -452,11 +452,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @notice Get the remaining reward balance for the farm.
     /// @param _rwdToken The reward token's address
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
-        uint256 rwdId = rewardData[_rwdToken].id;
-        require(rewardTokens[rwdId] == _rwdToken, "Invalid _rwdToken");
+        RewardData memory rwdData = rewardData[_rwdToken];
+
+        require(rwdData.tknManager != address(0), "Invalid reward token");
 
         uint256 numFunds = rewardFunds.length;
-        uint256 rewardsAcc = rewardData[_rwdToken].accRewardBal;
+        uint256 rewardsAcc = rwdData.accRewardBal;
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
@@ -464,7 +465,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             for (uint8 iFund; iFund < numFunds; ) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
-                        rewardFunds[iFund].rewardsPerSec[rwdId] *
+                        rewardFunds[iFund].rewardsPerSec[rwdData.id] *
                         time;
                 }
                 unchecked {
