@@ -30,7 +30,7 @@ struct RewardTokenData {
     address tknManager;
 }
 
-contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
+abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
