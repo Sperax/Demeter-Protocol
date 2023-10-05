@@ -213,6 +213,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
+        _farmNotClosed();
         require(lastFundUpdateTime > block.timestamp, "Farm already started");
         require(_newStartTime >= block.timestamp, "Time < now");
 
@@ -233,6 +234,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @notice Recover rewardToken from the farm in case of EMERGENCY
     /// @dev Shuts down the farm completely
     function closeFarm() external onlyOwner nonReentrant {
+        _farmNotClosed();
         _updateFarmRewardData();
         isPaused = true;
         isClosed = true;
