@@ -16,10 +16,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../BaseFarmDeployer.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
 
 contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
@@ -45,13 +45,13 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
-    address public protocolFactory;
+    address public immutable PROTOCOL_FACTORY;
 
     constructor(address _factory, address _protocolFactory) {
         _isNonZeroAddr(_factory);
         _isNonZeroAddr(_protocolFactory);
         factory = _factory;
-        protocolFactory = _protocolFactory;
+        PROTOCOL_FACTORY = _protocolFactory;
         discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_CamelotFarm());
     }
@@ -93,7 +93,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         view
         returns (address pool)
     {
-        pool = ICamelotFactory(protocolFactory).getPair(_tokenA, _tokenB);
+        pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;
     }

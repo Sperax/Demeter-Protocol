@@ -3,8 +3,8 @@
 pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./ISwapRouter.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ISwapRouter} from "./ISwapRouter.sol";
 import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
 
 /**
@@ -17,7 +17,7 @@ contract UniswapV3Test {
     INonfungiblePositionManager public nonfungiblePositionManager =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
 
-    ISwapRouter public constant swapRouter =
+    ISwapRouter public constant SWAP_ROUTER =
         ISwapRouter(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
 
     event SwapTest(
@@ -36,7 +36,7 @@ contract UniswapV3Test {
         uint24 poolFee,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        IERC20(inputToken).safeApprove(address(swapRouter), amountIn);
+        IERC20(inputToken).safeApprove(address(SWAP_ROUTER), amountIn);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: inputToken,
@@ -48,7 +48,7 @@ contract UniswapV3Test {
                 sqrtPriceLimitX96: 0
             });
         // Executes the swap.
-        amountOut = swapRouter.exactInputSingle(params);
+        amountOut = SWAP_ROUTER.exactInputSingle(params);
         emit SwapTest(inputToken, outputToken, amountIn, amountOut);
     }
 }

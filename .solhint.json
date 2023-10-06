@@ -7,7 +7,9 @@
     "ordering": "error",
     "avoid-throw": "off",
     "avoid-suicide": "error",
-    "avoid-sha3": "warn"
+    "avoid-sha3": "warn",
+    "func-visibility": ["error", { "ignoreConstructors": true }]
+
   },
   "plugins": ["prettier"]
 }
