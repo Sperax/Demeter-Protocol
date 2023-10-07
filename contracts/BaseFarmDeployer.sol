@@ -10,7 +10,7 @@ abstract contract BaseFarmDeployer is Ownable {
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
-    address public factory;
+    address public immutable factory;
     // Stores the address of farmImplementation.
     address public farmImplementation;
     uint256 public discountedFee;
@@ -27,6 +27,11 @@ abstract contract BaseFarmDeployer is Ownable {
         uint256 oldDiscountedFee,
         uint256 newDiscountedFee
     );
+
+    constructor(address _factory) {
+        _isNonZeroAddr(_factory);
+        factory = _factory;
+    }
 
     function updateFarmImplementation(address _newFarmImplementation)
         external
