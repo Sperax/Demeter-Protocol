@@ -212,7 +212,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
         _updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
-        emit RewardAdded(_rwdToken, _amount);
+        emit RewardAdded(
+            // should we add the account which added the rewards in this event?
+            _rwdToken,
+            _amount
+        );
     }
 
     // --------------------- Admin  Functions ---------------------
