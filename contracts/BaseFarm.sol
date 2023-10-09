@@ -17,50 +17,65 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
+/**
+ * @title BaseFarm
+ * @dev An abstract contract for a farming system that allows users to deposit tokens and earn rewards over time.
+ */
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-// Defines the reward data for constructor.
-// token - Address of the token
-// tknManager - Authority to update rewardToken related Params.
+/**
+ * @dev Defines the reward data for constructor.
+ * @param token Address of the token
+ * @param tknManager Authority to update rewardToken related Params.
+ */
 struct RewardTokenData {
     address token;
     address tknManager;
 }
 
+/**
+ * @dev Abstract contract for managing farming functionality.
+ */
 abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 
-    // Defines the reward funds for the farm
-    // totalLiquidity - amount of liquidity sharing the rewards in the fund
-    // rewardsPerSec - the emission rate of the fund
-    // accRewardPerShare - the accumulated reward per share
+    /**
+     * @dev Defines the reward funds for the farm.
+     * @param totalLiquidity amount of liquidity sharing the rewards in the fund
+     * @param rewardsPerSec the emission rate of the fund
+     * @param accRewardPerShare the accumulated reward per share
+     */
     struct RewardFund {
         uint256 totalLiquidity;
         uint256[] rewardsPerSec;
         uint256[] accRewardPerShare;
     }
 
-    // Keeps track of a deposit's share in a reward fund.
-    // fund id - id of the subscribed reward fund
-    // rewardDebt - rewards claimed for a deposit corresponding to
-    //              latest accRewardPerShare value of the budget
-    // rewardClaimed - rewards claimed for a deposit from the reward fund
+    /**
+     * @dev Keeps track of a deposit's share in a reward fund.
+     * @param fundId id of the subscribed reward fund
+     * @param rewardDebt rewards claimed for a deposit corresponding to
+     * latest accRewardPerShare value of the budget
+     * @param rewardClaimed rewards claimed for a deposit from the reward fund
+     */
     struct Subscription {
         uint8 fundId;
         uint256[] rewardDebt;
         uint256[] rewardClaimed;
     }
 
-    // Deposit information
-    // liquidity - amount of liquidity in the deposit
-    // tokenId - maps to uniswap NFT token id
-    // startTime - time of deposit
-    // expiryDate - expiry time (if deposit is locked)
-    // cooldownPeriod - cooldown period (if deposit is locked)
-    // totalRewardsClaimed - total rewards claimed for the deposit
+    /**
+     * @dev Deposit information.
+     * @param liquidity amount of liquidity in the deposit
+     * @param tokenId maps to uniswap NFT token id
+     * @param startTime time of deposit
+     * @param expiryDate expiry time (if deposit is locked)
+     * @param cooldownPeriod cooldown period (if deposit is locked)
+     * @param totalRewardsClaimed total rewards claimed for the deposit
+     */
     struct Deposit {
         uint256 liquidity;
         uint256 tokenId;
@@ -70,17 +85,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256[] totalRewardsClaimed;
     }
 
-    // Reward token related information
-    // tknManager - Address that manages the rewardToken.
-    // id - Id of the rewardToken in the rewardTokens array.
-    // accRewardBal - The rewards accrued but pending to be claimed.
+    /**
+     * @dev Reward token related information.
+     * @param tknManager Address that manages the rewardToken.
+     * @param id Id of the rewardToken in the rewardTokens array.
+     * @param accRewardBal The rewards accrued but pending to be claimed.
+     */
     struct RewardData {
         address tknManager;
         uint8 id;
         uint256 accRewardBal;
     }
 
-    // constants
+    // Constants
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant SPA_TOKEN_MANAGER =
         0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188; // GaugeSPARewarder
@@ -187,21 +204,25 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     error InvalidAddress();
     error InvalidCoolDownPeriod();
 
-    // Disallow initialization of a implementation contract
+    // Disallow initialization of an implementation contract
     constructor() {
         _disableInitializers();
     }
 
-    /// @notice Claim rewards for the user.
-    /// @param _depositId The id of the deposit
+    /**
+     * @notice Claim rewards for the user.
+     * @param _depositId The id of the deposit
+     */
     function claimRewards(uint256 _depositId) external {
         address account = msg.sender;
         claimRewards(account, _depositId);
     }
 
-    /// @notice Add rewards to the farm.
-    /// @param _rwdToken the reward token's address.
-    /// @param _amount the amount of reward tokens to add.
+    /**
+     * @notice Add rewards to the farm.
+     * @param _rwdToken The reward token's address.
+     * @param _amount The amount of reward tokens to add.
+     */
     function addRewards(address _rwdToken, uint256 _amount)
         external
         nonReentrant
@@ -216,8 +237,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     // --------------------- Admin  Functions ---------------------
-    /// @notice Update the cooldown period
-    /// @param _newCooldownPeriod The new cooldown period (in days)
+
+    /**
+     * @notice Update the cooldown period.
+     * @param _newCooldownPeriod The new cooldown period (in days).
+     */
     function updateCooldownPeriod(uint256 _newCooldownPeriod)
         external
         onlyOwner
@@ -232,10 +256,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
     }
 
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
-    ///      New start time should be in future.
-    /// @param _newStartTime The new farm start time.
+    /**
+     * @notice Update the farm start time.
+     * @dev Can be updated only before the farm start.
+        New start time should be in the future.
+     * @param _newStartTime The new farm start time.
+     */
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
         _farmNotClosed();
         if (block.timestamp >= lastFundUpdateTime) {
@@ -250,7 +276,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit FarmStartTimeUpdated(_newStartTime);
     }
 
-    /// @notice Pause / UnPause the deposit
+    /**
+     * @notice Pause / Unpause the deposit.
+     */
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
         _farmNotClosed();
         if (isPaused == _isPaused) {
@@ -261,8 +289,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit FarmPaused(isPaused);
     }
 
-    /// @notice Recover rewardToken from the farm in case of EMERGENCY
-    /// @dev Shuts down the farm completely
+    /**
+     * @notice Recover rewardToken from the farm in case of EMERGENCY.
+     * @dev Shuts down the farm completely.
+     */
     function closeFarm() external onlyOwner nonReentrant {
         _farmNotClosed();
         _updateFarmRewardData();
@@ -282,8 +312,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit FarmClosed();
     }
 
-    /// @notice Recover erc20 tokens other than the reward Tokens.
-    /// @param _token Address of token to be recovered
+    /**
+     * @notice Recover ERC20 tokens other than the rewardTokens.
+     * @param _token Address of the token to be recovered.
+     */
     function recoverERC20(address _token) external onlyOwner nonReentrant {
         if (rewardData[_token].tknManager != address(0)) {
             revert CannotWithdrawRewardToken();
@@ -299,10 +331,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     // --------------------- Token Manager Functions ---------------------
-    /// @notice Get the remaining balance out of the  farm
-    /// @param _rwdToken The reward token's address
-    /// @param _amount The amount of the reward token to be withdrawn
-    /// @dev Function recovers minOf(_amount, rewardsLeft)
+
+    /**
+     * @notice Get the remaining balance out of the farm.
+     * @param _rwdToken The reward token's address.
+     * @param _amount The amount of the reward token to be withdrawn.
+     * @dev Function recovers minOf(_amount, rewardsLeft).
+     */
     function recoverRewardFunds(address _rwdToken, uint256 _amount)
         external
         nonReentrant
@@ -312,9 +347,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _recoverRewardFunds(_rwdToken, _amount);
     }
 
-    /// @notice Function to update reward params for a fund.
-    /// @param _rwdToken The reward token's address
-    /// @param _newRewardRates The new reward rate for the fund (includes the precision)
+    /**
+     * @notice Function to update reward parameters for a fund.
+     * @param _rwdToken The reward token's address.
+     * @param _newRewardRates The new reward rate for the fund (includes the precision).
+     */
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
         external
     {
@@ -324,10 +361,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _setRewardRate(_rwdToken, _newRewardRates);
     }
 
-    /// @notice Transfer the tokenManagerRole to other user.
-    /// @dev Only the existing tokenManager for a reward can call this function.
-    /// @param _rwdToken The reward token's address.
-    /// @param _newTknManager Address of the new token manager.
+    /**
+     * @notice Transfer the tokenManagerRole to another user.
+     * @dev Only the existing tokenManager for a reward can call this function.
+     * @param _rwdToken The reward token's address.
+     * @param _newTknManager Address of the new token manager.
+     */
     function updateTokenManager(address _rwdToken, address _newTknManager)
         external
     {
@@ -338,10 +377,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit TokenManagerUpdated(_rwdToken, msg.sender, _newTknManager);
     }
 
-    /// @notice Function to compute the total accrued rewards for a deposit
-    /// @param _account The user's address
-    /// @param _depositId The id of the deposit
-    /// @return rewards The total accrued rewards for the deposit (uint256[])
+    /**
+     * @notice Function to compute the total accrued rewards for a deposit.
+     * @param _account The user's address.
+     * @param _depositId The ID of the deposit.
+     * @return rewards The total accrued rewards for the deposit (uint256[]).
+     */
     function computeRewards(address _account, uint256 _depositId)
         external
         view
@@ -356,7 +397,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         rewards = new uint256[](numRewards);
 
         uint256 time = 0;
-        // In case the reward is not updated
+        // In case the reward is not updated.
         if (block.timestamp > lastFundUpdateTime) {
             unchecked {
                 time = block.timestamp - lastFundUpdateTime;
@@ -370,7 +411,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             for (uint8 iRwd; iRwd < numRewards; ) {
                 if (funds[fundId].totalLiquidity != 0 && !isPaused) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
-                    // update the accRewardPerShare for delta time.
+                    // Update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] +=
                         (accRewards * PREC) /
                         funds[fundId].totalLiquidity;
@@ -390,25 +431,34 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return rewards;
     }
 
-    /// @notice get number of deposits for an account
-    /// @param _account The user's address
+    /**
+     * @notice Get the number of deposits made by an account.
+     * @param _account The address of the user.
+     * @return The total number of deposits made by the specified user.
+     */
     function getNumDeposits(address _account) external view returns (uint256) {
         return deposits[_account].length;
     }
 
-    /// @notice get deposit info for an account
-    /// @notice _account The user's address
-    /// @notice _depositId The id of the deposit
+    /**
+     * @notice Get deposit information about a specific deposit made by an account.
+     * @param _account The address of the user.
+     * @param _depositId The unique ID of the deposit.
+     * @return deposit The deposit information represented as a struct.
+     */
     function getDeposit(address _account, uint256 _depositId)
         external
         view
-        returns (Deposit memory)
+        returns (Deposit memory deposit)
     {
         return deposits[_account][_depositId];
     }
 
-    /// @notice get number of deposits for an account
-    /// @param _tokenId The token's id
+    /**
+     * @notice Get the number of subscriptions for an account.
+     * @param _tokenId The token's ID.
+     * @return The number of subscriptions.
+     */
     function getNumSubscriptions(uint256 _tokenId)
         external
         view
@@ -417,9 +467,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return subscriptions[_tokenId].length;
     }
 
-    /// @notice get subscription stats for a deposit.
-    /// @param _tokenId The token's id
-    /// @param _subscriptionId The subscription's id
+    /**
+     * @notice Get subscription information for a deposit.
+     * @param _tokenId The token's ID.
+     * @param _subscriptionId The subscription's ID.
+     * @return Subscription information.
+     */
     function getSubscriptionInfo(uint256 _tokenId, uint256 _subscriptionId)
         external
         view
@@ -431,9 +484,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return subscriptions[_tokenId][_subscriptionId];
     }
 
-    /// @notice get reward rates for a rewardToken.
-    /// @param _rwdToken The reward token's address
-    /// @return The reward rates for the reward token (uint256[])
+    /**
+     * @notice Get reward rates for a rewardToken.
+     * @param _rwdToken The reward token's address.
+     * @return The reward rates for the reward token.
+     */
     function getRewardRates(address _rwdToken)
         external
         view
@@ -451,8 +506,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return rates;
     }
 
-    /// @notice get farm reward fund info.
-    /// @param _fundId The fund's id
+    /**
+     * @notice Get farm reward fund info.
+     * @param _fundId The fund's ID.
+     * @return Reward fund information.
+     */
     function getRewardFundInfo(uint8 _fundId)
         external
         view
@@ -464,10 +522,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return rewardFunds[_fundId];
     }
 
-    /// @notice Claim rewards for the user.
-    /// @param _account The user's address
-    /// @param _depositId The id of the deposit
-    /// @dev Anyone can call this function to claim rewards for the user
+    /**
+     * @notice Claim rewards for the user.
+     * @param _account The user's address.
+     * @param _depositId The ID of the deposit.
+     * @dev Anyone can call this function to claim rewards for the user.
+     */
     function claimRewards(address _account, uint256 _depositId)
         public
         nonReentrant
@@ -477,8 +537,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _claimRewards(_account, _depositId);
     }
 
-    /// @notice Get the remaining reward balance for the farm.
-    /// @param _rwdToken The reward token's address
+    /**
+     * @notice Get the remaining reward balance for the farm.
+     * @param _rwdToken The reward token's address.
+     * @return The remaining reward balance.
+     */
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 
@@ -494,7 +557,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             unchecked {
                 time = block.timestamp - lastFundUpdateTime;
             }
-            // Compute the accrued reward balance for time
+            // Compute the accrued reward balance for time.
             for (uint8 iFund; iFund < numFunds; ) {
                 if (rewardFunds[iFund].totalLiquidity != 0) {
                     rewardsAcc +=
@@ -512,18 +575,20 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return (supply - rewardsAcc);
     }
 
-    /// @notice Common logic for deposit in the demeter farm.
-    /// @param _account Address of the user
-    /// @param _lockup lockup option for the deposit.
-    /// @param _tokenId generated | provided id of position to be deposited.
-    /// @param _liquidity Liquidity amount to be added to the pool.
+    /**
+     * @notice Common logic for deposit in the demeter farm.
+     * @param _account Address of the user.
+     * @param _lockup Lockup option for the deposit.
+     * @param _tokenId Generated or provided ID of the position to be deposited.
+     * @param _liquidity Liquidity amount to be added to the pool.
+     */
     function _deposit(
         address _account,
         bool _lockup,
         uint256 _tokenId,
         uint256 _liquidity
     ) internal {
-        // Allow deposit only when farm is not paused.
+        // Allow deposit only when the farm is not paused.
         _farmNotPaused();
 
         if (cooldownPeriod == 0) {
@@ -535,7 +600,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (_liquidity == 0) {
             revert NoLiquidityInPosition();
         }
-        // update the reward funds
+        // update the reward funds.
         _updateFarmRewardData();
 
         // Prepare data to be stored.
@@ -547,41 +612,44 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: _liquidity
         });
-        // Add common fund subscription to the user's deposit
+
+        // Add common fund subscription to the user's deposit.
         _subscribeRewardFund(COMMON_FUND_ID, _tokenId, _liquidity);
 
         if (_lockup) {
-            // Add lockup fund subscription to the user's deposit
+            // Add lockup fund subscription to the user's deposit.
             userDeposit.cooldownPeriod = cooldownPeriod;
             _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, _liquidity);
         }
 
-        // @dev Add the deposit to the user's deposit list
+        // Add the deposit to the user's deposit list.
         deposits[_account].push(userDeposit);
 
         emit Deposited(_account, _lockup, _tokenId, _liquidity);
     }
 
-    /// @notice Common logic for initiating cooldown.
-    /// @param _depositId user's deposit Id.
+    /**
+     * @notice Initiate cooldown for a user's deposit.
+     * @param _depositId The unique ID of the user's deposit.
+     */
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
         Deposit storage userDeposit = deposits[account][_depositId];
 
-        // validate if the deposit is in locked state
+        // Validate if the deposit is in a locked state
         if (userDeposit.cooldownPeriod == 0) {
             revert CannotInitiateCoolDown();
         }
 
-        // update the deposit expiry time & lock status
+        // Update the deposit expiry time & lock status
         userDeposit.expiryDate =
             block.timestamp +
             (userDeposit.cooldownPeriod * 1 days);
         userDeposit.cooldownPeriod = 0;
 
-        // claim the pending rewards for the user
+        // Claim the pending rewards for the user
         _claimRewards(account, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund
@@ -594,17 +662,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
     }
 
-    /// @notice Common logic for withdraw.
-    /// @param _account address of the user.
-    /// @param _depositId user's deposit id.
-    /// @param _userDeposit userDeposit struct.
+    /**
+     * @notice Perform the withdrawal of a user's deposit.
+     * @param _account The address of the user.
+     * @param _depositId The unique ID of the user's deposit.
+     * @param _userDeposit The deposit information represented as a struct.
+     */
     function _withdraw(
         address _account,
         uint256 _depositId,
         Deposit memory _userDeposit
     ) internal {
         // Check for the withdrawal criteria
-        // Note: If farm is paused, skip the cooldown check
+        // Note: If the farm is paused, skip the cooldown check
         if (!isPaused) {
             if (_userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCoolDown();
@@ -624,7 +694,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256[] memory totalRewards = deposits[_account][_depositId]
             .totalRewardsClaimed;
 
-        // unsubscribe the user from the common reward fund
+        // Unsubscribe the user from the common reward fund
         _unsubscribeRewardFund(COMMON_FUND_ID, _account, _depositId);
 
         if (subscriptions[_userDeposit.tokenId].length != 0) {
@@ -647,11 +717,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
     }
 
-    /// @notice Claim rewards for the user.
-    /// @param _account The user's address
-    /// @param _depositId The id of the deposit
-    /// @dev NOTE: any function calling this private
-    ///     function should be marked as non-reentrant
+    /**
+     * @notice Claim rewards for a user's deposit.
+     * @param _account The address of the user.
+     * @param _depositId The unique ID of the user's deposit.
+     * @dev NOTE: Any function calling this private function should be marked as non-reentrant.
+     */
     function _claimRewards(address _account, uint256 _depositId) internal {
         _updateFarmRewardData();
 
@@ -715,11 +786,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Get the remaining balance out of the  farm
-    /// @param _rwdToken The reward token's address
-    /// @param _amount The amount of the reward token to be withdrawn
-    /// @dev Function recovers minOf(_amount, rewardsLeft)
-    /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
+    /**
+     * @notice Recover rewardToken from the farm in case of EMERGENCY.
+     * @param _rwdToken The reward token's address.
+     * @param _amount The amount of the reward token to be withdrawn.
+     * @dev This function recovers a minimum of `_amount` and the remaining rewards.
+     * @dev In case of a partial withdrawal of funds, the reward rate must be set manually again.
+     */
     function _recoverRewardFunds(address _rwdToken, uint256 _amount) internal {
         address emergencyRet = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
@@ -733,9 +806,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Function to update reward params for a fund.
-    /// @param _rwdToken The reward token's address
-    /// @param _newRewardRates The new reward rate for the fund (includes the precision)
+    /**
+     * @notice Update reward parameters for a fund.
+     * @param _rwdToken The reward token's address.
+     * @param _newRewardRates The new reward rate for the fund (including precision).
+     */
     function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates)
         internal
     {
@@ -754,10 +829,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit RewardRateUpdated(_rwdToken, _newRewardRates);
     }
 
-    /// @notice Add subscription to the reward fund for a deposit
-    /// @param _tokenId The tokenId of the deposit
-    /// @param _fundId The reward fund id
-    /// @param _liquidity The liquidity of the deposit
+    /**
+     * @notice Subscribe to a reward fund for a deposit.
+     * @param _fundId The reward fund ID.
+     * @param _tokenId The token ID of the deposit.
+     * @param _liquidity The liquidity of the deposit.
+     */
     function _subscribeRewardFund(
         uint8 _fundId,
         uint256 _tokenId,
@@ -777,7 +854,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
         uint256 subId = subscriptions[_tokenId].length - 1;
 
-        // initialize user's reward debt
+        // Initialize user's reward debt
         for (uint8 iRwd; iRwd < numRewards; ) {
             subscriptions[_tokenId][subId].rewardDebt[iRwd] =
                 (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) /
@@ -790,11 +867,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         rewardFunds[_fundId].totalLiquidity += _liquidity;
     }
 
-    /// @notice Unsubscribe a reward fund from a deposit
-    /// @param _fundId The reward fund id
-    /// @param _account The user's address
-    /// @param _depositId The deposit id corresponding to the user
-    /// @dev The rewards claimed from the reward fund is persisted in the event
+    /**
+     * @notice Unsubscribe a reward fund from a deposit.
+     * @param _fundId The reward fund ID.
+     * @param _account The user's address.
+     * @param _depositId The deposit ID corresponding to the user.
+     * @dev The rewards claimed from the reward fund are persisted in the event.
+     */
     function _unsubscribeRewardFund(
         uint8 _fundId,
         address _account,
@@ -844,7 +923,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Function to update the FarmRewardData for all funds
+    /// @notice Update the FarmRewardData for all funds.
     function _updateFarmRewardData() internal {
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
@@ -887,10 +966,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Function to setup the reward funds during construction.
-    /// @param _farmStartTime - Time of farm start.
-    /// @param _cooldownPeriod - cooldown period for locked deposits.
-    /// @param _rwdTokenData - Reward data for each reward token.
+    /**
+     * @notice Set up the reward funds during farm construction.
+     * @param _farmStartTime The time of farm start.
+     * @param _cooldownPeriod The cooldown period for locked deposits.
+     * @param _rwdTokenData Reward data for each reward token.
+     */
     function _setupFarm(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
@@ -913,7 +994,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             numFunds = 2;
         }
 
-        // Setup reward related information.
+        // Setup reward-related information.
         uint256 numRewards = _rwdTokenData.length;
         if (numRewards > MAX_NUM_REWARDS - 1) {
             revert InvalidRewardData();
@@ -932,7 +1013,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             }
         }
 
-        // Add SPA as default reward token in the farm
+        // Add SPA as the default reward token in the farm
         _addRewardData(SPA, SPA_TOKEN_MANAGER);
 
         // Initialize reward Data
@@ -949,9 +1030,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit FarmStartTimeUpdated(_farmStartTime);
     }
 
-    /// @notice Adds new reward token to the farm
-    /// @param _token Address of the reward token to be added.
-    /// @param _tknManager Address of the reward token Manager.
+    /**
+     * @notice Add a new reward token to the farm.
+     * @param _token The address of the reward token to be added.
+     * @param _tknManager The address of the reward token manager.
+     */
     function _addRewardData(address _token, address _tknManager) internal {
         // Validate if addresses are correct
         _isNonZeroAddr(_token);
@@ -973,10 +1056,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit RewardTokenAdded(_token, _tknManager);
     }
 
-    /// @notice Computes the accrued reward for a given fund id and time interval.
-    /// @param _rwdId Id of the reward token.
-    /// @param _fundId Id of the reward fund.
-    /// @param _time Time interval for the reward computation.
+    /**
+     * @notice Compute the accrued reward for a given fund ID and time interval.
+     * @param _rwdId The ID of the reward token.
+     * @param _fundId The ID of the reward fund.
+     * @param _time The time interval for reward computation.
+     */
     function _getAccRewards(
         uint8 _rwdId,
         uint8 _fundId,
@@ -1006,7 +1091,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return accRewards;
     }
 
-    /// @notice Validate the deposit for account
+    /**
+     * @notice Validate the deposit for an account.
+     * @param _account The user's address.
+     * @param _depositId The deposit ID.
+     */
     function _isValidDeposit(address _account, uint256 _depositId)
         internal
         view
@@ -1016,27 +1105,38 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Validate if farm is not closed
+    /**
+     * @notice Validate that the farm is not closed.
+     */
     function _farmNotClosed() internal view {
         if (isClosed) {
             revert FarmIsClosed();
         }
     }
 
-    /// @notice Validate if farm is not paused
+    /**
+     * @notice Validate that the farm is not paused.
+     */
     function _farmNotPaused() internal view {
         if (isPaused) {
             revert FarmIsPaused();
         }
     }
 
-    /// @notice Validate the caller is the token Manager.
+    /**
+     * @notice Validate that the caller is the token manager.
+     * @param _rwdToken The reward token's address.
+     */
     function _isTokenManager(address _rwdToken) internal view {
         if (msg.sender != rewardData[_rwdToken].tknManager) {
             revert NotTheTokenManager();
         }
     }
 
+    /**
+     * @notice Validate the cooldown period.
+     * @param _cooldownPeriod The cooldown period to validate.
+     */
     function _isValidCooldownPeriod(uint256 _cooldownPeriod) internal pure {
         if (
             _cooldownPeriod < MIN_COOLDOWN_PERIOD ||
@@ -1046,7 +1146,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Validate address
+    /**
+     * @notice Validate an address.
+     * @param _addr The address to validate.
+     */
     function _isNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();

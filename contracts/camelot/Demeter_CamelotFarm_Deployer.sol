@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
+
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
 //@@@@@@........../@@@@@@@........../@@@@@@//
@@ -16,6 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
+/**
+ * @title Demeter_CamelotFarm_Deployer
+ * @notice This contract deploys Camelot farms with configurable parameters.
+ * @dev It inherits from BaseFarmDeployer and uses the Clones library to create farm instances.
+ * @dev Farms created by this contract are managed by the Demeter_CamelotFarm contract.
+ */
 import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
@@ -23,19 +30,25 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
 
 contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
-    // @dev the token Order is not important
+    /**
+     * @dev Struct to hold data required for Camelot pool configuration.
+     * @param tokenA Address of token A in the Camelot pool.
+     * @param tokenB Address of token B in the Camelot pool.
+     */
     struct CamelotPoolData {
         address tokenA;
         address tokenB;
     }
 
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment
-    // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days)
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // lpTokenData - data for camelot pool.
-    //                  (tokenA, tokenB)
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
+    /**
+     * @dev Struct to hold data required for farm deployment.
+     * @param farmAdmin Address to which ownership of the farm is transferred post deployment.
+     * @param farmStartTime Time when rewards start accruing for deposits in the farm.
+     * @param cooldownPeriod Cooldown period for locked deposits (in days).
+     *                      Set to 0 to disable the lockup functionality of the farm.
+     * @param camelotPoolData Data for the Camelot pool (tokenA, tokenB).
+     * @param rewardData Array of tuples containing reward token address and token manager address.
+     */
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
@@ -44,9 +57,17 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
+    /// @notice Name of this deployer contract.
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
+
+    /// @notice Address of the protocol factory contract.
     address public immutable PROTOCOL_FACTORY;
 
+    /**
+     * @dev Constructs the Demeter_CamelotFarm_Deployer contract.
+     * @param _factory Address of the factory contract used for farm registration.
+     * @param _protocolFactory Address of the Camelot protocol factory contract.
+     */
     constructor(address _factory, address _protocolFactory)
         BaseFarmDeployer(_factory)
     {
@@ -56,8 +77,11 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         farmImplementation = address(new Demeter_CamelotFarm());
     }
 
-    /// @notice Deploys a new UniswapV3 farm.
-    /// @param _data data for deployment.
+    /**
+     * @notice Deploys a new Camelot farm.
+     * @param _data Data for deployment.
+     * @return The address of the newly created farm.
+     */
     function createFarm(FarmData memory _data)
         external
         nonReentrant
@@ -88,6 +112,12 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         return farm;
     }
 
+    /**
+     * @notice Validates a Camelot pool and retrieves the pair address.
+     * @param _tokenA The address of token A in the pool.
+     * @param _tokenB The address of token B in the pool.
+     * @return pool The address of the Camelot pool pair.
+     */
     function validatePool(address _tokenA, address _tokenB)
         public
         view
