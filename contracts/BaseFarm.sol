@@ -121,11 +121,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     );
     event RewardsClaimed(
         address indexed account,
-        uint8 fundId,
-        uint256 tokenId,
-        uint256 liquidity,
-        uint256 fundLiquidity,
-        uint256[] rewardAmount
+        uint8[] fundIds,
+        uint256[][] rewardsForEachSubs
     );
     event PoolUnsubscribed(
         address indexed account,
@@ -656,8 +653,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = depositSubs.length;
         uint256[] memory totalRewards = new uint256[](numRewards);
+        uint8[] memory fundIds = new uint8[](numSubs);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](numSubs);
+
         // Compute the rewards for each subscription.
         for (uint8 iSub; iSub < numSubs; ) {
+            fundIds[iSub] = depositSubs[iSub].fundId;
+
             uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
             RewardFund memory fund = rewardFunds[fundId];
@@ -677,19 +679,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                     ++iRwd;
                 }
             }
+            rewardsForEachSubs[iSub] = rewards;
 
-            emit RewardsClaimed(
-                _account,
-                fundId,
-                userDeposit.tokenId,
-                userDeposit.liquidity,
-                fund.totalLiquidity,
-                rewards
-            );
             unchecked {
                 ++iSub;
             }
         }
+
+        emit RewardsClaimed(_account, fundIds, rewardsForEachSubs);
 
         // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd; iRwd < numRewards; ) {
