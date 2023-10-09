@@ -131,7 +131,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         address indexed account,
         uint8 fundId,
         uint256 depositId,
-        uint256 startTime,
         uint256[] totalRewardsClaimed
     );
     event FarmStartTimeUpdated(uint256 newStartTime);
@@ -827,8 +826,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 emit PoolUnsubscribed(
                     _account,
                     _fundId,
-                    userDeposit.tokenId,
-                    userDeposit.startTime,
+                    _depositId,
                     rewardClaimed
                 );
 
