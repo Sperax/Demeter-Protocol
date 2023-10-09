@@ -47,10 +47,10 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
     address public immutable PROTOCOL_FACTORY;
 
-    constructor(address _factory, address _protocolFactory) {
-        _isNonZeroAddr(_factory);
+    constructor(address _factory, address _protocolFactory)
+        BaseFarmDeployer(_factory)
+    {
         _isNonZeroAddr(_protocolFactory);
-        factory = _factory;
         PROTOCOL_FACTORY = _protocolFactory;
         discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_CamelotFarm());

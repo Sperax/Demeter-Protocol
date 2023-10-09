@@ -451,12 +451,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return rates;
     }
 
-    /// @notice Get list of reward tokens.
-    /// @return The list of reward tokens.
-    function getRewardTokens() external view returns (address[] memory) {
-        return rewardTokens;
-    }
-
     /// @notice get farm reward fund info.
     /// @param _fundId The fund's id
     function getRewardFundInfo(uint8 _fundId)
