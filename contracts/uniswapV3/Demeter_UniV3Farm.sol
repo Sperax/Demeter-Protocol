@@ -128,15 +128,14 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external nonReentrant {
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
         INFPM(NFPM).safeTransferFrom(
             address(this),
-            account,
+            msg.sender,
             userDeposit.tokenId
         );
     }
@@ -146,9 +145,8 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        uint256 tokenId = deposits[account][_depositId].tokenId;
+        _isValidDeposit(msg.sender, _depositId);
+        uint256 tokenId = deposits[msg.sender][_depositId].tokenId;
 
         INFPM pm = INFPM(NFPM);
         (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
@@ -158,12 +156,12 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
             CollectParams({
                 tokenId: tokenId,
-                recipient: account,
+                recipient: msg.sender,
                 amount0Max: uint128(amt0),
                 amount1Max: uint128(amt1)
             })
         );
-        emit PoolFeeCollected(account, tokenId, amt0Recv, amt1Recv);
+        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
     /// @notice Get the accrued uniswap fee for a deposit.
