@@ -9,22 +9,16 @@ interface INFTPoolFactory {
 interface INFTPool {
     function addToPosition(uint256 tokenId, uint256 amountToAdd) external;
 
-    /**
-     * @dev Withdraw from a staking position
-     *
-     * Can only be called by spNFT's owner or approved address
-     */
+    /// @dev Withdraw from a staking position
+    /// Can only be called by spNFT's owner or approved address
     function withdrawFromPosition(uint256 tokenId, uint256 amountToWithdraw)
         external;
 
     function updatePool() external;
 
-    /**
-     * @dev Harvest from a staking position to "to" address
-     *
-     * Can only be called by spNFT's owner or approved address
-     * spNFT's owner must be a contract
-     */
+    /// @dev Harvest from a staking position to "to" address
+    /// Can only be called by spNFT's owner or approved address
+    /// spNFT's owner must be a contract
     function harvestPositionTo(uint256 tokenId, address to) external;
 
     function safeTransferFrom(

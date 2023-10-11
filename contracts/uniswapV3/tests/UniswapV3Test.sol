@@ -7,11 +7,9 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {ISwapRouter} from "./ISwapRouter.sol";
 import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
 
-/**
- * @title Token Swapping on UniswapV3 Arbitrum
- * @dev reference: https://docs.uniswap.org/protocol/guides/swaps/single-swaps
- * @author Sperax Foundation
- */
+/// @title Token Swapping on UniswapV3 Arbitrum
+/// @dev reference: https://docs.uniswap.org/protocol/guides/swaps/single-swaps
+/// @author Sperax Foundation
 contract UniswapV3Test {
     using SafeERC20 for IERC20;
     INonfungiblePositionManager public nonfungiblePositionManager =
@@ -27,9 +25,7 @@ contract UniswapV3Test {
         uint256 amountOut
     );
 
-    /**
-     * @notice swaps a fixed amount of inputToken for a maximum possible amount of outputToken on Uniswap V3
-     */
+    /// @notice swaps a fixed amount of inputToken for a maximum possible amount of outputToken on Uniswap V3
     function swap(
         address inputToken,
         address outputToken,
