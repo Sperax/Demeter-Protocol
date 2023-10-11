@@ -32,6 +32,7 @@ struct RewardTokenData {
 
 /// @title BaseFarm
 /// @dev An abstract contract for a farming system that allows users to deposit tokens and earn rewards over time.
+/// @author Sperax Foundation
 abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 

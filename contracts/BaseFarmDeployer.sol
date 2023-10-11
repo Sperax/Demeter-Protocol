@@ -23,6 +23,7 @@ import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 
 /// @title BaseFarmDeployer
 /// @dev An abstract contract for deploying farms with fees and discounts.
+/// @author Sperax Foundation
 abstract contract BaseFarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 

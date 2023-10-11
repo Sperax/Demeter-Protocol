@@ -27,6 +27,7 @@ import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
 /// @notice This contract deploys Camelot farms with configurable parameters.
 /// @dev It inherits from BaseFarmDeployer and uses the Clones library to create farm instances.
 /// @dev Farms created by this contract are managed by the Demeter_CamelotFarm contract.
+/// @author Sperax Foundation
 contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @dev Struct to hold data required for Camelot pool configuration.
     /// @param tokenA Address of token A in the Camelot pool.

@@ -21,6 +21,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 
 /// @title FarmFactory
 /// @dev A contract that allows registered deployers to create farms with fees.
+/// @author Sperax Foundation
 contract FarmFactory is OwnableUpgradeable {
     address public feeReceiver; // Address to receive the creation fees.
     address public feeToken; // Token used for the creation fees.

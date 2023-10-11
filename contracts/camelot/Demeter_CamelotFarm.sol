@@ -23,6 +23,7 @@ import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 /// @title Demeter_CamelotFarm
 /// @notice This contract represents a Camelot farm where users can stake and lock NFTs to earn rewards.
 /// @dev It inherits from BaseFarm and implements the INFTHandler interface for NFT handling.
+/// @author Sperax Foundation
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // Constants
     string public constant FARM_ID = "Demeter_Camelot_v1";

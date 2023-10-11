@@ -38,6 +38,7 @@ struct UniswapPoolData {
 
 /// @title Demeter_UniV3Farm
 /// @notice This contract represents a Uniswap V3 farm that allows users to stake NFT liquidity positions.
+/// @author Sperax Foundation
 contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     // Constants
     string public constant FARM_ID = "Demeter_UniV3_v3";

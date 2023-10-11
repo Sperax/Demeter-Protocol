@@ -26,6 +26,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 /// @notice This contract deploys UniswapV3 farms with configurable parameters.
 /// @dev It inherits from BaseFarmDeployer and uses the Clones library to create farm instances.
 /// @dev Farms created by this contract are managed by the Demeter_UniV3Farm contract.
+/// @author Sperax Foundation
 contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     /// @dev Struct to hold data required for farm deployment.
     /// @param farmAdmin The address to which ownership of the farm is transferred to post-deployment.
