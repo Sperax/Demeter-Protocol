@@ -146,6 +146,29 @@ contract BaseE20Farm is BaseFarm {
         IERC20(farmToken).safeTransfer(account, userDeposit.liquidity);
     }
 
+    // --------------------- Admin  Functions ---------------------
+    /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
+    /// @param _token Address of token to be recovered
+    function recoverERC20(address _token)
+        external
+        override
+        onlyOwner
+        nonReentrant
+    {
+        require(
+            rewardData[_token].tknManager == address(0) && _token != farmToken,
+            "Can't withdraw rewardToken or farmToken"
+        );
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        require(balance > 0, "Can't withdraw 0 amount");
+
+        IERC20(_token).safeTransfer(owner(), balance);
+        emit RecoveredERC20(_token, balance);
+    }
+
+    // --------------------- Private  Functions ---------------------
+
     /// @notice Update subscription data of a deposit for increase in liquidity.
     /// @param _tokenId Unique token id for the deposit
     /// @param _amount Amount to be increased.
