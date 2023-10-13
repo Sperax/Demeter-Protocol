@@ -266,7 +266,12 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered
-    function recoverERC20(address _token) external onlyOwner nonReentrant {
+    function recoverERC20(address _token)
+        external
+        virtual
+        onlyOwner
+        nonReentrant
+    {
         require(
             rewardData[_token].tknManager == address(0),
             "Can't withdraw rewardToken"
