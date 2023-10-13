@@ -3,9 +3,10 @@ pragma solidity 0.8.16;
 import {BaseFarm} from "../contracts/BaseFarm.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {BaseTest} from "../test/utils/BaseTest.sol";
+import {PreMigrationSetup} from "../test/utils/DeploymentSetup.sol";
 
-contract BaseFarmTest is BaseTest {
+import {console} from "forge-std/console.sol";
+contract BaseFarmTest is PreMigrationSetup {
     BaseFarm public base;
 
     function setUp() public override {
