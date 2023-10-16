@@ -5,13 +5,12 @@ import { BaseFarm } from "../../contracts/BaseFarm.sol";
 import { FarmFactory } from "../../contracts/FarmFactory.sol";
 import { BaseFarmDeployer } from "../../contracts/BaseFarmDeployer.sol";
 import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 abstract contract Setup is Test {
   // Define global constants | Test config
   // @dev Make it 0 to test on latest
-  uint256 public constant FORK_BLOCK = 135117085;
-  uint256 public constant NUM_ACTORS = 5;
+  uint256 public constant FORK_BLOCK = 140358112;
+  uint256 public constant NUM_ACTORS = 2;
   uint256 public constant MIN_BALANCE = 1000000000000000000;
   uint256 public constant GAS_LIMIT = 1000000000;
   uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
@@ -25,23 +24,17 @@ abstract contract Setup is Test {
   address public constant VST = 0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17;
   address public constant L2DAO = 0x2CaB3abfC1670D1a452dF502e216a66883cDf079;
   address public constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
+  bytes32 public constant NO_LOCK_DATA =0x0000000000000000000000000000000000000000000000000000000000000000;
+  bytes32 public constant LOCK_DATA =0x0000000000000000000000000000000000000000000000000000000000000001;
 
   // Define Demeter constants here
   address internal PROXY_OWNER;
+  address internal USDS_OWNER;
+  address internal PROXY_ADMIN;
   address internal OWNER;
   address internal DEMETER_FACTORY;
   address internal BALANCER_VAULT;
-
-  address internal CAMELOT_NFT_FACTORY;
-  address internal CAMELOT_POSITION_HELPER;
-  // address[6] public constant RWD_TKN_LST = [
-  //     SPA,
-  //     USDS,
-  //     L2DAO,
-  //     FRAX,
-  //     USDCe,
-  //     DAI
-  // ];
+  address internal USDS_VAULT;
 
   // Define fork networks
   uint256 internal arbFork;
@@ -88,12 +81,12 @@ abstract contract Setup is Test {
 abstract contract BaseTest is Setup {
   function setUp() public virtual override {
     super.setUp();
-    PROXY_OWNER = 0x6d5240f086637fb408c7F727010A10cf57D51B62;
+    PROXY_ADMIN = 0x3E49925A79CbFb68BAa5bc9DFb4f7D955D1ddF25;
     OWNER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
+    USDS_OWNER = 0x5b12d9846F8612E439730d18E1C12634753B1bF1;
+    PROXY_OWNER = 0x6d5240f086637fb408c7F727010A10cf57D51B62;
     DEMETER_FACTORY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
     BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-
-    CAMELOT_NFT_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
-    CAMELOT_POSITION_HELPER = 0xe458018Ad4283C90fB7F5460e24C4016F81b8175;
+    USDS_VAULT = 0xF783DD830A4650D2A8594423F123250652340E3f;
   }
 }

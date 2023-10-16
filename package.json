@@ -11,7 +11,20 @@
     "initialize-pre-commit": "pre-commit install -c ./dev-utils/.pre-commit-config.yaml",
     "prepare": "npm-run-all install-pip-packages initialize-pre-commit",
     "solhint": "./node_modules/.bin/solhint -f table -c ./dev-utils/.solhint.json",
-    "prettier:solidity": "./node_modules/.bin/prettier --write **/*.sol"
+    "prettier:solidity": "./node_modules/.bin/prettier --write **/*.sol",
+    "test": "forge test -vvv",
+    "test-contract": "forge test -vvv --match-contract",
+    "test-file": "forge test -vvv --match-path",
+    "test-function": "forge test -vvv --match-test",
+    "install-husky": "husky install",
+    "slither-analyze": "slither .",
+    "lint:fix": "prettier --write 'scripts/**/*.{js,ts}' 'test/**/*.{js,ts}' '*.{js,ts}' && tslint --fix --config tslint.json --project tsconfig.json",
+    "forge-coverage": "forge coverage --report lcov && lcov --remove ./lcov.info -o ./lcov.info 'test/*' && rm -rf ./coverage && genhtml lcov.info --output-dir coverage && mv lcov.info ./coverage",
+    "lint-contract": "solhint 'contracts/**/*.sol' -f table",
+    "lint-test-contract": "solhint 'test/**/*.sol' -f table",
+    "lint-contract:errors": "solhint 'contracts/**/*.sol' 'test/**/*.sol' -f table --quiet",
+    "lint-contract:fix": "prettier --write 'contracts/**/*.sol'",
+    "lint-test-contract:fix": "prettier --write 'test/**/*.sol'"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
