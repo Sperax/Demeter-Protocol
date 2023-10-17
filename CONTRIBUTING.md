@@ -30,6 +30,8 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 
 Currently, Demeter protocol is only open for adding new protocols to our growing list of protocols which offers incentivized liquidity pools.
 
+If you want to get in touch with the maintainers for any doubt or question, you can drop a message in `#engineering-dev` room in our official [Discord](https://discord.com/invite/cFdcvj9jMm).
+
 ## Development Workflow
 
 To set up a development environment for Demeter Protocol, follow these steps:
