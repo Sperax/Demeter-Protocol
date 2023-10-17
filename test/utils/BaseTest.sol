@@ -9,12 +9,13 @@ import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin
 abstract contract Setup is Test {
   // Define global constants | Test config
   // @dev Make it 0 to test on latest
-  uint256 public constant FORK_BLOCK = 140358112;
+  uint256 public constant FORK_BLOCK = 140358112; //TODO :
   uint256 public constant NUM_ACTORS = 2;
   uint256 public constant MIN_BALANCE = 1000000000000000000;
   uint256 public constant GAS_LIMIT = 1000000000;
   uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
   uint256 public constant LOCKUP_REWARD_RATE = 2e18;
+  uint256 public constant COOLDOWN_PERIOD =21;
 
   address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
   address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;

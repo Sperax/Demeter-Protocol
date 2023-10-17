@@ -143,3 +143,4 @@ artifacts/
 out/
 forge-cache/
 tests/
+coverage/

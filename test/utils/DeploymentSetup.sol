@@ -10,6 +10,7 @@ import { IERC20, ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { FarmFactory } from "../../contracts/farmFactory.sol";
 import { BaseFarmDeployer } from "../../contracts/BaseFarmDeployer.sol";
 import { BaseFarm, RewardTokenData } from "../../contracts/BaseFarm.sol";
+import { BaseE20Farm } from "../../contracts/e20-farms/BaseE20Farm.sol";
 import { Demeter_BalancerFarm } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 
@@ -30,8 +31,8 @@ interface IVault {
 }
 
 abstract contract PreMigrationSetup is Setup {
-
-  BaseFarm internal balancerFarm;
+  BaseE20Farm internal nonLockupFarm;
+  BaseE20Farm internal lockupFarm;
   Demeter_BalancerFarm_Deployer internal balancerFarmDeployer;
 
   function setUp() public virtual override {
@@ -53,11 +54,10 @@ abstract contract PreMigrationSetup is Setup {
       "Balancer Deployer"
     );
     factory.registerFarmDeployer(address(balancerFarmDeployer));
-  createFarm();
 
   }
 
-function createFarm() public useActor(0){
+  function createNonLockupFarm(uint256 startTime) public useActor(0) {
     RewardTokenData[] memory rwd_tkn = new RewardTokenData[](1);
 
     rwd_tkn[0] = RewardTokenData(USDCe, currentActor);
@@ -65,8 +65,8 @@ function createFarm() public useActor(0){
     Demeter_BalancerFarm_Deployer.FarmData
       memory _data = Demeter_BalancerFarm_Deployer.FarmData({
         farmAdmin: currentActor,
-        farmStartTime: block.timestamp,
-        cooldownPeriod: 21,
+        farmStartTime: startTime,
+        cooldownPeriod: 0,
         poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
         rewardData: rwd_tkn
       });
@@ -81,8 +81,36 @@ function createFarm() public useActor(0){
     vm.startPrank(currentActor);
     IERC20(USDS).balanceOf(currentActor);
     IERC20(USDS).approve(address(balancerFarmDeployer), 1e22);
-    balancerFarm = BaseFarm(balancerFarmDeployer.createFarm(_data));
-}
+    nonLockupFarm = BaseE20Farm(balancerFarmDeployer.createFarm(_data));
+  }
+
+  function createLockupFarm(uint256 startTime) public useActor(1) {
+    RewardTokenData[] memory rwd_tkn = new RewardTokenData[](1);
+
+    rwd_tkn[0] = RewardTokenData(USDCe, currentActor);
+
+    Demeter_BalancerFarm_Deployer.FarmData
+      memory _data = Demeter_BalancerFarm_Deployer.FarmData({
+        farmAdmin: currentActor,
+        farmStartTime: startTime,
+        cooldownPeriod: COOLDOWN_PERIOD,
+        poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
+        rewardData: rwd_tkn
+      });
+    vm.stopPrank();
+    // Minting USDs
+    mintUSDs(1e10);
+
+    vm.startPrank(USDS_OWNER);
+    IERC20(USDS).transfer(currentActor, 1e21);
+    vm.stopPrank();
+
+    vm.startPrank(currentActor);
+    IERC20(USDS).balanceOf(currentActor);
+    IERC20(USDS).approve(address(balancerFarmDeployer), 1e22);
+    lockupFarm = BaseE20Farm(balancerFarmDeployer.createFarm(_data));
+  }
+
   function mintUSDs(uint256 amountIn) public {
     vm.startPrank(USDS_OWNER);
 
@@ -98,4 +126,21 @@ function createFarm() public useActor(0){
     );
     vm.stopPrank();
   }
+
+  //   function createFarm_without_deployer() public useActor(0){
+  //     RewardTokenData[] memory rwd_tkn = new RewardTokenData[](1);
+
+  //     rwd_tkn[0] = RewardTokenData(USDCe, currentActor);
+
+  //     Demeter_BalancerFarm_Deployer.FarmData
+  //       memory _data = Demeter_BalancerFarm_Deployer.FarmData({
+  //         farmAdmin: currentActor,
+  //         farmStartTime: block.timestamp,
+  //         cooldownPeriod: 21,
+  //         poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
+  //         rewardData: rwd_tkn
+  //       });
+
+  //     // balancerFarm =  BaseFarm(_data);
+  // }
 }

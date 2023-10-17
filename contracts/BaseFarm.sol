@@ -215,6 +215,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         external
         onlyOwner
     {
+        //@audit-info: Check CooldownPeriod before ClosedFarm
         _farmNotClosed();
         require(cooldownPeriod != 0, "Farm does not support lockup");
         _isValidCooldownPeriod(_newCooldownPeriod);
