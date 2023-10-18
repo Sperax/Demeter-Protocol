@@ -98,7 +98,7 @@ contract BaseE20Farm is BaseFarm {
         //Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[msg.sender][_depositId];
         require(
             _amount > 0 && _amount < userDeposit.liquidity,
             "Invalid amount"
@@ -113,7 +113,7 @@ contract BaseE20Farm is BaseFarm {
 
         // Update deposit info
         _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
-        deposits[msg.sender][_depositId].liquidity -= _amount;
+        userDeposit.liquidity -= _amount;
 
         // Transfer the lp tokens to the user
         IERC20(farmToken).safeTransfer(msg.sender, _amount);
