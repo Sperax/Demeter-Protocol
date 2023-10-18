@@ -167,20 +167,20 @@ contract BaseE20Farm is BaseFarm {
     function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount)
         private
     {
-        Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = depositSubs.length;
+        uint256 numSubs = subscriptions[_tokenId].length;
         for (uint256 iSub; iSub < numSubs; ) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
+                .rewardDebt;
+            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards; ) {
-                depositSubs[iSub].rewardDebt[iRwd] += ((_amount *
-                    rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
-                        iRwd
-                    ]) / PREC);
+                _rewardDebt[iRwd] += ((_amount *
+                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
             }
-            rewardFunds[depositSubs[iSub].fundId].totalLiquidity += _amount;
+            rewardFunds[_fundId].totalLiquidity += _amount;
             unchecked {
                 ++iSub;
             }
@@ -193,20 +193,20 @@ contract BaseE20Farm is BaseFarm {
     function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount)
         private
     {
-        Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = depositSubs.length;
+        uint256 numSubs = subscriptions[_tokenId].length;
         for (uint256 iSub; iSub < numSubs; ) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
+                .rewardDebt;
+            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards; ) {
-                depositSubs[iSub].rewardDebt[iRwd] -= ((_amount *
-                    rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
-                        iRwd
-                    ]) / PREC);
+                _rewardDebt[iRwd] -= ((_amount *
+                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
             }
-            rewardFunds[depositSubs[iSub].fundId].totalLiquidity -= _amount;
+            rewardFunds[_fundId].totalLiquidity -= _amount;
             unchecked {
                 ++iSub;
             }
