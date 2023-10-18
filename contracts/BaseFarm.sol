@@ -186,9 +186,8 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId The id of the deposit
     function claimRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        _claimRewards(account, _depositId);
+        _isValidDeposit(msg.sender, _depositId);
+        _claimRewards(msg.sender, _depositId);
     }
 
     /// @notice Add rewards to the farm.
@@ -530,9 +529,8 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId user's deposit Id.
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit storage userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit storage userDeposit = deposits[msg.sender][_depositId];
 
         // validate if the deposit is in locked state
         require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
@@ -544,13 +542,13 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         userDeposit.cooldownPeriod = 0;
 
         // claim the pending rewards for the user
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund
-        _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+        _unsubscribeRewardFund(LOCKUP_FUND_ID, msg.sender, _depositId);
 
         emit CooldownInitiated(
-            account,
+            msg.sender,
             userDeposit.tokenId,
             userDeposit.expiryDate
         );

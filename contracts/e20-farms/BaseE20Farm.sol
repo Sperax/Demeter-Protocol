@@ -45,7 +45,6 @@ contract BaseE20Farm is BaseFarm {
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
-
         // initialize farmToken related data
         farmToken = _farmToken;
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
@@ -70,23 +69,22 @@ contract BaseE20Farm is BaseFarm {
         external
         nonReentrant
     {
-        address account = msg.sender;
         // Validations
         _farmNotClosed();
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
         require(_amount > 0, "Invalid amount");
         require(userDeposit.expiryDate == 0, "Deposit in cooldown");
 
         // claim the pending rewards for the deposit
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Update deposit Information
         _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
-        deposits[account][_depositId].liquidity += _amount;
+        deposits[msg.sender][_depositId].liquidity += _amount;
 
         // Transfer the lp tokens to the farm
-        IERC20(farmToken).safeTransferFrom(account, address(this), _amount);
+        IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /// @notice Withdraw liquidity partially from an existing deposit.
@@ -97,11 +95,10 @@ contract BaseE20Farm is BaseFarm {
         external
         nonReentrant
     {
-        address account = msg.sender;
         //Validations
         _farmNotClosed();
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
         require(
             _amount > 0 && _amount < userDeposit.liquidity,
             "Invalid amount"
@@ -112,14 +109,14 @@ contract BaseE20Farm is BaseFarm {
         );
 
         // claim the pending rewards for the deposit
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Update deposit info
         _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
-        deposits[account][_depositId].liquidity -= _amount;
+        deposits[msg.sender][_depositId].liquidity -= _amount;
 
         // Transfer the lp tokens to the user
-        IERC20(farmToken).safeTransfer(account, _amount);
+        IERC20(farmToken).safeTransfer(msg.sender, _amount);
     }
 
     /// @notice Function to lock a staked deposit
@@ -132,14 +129,13 @@ contract BaseE20Farm is BaseFarm {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external nonReentrant {
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
-        _withdraw(account, _depositId, userDeposit);
+        _withdraw(msg.sender, _depositId, userDeposit);
 
         // Transfer the farmTokens to the user.
-        IERC20(farmToken).safeTransfer(account, userDeposit.liquidity);
+        IERC20(farmToken).safeTransfer(msg.sender, userDeposit.liquidity);
     }
 
     // --------------------- Admin  Functions ---------------------
