@@ -57,13 +57,11 @@ contract BaseE20Farm is BaseFarm {
     /// @param _amount Amount of farmToken to be deposited
     /// @param _lockup The lockup flag (bool).
     function deposit(uint256 _amount, bool _lockup) external nonReentrant {
-        address account = msg.sender;
-        uint256 tokenId = ++tokenNum;
         // Execute common deposit logic.
-        _deposit(account, _lockup, tokenId, _amount);
+        _deposit(msg.sender, _lockup, ++tokenNum, _amount);
 
         // Transfer the lp tokens to the farm
-        IERC20(farmToken).safeTransferFrom(account, address(this), _amount);
+        IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /// @notice Allow user to increase liquidity for a deposit
