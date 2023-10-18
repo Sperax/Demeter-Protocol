@@ -39,7 +39,14 @@ contract BaseFarmTest is PreMigrationSetup {
     uint8 id;
     uint256 accRewardBal;
   }
-
+  struct Deposit {
+    uint256 liquidity;
+    uint256 tokenId;
+    uint256 startTime;
+    uint256 expiryDate;
+    uint256 cooldownPeriod;
+    uint256[] totalRewardsClaimed;
+  }
   mapping(address => RewardData) public rewardData;
   event Deposited(
     address indexed account,
@@ -196,7 +203,7 @@ contract increaseDeposit is BaseFarmTest {
     address poolAddress;
     (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
-    deposit(lockupFarm, true);
+
     vm.assume(
       amt > 100 * 10**ERC20(poolAddress).decimals() &&
         amt <= 1000 * 10**ERC20(poolAddress).decimals()
@@ -204,8 +211,64 @@ contract increaseDeposit is BaseFarmTest {
 
     deal(poolAddress, currentActor, amt);
     ERC20(poolAddress).approve(address(lockupFarm), amt);
-
     lockupFarm.increaseDeposit(0, amt);
+  }
+}
+
+contract withdrawPartially is BaseFarmTest {
+  function test_zeroAmount() public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    setupFarmRewards();
+
+    // lockupFarm.initiateCooldown(0);
+    vm.expectRevert("Invalid amount");
+    nonLockupFarm.withdrawPartially(0, 0);
+  }
+
+  function test_LockupFarm() public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    setupFarmRewards();
+
+    skip(86400 * 7);
+    vm.expectRevert("Partial withdraw not permitted");
+    lockupFarm.withdrawPartially(0, 10000);
+  }
+
+  function test_nonLockupFarm() public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    setupFarmRewards();
+
+    // lockupFarm.initiateCooldown(0);
+    skip(86400 * 7);
+    nonLockupFarm.computeRewards(currentActor, 0);
+    nonLockupFarm.withdrawPartially(0, 10000);
+  }
+}
+
+contract initiateCooldown is BaseFarmTest {
+  function test_LockupFarm() public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    setupFarmRewards();
+
+    skip(86400 * 7);
+    vm.expectEmit(true, true, false, false);
+    emit CooldownInitiated(currentActor, 1, COOLDOWN_PERIOD * 1 days);
+    lockupFarm.initiateCooldown(0);
+  }
+
+  function test_nonLockupFarm() public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    setupFarmRewards();
+
+    // lockupFarm.initiateCooldown(0);
+    skip(86400 * 7);
+    vm.expectRevert("Can not initiate cooldown");
+    nonLockupFarm.initiateCooldown(0);
   }
 }
 

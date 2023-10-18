@@ -209,11 +209,12 @@ abstract contract PreMigrationSetup is Setup {
     }
   }
 
-  function deposit(BaseE20Farm farm, bool locked) public useActor(5) {
+  function deposit(BaseE20Farm farm, bool locked) public {
+    vm.startPrank(actors[5]);
     address poolAddress;
     (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     uint256 amt = 1000 * 10**ERC20(poolAddress).decimals();
-    deal(poolAddress, currentActor, amt);
+    deal(poolAddress, actors[5], amt);
     ERC20(poolAddress).approve(address(farm), amt);
     farm.deposit(amt, locked);
   }
