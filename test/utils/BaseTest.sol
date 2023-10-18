@@ -10,12 +10,12 @@ abstract contract Setup is Test {
   // Define global constants | Test config
   // @dev Make it 0 to test on latest
   uint256 public constant FORK_BLOCK = 140358112; //TODO :
-  uint256 public constant NUM_ACTORS = 2;
+  uint256 public constant NUM_ACTORS = 6;
   uint256 public constant MIN_BALANCE = 1000000000000000000;
   uint256 public constant GAS_LIMIT = 1000000000;
   uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
   uint256 public constant LOCKUP_REWARD_RATE = 2e18;
-  uint256 public constant COOLDOWN_PERIOD =21;
+  uint256 public constant COOLDOWN_PERIOD = 21;
 
   address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
   address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
@@ -25,10 +25,13 @@ abstract contract Setup is Test {
   address public constant VST = 0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17;
   address public constant L2DAO = 0x2CaB3abfC1670D1a452dF502e216a66883cDf079;
   address public constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
-  bytes32 public constant NO_LOCK_DATA =0x0000000000000000000000000000000000000000000000000000000000000000;
-  bytes32 public constant LOCK_DATA =0x0000000000000000000000000000000000000000000000000000000000000001;
+  bytes32 public constant NO_LOCK_DATA =
+    0x0000000000000000000000000000000000000000000000000000000000000000;
+  bytes32 public constant LOCK_DATA =
+    0x0000000000000000000000000000000000000000000000000000000000000001;
 
   // Define Demeter constants here
+  bytes32 internal POOL_ID;
   address internal PROXY_OWNER;
   address internal USDS_OWNER;
   address internal PROXY_ADMIN;
@@ -42,6 +45,7 @@ abstract contract Setup is Test {
   uint256 internal arbFork;
 
   address[] public actors;
+  address[] public poolTokens;
   address internal currentActor;
 
   /// @notice Get a pre-set address for prank

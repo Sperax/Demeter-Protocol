@@ -14,6 +14,28 @@ import { BaseE20Farm } from "../../contracts/e20-farms/BaseE20Farm.sol";
 import { Demeter_BalancerFarm } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 
+interface IBalancerVault {
+  enum PoolSpecialization {
+    GENERAL,
+    MINIMAL_SWAP_INFO,
+    TWO_TOKEN
+  }
+
+  function getPool(bytes32 poolId)
+    external
+    view
+    returns (address, PoolSpecialization);
+
+  function getPoolTokens(bytes32 poolId)
+    external
+    view
+    returns (
+      IERC20[] memory tokens,
+      uint256[] memory balances,
+      uint256 lastChangeBlock
+    );
+}
+
 interface ICustomOracle {
   function updateDIAParams(uint256 _weightDIA, uint128 _maxTime) external;
 
@@ -31,7 +53,6 @@ interface IVault {
 }
 
 abstract contract PreMigrationSetup is Setup {
-
   BaseE20Farm internal nonLockupFarm;
   BaseE20Farm internal lockupFarm;
   Demeter_BalancerFarm_Deployer internal balancerFarmDeployer;
@@ -46,7 +67,9 @@ abstract contract PreMigrationSetup is Setup {
     DEMETER_FACTORY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
     BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     USDS_VAULT = 0xF783DD830A4650D2A8594423F123250652340E3f;
-    SPA_MANAGER= 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
+    SPA_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
+    //POOL_ID = 0x848a7ff84cf73d2534c3dac6ab381e177a1cff240001000000000000000004bb; //33108-33WETH-33USDC (33108-33W...)
+    POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     vm.startPrank(PROXY_OWNER);
     FarmFactory factory = FarmFactory(DEMETER_FACTORY);
 
@@ -68,7 +91,7 @@ abstract contract PreMigrationSetup is Setup {
         farmAdmin: currentActor,
         farmStartTime: startTime,
         cooldownPeriod: 0,
-        poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
+        poolId: POOL_ID, //Balancer Stable 4pool (4POOL-BPT)
         rewardData: rwd_tkn
       });
     vm.stopPrank();
@@ -95,7 +118,7 @@ abstract contract PreMigrationSetup is Setup {
         farmAdmin: currentActor,
         farmStartTime: startTime,
         cooldownPeriod: COOLDOWN_PERIOD,
-        poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
+        poolId: POOL_ID,
         rewardData: rwd_tkn
       });
     vm.stopPrank();
@@ -130,38 +153,68 @@ abstract contract PreMigrationSetup is Setup {
 
   function addRewards(BaseE20Farm farm) public {
     address[] memory rewardTokens = farm.getRewardTokens();
-    uint256 rwdAmt ;
+    uint256 rwdAmt;
 
-    if (farm.cooldownPeriod() == 0) {
-      vm.startPrank(actors[0]);
-    } else {
-      vm.startPrank(actors[1]);
-    }
     for (uint8 i; i < rewardTokens.length; ++i) {
-      rwdAmt =1000000 * 10**ERC20(rewardTokens[i]).decimals();
-      deal(address(rewardTokens[i]), currentActor, rwdAmt);
-      IERC20(rewardTokens[i]).approve(address(farm), rwdAmt);
-      farm.addRewards(rewardTokens[i], rwdAmt);
+      if (farm.cooldownPeriod() == 0) {
+        vm.startPrank(actors[0]);
+        rwdAmt = 1000000 * 10**ERC20(rewardTokens[i]).decimals();
+        deal(address(rewardTokens[i]), actors[0], rwdAmt);
+        IERC20(rewardTokens[i]).approve(address(farm), 2 * rwdAmt);
+        IERC20(rewardTokens[i]).balanceOf(actors[0]);
+        farm.addRewards(rewardTokens[i], rwdAmt);
+      } else {
+        vm.startPrank(actors[1]);
+        rwdAmt = 1000000 * 10**ERC20(rewardTokens[i]).decimals();
+        deal(address(rewardTokens[i]), actors[1], rwdAmt);
+        IERC20(rewardTokens[i]).approve(address(farm), 2 * rwdAmt);
+        IERC20(rewardTokens[i]).balanceOf(actors[1]);
+        farm.addRewards(rewardTokens[i], rwdAmt);
+      }
     }
-
-    // deal(address(ASSET), VAULT, depositAmount);
   }
 
+  function setRewardRates(BaseE20Farm farm) public {
+    if (farm.cooldownPeriod() == 0) {
+      vm.startPrank(actors[0]);
+      uint256[] memory rwdRate = new uint256[](1);
+      address[] memory rewardTokens = farm.getRewardTokens();
+      uint256[] memory oldRewardRate = new uint256[](1);
+      for (uint8 i; i < rewardTokens.length; ++i) {
+        oldRewardRate = farm.getRewardRates(rewardTokens[i]);
+        rwdRate[0] = 1 * 10**ERC20(rewardTokens[i]).decimals();
+        if (rewardTokens[i] == SPA) {
+          vm.startPrank(SPA_MANAGER);
+        } else {
+          vm.startPrank(actors[0]);
+        }
+        farm.setRewardRate(rewardTokens[i], rwdRate);
+      }
+    } else {
+      vm.startPrank(actors[1]);
+      uint256[] memory rwdRate = new uint256[](2);
+      address[] memory rewardTokens = farm.getRewardTokens();
+      uint256[] memory oldRewardRate = new uint256[](2);
+      for (uint8 i; i < rewardTokens.length; ++i) {
+        oldRewardRate = farm.getRewardRates(rewardTokens[i]);
+        rwdRate[0] = 1 * 10**ERC20(rewardTokens[i]).decimals();
+        rwdRate[1] = 2 * 10**ERC20(rewardTokens[i]).decimals();
+        if (rewardTokens[i] == SPA) {
+          vm.startPrank(SPA_MANAGER);
+        } else {
+          vm.startPrank(actors[1]);
+        }
+        farm.setRewardRate(rewardTokens[i], rwdRate);
+      }
+    }
+  }
 
-  //   function createFarm_without_deployer() public useActor(0){
-  //     RewardTokenData[] memory rwd_tkn = new RewardTokenData[](1);
-
-  //     rwd_tkn[0] = RewardTokenData(USDCe, currentActor);
-
-  //     Demeter_BalancerFarm_Deployer.FarmData
-  //       memory _data = Demeter_BalancerFarm_Deployer.FarmData({
-  //         farmAdmin: currentActor,
-  //         farmStartTime: block.timestamp,
-  //         cooldownPeriod: 21,
-  //         poolId: 0xb6911f80b1122f41c19b299a69dca07100452bf90002000000000000000004ba,
-  //         rewardData: rwd_tkn
-  //       });
-
-  //     // balancerFarm =  BaseFarm(_data);
-  // }
+  function deposit(BaseE20Farm farm, bool locked) public useActor(5) {
+    address poolAddress;
+    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    uint256 amt = 1000 * 10**ERC20(poolAddress).decimals();
+    deal(poolAddress, currentActor, amt);
+    ERC20(poolAddress).approve(address(farm), amt);
+    farm.deposit(amt, locked);
+  }
 }
