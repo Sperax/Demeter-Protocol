@@ -31,6 +31,7 @@ interface IVault {
 }
 
 abstract contract PreMigrationSetup is Setup {
+
   BaseE20Farm internal nonLockupFarm;
   BaseE20Farm internal lockupFarm;
   Demeter_BalancerFarm_Deployer internal balancerFarmDeployer;
@@ -45,6 +46,7 @@ abstract contract PreMigrationSetup is Setup {
     DEMETER_FACTORY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
     BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     USDS_VAULT = 0xF783DD830A4650D2A8594423F123250652340E3f;
+    SPA_MANAGER= 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
     vm.startPrank(PROXY_OWNER);
     FarmFactory factory = FarmFactory(DEMETER_FACTORY);
 
@@ -54,7 +56,6 @@ abstract contract PreMigrationSetup is Setup {
       "Balancer Deployer"
     );
     factory.registerFarmDeployer(address(balancerFarmDeployer));
-
   }
 
   function createNonLockupFarm(uint256 startTime) public useActor(0) {
@@ -126,6 +127,26 @@ abstract contract PreMigrationSetup is Setup {
     );
     vm.stopPrank();
   }
+
+  function addRewards(BaseE20Farm farm) public {
+    address[] memory rewardTokens = farm.getRewardTokens();
+    uint256 rwdAmt ;
+
+    if (farm.cooldownPeriod() == 0) {
+      vm.startPrank(actors[0]);
+    } else {
+      vm.startPrank(actors[1]);
+    }
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      rwdAmt =1000000 * 10**ERC20(rewardTokens[i]).decimals();
+      deal(address(rewardTokens[i]), currentActor, rwdAmt);
+      IERC20(rewardTokens[i]).approve(address(farm), rwdAmt);
+      farm.addRewards(rewardTokens[i], rwdAmt);
+    }
+
+    // deal(address(ASSET), VAULT, depositAmount);
+  }
+
 
   //   function createFarm_without_deployer() public useActor(0){
   //     RewardTokenData[] memory rwd_tkn = new RewardTokenData[](1);

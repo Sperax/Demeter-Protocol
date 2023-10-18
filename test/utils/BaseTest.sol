@@ -36,6 +36,7 @@ abstract contract Setup is Test {
   address internal DEMETER_FACTORY;
   address internal BALANCER_VAULT;
   address internal USDS_VAULT;
+  address internal SPA_MANAGER;
 
   // Define fork networks
   uint256 internal arbFork;

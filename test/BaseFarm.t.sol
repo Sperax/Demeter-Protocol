@@ -12,6 +12,13 @@ import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balance
 import { console } from "forge-std/console.sol";
 
 contract BaseFarmTest is PreMigrationSetup {
+  struct RewardData {
+    address tknManager;
+    uint8 id;
+    uint256 accRewardBal;
+  }
+
+  mapping(address => RewardData) public rewardData;
   event Deposited(
     address indexed account,
     bool locked,
@@ -74,7 +81,237 @@ contract BaseFarmTest is PreMigrationSetup {
   function setUp() public virtual override {
     super.setUp();
     createNonLockupFarm(block.timestamp);
+
     createLockupFarm(block.timestamp);
+  }
+
+  function setupFarmRewards() public {
+    addRewards(nonLockupFarm);
+    addRewards(lockupFarm);
+  }
+}
+
+contract addRewards is BaseFarmTest {
+  function test_nonLockupFarm_revertsWhen_invalidRwdToken(uint256 rwdAmt)
+    public
+    useActor(0)
+  {
+    bound(
+      rwdAmt,
+      1000 * 10**ERC20(VST).decimals(),
+      1000000 * 10**ERC20(VST).decimals()
+    );
+    deal(address(VST), currentActor, rwdAmt);
+    ERC20(VST).approve(address(nonLockupFarm), rwdAmt);
+    vm.expectRevert("Invalid reward token");
+    nonLockupFarm.addRewards(VST, rwdAmt);
+  }
+
+  function test_lockupFarm_revertsWhen_invalidRwdToken(uint256 rwdAmt)
+    public
+    useActor(1)
+  {
+    bound(
+      rwdAmt,
+      1000 * 10**ERC20(VST).decimals(),
+      1000000 * 10**ERC20(VST).decimals()
+    );
+    deal(address(VST), currentActor, rwdAmt);
+    ERC20(VST).approve(address(lockupFarm), rwdAmt);
+    vm.expectRevert("Invalid reward token");
+    lockupFarm.addRewards(VST, rwdAmt);
+  }
+
+  // function test_lockupFarm_revertsWhen_noAmount(uint256 rwdAmt)
+  //   public
+  //   useActor(1)
+  // {
+  //   bound(rwdAmt, 0, 1000000 * 10**ERC20(USDCe).decimals());
+  //   vm.expectRevert(bytes(""));
+  //   lockupFarm.addRewards(USDCe, rwdAmt);
+  // }
+
+  function test_nonLockupFarm(uint256 rwdAmt) public useActor(0) {
+    address[] memory rewardTokens = nonLockupFarm.getRewardTokens();
+
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      bound(
+        rwdAmt,
+        1000 * 10**ERC20(rewardTokens[i]).decimals(),
+        1000000 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      deal(address(rewardTokens[i]), currentActor, rwdAmt);
+      ERC20(rewardTokens[i]).approve(address(nonLockupFarm), rwdAmt);
+      vm.expectEmit(true, true, false, true);
+      emit RewardAdded(rewardTokens[i], rwdAmt);
+      nonLockupFarm.addRewards(rewardTokens[i], rwdAmt);
+      assertEq(nonLockupFarm.getRewardBalance(rewardTokens[i]), rwdAmt);
+    }
+  }
+
+  function test_lockupFarm(uint256 rwdAmt) public useActor(1) {
+    address[] memory rewardTokens = lockupFarm.getRewardTokens();
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      bound(
+        rwdAmt,
+        1000 * 10**ERC20(rewardTokens[i]).decimals(),
+        1000000 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      deal(address(rewardTokens[i]), currentActor, rwdAmt);
+      ERC20(rewardTokens[i]).approve(address(lockupFarm), rwdAmt);
+      vm.expectEmit(true, true, false, true);
+      emit RewardAdded(rewardTokens[i], rwdAmt);
+      lockupFarm.addRewards(rewardTokens[i], rwdAmt);
+      assertEq(lockupFarm.getRewardBalance(rewardTokens[i]), rwdAmt);
+    }
+  }
+}
+
+contract setRewardRate is BaseFarmTest {
+  function test_noLockupFarm_revertsWhen_invalidLength(uint256 rwdRateNonLockup)
+    public
+    useActor(1)
+  {
+    uint256[] memory rwdRate = new uint256[](1);
+    rwdRate[0] = rwdRateNonLockup;
+    address[] memory rewardTokens = nonLockupFarm.getRewardTokens();
+    uint256[] memory oldRewardRate = new uint256[](1);
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      oldRewardRate = nonLockupFarm.getRewardRates(rewardTokens[i]);
+      bound(
+        rwdRateNonLockup,
+        1 * 10**ERC20(rewardTokens[i]).decimals(),
+        2 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      if (rewardTokens[i] == SPA) {
+        vm.startPrank(SPA_MANAGER);
+      } else {
+        vm.startPrank(currentActor);
+      }
+
+      vm.expectRevert("Invalid reward rates length");
+
+      lockupFarm.setRewardRate(rewardTokens[i], rwdRate);
+    }
+  }
+
+  function test_noLockupFarm(uint256 rwdRateNonLockup) public useActor(0) {
+    uint256[] memory rwdRate = new uint256[](1);
+    rwdRate[0] = rwdRateNonLockup;
+    address[] memory rewardTokens = nonLockupFarm.getRewardTokens();
+    uint256[] memory oldRewardRate = new uint256[](1);
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      oldRewardRate = nonLockupFarm.getRewardRates(rewardTokens[i]);
+      bound(
+        rwdRateNonLockup,
+        1 * 10**ERC20(rewardTokens[i]).decimals(),
+        2 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      if (rewardTokens[i] == SPA) {
+        vm.startPrank(SPA_MANAGER);
+      } else {
+        vm.startPrank(currentActor);
+      }
+
+      vm.expectEmit(true, true, false, true);
+      emit RewardRateUpdated(rewardTokens[i], oldRewardRate, rwdRate);
+      nonLockupFarm.setRewardRate(rewardTokens[i], rwdRate);
+      assertEq(nonLockupFarm.getRewardRates(rewardTokens[i]), rwdRate);
+    }
+  }
+
+  function test_LockupFarm(uint256 rwdRateNonLockup, uint256 rwdRateLockup)
+    public
+    useActor(1)
+  {
+    uint256[] memory rwdRate = new uint256[](2);
+    rwdRate[0] = rwdRateNonLockup;
+    rwdRate[1] = rwdRateLockup;
+    address[] memory rewardTokens = lockupFarm.getRewardTokens();
+    uint256[] memory oldRewardRate = new uint256[](2);
+    for (uint8 i; i < rewardTokens.length; ++i) {
+      oldRewardRate = nonLockupFarm.getRewardRates(rewardTokens[i]);
+      bound(
+        rwdRateNonLockup,
+        1 * 10**ERC20(rewardTokens[i]).decimals(),
+        2 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      bound(
+        rwdRateLockup,
+        2 * 10**ERC20(rewardTokens[i]).decimals(),
+        4 * 10**ERC20(rewardTokens[i]).decimals()
+      );
+      if (rewardTokens[i] == SPA) {
+        vm.startPrank(SPA_MANAGER);
+      } else {
+        vm.startPrank(currentActor);
+      }
+
+      vm.expectEmit(true, false, false, false);
+      emit RewardRateUpdated(rewardTokens[i], oldRewardRate, rwdRate);
+      lockupFarm.setRewardRate(rewardTokens[i], rwdRate);
+      assertEq(lockupFarm.getRewardRates(rewardTokens[i]), rwdRate);
+    }
+  }
+}
+
+contract farmPauseSwitch is BaseFarmTest {
+  function test_noLockupFarm_revertsWhen_farmIntheSameState(bool _isPaused)
+    public
+    useActor(0)
+  {
+    bool isPaused = nonLockupFarm.isPaused();
+    vm.assume(_isPaused == isPaused);
+    vm.expectRevert("Farm already in required state");
+    nonLockupFarm.farmPauseSwitch(_isPaused);
+  }
+
+  function test_lockupFarm_revertsWhen_farmIntheSameState(bool _isPaused)
+    public
+    useActor(1)
+  {
+    bool isPaused = lockupFarm.isPaused();
+    vm.assume(_isPaused == isPaused);
+    vm.expectRevert("Farm already in required state");
+    lockupFarm.farmPauseSwitch(_isPaused);
+  }
+
+  function test_noLockupFarm_revertsWhen_farmClosed(bool _isPaused)
+    public
+    useActor(0)
+  {
+    bool isPaused = nonLockupFarm.isPaused();
+    vm.assume(_isPaused != isPaused);
+    nonLockupFarm.closeFarm();
+    vm.expectRevert("Farm closed");
+    nonLockupFarm.farmPauseSwitch(_isPaused);
+  }
+
+  function test_lockupFarm_revertsWhen_farmClosed(bool _isPaused)
+    public
+    useActor(1)
+  {
+    bool isPaused = lockupFarm.isPaused();
+    vm.assume(_isPaused != isPaused);
+    lockupFarm.closeFarm();
+    vm.expectRevert("Farm closed");
+    lockupFarm.farmPauseSwitch(_isPaused);
+  }
+
+  function test_noLockupFarm(bool _isPaused) public useActor(0) {
+    bool isPaused = nonLockupFarm.isPaused();
+    vm.assume(_isPaused != isPaused);
+    vm.expectEmit(true, true, false, true);
+    emit FarmPaused(_isPaused);
+    nonLockupFarm.farmPauseSwitch(_isPaused);
+  }
+
+  function test_lockupFarm(bool _isPaused) public useActor(1) {
+    bool isPaused = lockupFarm.isPaused();
+    vm.assume(_isPaused != isPaused);
+    vm.expectEmit(true, true, false, true);
+    emit FarmPaused(_isPaused);
+    lockupFarm.farmPauseSwitch(_isPaused);
   }
 }
 
