@@ -178,8 +178,8 @@ contract BaseE20Farm is BaseFarm {
         Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ) {
-            for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint256 iSub; iSub < numSubs; ) {
+            for (uint8 iRwd; iRwd < numRewards; ) {
                 depositSubs[iSub].rewardDebt[iRwd] += ((_amount *
                     rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
                         iRwd
@@ -204,8 +204,8 @@ contract BaseE20Farm is BaseFarm {
         Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ) {
-            for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint256 iSub; iSub < numSubs; ) {
+            for (uint8 iRwd; iRwd < numRewards; ) {
                 depositSubs[iSub].rewardDebt[iRwd] -= ((_amount *
                     rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
                         iRwd
