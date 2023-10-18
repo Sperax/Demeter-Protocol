@@ -45,8 +45,6 @@ contract BaseE20Farm is BaseFarm {
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
-        // Initialize farm global params
-        tokenNum = 0;
 
         // initialize farmToken related data
         farmToken = _farmToken;
