@@ -13,6 +13,16 @@ import { BaseFarm, RewardTokenData } from "../../contracts/BaseFarm.sol";
 import { BaseE20Farm } from "../../contracts/e20-farms/BaseE20Farm.sol";
 import { Demeter_BalancerFarm } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
+struct JoinPoolRequest {
+  address[] assets;
+  uint256[] maxAmountsIn;
+  bytes userData;
+  bool fromInternalBalance;
+}
+
+interface IAsset {
+  // solhint-disable-previous-line no-empty-blocks
+}
 
 interface IBalancerVault {
   enum PoolSpecialization {
@@ -34,6 +44,13 @@ interface IBalancerVault {
       uint256[] memory balances,
       uint256 lastChangeBlock
     );
+
+  function joinPool(
+    bytes32 poolId,
+    address sender,
+    address recipient,
+    JoinPoolRequest memory request
+  ) external payable;
 }
 
 interface ICustomOracle {
@@ -209,10 +226,70 @@ abstract contract PreMigrationSetup is Setup {
     }
   }
 
+  // function dexDeposit() public {
+  //   address poolAddress;
+  //   IERC20[] memory poolTkns;
+  //   (poolTkns, , ) = IBalancerVault(BALANCER_VAULT).getPoolTokens(POOL_ID);
+  //   address[] memory collaterals = new address[](poolTkns.length);
+  //   uint256[] memory amts = new uint256[](poolTkns.length);
+  //   (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+  //   for (uint8 i; i < poolTkns.length; ++i) {
+  //     collaterals[i] = address(poolTkns[i]);
+  //     amts[i] = 100 * 10**ERC20(collaterals[i]).decimals();
+  //     deal(collaterals[i], actors[5], amts[i]);
+  //     ERC20(collaterals[i]).approve(poolAddress, amts[i]);
+  //   }
+
+  //   JoinPoolRequest memory joinRequest = JoinPoolRequest({
+  //     assets: collaterals,
+  //     maxAmountsIn: amts,
+  //     userData: "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000003697f7b3c8ee6a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000158500000000000000000000000000000000000000000000000000000000000026de3",
+  //     fromInternalBalance: false
+  //   });
+  //   IBalancerVault(BALANCER_VAULT).joinPool(
+  //     POOL_ID,
+  //     currentActor,
+  //     currentActor,
+  //     joinRequest
+  //   );
+  // }
+
+  // function deposit(BaseE20Farm farm, bool locked) public {
+  //   address poolAddress;
+  //   uint256 poolAmt;
+  //   dexDeposit();
+  //   (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+  //   poolAmt = ERC20(poolAddress).balanceOf(currentActor);
+  //   ERC20(poolAddress).approve(address(farm), poolAmt);
+  //   farm.deposit(poolAmt, locked);
+  //   vm.stopPrank();
+  // }
+
   function deposit(BaseE20Farm farm, bool locked) public {
     vm.startPrank(actors[5]);
     address poolAddress;
+    // address[] memory collaterals = new address[](2);
+    // uint256[] memory amts = new uint256[](2);
     (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+
+    // collaterals[0] = USDCe;
+    // collaterals[1] = (DAI);
+    // amts[0] = 100000;
+    // amts[1] = 250000;
+
+    // JoinPoolRequest memory joinRequest = JoinPoolRequest({
+    //   assets: collaterals,
+    //   maxAmountsIn: amts,
+    //   userData: "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000003697f7b3c8ee6a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000158500000000000000000000000000000000000000000000000000000000000026de3",
+    //   fromInternalBalance: false
+    // });
+
+    // IBalancerVault(BALANCER_VAULT).joinPool(
+    //   POOL_ID,
+    //   currentActor,
+    //   currentActor,
+    //   joinRequest
+    // );
     uint256 amt = 1000 * 10**ERC20(poolAddress).decimals();
     deal(poolAddress, actors[5], amt);
     ERC20(poolAddress).approve(address(farm), amt);

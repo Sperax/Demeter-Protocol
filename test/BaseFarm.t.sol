@@ -11,6 +11,10 @@ import { Demeter_BalancerFarm } from "../../contracts/e20-farms/balancer/Demeter
 import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 import { console } from "forge-std/console.sol";
 
+interface IAsset {
+  // solhint-disable-previous-line no-empty-blocks
+}
+
 interface IBalancerVault {
   enum PoolSpecialization {
     GENERAL,
@@ -31,6 +35,20 @@ interface IBalancerVault {
       uint256[] memory balances,
       uint256 lastChangeBlock
     );
+
+  function joinPool(
+    bytes32 poolId,
+    address sender,
+    address recipient,
+    JoinPoolRequest memory request
+  ) external payable;
+
+  struct JoinPoolRequest {
+    IAsset[] assets;
+    uint256[] maxAmountsIn;
+    bytes userData;
+    bool fromInternalBalance;
+  }
 }
 
 contract BaseFarmTest is PreMigrationSetup {
@@ -155,7 +173,7 @@ contract deposit is BaseFarmTest {
     nonLockupFarm.deposit(amt, true);
   }
 
-  function test_noLockupFarm(uint256 amt) public useActor(4) {
+  function test_noLockupFarm_deposit(uint256 amt) public useActor(4) {
     address poolAddress;
     (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
 
@@ -196,6 +214,9 @@ contract deposit is BaseFarmTest {
     );
     lockupFarm.deposit(amt, true);
   }
+  //   function test_lockupFarm(uint256 amt) public useActor(5) {
+  //     deposit(lockupFarm,true);
+  // }
 }
 
 contract increaseDeposit is BaseFarmTest {
@@ -212,6 +233,44 @@ contract increaseDeposit is BaseFarmTest {
     deal(poolAddress, currentActor, amt);
     ERC20(poolAddress).approve(address(lockupFarm), amt);
     lockupFarm.increaseDeposit(0, amt);
+  }
+}
+
+contract fullWithdraw is BaseFarmTest {
+  function test_lockupFarm_RevertsWhen_Cooldown_IsntInitiated()
+    public
+    useActor(5)
+  {
+    setupFarmRewards();
+    vm.expectRevert("Please initiate cooldown");
+    lockupFarm.withdraw(0);
+  }
+
+  function test_lockupFarm_RevertsWhen_Cooldown_notFinished()
+    public
+    useActor(5)
+  {
+    setupFarmRewards();
+    lockupFarm.initiateCooldown(0);
+    skip((COOLDOWN_PERIOD * 86400) - 100); //100 seconds before the end of CoolDown Period
+    vm.expectRevert("Deposit is in cooldown");
+    lockupFarm.withdraw(0);
+  }
+
+  function test_lockupFarm() public useActor(5) {
+    setupFarmRewards();
+    lockupFarm.initiateCooldown(0);
+    skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
+
+    lockupFarm.withdraw(0);
+  }
+
+  function test_nonLockupFarm() public useActor(5) {
+    setupFarmRewards();
+    lockupFarm.initiateCooldown(0);
+    skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
+
+    nonLockupFarm.withdraw(0);
   }
 }
 
@@ -248,10 +307,53 @@ contract withdrawPartially is BaseFarmTest {
   }
 }
 
+contract getRewardFundInfo is BaseFarmTest {
+  function test_LockupFarm_rewardDoesntExist() public useActor(5) {
+    setupFarmRewards();
+
+    vm.expectRevert("Reward fund does not exist");
+    lockupFarm.getRewardFundInfo(2);
+  }
+
+  function test_LockupFarm() public useActor(5) {
+    setupFarmRewards();
+
+    lockupFarm.getRewardFundInfo(0);
+  }
+}
+
+contract recoverERC20 is BaseFarmTest {
+  function test_LockupFarm_revertsWhenRewardToken() public useActor(1) {
+
+    vm.expectRevert("Can't withdraw rewardToken or farmToken");
+    lockupFarm.recoverERC20(USDCe);
+
+
+  }
+
+    function test_LockupFarm_revertsWhenZeroAmount() public useActor(1) {
+
+    vm.expectRevert("Can't withdraw 0 amount");
+    lockupFarm.recoverERC20(USDT);
+
+
+  }
+  function test_LockupFarm_(uint256 amt) public useActor(1) {
+        bound(
+      amt,
+      1000 * 10**ERC20(USDT).decimals(),
+      10000 * 10**ERC20(USDT).decimals()
+    );
+    deal(USDT,address(lockupFarm),10e10);
+    vm.expectEmit(true, true, false, false);
+    emit RecoveredERC20(USDT, 10e10);
+    lockupFarm.recoverERC20(USDT);
+
+  }
+}
+
 contract initiateCooldown is BaseFarmTest {
   function test_LockupFarm() public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
 
     skip(86400 * 7);
@@ -261,8 +363,6 @@ contract initiateCooldown is BaseFarmTest {
   }
 
   function test_nonLockupFarm() public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
 
     // lockupFarm.initiateCooldown(0);
