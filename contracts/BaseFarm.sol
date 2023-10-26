@@ -186,9 +186,8 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId The id of the deposit
     function claimRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        _claimRewards(account, _depositId);
+        _isValidDeposit(msg.sender, _depositId);
+        _claimRewards(msg.sender, _depositId);
     }
 
     /// @notice Add rewards to the farm.
@@ -251,7 +250,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         isPaused = true;
         isClosed = true;
         uint256 numRewards = rewardTokens.length;
-        for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint8 iRwd; iRwd < numRewards; ) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
             _setRewardRate(
                 rewardTokens[iRwd],
@@ -266,7 +265,12 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered
-    function recoverERC20(address _token) external onlyOwner nonReentrant {
+    function recoverERC20(address _token)
+        external
+        virtual
+        onlyOwner
+        nonReentrant
+    {
         require(
             rewardData[_token].tknManager == address(0),
             "Can't withdraw rewardToken"
@@ -342,9 +346,9 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         // Update the two reward funds.
-        for (uint8 iSub = 0; iSub < depositSubs.length; ) {
+        for (uint8 iSub; iSub < depositSubs.length; ) {
             uint8 fundId = depositSubs[iSub].fundId;
-            for (uint8 iRwd = 0; iRwd < numRewards; ) {
+            for (uint8 iRwd; iRwd < numRewards; ) {
                 if (funds[fundId].totalLiquidity > 0 && !isPaused) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
@@ -420,7 +424,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
-        for (uint8 iFund = 0; iFund < numFunds; ) {
+        for (uint8 iFund; iFund < numFunds; ) {
             rates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
             unchecked {
                 ++iFund;
@@ -458,7 +462,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (block.timestamp > lastFundUpdateTime) {
             uint256 time = block.timestamp - lastFundUpdateTime;
             // Compute the accrued reward balance for time
-            for (uint8 iFund = 0; iFund < numFunds; ) {
+            for (uint8 iFund; iFund < numFunds; ) {
                 if (rewardFunds[iFund].totalLiquidity > 0) {
                     rewardsAcc +=
                         rewardFunds[iFund].rewardsPerSec[rwdId] *
@@ -525,9 +529,8 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId user's deposit Id.
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit storage userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit storage userDeposit = deposits[msg.sender][_depositId];
 
         // validate if the deposit is in locked state
         require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
@@ -539,13 +542,13 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         userDeposit.cooldownPeriod = 0;
 
         // claim the pending rewards for the user
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund
-        _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+        _unsubscribeRewardFund(LOCKUP_FUND_ID, msg.sender, _depositId);
 
         emit CooldownInitiated(
-            account,
+            msg.sender,
             userDeposit.tokenId,
             userDeposit.expiryDate
         );
@@ -621,10 +624,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 numSubs = depositSubs.length;
         uint256[] memory totalRewards = new uint256[](numRewards);
         // Compute the rewards for each subscription.
-        for (uint8 iSub = 0; iSub < numSubs; ) {
+        for (uint8 iSub; iSub < numSubs; ) {
             uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
-            for (uint256 iRwd = 0; iRwd < numRewards; ) {
+            for (uint256 iRwd; iRwd < numRewards; ) {
                 // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
                 uint256 accRewards = (userDeposit.liquidity *
                     rewardFunds[fundId].accRewardPerShare[iRwd]) / PREC;
@@ -654,7 +657,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         // Transfer the claimed rewards to the User if any.
-        for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint8 iRwd; iRwd < numRewards; ) {
             if (totalRewards[iRwd] > 0) {
                 rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[
                     iRwd
@@ -704,7 +707,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         );
         uint256[] memory oldRewardRates = new uint256[](numFunds);
         // Update the reward rate
-        for (uint8 iFund = 0; iFund < numFunds; ) {
+        for (uint8 iFund; iFund < numFunds; ) {
             oldRewardRates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
             rewardFunds[iFund].rewardsPerSec[id] = _newRewardRates[iFund];
             unchecked {
@@ -736,7 +739,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 subId = subscriptions[_tokenId].length - 1;
 
         // initialize user's reward debt
-        for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint8 iRwd; iRwd < numRewards; ) {
             subscriptions[_tokenId][subId].rewardDebt[iRwd] =
                 (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) /
                 PREC;
@@ -765,12 +768,12 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // Unsubscribe from the reward fund
         Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
         uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ) {
+        for (uint256 iSub; iSub < numSubs; ) {
             if (depositSubs[iSub].fundId == _fundId) {
                 // Persist the reward information
                 uint256[] memory rewardClaimed = new uint256[](numRewards);
 
-                for (uint8 iRwd = 0; iRwd < numRewards; ) {
+                for (uint8 iRwd; iRwd < numRewards; ) {
                     rewardClaimed[iRwd] = depositSubs[iSub].rewardClaimed[iRwd];
                     unchecked {
                         ++iRwd;
@@ -809,10 +812,10 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 uint256 time = block.timestamp - lastFundUpdateTime;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
-                for (uint8 iFund = 0; iFund < rewardFunds.length; ) {
+                for (uint8 iFund; iFund < rewardFunds.length; ) {
                     RewardFund memory fund = rewardFunds[iFund];
                     if (fund.totalLiquidity > 0) {
-                        for (uint8 iRwd = 0; iRwd < numRewards; ) {
+                        for (uint8 iRwd; iRwd < numRewards; ) {
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(
                                 iRwd,
@@ -872,7 +875,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         require(numRewards <= MAX_NUM_REWARDS - 1, "Invalid reward data");
 
         // Initialize fund storage
-        for (uint8 i = 0; i < numFunds; ) {
+        for (uint8 i; i < numFunds; ) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
                 rewardsPerSec: new uint256[](numRewards + 1),
@@ -888,7 +891,7 @@ contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _addRewardData(SPA, SPA_TOKEN_MANAGER);
 
         // Initialize reward Data
-        for (uint8 iRwd = 0; iRwd < numRewards; ) {
+        for (uint8 iRwd; iRwd < numRewards; ) {
             _addRewardData(
                 _rwdTokenData[iRwd].token,
                 _rwdTokenData[iRwd].tknManager
