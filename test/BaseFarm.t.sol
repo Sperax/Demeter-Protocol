@@ -57,14 +57,20 @@ contract BaseFarmTest is PreMigrationSetup {
     uint8 id;
     uint256 accRewardBal;
   }
-  struct Deposit {
-    uint256 liquidity;
-    uint256 tokenId;
-    uint256 startTime;
-    uint256 expiryDate;
-    uint256 cooldownPeriod;
-    uint256[] totalRewardsClaimed;
+  struct RewardFund {
+    uint256 totalLiquidity;
+    uint256[] rewardsPerSec;
+    uint256[] accRewardPerShare;
   }
+  // struct Deposit {
+  //   uint256 liquidity;
+  //   uint256 tokenId;
+  //   uint256 startTime;
+  //   uint256 expiryDate;
+  //   uint256 cooldownPeriod;
+  //   uint256[] totalRewardsClaimed;
+  // }
+  RewardFund[] public rewardFunds;
   mapping(address => RewardData) public rewardData;
   event Deposited(
     address indexed account,
@@ -265,6 +271,31 @@ contract fullWithdraw is BaseFarmTest {
     lockupFarm.withdraw(0);
   }
 
+  function test_lockupFarm_paused() public useActor(5) {
+    setupFarmRewards();
+
+    //lockupFarm.deposit storage userDeposit = lockupFarm.getDeposit(currentActor,0); //out of bounds
+    skip(86400 * 2);
+    lockupFarm.initiateCooldown(0);
+    vm.startPrank(actors[1]);
+    skip(86400 * 2);
+    lockupFarm.farmPauseSwitch(true);
+    vm.startPrank(actors[5]);
+    skip(86400 * 2);
+    uint256[] memory rewards = lockupFarm.computeRewards(currentActor, 0);
+
+    vm.expectEmit(true, true, false, true);
+    emit RewardsClaimed(
+      currentActor,
+      0,
+      1,
+      1000000000000000000000,
+      1000000000000000000000,
+      rewards
+    );
+    lockupFarm.withdraw(0);
+  }
+
   function test_nonLockupFarm() public useActor(5) {
     setupFarmRewards();
     lockupFarm.initiateCooldown(0);
@@ -324,31 +355,25 @@ contract getRewardFundInfo is BaseFarmTest {
 
 contract recoverERC20 is BaseFarmTest {
   function test_LockupFarm_revertsWhenRewardToken() public useActor(1) {
-
     vm.expectRevert("Can't withdraw rewardToken or farmToken");
     lockupFarm.recoverERC20(USDCe);
-
-
   }
 
-    function test_LockupFarm_revertsWhenZeroAmount() public useActor(1) {
-
+  function test_LockupFarm_revertsWhenZeroAmount() public useActor(1) {
     vm.expectRevert("Can't withdraw 0 amount");
     lockupFarm.recoverERC20(USDT);
-
-
   }
+
   function test_LockupFarm_(uint256 amt) public useActor(1) {
-        bound(
+    bound(
       amt,
       1000 * 10**ERC20(USDT).decimals(),
       10000 * 10**ERC20(USDT).decimals()
     );
-    deal(USDT,address(lockupFarm),10e10);
+    deal(USDT, address(lockupFarm), 10e10);
     vm.expectEmit(true, true, false, false);
     emit RecoveredERC20(USDT, 10e10);
     lockupFarm.recoverERC20(USDT);
-
   }
 }
 
