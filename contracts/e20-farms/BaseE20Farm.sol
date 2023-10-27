@@ -38,7 +38,6 @@ contract BaseE20Farm is BaseFarm {
     error DepositInCoolDown();
     error PartialWithdrawNotPermitted();
     error CannotWithdrawRewardTokenOrFarmToken();
-    error CannotWithdrawZeroAmount();
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
