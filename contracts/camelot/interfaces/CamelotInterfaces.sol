@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT Line
 pragma solidity 0.8.16;
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 interface INFTPoolFactory {
     function getPool(address _lpTokenAddr) external view returns (address);

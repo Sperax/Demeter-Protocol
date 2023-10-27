@@ -54,10 +54,8 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         address _factory,
         address _protocolFactory,
         string memory _deployerName
-    ) {
-        _isNonZeroAddr(_factory);
+    ) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_protocolFactory);
-        factory = _factory;
         PROTOCOL_FACTORY = _protocolFactory;
         DEPLOYER_NAME = _deployerName;
         discountedFee = 100e18; // 100 USDs

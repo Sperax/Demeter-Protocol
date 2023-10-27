@@ -58,10 +58,9 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         address _factory,
         address _balancerVault,
         string memory _deployerName
-    ) {
-        _isNonZeroAddr(_factory);
+    ) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_balancerVault);
-        factory = _factory;
+
         BALANCER_VAULT = _balancerVault;
         DEPLOYER_NAME = _deployerName;
         discountedFee = 50e18; // 50 USDs

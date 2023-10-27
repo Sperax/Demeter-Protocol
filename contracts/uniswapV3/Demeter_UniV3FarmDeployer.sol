@@ -17,10 +17,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../BaseFarmDeployer.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
 import {Demeter_UniV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
@@ -40,9 +40,7 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v3";
 
-    constructor(address _factory) {
-        _isNonZeroAddr(_factory);
-        factory = _factory;
+    constructor(address _factory) BaseFarmDeployer(_factory) {
         discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_UniV3Farm());
     }
