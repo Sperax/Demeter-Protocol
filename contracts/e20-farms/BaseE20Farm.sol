@@ -33,6 +33,13 @@ contract BaseE20Farm is BaseFarm {
         uint256 amt1Recv
     );
 
+    // Custom Errors
+    error InvalidAmount();
+    error DepositInCoolDown();
+    error PartialWithdrawNotPermitted();
+    error CannotWithdrawRewardTokenOrFarmToken();
+    error CannotWithdrawZeroAmount();
+
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
@@ -73,8 +80,12 @@ contract BaseE20Farm is BaseFarm {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
         Deposit memory userDeposit = deposits[msg.sender][_depositId];
-        require(_amount > 0, "Invalid amount");
-        require(userDeposit.expiryDate == 0, "Deposit in cooldown");
+        if (_amount == 0) {
+            revert InvalidAmount();
+        }
+        if (userDeposit.expiryDate != 0) {
+            revert DepositInCoolDown();
+        }
 
         // claim the pending rewards for the deposit
         _claimRewards(msg.sender, _depositId);
@@ -99,14 +110,14 @@ contract BaseE20Farm is BaseFarm {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[msg.sender][_depositId];
-        require(
-            _amount > 0 && _amount < userDeposit.liquidity,
-            "Invalid amount"
-        );
-        require(
-            userDeposit.expiryDate == 0 && userDeposit.cooldownPeriod == 0,
-            "Partial withdraw not permitted"
-        );
+
+        if (_amount == 0 || _amount >= userDeposit.liquidity) {
+            revert InvalidAmount();
+        }
+
+        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
+            revert PartialWithdrawNotPermitted();
+        }
 
         // claim the pending rewards for the deposit
         _claimRewards(msg.sender, _depositId);
@@ -147,13 +158,14 @@ contract BaseE20Farm is BaseFarm {
         onlyOwner
         nonReentrant
     {
-        require(
-            rewardData[_token].tknManager == address(0) && _token != farmToken,
-            "Can't withdraw rewardToken or farmToken"
-        );
+        if (rewardData[_token].tknManager != address(0) || _token == farmToken) {
+            revert CannotWithdrawRewardTokenOrFarmToken();
+        }
 
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        require(balance > 0, "Can't withdraw 0 amount");
+        if (balance == 0) {
+            revert CannotWithdrawZeroAmount();
+        }
 
         IERC20(_token).safeTransfer(owner(), balance);
         emit RecoveredERC20(_token, balance);
