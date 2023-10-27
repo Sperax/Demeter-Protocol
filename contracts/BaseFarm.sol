@@ -254,7 +254,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered
-    function recoverERC20(address _token) external onlyOwner nonReentrant {
+    function recoverERC20(address _token)
+        external
+        virtual
+        onlyOwner
+        nonReentrant
+    {
         require(
             rewardData[_token].tknManager == address(0),
             "Can't withdraw rewardToken"
@@ -522,9 +527,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId user's deposit Id.
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit storage userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit storage userDeposit = deposits[msg.sender][_depositId];
 
         // validate if the deposit is in locked state
         require(userDeposit.cooldownPeriod > 0, "Can not initiate cooldown");
@@ -536,13 +540,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         userDeposit.cooldownPeriod = 0;
 
         // claim the pending rewards for the user
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund
-        _unsubscribeRewardFund(LOCKUP_FUND_ID, account, _depositId);
+        _unsubscribeRewardFund(LOCKUP_FUND_ID, msg.sender, _depositId);
 
         emit CooldownInitiated(
-            account,
+            msg.sender,
             userDeposit.tokenId,
             userDeposit.expiryDate
         );
