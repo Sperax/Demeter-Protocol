@@ -4,8 +4,8 @@ pragma solidity 0.8.16;
 pragma experimental ABIEncoderV2;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISwapRouter} from "./ISwapRouter.sol";
-import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
+import {ISwapRouter} from "../../uniswapV3/tests/ISwapRouter.sol";
+import {INonfungiblePositionManager} from "../../uniswapV3/interfaces/UniswapV3.sol";
 
 /**
  * @title Token Swapping on SushiswapV3 Arbitrum
