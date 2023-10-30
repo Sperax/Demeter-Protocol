@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
+
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
 //@@@@@@........../@@@@@@@........../@@@@@@//
@@ -16,15 +17,17 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
-import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
-import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
+import "../../BaseFarmDeployer.sol";
+import "./interfaces/IUniswapV2Factory.sol";
+import {Demeter_E20_farm, RewardTokenData} from "./Demeter_E20_farm.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // @dev the token Order is not important
-    struct CamelotPoolData {
+    struct PoolData {
         address tokenA;
         address tokenB;
     }
@@ -40,20 +43,23 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         address farmAdmin;
         uint256 farmStartTime;
         uint256 cooldownPeriod;
-        CamelotPoolData camelotPoolData;
+        PoolData camelotPoolData;
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
     address public immutable PROTOCOL_FACTORY;
+    string public DEPLOYER_NAME;
 
-    constructor(address _factory, address _protocolFactory)
-        BaseFarmDeployer(_factory)
-    {
+    constructor(
+        address _factory,
+        address _protocolFactory,
+        string memory _deployerName
+    ) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
-        discountedFee = 50e18; // 50 USDs
-        farmImplementation = address(new Demeter_CamelotFarm());
+        DEPLOYER_NAME = _deployerName;
+        discountedFee = 100e18; // 100 USDs
+        farmImplementation = address(new Demeter_E20_farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -64,7 +70,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         returns (address)
     {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_CamelotFarm farmInstance = Demeter_CamelotFarm(
+        Demeter_E20_farm farmInstance = Demeter_E20_farm(
             Clones.clone(farmImplementation)
         );
 
@@ -83,8 +89,8 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         address farm = address(farmInstance);
         // Calculate and collect fee if required
         _collectFee(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
-        emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         IFarmFactory(factory).registerFarm(farm, msg.sender);
+        emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }
 
@@ -93,7 +99,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         view
         returns (address pool)
     {
-        pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
+        pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;
     }

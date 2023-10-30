@@ -17,10 +17,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {INonfungiblePositionManager as INFPM, IUniswapV3Factory, IUniswapV3TickSpacing, CollectParams} from "./interfaces/UniswapV3.sol";
-import "./libraries/PositionValue.sol";
-import "../BaseFarm.sol";
+import {PositionValue} from "./libraries/PositionValue.sol";
+import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -38,7 +38,7 @@ struct UniswapPoolData {
 
 contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     // constants
-    string public constant farmId = "Demeter_UniV3_v3";
+    string public constant FARM_ID = "Demeter_UniV3_v3";
     address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNIV3_FACTORY =
         0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -96,11 +96,10 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     ) external override returns (bytes4) {
         require(msg.sender == NFPM, "onERC721Received: not a univ3 nft");
         require(_data.length > 0, "onERC721Received: no data");
-        bool lockup = abi.decode(_data, (bool));
         uint256 liquidity = _getLiquidity(_tokenId);
         // Validate the position and get the liquidity
 
-        _deposit(_from, lockup, _tokenId, liquidity);
+        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
         return this.onERC721Received.selector;
     }
 
@@ -134,22 +133,20 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         _farmNotClosed();
         address account = msg.sender;
         _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        uint256 tokenId = deposits[account][_depositId].tokenId;
+
         INFPM pm = INFPM(NFPM);
-        (uint256 amt0, uint256 amt1) = PositionValue.fees(
-            pm,
-            userDeposit.tokenId
-        );
+        (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
         require(amt0 > 0 || amt1 > 0, "No fee to claim");
         (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
             CollectParams({
-                tokenId: userDeposit.tokenId,
+                tokenId: tokenId,
                 recipient: account,
                 amount0Max: uint128(amt0),
                 amount1Max: uint128(amt1)
             })
         );
-        emit PoolFeeCollected(account, userDeposit.tokenId, amt0Recv, amt1Recv);
+        emit PoolFeeCollected(account, tokenId, amt0Recv, amt1Recv);
     }
 
     /// @notice Get the accrued uniswap fee for a deposit.
