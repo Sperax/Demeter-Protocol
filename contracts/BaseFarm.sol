@@ -111,7 +111,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 tokenId,
         uint256 liquidity
     );
-    event CooldownInitiated(address indexed account, uint256 depositId);
+    event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
     event DepositWithdrawn(
         address indexed account,
         uint256 tokenId,
@@ -581,7 +581,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // Unsubscribe the deposit from the lockup reward fund
         _unsubscribeRewardFund(LOCKUP_FUND_ID, msg.sender, _depositId);
 
-        emit CooldownInitiated(msg.sender, _depositId);
+        emit CooldownInitiated(msg.sender, userDeposit.tokenId, userDeposit.expiryDate);
     }
 
     /// @notice Common logic for withdraw.
