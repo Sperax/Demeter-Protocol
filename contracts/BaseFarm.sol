@@ -134,7 +134,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 oldCooldownPeriod,
         uint256 newCooldownPeriod
     );
-    event RewardRateUpdated(address rwdToken, uint256[] newRewardRate);
+    event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
