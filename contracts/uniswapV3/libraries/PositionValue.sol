@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.16;
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "./PoolAddress.sol";
-import "@uniswap/v3-periphery/contracts/libraries/PositionKey.sol";
-import "@uniswap/v3-core/contracts/libraries/FixedPoint128.sol";
-import {INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3TickSpacing} from "../interfaces/UniswapV3.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {PoolAddress} from "./PoolAddress.sol";
+import {FixedPoint128} from "@uniswap/v3-core/contracts/libraries/FixedPoint128.sol";
+import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
 
 /// @title Returns information about the token value held in a Uniswap V3 NFT
 library PositionValue {

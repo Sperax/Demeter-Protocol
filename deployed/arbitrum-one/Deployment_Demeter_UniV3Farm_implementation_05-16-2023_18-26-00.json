@@ -1,0 +1,41 @@
+{
+    "contract_addr": "0xDb3c487C0C589f0e5590893F070aBB534C1fB08c",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Deployment_transaction",
+            "tx_hash": "0x54d86502361a18441e02366932b507f774f7199bfbd7b7b8e5283c6869b1fa9b",
+            "contract": "Demeter_UniV3Farm",
+            "contract_addr": "0xDb3c487C0C589f0e5590893F070aBB534C1fB08c",
+            "tx_func": "constructor",
+            "blocknumber": 91284252,
+            "gas_used": 61289551,
+            "gas_limit": 100000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0x9c7f80295aa81d372a4dc5b359b2167c6b00461c69bad429bfd8f4464cc7f1a6",
+            "contract": "Demeter_UniV3Farm",
+            "contract_addr": null,
+            "tx_func": "renounceOwnership",
+            "blocknumber": 91284293,
+            "gas_used": 531732,
+            "gas_limit": 100000000
+        }
+    ],
+    "config_name": "Demeter_UniV3Farm_implementation",
+    "config": {
+        "deployment_params": {},
+        "post_deployment_steps": [
+            {
+                "func": "renounceOwnership",
+                "args": {},
+                "transact": true,
+                "contract": "Demeter_UniV3Farm",
+                "contract_addr": "0xDb3c487C0C589f0e5590893F070aBB534C1fB08c"
+            }
+        ],
+        "upgradeable": false,
+        "proxy_admin": null
+    }
+}

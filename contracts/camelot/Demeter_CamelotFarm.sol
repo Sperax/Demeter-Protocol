@@ -18,12 +18,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {INFTPoolFactory, INFTPool, INFTHandler} from "./interfaces/CamelotInterfaces.sol";
-import "../BaseFarm.sol";
+import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // constants
     string public constant FARM_ID = "Demeter_Camelot_v1";
-    address public constant NFTPoolFactory =
+    address public constant NFT_POOL_FACTORY =
         0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
 
     // Camelot nft pool
@@ -35,6 +35,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 grailAmt,
         uint256 xGrailAmt
     );
+
+    // Custom Errors
+    error InvalidCamelotPoolConfig();
+    error NotACamelotNFT();
+    error NoData();
+    error NotAllowed();
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
@@ -49,8 +55,10 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize uniswap related data
-        nftPool = INFTPoolFactory(NFTPoolFactory).getPool(_camelotPairPool);
-        require(nftPool != address(0), "Invalid camelot pool config");
+        nftPool = INFTPoolFactory(NFT_POOL_FACTORY).getPool(_camelotPairPool);
+        if (nftPool == address(0)) {
+            revert InvalidCamelotPoolConfig();
+        }
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
     }
@@ -65,12 +73,15 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 _tokenId,
         bytes calldata _data
     ) external override returns (bytes4) {
-        require(msg.sender == nftPool, "onERC721Received: incorrect nft");
-        require(_data.length > 0, "onERC721Received: no data");
-        bool lockup = abi.decode(_data, (bool));
+        if (msg.sender != nftPool) {
+            revert NotACamelotNFT();
+        }
+        if (_data.length == 0) {
+            revert NoData();
+        }
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
-        _deposit(_from, lockup, _tokenId, liquidity);
+        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
         return this.onERC721Received.selector;
     }
 
@@ -84,15 +95,14 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external nonReentrant {
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
         INFTPool(nftPool).safeTransferFrom(
             address(this),
-            account,
+            msg.sender,
             userDeposit.tokenId
         );
     }
@@ -102,10 +112,11 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
-        INFTPool(nftPool).harvestPositionTo(userDeposit.tokenId, account);
+        _isValidDeposit(msg.sender, _depositId);
+        INFTPool(nftPool).harvestPositionTo(
+            deposits[msg.sender][_depositId].tokenId,
+            msg.sender
+        );
     }
 
     /// @notice callback function for harvestPosition().
@@ -116,7 +127,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         uint256 _grailAmount,
         uint256 _xGrailAmount
     ) external override returns (bool) {
-        require(msg.sender == nftPool, "Not Allowed");
+        if (msg.sender != nftPool) {
+            revert NotAllowed();
+        }
         emit PoolRewardsCollected(_to, _tokenId, _grailAmount, _xGrailAmount);
         return true;
     }

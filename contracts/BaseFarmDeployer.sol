@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IFarmFactory.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 
 abstract contract BaseFarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant USDs = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
-    address public factory;
+    address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
+    address public immutable factory;
     // Stores the address of farmImplementation.
     address public farmImplementation;
     uint256 public discountedFee;
@@ -27,6 +27,15 @@ abstract contract BaseFarmDeployer is Ownable {
         uint256 oldDiscountedFee,
         uint256 newDiscountedFee
     );
+
+    // Custom Errors
+    error InvalidTokenPair();
+    error InvalidAddress();
+
+    constructor(address _factory) {
+        _isNonZeroAddr(_factory);
+        factory = _factory;
+    }
 
     function updateFarmImplementation(address _newFarmImplementation)
         external
@@ -61,7 +70,9 @@ abstract contract BaseFarmDeployer is Ownable {
     {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
-        require(_tokenA != _tokenB, "Invalid token pair");
+        if (_tokenA == _tokenB) {
+            revert InvalidTokenPair();
+        }
         return _calculateFees(_tokenA, _tokenB);
     }
 
@@ -74,7 +85,7 @@ abstract contract BaseFarmDeployer is Ownable {
             uint256 feeAmount,
             bool claimable
         ) = _calculateFees(_tokenA, _tokenB);
-        if (feeAmount > 0) {
+        if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(
                 msg.sender,
                 feeReceiver,
@@ -106,24 +117,26 @@ abstract contract BaseFarmDeployer is Ownable {
             feeAmount = 0;
             return (feeReceiver, feeToken, feeAmount, false);
         }
-        if (!_checkToken(_tokenA) && !_checkToken(_tokenB)) {
-            // No discount because neither of the token is SPA or USDs
-            return (feeReceiver, feeToken, feeAmount, false);
-        } else {
+        if (_checkToken(_tokenA) || _checkToken(_tokenB)) {
             // DiscountedFee if either of the token is SPA or USDs
             // This fees is claimable
             return (feeReceiver, feeToken, discountedFee, true);
+        } else {
+            // No discount because neither of the token is SPA or USDs
+            return (feeReceiver, feeToken, feeAmount, false);
         }
     }
 
     /// @notice Check if a token is either SPA | USDs.
     /// @param _token Address of the desired token.
     function _checkToken(address _token) internal pure returns (bool) {
-        return _token == SPA || _token == USDs;
+        return _token == SPA || _token == USDS;
     }
 
     /// @notice Validate address
     function _isNonZeroAddr(address _addr) internal pure {
-        require(_addr != address(0), "Invalid address");
+        if (_addr == address(0)) {
+            revert InvalidAddress();
+        }
     }
 }
