@@ -35,7 +35,7 @@ contract BaseE20Farm is BaseFarm {
 
     // Custom Errors
     error InvalidAmount();
-    error DepositInCoolDown();
+    error DepositInCooldown();
     error PartialWithdrawNotPermitted();
     error CannotWithdrawRewardTokenOrFarmToken();
 
@@ -83,7 +83,7 @@ contract BaseE20Farm is BaseFarm {
             revert InvalidAmount();
         }
         if (userDeposit.expiryDate != 0) {
-            revert DepositInCoolDown();
+            revert DepositInCooldown();
         }
 
         // claim the pending rewards for the deposit
@@ -157,7 +157,9 @@ contract BaseE20Farm is BaseFarm {
         onlyOwner
         nonReentrant
     {
-        if (rewardData[_token].tknManager != address(0) || _token == farmToken) {
+        if (
+            rewardData[_token].tknManager != address(0) || _token == farmToken
+        ) {
             revert CannotWithdrawRewardTokenOrFarmToken();
         }
 

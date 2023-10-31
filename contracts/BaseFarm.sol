@@ -163,9 +163,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     error RewardFundDoesNotExist();
     error LockupFunctionalityIsDisabled();
     error NoLiquidityInPosition();
-    error CannotInitiateCoolDown();
-    error PleaseInitiateCoolDown();
-    error DepositIsInCoolDown();
+    error CannotInitiateCooldown();
+    error PleaseInitiateCooldown();
+    error DepositIsInCooldown();
     error InvalidRewardRatesLength();
     error InvalidFundId();
     error InvalidFarmStartTime();
@@ -176,7 +176,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     error FarmIsPaused();
     error NotTheTokenManager();
     error InvalidAddress();
-    error InvalidCoolDownPeriod();
+    error InvalidCooldownPeriod();
 
     // Disallow initialization of a implementation contract
     constructor() {
@@ -202,10 +202,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
         _updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
-        emit RewardAdded(
-            _rwdToken,
-            _amount
-        );
+        emit RewardAdded(_rwdToken, _amount);
     }
 
     // --------------------- Admin  Functions ---------------------
@@ -569,7 +566,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         // validate if the deposit is in locked state
         if (userDeposit.cooldownPeriod == 0) {
-            revert CannotInitiateCoolDown();
+            revert CannotInitiateCooldown();
         }
 
         // update the deposit expiry time & lock status
@@ -600,12 +597,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // Note: If farm is paused, skip the cooldown check
         if (!isPaused) {
             if (_userDeposit.cooldownPeriod != 0) {
-                revert PleaseInitiateCoolDown();
+                revert PleaseInitiateCooldown();
             }
             if (_userDeposit.expiryDate != 0) {
                 // Cooldown is initiated for the user
                 if (_userDeposit.expiryDate > block.timestamp) {
-                    revert DepositIsInCoolDown();
+                    revert DepositIsInCooldown();
                 }
             }
         }
@@ -1032,7 +1029,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             _cooldownPeriod < MIN_COOLDOWN_PERIOD ||
             _cooldownPeriod > MAX_COOLDOWN_PERIOD
         ) {
-            revert InvalidCoolDownPeriod();
+            revert InvalidCooldownPeriod();
         }
     }
 
