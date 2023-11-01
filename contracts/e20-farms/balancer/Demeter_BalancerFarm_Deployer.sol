@@ -49,6 +49,9 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     address public immutable BALANCER_VAULT;
     string public DEPLOYER_NAME;
 
+    // Custom Errors
+    error InvalidTokens();
+
     /// @notice Constructor of the contract
     /// @param _factory Address of Sperax Farm Factory
     /// @param _balancerVault Address of Balancer's Vault
@@ -140,7 +143,11 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         )
     {
         uint8 tokensLen = uint8(_tokens.length);
-        require(tokensLen != 0, "Invalid tokens");
+        
+        if (tokensLen == 0) {
+            revert InvalidTokens();
+        }
+
         (
             address feeReceiver,
             address feeToken,
