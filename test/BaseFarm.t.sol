@@ -9,7 +9,7 @@ import { BaseFarmDeployer } from "../../contracts/BaseFarmDeployer.sol";
 import { BaseFarm, RewardTokenData } from "../../contracts/BaseFarm.sol";
 import { Demeter_BalancerFarm } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import { Demeter_BalancerFarm_Deployer } from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
-import { console } from "forge-std/console.sol";
+
 
 interface IAsset {
   // solhint-disable-previous-line no-empty-blocks
@@ -553,7 +553,7 @@ contract setRewardRate is BaseFarmTest {
       nonLockupFarm.setRewardRate(rewardTokens[i], rwdRate);
 
       assertEq(nonLockupFarm.getRewardRates(rewardTokens[i]), rwdRate);
-      console.log(nonLockupFarm.getRewardRates(rewardTokens[i])[0]);
+
     }
   }
 
@@ -588,7 +588,7 @@ contract setRewardRate is BaseFarmTest {
       emit RewardRateUpdated(rewardTokens[i], oldRewardRate, rwdRate);
       lockupFarm.setRewardRate(rewardTokens[i], rwdRate);
       assertEq(lockupFarm.getRewardRates(rewardTokens[i]), rwdRate);
-      console.log(lockupFarm.getRewardRates(rewardTokens[i])[0]);
+
     }
   }
 }
