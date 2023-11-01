@@ -51,9 +51,6 @@ contract BaseE20Farm is BaseFarm {
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
-        // Initialize farm global params
-        tokenNum = 0;
-
         // initialize farmToken related data
         farmToken = _farmToken;
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
@@ -63,13 +60,11 @@ contract BaseE20Farm is BaseFarm {
     /// @param _amount Amount of farmToken to be deposited
     /// @param _lockup The lockup flag (bool).
     function deposit(uint256 _amount, bool _lockup) external nonReentrant {
-        address account = msg.sender;
-        uint256 tokenId = ++tokenNum;
         // Execute common deposit logic.
-        _deposit(account, _lockup, tokenId, _amount);
+        _deposit(msg.sender, _lockup, ++tokenNum, _amount);
 
         // Transfer the lp tokens to the farm
-        IERC20(farmToken).safeTransferFrom(account, address(this), _amount);
+        IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /// @notice Allow user to increase liquidity for a deposit
@@ -80,7 +75,6 @@ contract BaseE20Farm is BaseFarm {
         external
         nonReentrant
     {
-        address account = msg.sender;
         // Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -93,14 +87,14 @@ contract BaseE20Farm is BaseFarm {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Update deposit Information
         _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
-        deposits[account][_depositId].liquidity += _amount;
+        deposits[msg.sender][_depositId].liquidity += _amount;
 
         // Transfer the lp tokens to the farm
-        IERC20(farmToken).safeTransferFrom(account, address(this), _amount);
+        IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     /// @notice Withdraw liquidity partially from an existing deposit.
@@ -111,7 +105,6 @@ contract BaseE20Farm is BaseFarm {
         external
         nonReentrant
     {
-        address account = msg.sender;
         //Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -126,14 +119,14 @@ contract BaseE20Farm is BaseFarm {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(account, _depositId);
+        _claimRewards(msg.sender, _depositId);
 
         // Update deposit info
         _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
-        deposits[account][_depositId].liquidity -= _amount;
+        userDeposit.liquidity -= _amount;
 
         // Transfer the lp tokens to the user
-        IERC20(farmToken).safeTransfer(account, _amount);
+        IERC20(farmToken).safeTransfer(msg.sender, _amount);
     }
 
     /// @notice Function to lock a staked deposit
@@ -146,14 +139,13 @@ contract BaseE20Farm is BaseFarm {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external nonReentrant {
-        address account = msg.sender;
-        _isValidDeposit(account, _depositId);
-        Deposit memory userDeposit = deposits[account][_depositId];
+        _isValidDeposit(msg.sender, _depositId);
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
-        _withdraw(account, _depositId, userDeposit);
+        _withdraw(msg.sender, _depositId, userDeposit);
 
         // Transfer the farmTokens to the user.
-        IERC20(farmToken).safeTransfer(account, userDeposit.liquidity);
+        IERC20(farmToken).safeTransfer(msg.sender, userDeposit.liquidity);
     }
 
     // --------------------- Admin  Functions ---------------------
@@ -188,20 +180,20 @@ contract BaseE20Farm is BaseFarm {
     function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount)
         private
     {
-        Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ) {
-            for (uint8 iRwd = 0; iRwd < numRewards; ) {
-                depositSubs[iSub].rewardDebt[iRwd] += ((_amount *
-                    rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
-                        iRwd
-                    ]) / PREC);
+        uint256 numSubs = subscriptions[_tokenId].length;
+        for (uint256 iSub; iSub < numSubs; ) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
+                .rewardDebt;
+            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            for (uint8 iRwd; iRwd < numRewards; ) {
+                _rewardDebt[iRwd] += ((_amount *
+                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
             }
-            rewardFunds[depositSubs[iSub].fundId].totalLiquidity += _amount;
+            rewardFunds[_fundId].totalLiquidity += _amount;
             unchecked {
                 ++iSub;
             }
@@ -214,20 +206,20 @@ contract BaseE20Farm is BaseFarm {
     function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount)
         private
     {
-        Subscription[] storage depositSubs = subscriptions[_tokenId];
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = depositSubs.length;
-        for (uint256 iSub = 0; iSub < numSubs; ) {
-            for (uint8 iRwd = 0; iRwd < numRewards; ) {
-                depositSubs[iSub].rewardDebt[iRwd] -= ((_amount *
-                    rewardFunds[depositSubs[iSub].fundId].accRewardPerShare[
-                        iRwd
-                    ]) / PREC);
+        uint256 numSubs = subscriptions[_tokenId].length;
+        for (uint256 iSub; iSub < numSubs; ) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
+                .rewardDebt;
+            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            for (uint8 iRwd; iRwd < numRewards; ) {
+                _rewardDebt[iRwd] -= ((_amount *
+                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
             }
-            rewardFunds[depositSubs[iSub].fundId].totalLiquidity -= _amount;
+            rewardFunds[_fundId].totalLiquidity -= _amount;
             unchecked {
                 ++iSub;
             }
