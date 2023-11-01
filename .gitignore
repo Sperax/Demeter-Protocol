@@ -144,3 +144,6 @@ out/
 forge-cache/
 tests/
 coverage/
+
+#macOS
+.DS_Store
