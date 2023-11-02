@@ -21,7 +21,7 @@ import {BaseUniV3Farm, RewardTokenData, UniswapPoolData} from "../BaseUniV3Farm.
 
 contract Demeter_SushiV3Farm is BaseUniV3Farm {
     // constants
-    string public constant FARM_ID = "Demeter_SushiV3_v3";
+    string public constant FARM_ID = "Demeter_SushiV3_v1";
 
     function NFPM() internal pure override returns (address) {
         return 0xF0cBce1942A68BEB3d1b73F0dd86C8DCc363eF49;
