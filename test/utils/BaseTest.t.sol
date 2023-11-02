@@ -1,5 +1,6 @@
 pragma solidity >=0.6.2 <0.9.0;
 pragma experimental ABIEncoderV2;
+
 import { Test } from "forge-std/Test.sol";
 import { BaseFarm } from "../../contracts/BaseFarm.sol";
 import { FarmFactory } from "../../contracts/FarmFactory.sol";
@@ -9,7 +10,6 @@ import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin
 abstract contract Setup is Test {
   // Define global constants | Test config
   // @dev Make it 0 to test on latest
-  uint256 public constant FORK_BLOCK = 140358112; //TODO :
   uint256 public constant NUM_ACTORS = 6;
   uint256 public constant MIN_BALANCE = 1000000000000000000;
   uint256 public constant GAS_LIMIT = 1000000000;
@@ -80,6 +80,7 @@ abstract contract Setup is Test {
 
   /// @notice
   function setArbitrumFork() public {
+    uint256 FORK_BLOCK = vm.envUint("FORK_BLOCK");
     string memory arbRpcUrl = vm.envString("ARB_URL");
     arbFork = vm.createFork(arbRpcUrl);
     vm.selectFork(arbFork);
