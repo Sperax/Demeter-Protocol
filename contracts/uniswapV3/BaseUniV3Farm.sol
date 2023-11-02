@@ -226,7 +226,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         }
     }
 
-    function NFPM() internal pure virtual returns (INFPM);
+    function NFPM() internal pure virtual returns (address);
 
     function UNIV3_FACTORY() internal pure virtual returns (address);
 }
