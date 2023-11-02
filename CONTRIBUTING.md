@@ -72,9 +72,9 @@ To set up a development environment for Demeter Protocol, follow these steps:
    touch contracts/protocol-name/ProtocolNameFarm_Deployer.sol
    ```
 
-1. Your Farm and FarmDeployer must extend BaseFarm.sol and BaseFarmDeployer.sol under contracts/
+1. Your Farm and FarmDeployer must extend BaseFarm.sol and BaseFarmDeployer.sol under `contracts`.
 
-1. If the desired protocol is a fork of Uniswap V2/ returns ERC20 LP positions, you must follow the steps under contracts/e20-farms.
+1. If the desired protocol is a fork of Uniswap V2/ returns ERC20 LP positions, you must follow the steps under `contracts/e20-farms`.
 
 1. Add the logic you would like to add for deposits and withdrawals over BaseFarm and then call the internal functions of BaseFarm for consistency.
 

@@ -15,8 +15,6 @@ downloads/
 eggs/
 .eggs/
 lib/
-out/
-forge-cache/
 lib64/
 parts/
 sdist/
