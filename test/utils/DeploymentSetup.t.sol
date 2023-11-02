@@ -7,7 +7,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // import Contracts
-import {FarmFactory} from "../../contracts/farmFactory.sol";
+import {FarmFactory} from "../../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../../contracts/BaseFarmDeployer.sol";
 import {BaseFarm, RewardTokenData} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
