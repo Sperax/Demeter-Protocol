@@ -17,8 +17,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
-import {Demeter_UniV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {Demeter_SushiV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_SushiV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -38,11 +38,11 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v3";
+    string public constant DEPLOYER_NAME = "Demeter_SushiV3FarmDeployer_v3";
 
     constructor(address _factory) BaseFarmDeployer(_factory) {
         discountedFee = 50e18; // 50 USDs
-        farmImplementation = address(new Demeter_UniV3Farm());
+        farmImplementation = address(new Demeter_SushiV3Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -53,7 +53,7 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         returns (address)
     {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_UniV3Farm farmInstance = Demeter_UniV3Farm(
+        Demeter_SushiV3Farm farmInstance = Demeter_SushiV3Farm(
             Clones.clone(farmImplementation)
         );
         farmInstance.initialize(
