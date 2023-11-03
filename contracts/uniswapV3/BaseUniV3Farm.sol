@@ -172,6 +172,10 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         return PositionValue.fees(INFPM(NFPM()), _tokenId);
     }
 
+    function NFPM() internal pure virtual returns (address);
+
+    function UNIV3_FACTORY() internal pure virtual returns (address);
+
     /// @notice Validate the position for the pool and get Liquidity
     /// @param _tokenId The tokenId of the position
     /// @dev the position must adhere to the price ranges
@@ -225,8 +229,4 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
             revert InvalidTickRange();
         }
     }
-
-    function NFPM() internal pure virtual returns (address);
-
-    function UNIV3_FACTORY() internal pure virtual returns (address);
 }
