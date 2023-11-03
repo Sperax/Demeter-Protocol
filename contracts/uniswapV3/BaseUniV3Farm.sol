@@ -36,12 +36,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
-    // constants
-    string public constant FARM_ID = "Demeter_UniV3_v3";
-    address public constant NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
-    address public constant UNIV3_FACTORY =
-        0x1F98431c8aD98523631AE4a59f267346ea31F984;
+abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
 
     // UniswapV3 params
     int24 public tickLowerAllowed;
@@ -77,7 +72,7 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize uniswap related data
-        uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(
+        uniswapPool = IUniswapV3Factory(UNIV3_FACTORY()).getPool(
             _uniswapPoolData.tokenB,
             _uniswapPoolData.tokenA,
             _uniswapPoolData.feeTier
@@ -105,7 +100,7 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         uint256 _tokenId,
         bytes calldata _data
     ) external override returns (bytes4) {
-        if (msg.sender != NFPM) {
+        if (msg.sender != NFPM()) {
             revert NotAUniV3NFT();
         }
         if (_data.length == 0) {
@@ -133,7 +128,7 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
-        INFPM(NFPM).safeTransferFrom(
+        INFPM(NFPM()).safeTransferFrom(
             address(this),
             msg.sender,
             userDeposit.tokenId
@@ -148,7 +143,7 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = deposits[msg.sender][_depositId].tokenId;
 
-        INFPM pm = INFPM(NFPM);
+        INFPM pm = INFPM(NFPM());
         (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
@@ -174,7 +169,7 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     {
         // Validate token.
         _getLiquidity(_tokenId);
-        return PositionValue.fees(INFPM(NFPM), _tokenId);
+        return PositionValue.fees(INFPM(NFPM()), _tokenId);
     }
 
     /// @notice Validate the position for the pool and get Liquidity
@@ -196,13 +191,13 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
             ,
             ,
 
-        ) = INFPM(NFPM).positions(_tokenId);
+        ) = INFPM(NFPM()).positions(_tokenId);
 
         /// @dev Check if the token belongs to correct pool
 
         if (
             uniswapPool !=
-            IUniswapV3Factory(UNIV3_FACTORY).getPool(token0, token1, fee)
+            IUniswapV3Factory(UNIV3_FACTORY()).getPool(token0, token1, fee)
         ) {
             revert IncorrectPoolToken();
         }
@@ -221,13 +216,17 @@ contract Demeter_UniV3Farm is BaseFarm, IERC721Receiver {
     {
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
         if (
-            !(_tickLower < _tickUpper &&
-                _tickLower >= -887272 &&
-                _tickLower % spacing == 0 &&
-                _tickUpper <= 887272 &&
-                _tickUpper % spacing == 0)
+            _tickLower >= _tickUpper ||
+            _tickLower < -887272 ||
+            _tickLower % spacing != 0 ||
+            _tickUpper > 887272 ||
+            _tickUpper % spacing != 0
         ) {
             revert InvalidTickRange();
         }
     }
+
+    function NFPM() internal pure virtual returns (address);
+
+    function UNIV3_FACTORY() internal pure virtual returns (address);
 }
