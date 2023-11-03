@@ -18,8 +18,7 @@ abstract contract Setup is Test {
     uint256 public constant COOLDOWN_PERIOD = 21;
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant SPA_MANAGER =
-        0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
+    address public constant SPA_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
 
     address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
     address public constant USDCe = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
@@ -28,10 +27,8 @@ abstract contract Setup is Test {
     address public constant VST = 0x64343594Ab9b56e99087BfA6F2335Db24c2d1F17;
     address public constant L2DAO = 0x2CaB3abfC1670D1a452dF502e216a66883cDf079;
     address public constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
-    bytes32 public constant NO_LOCK_DATA =
-        0x0000000000000000000000000000000000000000000000000000000000000000;
-    bytes32 public constant LOCK_DATA =
-        0x0000000000000000000000000000000000000000000000000000000000000001;
+    bytes32 public constant NO_LOCK_DATA = 0x0000000000000000000000000000000000000000000000000000000000000000;
+    bytes32 public constant LOCK_DATA = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
     // Define Demeter constants here
     bytes32 internal POOL_ID;
@@ -73,7 +70,7 @@ abstract contract Setup is Test {
         /// @dev Initialize actors for testing.
         string memory mnemonic = vm.envString("TEST_MNEMONIC");
         for (uint32 i = 0; i < NUM_ACTORS; ++i) {
-            (address act, ) = deriveRememberKey(mnemonic, i);
+            (address act,) = deriveRememberKey(mnemonic, i);
             actors.push(act);
         }
     }

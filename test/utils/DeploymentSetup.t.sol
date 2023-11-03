@@ -13,6 +13,7 @@ import {BaseFarm, RewardTokenData} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 import {Demeter_BalancerFarm} from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import {Demeter_BalancerFarm_Deployer} from "../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
+
 struct JoinPoolRequest {
     address[] assets;
     uint256[] maxAmountsIn;
@@ -21,7 +22,7 @@ struct JoinPoolRequest {
 }
 
 interface IAsset {
-    // solhint-disable-previous-line no-empty-blocks
+// solhint-disable-previous-line no-empty-blocks
 }
 
 interface IBalancerVault {
@@ -31,26 +32,16 @@ interface IBalancerVault {
         TWO_TOKEN
     }
 
-    function getPool(bytes32 poolId)
-        external
-        view
-        returns (address, PoolSpecialization);
+    function getPool(bytes32 poolId) external view returns (address, PoolSpecialization);
 
     function getPoolTokens(bytes32 poolId)
         external
         view
-        returns (
-            IERC20[] memory tokens,
-            uint256[] memory balances,
-            uint256 lastChangeBlock
-        );
+        returns (IERC20[] memory tokens, uint256[] memory balances, uint256 lastChangeBlock);
 
-    function joinPool(
-        bytes32 poolId,
-        address sender,
-        address recipient,
-        JoinPoolRequest memory request
-    ) external payable;
+    function joinPool(bytes32 poolId, address sender, address recipient, JoinPoolRequest memory request)
+        external
+        payable;
 }
 
 interface ICustomOracle {
@@ -108,14 +99,13 @@ abstract contract PreMigrationSetup is Setup {
             rwd_tkn[i] = RewardTokenData(rewardToken[i], currentActor);
         }
 
-        Demeter_BalancerFarm_Deployer.FarmData
-            memory _data = Demeter_BalancerFarm_Deployer.FarmData({
-                farmAdmin: currentActor,
-                farmStartTime: startTime,
-                cooldownPeriod: 0,
-                poolId: POOL_ID, //Balancer Stable 4pool (4POOL-BPT)
-                rewardData: rwd_tkn
-            });
+        Demeter_BalancerFarm_Deployer.FarmData memory _data = Demeter_BalancerFarm_Deployer.FarmData({
+            farmAdmin: currentActor,
+            farmStartTime: startTime,
+            cooldownPeriod: 0,
+            poolId: POOL_ID, //Balancer Stable 4pool (4POOL-BPT)
+            rewardData: rwd_tkn
+        });
         vm.stopPrank();
         // Minting USDs
         mintUSDs(1e10);
@@ -139,14 +129,13 @@ abstract contract PreMigrationSetup is Setup {
             rwd_tkn[i] = RewardTokenData(rewardToken[i], currentActor);
         }
 
-        Demeter_BalancerFarm_Deployer.FarmData
-            memory _data = Demeter_BalancerFarm_Deployer.FarmData({
-                farmAdmin: currentActor,
-                farmStartTime: startTime,
-                cooldownPeriod: COOLDOWN_PERIOD,
-                poolId: POOL_ID,
-                rewardData: rwd_tkn
-            });
+        Demeter_BalancerFarm_Deployer.FarmData memory _data = Demeter_BalancerFarm_Deployer.FarmData({
+            farmAdmin: currentActor,
+            farmStartTime: startTime,
+            cooldownPeriod: COOLDOWN_PERIOD,
+            poolId: POOL_ID,
+            rewardData: rwd_tkn
+        });
         vm.stopPrank();
         // Minting USDs
         mintUSDs(1e10);
@@ -167,13 +156,7 @@ abstract contract PreMigrationSetup is Setup {
         deal(address(USDCe), USDS_OWNER, amountIn);
 
         IERC20(USDCe).approve(USDS_VAULT, amountIn);
-        IVault(USDS_VAULT).mintBySpecifyingCollateralAmt(
-            USDCe,
-            amountIn,
-            0,
-            0,
-            block.timestamp + 1200
-        );
+        IVault(USDS_VAULT).mintBySpecifyingCollateralAmt(USDCe, amountIn, 0, 0, block.timestamp + 1200);
         vm.stopPrank();
     }
 
@@ -184,14 +167,14 @@ abstract contract PreMigrationSetup is Setup {
         for (uint8 i; i < farmRewardTokens.length; ++i) {
             if (farm.cooldownPeriod() == 0) {
                 vm.startPrank(actors[0]);
-                rwdAmt = 1000000 * 10**ERC20(farmRewardTokens[i]).decimals();
+                rwdAmt = 1000000 * 10 ** ERC20(farmRewardTokens[i]).decimals();
                 deal(address(farmRewardTokens[i]), actors[0], rwdAmt);
                 IERC20(farmRewardTokens[i]).approve(address(farm), 2 * rwdAmt);
                 IERC20(farmRewardTokens[i]).balanceOf(actors[0]);
                 farm.addRewards(farmRewardTokens[i], rwdAmt);
             } else {
                 vm.startPrank(actors[1]);
-                rwdAmt = 1000000 * 10**ERC20(farmRewardTokens[i]).decimals();
+                rwdAmt = 1000000 * 10 ** ERC20(farmRewardTokens[i]).decimals();
                 deal(address(farmRewardTokens[i]), actors[1], rwdAmt);
                 IERC20(farmRewardTokens[i]).approve(address(farm), 2 * rwdAmt);
                 IERC20(farmRewardTokens[i]).balanceOf(actors[1]);
@@ -208,7 +191,7 @@ abstract contract PreMigrationSetup is Setup {
             uint256[] memory oldRewardRate = new uint256[](1);
             for (uint8 i; i < farmRewardTokens.length; ++i) {
                 oldRewardRate = farm.getRewardRates(farmRewardTokens[i]);
-                rwdRate[0] = 1 * 10**ERC20(farmRewardTokens[i]).decimals();
+                rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals();
                 if (farmRewardTokens[i] == SPA) {
                     vm.startPrank(SPA_MANAGER);
                 } else {
@@ -226,8 +209,8 @@ abstract contract PreMigrationSetup is Setup {
             uint256[] memory oldRewardRate = new uint256[](2);
             for (uint8 i; i < farmRewardTokens.length; ++i) {
                 oldRewardRate = farm.getRewardRates(farmRewardTokens[i]);
-                rwdRate[0] = 1 * 10**ERC20(farmRewardTokens[i]).decimals();
-                rwdRate[1] = 2 * 10**ERC20(farmRewardTokens[i]).decimals();
+                rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals();
+                rwdRate[1] = 2 * 10 ** ERC20(farmRewardTokens[i]).decimals();
                 if (farmRewardTokens[i] == SPA) {
                     vm.startPrank(SPA_MANAGER);
                 } else {
@@ -238,11 +221,7 @@ abstract contract PreMigrationSetup is Setup {
         }
     }
 
-    function getRewardTokens(BaseE20Farm farm)
-        public
-        view
-        returns (address[3] memory)
-    {
+    function getRewardTokens(BaseE20Farm farm) public view returns (address[3] memory) {
         address[3] memory farmRewardTokens;
         for (uint8 i = 0; i < rwdTkns.length + 1; ++i) {
             farmRewardTokens[i] = farm.rewardTokens(i);
@@ -252,7 +231,7 @@ abstract contract PreMigrationSetup is Setup {
 
     function getPoolAddress() public view returns (address) {
         address poolAddress;
-        (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+        (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
         return poolAddress;
     }
 
@@ -300,7 +279,7 @@ abstract contract PreMigrationSetup is Setup {
         address poolAddress;
         // address[] memory collaterals = new address[](2);
         // uint256[] memory amts = new uint256[](2);
-        (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+        (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
 
         // collaterals[0] = USDCe;
         // collaterals[1] = (DAI);
@@ -320,7 +299,7 @@ abstract contract PreMigrationSetup is Setup {
         //   currentActor,
         //   joinRequest
         // );
-        uint256 amt = 1000 * 10**ERC20(poolAddress).decimals();
+        uint256 amt = 1000 * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, actors[5], amt);
         ERC20(poolAddress).approve(address(farm), amt);
         farm.deposit(amt, locked);
