@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 //@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
@@ -15,7 +16,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract FarmFactory is OwnableUpgradeable {
     address public feeReceiver;
@@ -37,6 +38,14 @@ contract FarmFactory is OwnableUpgradeable {
     event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
     event PrivilegeUpdated(address deployer, bool privilege);
+
+    // Custom Errors
+    error DeployerNotRegistered();
+    error DeployerAlreadyRegistered();
+    error InvalidDeployerId();
+    error PrivilegeSameAsDesired();
+    error FeeCannotBeZero();
+    error InvalidAddress();
 
     // Disable initialization for the implementation contract
     constructor() {
@@ -60,7 +69,9 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _farm Address of the created farm contract
     /// @param _creator Address of the farm creator
     function registerFarm(address _farm, address _creator) external {
-        require(deployerRegistered[msg.sender], "Deployer not registered");
+        if (!deployerRegistered[msg.sender]) {
+            revert DeployerNotRegistered();
+        }
         farms.push(_farm);
         farmRegistered[_farm] = true;
         emit FarmRegistered(_farm, _creator, msg.sender);
@@ -70,7 +81,9 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param  _deployer Address of deployer to be registered
     function registerFarmDeployer(address _deployer) external onlyOwner {
         _isNonZeroAddr(_deployer);
-        require(!deployerRegistered[_deployer], "Deployer already registered");
+        if (deployerRegistered[_deployer]) {
+            revert DeployerAlreadyRegistered();
+        }
         deployerList.push(_deployer);
         deployerRegistered[_deployer] = true;
         emit FarmDeployerRegistered(_deployer);
@@ -80,7 +93,9 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _id of the deployer to be removed (0 index based)
     function removeDeployer(uint16 _id) external onlyOwner {
         uint256 numDeployer = deployerList.length;
-        require(_id < numDeployer, "Invalid deployer id");
+        if (_id >= numDeployer) {
+            revert InvalidDeployerId();
+        }
         address deployer = deployerList[_id];
         delete deployerRegistered[deployer];
         deployerList[_id] = deployerList[numDeployer - 1];
@@ -97,10 +112,9 @@ contract FarmFactory is OwnableUpgradeable {
         external
         onlyOwner
     {
-        require(
-            isPrivilegedDeployer[_deployer] != _privilege,
-            "Privilege is same as desired"
-        );
+        if (isPrivilegedDeployer[_deployer] == _privilege) {
+            revert PrivilegeSameAsDesired();
+        }
         isPrivilegedDeployer[_deployer] = _privilege;
         emit PrivilegeUpdated(_deployer, _privilege);
     }
@@ -142,7 +156,9 @@ contract FarmFactory is OwnableUpgradeable {
     ) public onlyOwner {
         _isNonZeroAddr(_receiver);
         _isNonZeroAddr(_feeToken);
-        require(_amount > 0, "Fee can not be 0");
+        if (_amount == 0) {
+            revert FeeCannotBeZero();
+        }
         feeReceiver = _receiver;
         feeToken = _feeToken;
         feeAmount = _amount;
@@ -151,6 +167,8 @@ contract FarmFactory is OwnableUpgradeable {
 
     /// @notice Validate address
     function _isNonZeroAddr(address _addr) private pure {
-        require(_addr != address(0), "Invalid address");
+        if (_addr == address(0)) {
+            revert InvalidAddress();
+        }
     }
 }
