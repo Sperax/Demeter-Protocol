@@ -10,7 +10,7 @@ abstract contract BaseFarmDeployer is Ownable {
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
     address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
-    address public immutable factory;
+    address public immutable FACTORY;
     // Stores the address of farmImplementation.
     address public farmImplementation;
     uint256 public discountedFee;
@@ -26,7 +26,7 @@ abstract contract BaseFarmDeployer is Ownable {
 
     constructor(address _factory) {
         _isNonZeroAddr(_factory);
-        factory = _factory;
+        FACTORY = _factory;
     }
 
     function updateFarmImplementation(address _newFarmImplementation) external onlyOwner {
@@ -69,8 +69,8 @@ abstract contract BaseFarmDeployer is Ownable {
     /// @notice An internal function to calculate fees
     /// @notice and return feeReceiver, feeToken, feeAmount and claimable
     function _calculateFees(address _tokenA, address _tokenB) internal view returns (address, address, uint256, bool) {
-        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(factory).getFeeParams();
-        if (IFarmFactory(factory).isPrivilegedDeployer(msg.sender)) {
+        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(FACTORY).getFeeParams();
+        if (IFarmFactory(FACTORY).isPrivilegedDeployer(msg.sender)) {
             // No fees for privileged deployers
             feeAmount = 0;
             return (feeReceiver, feeToken, feeAmount, false);
