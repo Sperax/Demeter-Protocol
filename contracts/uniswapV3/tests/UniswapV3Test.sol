@@ -14,11 +14,9 @@ import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
  */
 contract UniswapV3Test {
     using SafeERC20 for IERC20;
-    INonfungiblePositionManager public nonfungiblePositionManager =
-        INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
+    INonfungiblePositionManager public nonfungiblePositionManager;
 
-    ISwapRouter public constant SWAP_ROUTER =
-        ISwapRouter(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
+    ISwapRouter public immutable SWAP_ROUTER;
 
     event SwapTest(
         address inputToken,
@@ -26,6 +24,19 @@ contract UniswapV3Test {
         uint256 amountIn,
         uint256 amountOut
     );
+
+    // uniswap-v3 data
+    // nonfungiblePositionManager address -> 0xC36442b4a4522E871399CD717aBDD847Ab11FE88
+    // SWAP_ROUTER address -> 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45
+
+    // sushiswap-v3 data
+    // nonfungiblePositionManager address -> 0xF0cBce1942A68BEB3d1b73F0dd86C8DCc363eF49
+    // SWAP_ROUTER address -> 0x8A21F6768C1f8075791D08546Dadf6daA0bE820c
+
+    constructor(address _nfpm, address _swapRouter) {
+        nonfungiblePositionManager = INonfungiblePositionManager(_nfpm);
+        SWAP_ROUTER = ISwapRouter(_swapRouter);
+    }
 
     /**
      * @notice swaps a fixed amount of inputToken for a maximum possible amount of outputToken on Uniswap V3
