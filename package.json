@@ -12,7 +12,8 @@
     "prepare": "npm-run-all install-husky install-pip-packages",
     "lint-contract": "solhint 'contracts/**/*.sol' -f table",
     "lint-test-contract": "solhint 'test/**/*.sol' -f table",
-    "lint-contract:fix": "prettier --write 'contracts/**/*.sol' 'test/**/*.sol'",
+    "prettier": "forge fmt",
+    "prettier-check": "forge fmt --check",
     "slither-analyze": "slither .",
     "test": "forge test -vvv",
     "test-contract": "forge test -vvvv --match-contract",
@@ -30,10 +31,7 @@
   "devDependencies": {
     "husky": "^8.0.3",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.5.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint": "^3.6.2",
-    "solhint-plugin-prettier": "^0.0.5"
+    "solhint": "^3.6.2"
   },
   "repository": {
     "type": "git",
