@@ -154,6 +154,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _disableInitializers();
     }
 
+    function initiateCooldown(uint256 _depositId) external virtual;
+    function withdraw(uint256 _depositId) external virtual;
+
     /// @notice Claim rewards for the user.
     /// @param _depositId The id of the deposit
     function claimRewards(uint256 _depositId) external {
