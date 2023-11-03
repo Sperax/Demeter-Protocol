@@ -50,11 +50,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     address public immutable PROTOCOL_FACTORY;
     string public DEPLOYER_NAME;
 
-    constructor(
-        address _factory,
-        address _protocolFactory,
-        string memory _deployerName
-    ) BaseFarmDeployer(_factory) {
+    constructor(address _factory, address _protocolFactory, string memory _deployerName) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         DEPLOYER_NAME = _deployerName;
@@ -64,27 +60,13 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
-    function createFarm(FarmData memory _data)
-        external
-        nonReentrant
-        returns (address)
-    {
+    function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_E20_farm farmInstance = Demeter_E20_farm(
-            Clones.clone(farmImplementation)
-        );
+        Demeter_E20_farm farmInstance = Demeter_E20_farm(Clones.clone(farmImplementation));
 
-        address pairPool = validatePool(
-            _data.camelotPoolData.tokenA,
-            _data.camelotPoolData.tokenB
-        );
+        address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 
-        farmInstance.initialize(
-            _data.farmStartTime,
-            _data.cooldownPeriod,
-            pairPool,
-            _data.rewardData
-        );
+        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, pairPool, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
@@ -94,11 +76,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         return farm;
     }
 
-    function validatePool(address _tokenA, address _tokenB)
-        public
-        view
-        returns (address pool)
-    {
+    function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
         pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;

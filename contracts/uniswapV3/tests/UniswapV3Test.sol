@@ -14,16 +14,12 @@ import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
  */
 contract UniswapV3Test {
     using SafeERC20 for IERC20;
+
     INonfungiblePositionManager public nonfungiblePositionManager;
 
     ISwapRouter public immutable SWAP_ROUTER;
 
-    event SwapTest(
-        address inputToken,
-        address outputToken,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event SwapTest(address inputToken, address outputToken, uint256 amountIn, uint256 amountOut);
 
     // uniswap-v3 data
     // nonfungiblePositionManager address -> 0xC36442b4a4522E871399CD717aBDD847Ab11FE88
@@ -41,23 +37,20 @@ contract UniswapV3Test {
     /**
      * @notice swaps a fixed amount of inputToken for a maximum possible amount of outputToken on Uniswap V3
      */
-    function swap(
-        address inputToken,
-        address outputToken,
-        uint24 poolFee,
-        uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    function swap(address inputToken, address outputToken, uint24 poolFee, uint256 amountIn)
+        external
+        returns (uint256 amountOut)
+    {
         IERC20(inputToken).safeApprove(address(SWAP_ROUTER), amountIn);
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: inputToken,
-                tokenOut: outputToken,
-                fee: poolFee,
-                recipient: msg.sender,
-                amountIn: amountIn,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            });
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: inputToken,
+            tokenOut: outputToken,
+            fee: poolFee,
+            recipient: msg.sender,
+            amountIn: amountIn,
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
+        });
         // Executes the swap.
         amountOut = SWAP_ROUTER.exactInputSingle(params);
         emit SwapTest(inputToken, outputToken, amountIn, amountOut);

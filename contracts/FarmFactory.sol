@@ -29,11 +29,7 @@ contract FarmFactory is OwnableUpgradeable {
     // List of deployers for which fee won't be charged.
     mapping(address => bool) public isPrivilegedDeployer;
 
-    event FarmRegistered(
-        address indexed farm,
-        address indexed creator,
-        address indexed deployer
-    );
+    event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
     event FarmDeployerRegistered(address deployer);
     event FarmDeployerRemoved(address deployer);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
@@ -55,11 +51,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @notice constructor
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
-    function initialize(
-        address _feeReceiver,
-        address _feeToken,
-        uint256 _feeAmount
-    ) external initializer {
+    function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount) external initializer {
         OwnableUpgradeable.__Ownable_init();
         updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
     }
@@ -108,10 +100,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _deployer Deployer(address) to add to privileged deployers list
     /// @param _privilege Privilege(bool) whether true or false
     /// @dev to be only called by owner
-    function updatePrivilege(address _deployer, bool _privilege)
-        external
-        onlyOwner
-    {
+    function updatePrivilege(address _deployer, bool _privilege) external onlyOwner {
         if (isPrivilegedDeployer[_deployer] == _privilege) {
             revert PrivilegeSameAsDesired();
         }
@@ -133,15 +122,7 @@ contract FarmFactory is OwnableUpgradeable {
 
     /// @notice Get all the fee parameters for creating farm.
     /// @return Returns FeeReceiver, feeToken address and feeTokenAmt.
-    function getFeeParams()
-        external
-        view
-        returns (
-            address,
-            address,
-            uint256
-        )
-    {
+    function getFeeParams() external view returns (address, address, uint256) {
         return (feeReceiver, feeToken, feeAmount);
     }
 
@@ -149,11 +130,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _receiver feeReceiver address
     /// @param _feeToken token address for fee
     /// @param _amount amount of token to be collected
-    function updateFeeParams(
-        address _receiver,
-        address _feeToken,
-        uint256 _amount
-    ) public onlyOwner {
+    function updateFeeParams(address _receiver, address _feeToken, uint256 _amount) public onlyOwner {
         _isNonZeroAddr(_receiver);
         _isNonZeroAddr(_feeToken);
         if (_amount == 0) {
