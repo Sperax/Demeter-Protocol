@@ -47,9 +47,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
     address public immutable PROTOCOL_FACTORY;
 
-    constructor(address _factory, address _protocolFactory)
-        BaseFarmDeployer(_factory)
-    {
+    constructor(address _factory, address _protocolFactory) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         discountedFee = 50e18; // 50 USDs
@@ -58,27 +56,13 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
-    function createFarm(FarmData memory _data)
-        external
-        nonReentrant
-        returns (address)
-    {
+    function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_CamelotFarm farmInstance = Demeter_CamelotFarm(
-            Clones.clone(farmImplementation)
-        );
+        Demeter_CamelotFarm farmInstance = Demeter_CamelotFarm(Clones.clone(farmImplementation));
 
-        address pairPool = validatePool(
-            _data.camelotPoolData.tokenA,
-            _data.camelotPoolData.tokenB
-        );
+        address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 
-        farmInstance.initialize(
-            _data.farmStartTime,
-            _data.cooldownPeriod,
-            pairPool,
-            _data.rewardData
-        );
+        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, pairPool, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
@@ -88,11 +72,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         return farm;
     }
 
-    function validatePool(address _tokenA, address _tokenB)
-        public
-        view
-        returns (address pool)
-    {
+    function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
         pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _isNonZeroAddr(pool);
         return pool;

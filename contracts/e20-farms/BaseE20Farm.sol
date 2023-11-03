@@ -27,11 +27,7 @@ contract BaseE20Farm is BaseFarm {
     address public farmToken;
     uint256 public tokenNum;
 
-    event PoolFeeCollected(
-        address indexed recipient,
-        uint256 amt0Recv,
-        uint256 amt1Recv
-    );
+    event PoolFeeCollected(address indexed recipient, uint256 amt0Recv, uint256 amt1Recv);
 
     // Custom Errors
     error InvalidAmount();
@@ -71,10 +67,7 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
-    function increaseDeposit(uint8 _depositId, uint256 _amount)
-        external
-        nonReentrant
-    {
+    function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant {
         // Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -101,10 +94,7 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Amount to be withdrawn.
     /// @dev Function is not available for locked deposits.
-    function withdrawPartially(uint8 _depositId, uint256 _amount)
-        external
-        nonReentrant
-    {
+    function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant {
         //Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -151,15 +141,8 @@ contract BaseE20Farm is BaseFarm {
     // --------------------- Admin  Functions ---------------------
     /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
     /// @param _token Address of token to be recovered
-    function recoverERC20(address _token)
-        external
-        override
-        onlyOwner
-        nonReentrant
-    {
-        if (
-            rewardData[_token].tknManager != address(0) || _token == farmToken
-        ) {
+    function recoverERC20(address _token) external override onlyOwner nonReentrant {
+        if (rewardData[_token].tknManager != address(0) || _token == farmToken) {
             revert CannotWithdrawRewardTokenOrFarmToken();
         }
 
@@ -177,18 +160,14 @@ contract BaseE20Farm is BaseFarm {
     /// @notice Update subscription data of a deposit for increase in liquidity.
     /// @param _tokenId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount)
-        private
-    {
+    function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = subscriptions[_tokenId].length;
-        for (uint256 iSub; iSub < numSubs; ) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
-                .rewardDebt;
+        for (uint256 iSub; iSub < numSubs;) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
             uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards; ) {
-                _rewardDebt[iRwd] += ((_amount *
-                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
+            for (uint8 iRwd; iRwd < numRewards;) {
+                _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
@@ -203,18 +182,14 @@ contract BaseE20Farm is BaseFarm {
     /// @notice Update subscription data of a deposit after decrease in liquidity.
     /// @param _tokenId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount)
-        private
-    {
+    function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = subscriptions[_tokenId].length;
-        for (uint256 iSub; iSub < numSubs; ) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub]
-                .rewardDebt;
+        for (uint256 iSub; iSub < numSubs;) {
+            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
             uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards; ) {
-                _rewardDebt[iRwd] -= ((_amount *
-                    rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
+            for (uint8 iRwd; iRwd < numRewards;) {
+                _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }

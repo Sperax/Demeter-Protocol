@@ -33,7 +33,16 @@ jobs:
         with:
           version: nightly
 
+      - name: Check Solhint
+        run: npm run lint-contract
+
+      - name: Check formatting
+        run: npm run prettier-check
+
       - name: Run tests
         run: forge test -vvv
         env:
           FOUNDRY_PROFILE: ci
+          TEST_MNEMONIC: ${{ secrets.TEST_MNEMONIC }}
+          ARB_URL: ${{ secrets.ARB_URL }}
+          FORK_BLOCK: ${{secrets.FORK_BLOCK}}

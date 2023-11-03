@@ -16,17 +16,9 @@ abstract contract BaseFarmDeployer is Ownable {
     uint256 public discountedFee;
 
     event FarmCreated(address farm, address creator, address indexed admin);
-    event FeeCollected(
-        address indexed creator,
-        address token,
-        uint256 amount,
-        bool indexed claimable
-    );
+    event FeeCollected(address indexed creator, address token, uint256 amount, bool indexed claimable);
     event FarmImplementationUpdated(address newFarmImplementation);
-    event DiscountedFeeUpdated(
-        uint256 oldDiscountedFee,
-        uint256 newDiscountedFee
-    );
+    event DiscountedFeeUpdated(uint256 oldDiscountedFee, uint256 newDiscountedFee);
 
     // Custom Errors
     error InvalidTokenPair();
@@ -37,10 +29,7 @@ abstract contract BaseFarmDeployer is Ownable {
         factory = _factory;
     }
 
-    function updateFarmImplementation(address _newFarmImplementation)
-        external
-        onlyOwner
-    {
+    function updateFarmImplementation(address _newFarmImplementation) external onlyOwner {
         farmImplementation = _newFarmImplementation;
         emit FarmImplementationUpdated(_newFarmImplementation);
     }
@@ -58,16 +47,7 @@ abstract contract BaseFarmDeployer is Ownable {
     /// @param _tokenB address of token B
     /// @notice Order does not matter
     /// @return Fees to be paid in feeToken set in FarmFactory (mostly USDs)
-    function calculateFees(address _tokenA, address _tokenB)
-        external
-        view
-        returns (
-            address,
-            address,
-            uint256,
-            bool
-        )
-    {
+    function calculateFees(address _tokenA, address _tokenB) external view returns (address, address, uint256, bool) {
         _isNonZeroAddr(_tokenA);
         _isNonZeroAddr(_tokenB);
         if (_tokenA == _tokenB) {
@@ -79,39 +59,17 @@ abstract contract BaseFarmDeployer is Ownable {
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from sfarmFactory.
     function _collectFee(address _tokenA, address _tokenB) internal virtual {
-        (
-            address feeReceiver,
-            address feeToken,
-            uint256 feeAmount,
-            bool claimable
-        ) = _calculateFees(_tokenA, _tokenB);
+        (address feeReceiver, address feeToken, uint256 feeAmount, bool claimable) = _calculateFees(_tokenA, _tokenB);
         if (feeAmount != 0) {
-            IERC20(feeToken).safeTransferFrom(
-                msg.sender,
-                feeReceiver,
-                feeAmount
-            );
+            IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
             emit FeeCollected(msg.sender, feeToken, feeAmount, claimable);
         }
     }
 
     /// @notice An internal function to calculate fees
     /// @notice and return feeReceiver, feeToken, feeAmount and claimable
-    function _calculateFees(address _tokenA, address _tokenB)
-        internal
-        view
-        returns (
-            address,
-            address,
-            uint256,
-            bool
-        )
-    {
-        (
-            address feeReceiver,
-            address feeToken,
-            uint256 feeAmount
-        ) = IFarmFactory(factory).getFeeParams();
+    function _calculateFees(address _tokenA, address _tokenB) internal view returns (address, address, uint256, bool) {
+        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(factory).getFeeParams();
         if (IFarmFactory(factory).isPrivilegedDeployer(msg.sender)) {
             // No fees for privileged deployers
             feeAmount = 0;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT Line
 pragma solidity 0.8.16;
+
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 interface INFTPoolFactory {
@@ -14,8 +15,7 @@ interface INFTPool {
      *
      * Can only be called by spNFT's owner or approved address
      */
-    function withdrawFromPosition(uint256 tokenId, uint256 amountToWithdraw)
-        external;
+    function withdrawFromPosition(uint256 tokenId, uint256 amountToWithdraw) external;
 
     function updatePool() external;
 
@@ -27,23 +27,11 @@ interface INFTPool {
      */
     function harvestPositionTo(uint256 tokenId, address to) external;
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
+    function safeTransferFrom(address from, address to, uint256 tokenId) external;
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
-    ) external;
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
 
-    function tokenOfOwnerByIndex(address owner, uint256 index)
-        external
-        view
-        returns (uint256);
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 
     function getStakingPosition(uint256 tokenId)
         external
@@ -63,10 +51,7 @@ interface INFTPool {
 }
 
 interface ICamelotFactory {
-    function getPair(address _tokenA, address _tokenB)
-        external
-        view
-        returns (address);
+    function getPair(address _tokenA, address _tokenB) external view returns (address);
 
     function allPairs(uint256 _id) external view returns (address);
 
@@ -74,13 +59,9 @@ interface ICamelotFactory {
 }
 
 interface INFTHandler is IERC721Receiver {
-    function onNFTHarvest(
-        address operator,
-        address to,
-        uint256 tokenId,
-        uint256 grailAmount,
-        uint256 xGrailAmount
-    ) external returns (bool);
+    function onNFTHarvest(address operator, address to, uint256 tokenId, uint256 grailAmount, uint256 xGrailAmount)
+        external
+        returns (bool);
     //   function onNFTAddToPosition(address operator, uint256 tokenId, uint256 lpAmount) external returns (bool);
     //   function onNFTWithdraw(address operator, uint256 tokenId, uint256 lpAmount) external returns (bool);
 }

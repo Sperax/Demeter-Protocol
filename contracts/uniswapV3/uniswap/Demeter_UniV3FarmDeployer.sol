@@ -47,21 +47,10 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
-    function createFarm(FarmData memory _data)
-        external
-        nonReentrant
-        returns (address)
-    {
+    function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_UniV3Farm farmInstance = Demeter_UniV3Farm(
-            Clones.clone(farmImplementation)
-        );
-        farmInstance.initialize(
-            _data.farmStartTime,
-            _data.cooldownPeriod,
-            _data.uniswapPoolData,
-            _data.rewardData
-        );
+        Demeter_UniV3Farm farmInstance = Demeter_UniV3Farm(Clones.clone(farmImplementation));
+        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, _data.uniswapPoolData, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required

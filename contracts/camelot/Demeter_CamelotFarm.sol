@@ -23,18 +23,12 @@ import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // constants
     string public constant FARM_ID = "Demeter_Camelot_v1";
-    address public constant NFT_POOL_FACTORY =
-        0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
+    address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
 
     // Camelot nft pool
     address public nftPool;
 
-    event PoolRewardsCollected(
-        address indexed recipient,
-        uint256 indexed tokenId,
-        uint256 grailAmt,
-        uint256 xGrailAmt
-    );
+    event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
     // Custom Errors
     error InvalidCamelotPoolConfig();
@@ -100,11 +94,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
-        INFTPool(nftPool).safeTransferFrom(
-            address(this),
-            msg.sender,
-            userDeposit.tokenId
-        );
+        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, userDeposit.tokenId);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
@@ -113,20 +103,15 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        INFTPool(nftPool).harvestPositionTo(
-            deposits[msg.sender][_depositId].tokenId,
-            msg.sender
-        );
+        INFTPool(nftPool).harvestPositionTo(deposits[msg.sender][_depositId].tokenId, msg.sender);
     }
 
     /// @notice callback function for harvestPosition().
-    function onNFTHarvest(
-        address,
-        address _to,
-        uint256 _tokenId,
-        uint256 _grailAmount,
-        uint256 _xGrailAmount
-    ) external override returns (bool) {
+    function onNFTHarvest(address, address _to, uint256 _tokenId, uint256 _grailAmount, uint256 _xGrailAmount)
+        external
+        override
+        returns (bool)
+    {
         if (msg.sender != nftPool) {
             revert NotAllowed();
         }
@@ -136,11 +121,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
 
     /// @notice Get the accrued uniswap fee for a deposit.
     /// @return amount Grail rewards.
-    function computePoolRewards(uint256 _tokenId)
-        external
-        view
-        returns (uint256 amount)
-    {
+    function computePoolRewards(uint256 _tokenId) external view returns (uint256 amount) {
         // Validate token.
         amount = INFTPool(nftPool).pendingRewards(_tokenId);
         return amount;
@@ -152,8 +133,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
         /// @dev Get the info of the required token
-        (uint256 liquidity, , , , , , , ) = INFTPool(nftPool)
-            .getStakingPosition(_tokenId);
+        (uint256 liquidity,,,,,,,) = INFTPool(nftPool).getStakingPosition(_tokenId);
 
         return uint256(liquidity);
     }
