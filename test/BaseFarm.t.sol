@@ -9,46 +9,6 @@ import { BaseFarmDeployer } from "../contracts/BaseFarmDeployer.sol";
 import { Demeter_BalancerFarm } from "../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
 import { Demeter_BalancerFarm_Deployer } from "../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 
-interface IAsset {
-  // solhint-disable-previous-line no-empty-blocks
-}
-
-interface IBalancerVault {
-  enum PoolSpecialization {
-    GENERAL,
-    MINIMAL_SWAP_INFO,
-    TWO_TOKEN
-  }
-
-  function getPool(bytes32 poolId)
-    external
-    view
-    returns (address, PoolSpecialization);
-
-  function getPoolTokens(bytes32 poolId)
-    external
-    view
-    returns (
-      IERC20[] memory tokens,
-      uint256[] memory balances,
-      uint256 lastChangeBlock
-    );
-
-  function joinPool(
-    bytes32 poolId,
-    address sender,
-    address recipient,
-    JoinPoolRequest memory request
-  ) external payable;
-
-  struct JoinPoolRequest {
-    IAsset[] assets;
-    uint256[] maxAmountsIn;
-    bytes userData;
-    bool fromInternalBalance;
-  }
-}
-
 contract BaseFarmTest is PreMigrationSetup {
   struct Deposit {
     uint256 liquidity;
@@ -141,8 +101,7 @@ contract BaseFarmTest is PreMigrationSetup {
 
 contract deposit is BaseFarmTest {
   function test_noLockupFarm_revertsWhen_0Liquidity() public useActor(4) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    address poolAddress = getPoolAddress();
 
     deal(poolAddress, currentActor, 0);
     ERC20(poolAddress).approve(address(nonLockupFarm), 0);
@@ -157,8 +116,7 @@ contract deposit is BaseFarmTest {
     public
     useActor(4)
   {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    address poolAddress = getPoolAddress();
 
     vm.assume(
       amt > 100 * 10**ERC20(poolAddress).decimals() &&
@@ -175,8 +133,7 @@ contract deposit is BaseFarmTest {
   }
 
   function test_noLockupFarm_deposit(uint256 amt) public useActor(4) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    address poolAddress = getPoolAddress();
 
     vm.assume(
       amt > 100 * 10**ERC20(poolAddress).decimals() &&
@@ -196,8 +153,7 @@ contract deposit is BaseFarmTest {
   }
 
   function test_lockupFarm(uint256 amt) public useActor(4) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    address poolAddress = getPoolAddress();
 
     vm.assume(
       amt > 100 * 10**ERC20(poolAddress).decimals() &&
@@ -222,8 +178,7 @@ contract deposit is BaseFarmTest {
 
 contract increaseDeposit is BaseFarmTest {
   function test_lockupFarm(uint256 amt) public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+    address poolAddress = getPoolAddress();
     setupFarmRewards();
 
     vm.assume(
@@ -347,16 +302,12 @@ contract fullWithdraw is BaseFarmTest {
 
 contract withdrawPartially is BaseFarmTest {
   function test_zeroAmount() public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
     vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
     nonLockupFarm.withdrawPartially(0, 0);
   }
 
   function test_LockupFarm() public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
 
     skip(86400 * 7);
@@ -367,10 +318,7 @@ contract withdrawPartially is BaseFarmTest {
   }
 
   function test_nonLockupFarm() public useActor(5) {
-    address poolAddress;
-    (poolAddress, ) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
     setupFarmRewards();
-
     // lockupFarm.initiateCooldown(0);
     skip(86400 * 7);
     nonLockupFarm.computeRewards(currentActor, 0);
@@ -683,7 +631,7 @@ contract getDeposit is BaseFarmTest {
       currentActor,
       0
     );
-    assertEq(userDeposit.tokenId,1);
+    assertEq(userDeposit.tokenId, 1);
   }
 }
 

@@ -18,6 +18,8 @@ abstract contract Setup is Test {
     uint256 public constant COOLDOWN_PERIOD = 21;
 
     address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
+    address public constant SPA_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
+
     address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
     address public constant USDCe = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address public constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
@@ -39,7 +41,6 @@ abstract contract Setup is Test {
     address internal DEMETER_FACTORY;
     address internal BALANCER_VAULT;
     address internal USDS_VAULT;
-    address internal SPA_MANAGER;
 
     // Define fork networks
     uint256 internal arbFork;
