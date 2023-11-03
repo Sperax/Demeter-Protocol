@@ -535,9 +535,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         deposits[_account][_depositId] = deposits[_account][deposits[_account].length - 1];
         deposits[_account].pop();
 
-        // emit DepositWithdrawn(
-        //     _account, _userDeposit.tokenId, _userDeposit.startTime, _userDeposit.liquidity, totalRewards
-        // );
         emit DepositWithdrawn({
             account: _account,
             tokenId: _userDeposit.tokenId,
