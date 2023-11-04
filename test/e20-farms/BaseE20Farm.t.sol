@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {BaseE20Farm} from "../../../contracts/e20-farms/BaseE20Farm.sol";
+import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {}
 
