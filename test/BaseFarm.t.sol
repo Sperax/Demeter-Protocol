@@ -63,7 +63,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     address user;
     address newTokenManager;
 
-    modifier setup() {
+    modifier setup() virtual {
         _;
     }
 

@@ -67,6 +67,11 @@ contract BalancerFarmTest is
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;
 
+    modifier setup() override {
+        setupFarmRewards();
+        _;
+    }
+
     function setUp() public override {
         super.setUp();
 
@@ -113,15 +118,14 @@ contract BalancerFarmTest is
         // Approve Farm fee
         IERC20(FEE_TOKEN()).approve(address(balancerFarmDeployer), 1e22);
         address farm = balancerFarmDeployer.createFarm(_data);
+        addRewards(farm);
+        setRewardRates(farm);
         return farm;
     }
 
     function setupFarmRewards() public override {
-        addRewards(lockupFarm);
-        setRewardRates(lockupFarm);
+        vm.startPrank(owner);
         deposit(lockupFarm, true, 1e3);
-        addRewards(nonLockupFarm);
-        setRewardRates(nonLockupFarm);
         deposit(nonLockupFarm, false, 1e3);
     }
 
@@ -133,6 +137,7 @@ contract BalancerFarmTest is
 
     /// @notice Farm specific deposit logic
     function deposit(address farm, bool locked, uint256 baseAmt) public override {
+        assertEq(currentActor, actors[0], "Wrong actor");
         address poolAddress = getPoolAddress();
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
