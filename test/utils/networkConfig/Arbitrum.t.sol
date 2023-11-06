@@ -33,12 +33,11 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     // Balancer
     address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
-    function FEE_TOKEN() public pure override returns (address) {
-        return USDS;
-    }
-
-    function NETWORK_ID() public pure override returns (string memory) {
-        return "Arbitrum";
+    function fundFeeToken() public useKnownActor(owner) {
+        uint256 amt = 1e22;
+        deal(USDCe, currentActor, amt);
+        IERC20(USDCe).approve(USDS_VAULT, amt);
+        IVault(USDS_VAULT).mintBySpecifyingCollateralAmt(USDCe, amt, 0, 0, block.timestamp + 1200);
     }
 
     function setForkNetwork() public override {
@@ -47,13 +46,6 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
         forkCheck = vm.createFork(arbRpcUrl);
         vm.selectFork(forkCheck);
         if (forkBlock != 0) vm.rollFork(forkBlock);
-    }
-
-    function fundFeeToken() public useKnownActor(owner) {
-        uint256 amt = 1e22;
-        deal(USDCe, currentActor, amt);
-        IERC20(USDCe).approve(USDS_VAULT, amt);
-        IVault(USDS_VAULT).mintBySpecifyingCollateralAmt(USDCe, amt, 0, 0, block.timestamp + 1200);
     }
 
     function setUp() public virtual override {
@@ -67,5 +59,13 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
         PROXY_OWNER = 0x6d5240f086637fb408c7F727010A10cf57D51B62;
         PROXY_ADMIN = 0x3E49925A79CbFb68BAa5bc9DFb4f7D955D1ddF25;
         DEMETER_FACTORY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
+    }
+
+    function FEE_TOKEN() public pure override returns (address) {
+        return USDS;
+    }
+
+    function NETWORK_ID() public pure override returns (string memory) {
+        return "Arbitrum";
     }
 }
