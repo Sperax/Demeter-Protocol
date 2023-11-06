@@ -27,16 +27,15 @@ interface IBalancerVault {
         TWO_TOKEN
     }
 
+    function joinPool(bytes32 poolId, address sender, address recipient, JoinPoolRequest memory request)
+        external
+        payable;
     function getPool(bytes32 poolId) external view returns (address, PoolSpecialization);
 
     function getPoolTokens(bytes32 poolId)
         external
         view
         returns (IERC20[] memory tokens, uint256[] memory balances, uint256 lastChangeBlock);
-
-    function joinPool(bytes32 poolId, address sender, address recipient, JoinPoolRequest memory request)
-        external
-        payable;
 }
 
 interface ICustomOracle {
@@ -129,14 +128,8 @@ contract BalancerFarmTest is
         deposit(nonLockupFarm, false, 1e3);
     }
 
-    function getPoolAddress() public view override returns (address) {
-        address poolAddress;
-        (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
-        return poolAddress;
-    }
-
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public override {
+    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(user) {
         assertEq(currentActor, actors[0], "Wrong actor");
         address poolAddress = getPoolAddress();
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
@@ -144,12 +137,16 @@ contract BalancerFarmTest is
         ERC20(poolAddress).approve(address(farm), amt);
 
         vm.expectEmit(true, true, false, true);
-        emit Deposited(currentActor, false, BaseFarm(farm).getNumDeposits(currentActor) + 1, amt);
+        emit Deposited(currentActor, locked, BaseFarm(farm).getNumDeposits(currentActor) + 1, amt);
         Demeter_BalancerFarm(farm).deposit(amt, locked);
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt, bytes memory revertMsg) public override {
+    function deposit(address farm, bool locked, uint256 baseAmt, bytes memory revertMsg)
+        public
+        override
+        useKnownActor(user)
+    {
         address poolAddress = getPoolAddress();
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
@@ -157,5 +154,11 @@ contract BalancerFarmTest is
 
         vm.expectRevert(revertMsg);
         Demeter_BalancerFarm(farm).deposit(amt, locked);
+    }
+
+    function getPoolAddress() public view override returns (address) {
+        address poolAddress;
+        (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+        return poolAddress;
     }
 }
