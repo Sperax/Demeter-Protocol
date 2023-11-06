@@ -63,7 +63,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     event RewardTokenAdded(address rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
 
-    modifier setup() virtual {
+    modifier setup() {
         _;
     }
 
@@ -120,15 +120,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
         }
     }
 
-    function createFarm(uint256 startTime, bool lockup) public virtual returns (address);
-
-    function deposit(address farm, bool locked, uint256 amt) public virtual;
-
-    function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
-
-    function setupFarmRewards() public virtual;
-    function getPoolAddress() public virtual returns (address);
-
     function getRewardTokens(address farm) public view returns (address[] memory) {
         address[] memory farmRewardTokens = new address[](rwdTokens.length + 1);
         for (uint8 i = 0; i < rwdTokens.length + 1; ++i) {
@@ -136,6 +127,13 @@ abstract contract BaseFarmTest is TestNetworkConfig {
         }
         return farmRewardTokens;
     }
+
+    function createFarm(uint256 startTime, bool lockup) public virtual returns (address);
+
+    function deposit(address farm, bool locked, uint256 amt) public virtual;
+
+    function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
+    function getPoolAddress() public virtual returns (address);
 }
 
 abstract contract DepositTest is BaseFarmTest {

@@ -8,7 +8,7 @@ import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 abstract contract BaseE20FarmTest is BaseFarmTest {}
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
-    function test_lockupFarm(uint256 amt) public setup useKnownActor(owner) {
+    function test_lockupFarm(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
         vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
 
@@ -19,18 +19,18 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 }
 
 abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
-    function test_zeroAmount() public setup useKnownActor(owner) {
+    function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
-        BaseE20Farm(nonLockupFarm).withdrawPartially(0, 0);
+        BaseE20Farm(lockupFarm).withdrawPartially(0, 0);
     }
 
-    function test_LockupFarm() public setup useKnownActor(owner) {
+    function test_LockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
         skip(86400 * 7);
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.PartialWithdrawNotPermitted.selector));
         BaseE20Farm(lockupFarm).withdrawPartially(0, 10000);
     }
 
-    function test_nonLockupFarm() public setup useKnownActor(owner) {
+    function test_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         // lockupFarm.initiateCooldown(0);
         skip(86400 * 7);
         BaseE20Farm(nonLockupFarm).computeRewards(currentActor, 0);
