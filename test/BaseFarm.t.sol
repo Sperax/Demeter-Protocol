@@ -36,6 +36,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant COOLDOWN_PERIOD = 21;
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
+    address internal farmProxy;
     address internal lockupFarm;
     address internal nonLockupFarm;
     address internal invalidRewardToken;
@@ -134,6 +135,16 @@ abstract contract BaseFarmTest is TestNetworkConfig {
 
     function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
     function getPoolAddress() public virtual returns (address);
+
+    function generateRewardTokenData() public view returns (RewardTokenData[] memory rwdTokenData) {
+        address[] memory rewardToken = rwdTokens;
+        rwdTokenData = new RewardTokenData[](
+            rewardToken.length
+        );
+        for (uint8 i = 0; i < rewardToken.length; ++i) {
+            rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
+        }
+    }
 }
 
 abstract contract DepositTest is BaseFarmTest {
@@ -204,6 +215,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
 }
 
 abstract contract WithdrawTest is BaseFarmTest {
+    // TODO I recommend to only test the _withdraw here.
     function test_withdraw_lockupFarm_RevertsWhen_Cooldown_IsntInitiated()
         public
         setup
@@ -765,5 +777,26 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         vm.expectEmit(true, true, false, true);
         emit CooldownPeriodUpdated(COOLDOWN_PERIOD, cooldownPeriod);
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
+    }
+}
+
+abstract contract _SetupFarmTest is BaseFarmTest {
+    function test_revertWhen_InvalidFarmStartTime() public {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidFarmStartTime.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp - 200, false));
+        assertTrue(success);
+    }
+
+    function test_revertWhen_InvalidRewardData() public {
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidRewardData.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
+        assertTrue(success);
     }
 }

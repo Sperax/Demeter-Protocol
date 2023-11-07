@@ -32,6 +32,14 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     // @note Add only specific farm related params, try to group them together
     // Balancer
     address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    // Sushiswap
+    address public constant SUSHISWAP_FACTORY = 0x1af415a1EbA07a4986a52B6f2e7dE7003D82231e;
+    address public constant SUSHISWAP_NFPM = 0xF0cBce1942A68BEB3d1b73F0dd86C8DCc363eF49;
+    address public constant SUSHISWAP_SWAP_ROUTER = 0x8A21F6768C1f8075791D08546Dadf6daA0bE820c;
+    // Uniswap
+    address public constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+    address public constant UNISWAP_V3_NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
+    address public constant UNISWAP_V3_SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     function fundFeeToken() public useKnownActor(owner) {
         uint256 amt = 1e22;
