@@ -23,11 +23,11 @@ contract Demeter_UniV3Farm is BaseUniV3Farm {
     // constants
     string public constant FARM_ID = "Demeter_UniV3_v4";
 
-    function NFPM() internal pure override returns (address) {
+    function NFPM() public pure override returns (address) {
         return 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     }
 
-    function UNIV3_FACTORY() internal pure override returns (address) {
+    function UNIV3_FACTORY() public pure override returns (address) {
         return 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     }
 }

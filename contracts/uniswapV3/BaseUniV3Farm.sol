@@ -72,7 +72,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     ) external initializer {
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY()).getPool(
-            _uniswapPoolData.tokenB, _uniswapPoolData.tokenA, _uniswapPoolData.feeTier
+            _uniswapPoolData.tokenA, _uniswapPoolData.tokenB, _uniswapPoolData.feeTier
         );
         if (uniswapPool == address(0)) {
             revert InvalidUniswapPoolConfig();
@@ -158,9 +158,9 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         return PositionValue.fees(INFPM(NFPM()), _tokenId);
     }
 
-    function NFPM() internal pure virtual returns (address);
+    function NFPM() public pure virtual returns (address);
 
-    function UNIV3_FACTORY() internal pure virtual returns (address);
+    function UNIV3_FACTORY() public pure virtual returns (address);
 
     /// @notice Validate the position for the pool and get Liquidity
     /// @param _tokenId The tokenId of the position
