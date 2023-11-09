@@ -123,6 +123,9 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
             revert DepositIsInCooldown();
         }
 
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
         uint256 tokenId = depositToTokenId[_depositId];
         (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
 
@@ -148,9 +151,6 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
 
         IERC20(lpToken).forceApprove(nftPool, liquidity);
         INFTPool(nftPool).addToPosition(tokenId, liquidity);
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         _updateSubscriptionForIncrease(_depositId, liquidity);
         userDeposit.liquidity += liquidity;
@@ -194,8 +194,13 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
             revert DecreaseDepositNotPermitted();
         }
 
-        uint256 tokenId = depositToTokenId[_depositId];
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        // Update deposit Information
+        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
+        userDeposit.liquidity -= _liquidityToWithdraw;
 
+        uint256 tokenId = depositToTokenId[_depositId];
         // Withdraw liquidity from nft pool
         INFTPool(nftPool).withdrawFromPosition(tokenId, _liquidityToWithdraw);
         (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
@@ -211,13 +216,6 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
             to: msg.sender,
             deadline: block.timestamp
         });
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
-
-        // Update deposit Information
-        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        userDeposit.liquidity -= _liquidityToWithdraw;
 
         emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }

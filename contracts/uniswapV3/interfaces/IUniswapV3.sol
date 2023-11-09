@@ -21,7 +21,7 @@ interface IPoolInitializer {
         returns (address pool);
 }
 
-interface INonfungiblePositionManager is IPoolInitializer, IERC721 {
+interface INFPM is IPoolInitializer, IERC721 {
     struct MintParams {
         address token0;
         address token1;
