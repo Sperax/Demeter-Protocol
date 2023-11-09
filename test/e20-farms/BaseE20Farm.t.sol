@@ -8,7 +8,7 @@ import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 abstract contract BaseE20FarmTest is BaseFarmTest {}
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
-    function test_lockupFarm(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function testFuzz_lockupFarm(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
         vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
 
