@@ -146,6 +146,12 @@ abstract contract DepositTest is BaseFarmTest {
         deposit(nonLockupFarm, true, 1e2, abi.encodeWithSelector(BaseFarm.LockupFunctionalityIsDisabled.selector));
     }
 
+    function test_deposit_revertsWhenFarmisPaused() public {
+        vm.startPrank(BaseFarm(nonLockupFarm).owner());
+        BaseFarm(nonLockupFarm).farmPauseSwitch(true);
+        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsPaused.selector));
+    }
+
     function test_deposit_noLockupFarm_deposit() public {
         deposit(nonLockupFarm, false, 1e2);
     }
@@ -506,6 +512,17 @@ abstract contract GetNumSubscriptionsTest is BaseFarmTest {
 }
 
 abstract contract SubscriptionInfoTest is BaseFarmTest {
+    function test_subInfo_revertsWhen_subscriptionDoesNotExist()
+        public
+        setup
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
+        BaseFarm(nonLockupFarm).getSubscriptionInfo(userDeposit.tokenId, 2);
+    }
+
     function test_subInfo_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
 
@@ -533,9 +550,16 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
     }
 
-    function test_updateTknManager_nonLockupFarm_revertsWhen_invalidTokenManager() public useKnownActor(owner) {
+    function test_updateTknManager_nonLockupFarm_revertsWhen_notTokenManager() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.NotTheTokenManager.selector));
+        BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
+    }
+
+    function test_updateTknManager_nonLockupFarm_revertsWhen_invalidTokenManager() public useKnownActor(owner) {
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        address _newTknManager = address(0);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.NotTheTokenManager.selector));
         BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
     }
@@ -574,7 +598,7 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
 }
 
 abstract contract RecoverRewardFundsTest is BaseFarmTest {
-    function test_recoverRewardFund_nonLockupFarm() public setup useKnownActor(owner) {
+    function test_recoverRewardFund_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
 
         for (uint8 i; i < rewardTokens.length; ++i) {
@@ -583,6 +607,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
             } else {
                 vm.startPrank(currentActor);
             }
+            BaseFarm(nonLockupFarm).getRewardBalance(rewardTokens[i]);
             emit FundsRecovered(currentActor, rewardTokens[i], ERC20(rewardTokens[i]).balanceOf(nonLockupFarm));
             BaseFarm(nonLockupFarm).recoverRewardFunds(rewardTokens[i], ERC20(rewardTokens[i]).balanceOf(nonLockupFarm));
         }
@@ -604,28 +629,28 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
         }
     }
 
-    // function test_recoverRewardFund_lockupFarm_partially() public useKnownActor(owner) {
-    //   address[] memory rewardTokens = BaseFarm(lockupFarm).getRewardTokens();
+    function test_recoverRewardFund_lockupFarm_partially() public useKnownActor(owner) {
+        address[] memory rewardTokens = getRewardTokens(lockupFarm);
 
-    //   for (uint8 i; i < rewardTokens.length; ++i) {
-    //     if (rewardTokens[i] == SPA) {
-    //       vm.startPrank(SPA_REWARD_MANAGER);
-    //     } else {
-    //       vm.startPrank(currentActor);
-    //     }
-    //     emit FundsRecovered(
-    //       currentActor,
-    //       rewardTokens[i],
-    //       ERC20(rewardTokens[i]).balanceOf(address(lockupFarm)) - 1e7
-    //     );
-    //     BaseFarm(lockupFarm).recoverRewardFunds(
-    //       rewardTokens[i],
-    //       ERC20(rewardTokens[i]).balanceOf(address(lockupFarm)) - 1e7
-    //     );
-    //     emit FundsRecovered(currentActor, rewardTokens[i], 5e6);
-    //     BaseFarm(lockupFarm).recoverRewardFunds(rewardTokens[i], 5e6);
-    //   }
-    // }
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            if (rewardTokens[i] == SPA) {
+                vm.startPrank(SPA_REWARD_MANAGER);
+            } else {
+                vm.startPrank(currentActor);
+            }
+            // emit FundsRecovered(
+            //   currentActor,
+            //   rewardTokens[i],
+            //   ERC20(rewardTokens[i]).balanceOf(address(lockupFarm)) - 1e7
+            // );
+            // BaseFarm(lockupFarm).recoverRewardFunds(
+            //   rewardTokens[i],
+            //   ERC20(rewardTokens[i]).balanceOf(address(lockupFarm)) - 1e7
+            // );
+            emit FundsRecovered(currentActor, rewardTokens[i], 5e6);
+            BaseFarm(lockupFarm).recoverRewardFunds(rewardTokens[i], 5e6);
+        }
+    }
 }
 
 abstract contract FarmPauseSwitchTest is BaseFarmTest {
@@ -762,5 +787,35 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         vm.expectEmit(true, true, false, true);
         emit CooldownPeriodUpdated(COOLDOWN_PERIOD, cooldownPeriod);
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
+    }
+}
+
+abstract contract _SetupFarmTest is BaseFarmTest {
+    function test_revertWhen_InvalidFarmStartTime() public {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidFarmStartTime.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp - 200, false));
+        assertTrue(success);
+    }
+
+    function test_revertWhen_InvalidRewardData() public {
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+        rwdTokens.push(USDCe);
+
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidRewardData.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
+        assertTrue(success);
+    }
+
+    function test_revertWhen_RewardAlreadyAdded() public {
+        rwdTokens.push(SPA);
+
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.RewardTokenAlreadyAdded.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
+        assertTrue(success);
     }
 }
