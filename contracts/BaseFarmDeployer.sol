@@ -36,15 +36,19 @@ abstract contract BaseFarmDeployer is Ownable {
 
     /// @notice A public view function to get fees from Farm Factory
     /// @return feeReceiver of feeToken in feeAmount
-    function getFees() public view returns (address feeReceiver, address feeToken, uint256 feeAmount) {
-        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
-        (feeReceiver, feeToken, feeAmount) = IFarmFactory(factory).getFeeParams(msg.sender);
+    function getFees(address _deployerAccount)
+        public
+        view
+        returns (address feeReceiver, address feeToken, uint256 feeAmount)
+    {
+        (feeReceiver, feeToken, feeAmount) = IFarmFactory(factory).getFeeParams(_deployerAccount);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
     function _collectFee() internal virtual {
-        (address feeReceiver, address feeToken, uint256 feeAmount) = getFees();
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        (address feeReceiver, address feeToken, uint256 feeAmount) = getFees(msg.sender);
         if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
             emit FeeCollected(msg.sender, feeToken, feeAmount);
