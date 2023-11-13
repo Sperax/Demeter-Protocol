@@ -10,11 +10,12 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 abstract contract BaseSetup is Test {
     // Define global constants | Test config
     // @dev Make it 0 to test on latest
-    uint256 public constant NUM_ACTORS = 6;
+    uint256 public constant NUM_ACTORS = 12;
     uint256 public constant GAS_LIMIT = 1000000000;
 
     // Define Demeter constants here
     address internal PROXY_OWNER;
+    address internal FACTORY_OWNER;
     address internal PROXY_ADMIN;
     address internal DEMETER_FACTORY;
 
@@ -22,6 +23,7 @@ abstract contract BaseSetup is Test {
     uint256 internal forkCheck;
 
     address public owner;
+    address public factory;
     address[] public actors;
     address internal currentActor;
 
@@ -50,6 +52,7 @@ abstract contract BaseSetup is Test {
             (address act,) = deriveRememberKey(mnemonic, i);
             actors.push(act);
         }
-        owner = actors[0];
+        owner = actors[4];
+        FACTORY_OWNER = actors[5];
     }
 }
