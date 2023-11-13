@@ -76,7 +76,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
 
     function setUp() public virtual override {
         super.setUp();
-        user = actors[4];
+        user = actors[0];
         newTokenManager = actors[3];
     }
 
