@@ -18,6 +18,9 @@ pragma solidity 0.8.16;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+/// @title Farm Factory contract of Demeter Protocol
+/// @notice This contract tracks fee details, privileged deployers, deployed farms and farm deployers
+/// @author Sperax Foundation
 contract FarmFactory is OwnableUpgradeable {
     address public feeReceiver;
     address public feeToken;
@@ -30,8 +33,7 @@ contract FarmFactory is OwnableUpgradeable {
     mapping(address => bool) public isPrivilegedDeployer;
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerRegistered(address deployer);
-    event FarmDeployerRemoved(address deployer);
+    event FarmDeployerUpdated(address deployer, bool registered);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
     event PrivilegeUpdated(address deployer, bool privilege);
 
@@ -40,7 +42,6 @@ contract FarmFactory is OwnableUpgradeable {
     error DeployerAlreadyRegistered();
     error InvalidDeployerId();
     error PrivilegeSameAsDesired();
-    error FeeCannotBeZero();
     error InvalidAddress();
 
     // Disable initialization for the implementation contract
@@ -51,6 +52,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @notice constructor
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
+    /// @param _feeReceiver Receiver of the fees
     function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount) external initializer {
         OwnableUpgradeable.__Ownable_init();
         updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
@@ -78,7 +80,7 @@ contract FarmFactory is OwnableUpgradeable {
         }
         deployerList.push(_deployer);
         deployerRegistered[_deployer] = true;
-        emit FarmDeployerRegistered(_deployer);
+        emit FarmDeployerUpdated(_deployer, true);
     }
 
     /// @notice Remove an existing deployer from factory
@@ -93,7 +95,7 @@ contract FarmFactory is OwnableUpgradeable {
         deployerList[_id] = deployerList[numDeployer - 1];
         deployerList.pop();
 
-        emit FarmDeployerRemoved(deployer);
+        emit FarmDeployerUpdated(deployer, false);
     }
 
     /// @notice A function to add/ remove privileged deployer
@@ -120,9 +122,14 @@ contract FarmFactory is OwnableUpgradeable {
         return farms;
     }
 
-    /// @notice Get all the fee parameters for creating farm.
-    /// @return Returns FeeReceiver, feeToken address and feeTokenAmt.
-    function getFeeParams() external view returns (address, address, uint256) {
+    /// @notice Get all the fee parameters for creating farm
+    /// @param _deployerAccount The account creating the farm
+    /// @return Returns FeeReceiver, feeToken address and feeTokenAmt
+    /// @dev It returns fee amount as 0 if deployer account is privileged
+    function getFeeParams(address _deployerAccount) external view returns (address, address, uint256) {
+        if (isPrivilegedDeployer[_deployerAccount]) {
+            return (feeReceiver, feeToken, 0);
+        }
         return (feeReceiver, feeToken, feeAmount);
     }
 
@@ -133,9 +140,6 @@ contract FarmFactory is OwnableUpgradeable {
     function updateFeeParams(address _receiver, address _feeToken, uint256 _amount) public onlyOwner {
         _isNonZeroAddr(_receiver);
         _isNonZeroAddr(_feeToken);
-        if (_amount == 0) {
-            revert FeeCannotBeZero();
-        }
         feeReceiver = _receiver;
         feeToken = _feeToken;
         feeAmount = _amount;

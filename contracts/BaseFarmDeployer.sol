@@ -34,32 +34,21 @@ abstract contract BaseFarmDeployer is Ownable {
         emit FarmImplementationUpdated(_newFarmImplementation);
     }
 
-    /// @notice A public view function to calculate fees
+    /// @notice A public view function to get fees from Farm Factory
     /// @return feeReceiver of feeToken in feeAmount
-    function calculateFees() external view returns (address, address, uint256) {
-        return _calculateFees();
+    function getFees() public view returns (address feeReceiver, address feeToken, uint256 feeAmount) {
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        (feeReceiver, feeToken, feeAmount) = IFarmFactory(factory).getFeeParams(msg.sender);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
     function _collectFee() internal virtual {
-        (address feeReceiver, address feeToken, uint256 feeAmount) = _calculateFees();
+        (address feeReceiver, address feeToken, uint256 feeAmount) = getFees();
         if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
             emit FeeCollected(msg.sender, feeToken, feeAmount);
         }
-    }
-
-    /// @notice An internal function to calculate fees
-    /// @notice and return feeReceiver, feeToken and feeAmount
-    /// @return feeReceiver of feeToken in feeAmount
-    function _calculateFees() internal view returns (address, address, uint256) {
-        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(factory).getFeeParams();
-        if (IFarmFactory(factory).isPrivilegedDeployer(msg.sender)) {
-            // No fees for privileged deployers
-            feeAmount = 0;
-        }
-        return (feeReceiver, feeToken, feeAmount);
     }
 
     /// @notice Validate address
