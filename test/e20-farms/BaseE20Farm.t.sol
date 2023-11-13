@@ -25,6 +25,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
+        vm.startPrank(owner);
         BaseE20Farm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseE20Farm(lockupFarm).increaseDeposit(0, amt);
@@ -67,9 +68,10 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).withdrawPartially(0, 10000);
     }
 
-    function test_revertsWhen_farmIsClosed() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
+    function test_revertsWhen_farmIsClosed() public depositSetup(nonLockupFarm, false) useKnownActor(owner) {
         skip(86400 * 7);
         BaseE20Farm(nonLockupFarm).closeFarm();
+        vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseE20Farm(nonLockupFarm).withdrawPartially(0, 10000);
     }
