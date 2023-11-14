@@ -899,7 +899,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             revert InvalidAddress();
         }
     }
-    /// @notice Validate amount
 
     function _isNonZeroAmt(uint256 _amt) internal pure {
         if (_amt == 0) {
