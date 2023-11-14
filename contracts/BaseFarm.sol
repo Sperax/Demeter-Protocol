@@ -168,8 +168,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _rwdToken the reward token's address.
     /// @param _amount the amount of reward tokens to add.
     function addRewards(address _rwdToken, uint256 _amount) external nonReentrant {
-        _farmNotClosed();
         _isNonZeroAmt(_amount);
+        _farmNotClosed();
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
         }
