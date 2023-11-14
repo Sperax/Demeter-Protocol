@@ -25,11 +25,8 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
         _;
     }
 
-    modifier deployerRegistred() {
-        vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRegistered(owner);
+    modifier deployerRegistered() {
         FarmFactory(factory).registerFarmDeployer(owner);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
         _;
     }
 
@@ -66,32 +63,39 @@ contract initializeTest is FarmFactoryTest {
     }
 
     function test_init(uint256 feeAmt) public useKnownActor(FACTORY_OWNER) {
+        address feeReceiver = FACTORY_OWNER;
+        address feeToken = USDS;
+        feeAmt = bound(feeAmt, 1e18, 1e25);
+
         address _feeReceiver;
         address _feeToken;
         uint256 _feeAmount;
-        feeAmt = bound(feeAmt, 1e18, 1e25);
         vm.expectEmit(true, true, true, false);
-        emit FeeParamsUpdated(FACTORY_OWNER, USDS, feeAmt);
-        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, feeAmt);
+        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt);
+        FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt);
         (_feeReceiver, _feeToken, _feeAmount) = FarmFactory(factory).getFeeParams();
-        assertEq(_feeReceiver, FACTORY_OWNER);
-        assertEq(_feeToken, USDS);
+        assertEq(_feeReceiver, feeReceiver);
+        assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
+        assertEq(FarmFactory(factory).owner(), currentActor);
     }
 }
 
 contract registerFarmTest is FarmFactoryTest {
-    function test_revertsWhen_DeployerIsNotRegistred() public useKnownActor(FACTORY_OWNER) initialized {
+    function test_revertsWhen_DeployerNotRegistered() public useKnownActor(FACTORY_OWNER) initialized {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.DeployerNotRegistered.selector));
         FarmFactory(factory).registerFarm(actors[6], actors[4]);
     }
 
-    function test_registerFarm() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_registerFarm() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+        address farm = actors[6];
+        address creator = actors[5];
+
         vm.startPrank(owner);
         vm.expectEmit(true, true, false, true);
-        emit FarmRegistered(actors[6], actors[5], owner);
-        FarmFactory(factory).registerFarm(actors[6], actors[5]);
-        assertEq(FarmFactory(factory).getFarmList()[0], actors[6]);
+        emit FarmRegistered(farm, creator, owner);
+        FarmFactory(factory).registerFarm(farm, creator);
+        assertEq(FarmFactory(factory).getFarmList()[0], farm);
     }
 }
 
@@ -101,25 +105,34 @@ contract registerFarmDeployerTest is FarmFactoryTest {
         FarmFactory(factory).registerFarmDeployer(address(0));
     }
 
-    function test_revertsWhen_DeployerIsAlreadyRegistred()
+    function test_revertsWhen_DeployerIsAlreadyRegistered()
         public
         useKnownActor(FACTORY_OWNER)
         initialized
-        deployerRegistred
+        deployerRegistered
     {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.DeployerAlreadyRegistered.selector));
         FarmFactory(factory).registerFarmDeployer(owner);
     }
+
+    function test_registerFarmDeployer() public useKnownActor(FACTORY_OWNER) initialized {
+        address deployer = actors[5];
+        vm.expectEmit(true, true, false, false);
+        emit FarmDeployerRegistered(deployer);
+        FarmFactory(factory).registerFarmDeployer(deployer);
+        assertEq(FarmFactory(factory).getFarmDeployerList()[0], deployer);
+        assertEq(FarmFactory(factory).deployerRegistered(deployer), true);
+    }
 }
 
 contract removeFarmDeployerTest is FarmFactoryTest {
-    function test_revertsWhen_invalidDeployerId() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_revertsWhen_invalidDeployerId() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidDeployerId.selector));
         FarmFactory(factory).removeDeployer(deployerId);
     }
 
-    function test_removeLastDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_removeLastDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         FarmFactory(factory).registerFarmDeployer(actors[10]);
         FarmFactory(factory).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 1);
@@ -132,7 +145,7 @@ contract removeFarmDeployerTest is FarmFactoryTest {
         assertEq(uint16(FarmFactory(factory).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
     }
 
-    function test_removeMiddleDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_removeMiddleDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         FarmFactory(factory).registerFarmDeployer(actors[10]);
         FarmFactory(factory).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 2);
@@ -151,19 +164,19 @@ contract updatePrivilegeTest is FarmFactoryTest {
         public
         useKnownActor(FACTORY_OWNER)
         initialized
-        deployerRegistred
+        deployerRegistered
     {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.PrivilegeSameAsDesired.selector));
         FarmFactory(factory).updatePrivilege(owner, false);
     }
 
-    function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
         FarmFactory(factory).updatePrivilege(owner, false);
     }
 
-    function test_updatePrivilege() public useKnownActor(FACTORY_OWNER) initialized deployerRegistred {
+    function test_updatePrivilege() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.expectEmit(true, true, false, false);
         emit PrivilegeUpdated(owner, true);
         FarmFactory(factory).updatePrivilege(owner, true);
