@@ -63,7 +63,8 @@ contract BalancerFarmTest is
     WithdrawPartiallyTest,
     RecoverERC20Test,
     RecoverRewardFundsTest,
-    _SetupFarmTest
+    _SetupFarmTest,
+    MulticallTest
 {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)

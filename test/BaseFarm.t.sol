@@ -839,3 +839,27 @@ abstract contract _SetupFarmTest is BaseFarmTest {
         assertTrue(success);
     }
 }
+
+abstract contract MulticallTest is BaseFarmTest {
+    function test_Multicall(uint256 cooldownPeriod) public useKnownActor(owner) {
+        cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+        bytes[] memory data = new bytes[](2);
+        data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+        data[1] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
+
+        BaseFarm(lockupFarm).multicall(data);
+
+        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod);
+        assertEq(BaseFarm(lockupFarm).isClosed(), true);
+    }
+
+    function test_revert_Multicall() public useKnownActor(owner) {
+        bytes[] memory data = new bytes[](1);
+        // This should revert as farm already started.
+        data[0] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
+
+        vm.expectRevert("Address: low-level delegate call failed");
+        BaseFarm(lockupFarm).multicall(data);
+    }
+}
