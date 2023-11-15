@@ -74,8 +74,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         _isNonZeroAddr(_data.farmAdmin);
 
         address pairPool = validatePool(_data.poolId);
-        IERC20[] memory tokens;
-        (tokens,,) = IBalancerVault(BALANCER_VAULT).getPoolTokens(_data.poolId);
+        (IERC20[] memory tokens,,) = IBalancerVault(BALANCER_VAULT).getPoolTokens(_data.poolId);
 
         // Calculate and collect fee if required
         _collectFee(tokens);
