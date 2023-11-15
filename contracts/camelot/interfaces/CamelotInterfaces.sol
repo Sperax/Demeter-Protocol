@@ -7,6 +7,12 @@ interface INFTPoolFactory {
     function getPool(address _lpTokenAddr) external view returns (address);
 }
 
+interface IPair {
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+}
+
 interface INFTPool {
     function addToPosition(uint256 tokenId, uint256 amountToAdd) external;
 
@@ -45,6 +51,20 @@ interface INFTPool {
             uint256 rewardDebt,
             uint256 boostPoints,
             uint256 totalMultiplier
+        );
+
+    function getPoolInfo()
+        external
+        view
+        returns (
+            address lpToken,
+            address grailToken,
+            address xGrailToken,
+            uint256 lastRewardTime,
+            uint256 accRewardsPerShare,
+            uint256 lpSupply,
+            uint256 lpSupplyWithMultiplier,
+            uint256 allocPoint
         );
 
     function pendingRewards(uint256 tokenId) external view returns (uint256);
@@ -90,4 +110,27 @@ interface IPositionHelper {
         INFTPool nftPool,
         uint256 lockDuration
     ) external payable;
+}
+
+interface IRouter {
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
+
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB);
 }

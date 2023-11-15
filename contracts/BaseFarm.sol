@@ -105,9 +105,15 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     mapping(uint256 => Subscription[]) public subscriptions;
 
     event Deposited(address indexed account, bool locked, uint256 tokenId, uint256 liquidity);
+    event DepositIncreased(
+        address indexed account, uint256 tokenId, uint256 liquidity, uint256 amountA, uint256 amountB
+    );
     event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
     event DepositWithdrawn(
         address indexed account, uint256 tokenId, uint256 startTime, uint256 liquidity, uint256[] totalRewardsClaimed
+    );
+    event DepositDecreased(
+        address indexed account, uint256 tokenId, uint256 liquidity, uint256 amountA, uint256 amountB
     );
     event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
