@@ -213,7 +213,12 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
     /// @return rewards The total accrued rewards for the deposit for each subscription (uint256[][]).
-    function computeRewards(address _account, uint256 _depositId) external view returns (uint256[][] memory rewards) {
+    function computeRewards(address _account, uint256 _depositId)
+        external
+        view
+        virtual
+        returns (uint256[][] memory rewards)
+    {
         _validateDeposit(_account, _depositId);
         Deposit memory userDeposit = deposits[_depositId];
         Subscription[] memory depositSubs = subscriptions[_depositId];
@@ -330,7 +335,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     ///         Farm is active if it is not paused and not closed.
     /// @return bool true if farm is active.
     /// @dev This function can be overridden to add any new/additional logic.
-    function isFarmActive() public view returns (bool) {
+    function isFarmActive() public view virtual returns (bool) {
         return !isPaused && isFarmOpen();
     }
 
@@ -593,7 +598,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     }
 
     /// @notice Function to update the FarmRewardData for all funds.
-    function _updateFarmRewardData() internal {
+    function _updateFarmRewardData() internal virtual {
         if (block.timestamp > lastFundUpdateTime) {
             // If farm is paused don't accrue any rewards,
             // only update the lastFundUpdateTime.
