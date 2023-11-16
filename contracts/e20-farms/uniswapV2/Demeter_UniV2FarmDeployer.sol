@@ -56,7 +56,6 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         _isNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         DEPLOYER_NAME = _deployerName;
-        discountedFee = 100e18; // 100 USDs
         farmImplementation = address(new Demeter_E20_farm());
     }
 
@@ -72,7 +71,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
-        _collectFee(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
+        _collectFee();
         IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;

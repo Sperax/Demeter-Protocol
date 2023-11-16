@@ -5,6 +5,9 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 
+/// @title BaseFarmDeployer contract of Demeter Protocol
+/// @notice Exposes base functionalities which will be useful in every deployer
+/// @author Sperax Foundation
 abstract contract BaseFarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
@@ -13,15 +16,12 @@ abstract contract BaseFarmDeployer is Ownable {
     address public immutable FACTORY;
     // Stores the address of farmImplementation.
     address public farmImplementation;
-    uint256 public discountedFee;
 
     event FarmCreated(address farm, address creator, address indexed admin);
-    event FeeCollected(address indexed creator, address token, uint256 amount, bool indexed claimable);
+    event FeeCollected(address indexed creator, address token, uint256 amount);
     event FarmImplementationUpdated(address newFarmImplementation);
-    event DiscountedFeeUpdated(uint256 oldDiscountedFee, uint256 newDiscountedFee);
 
     // Custom Errors
-    error InvalidTokenPair();
     error InvalidAddress();
 
     constructor(address _factory) {
@@ -29,66 +29,33 @@ abstract contract BaseFarmDeployer is Ownable {
         FACTORY = _factory;
     }
 
+    /// @notice Update farm implementation's address
+    /// @dev only callable by owner
+    /// @param _newFarmImplementation New farm implementation's address
     function updateFarmImplementation(address _newFarmImplementation) external onlyOwner {
         farmImplementation = _newFarmImplementation;
         emit FarmImplementationUpdated(_newFarmImplementation);
     }
 
-    /// @notice An external function to update discountOnSpaUSDsFarms
-    /// @param _discountedFee New desired discount on Spa/ USDs farms
-    /// @dev _discountedFee cannot be more than 100
-    function updateDiscountedFee(uint256 _discountedFee) external onlyOwner {
-        emit DiscountedFeeUpdated(discountedFee, _discountedFee);
-        discountedFee = _discountedFee;
-    }
-
-    /// @notice A public view function to calculate fees
-    /// @param _tokenA address of token A
-    /// @param _tokenB address of token B
-    /// @notice Order does not matter
-    /// @return Fees to be paid in feeToken set in FarmFactory (mostly USDs)
-    function calculateFees(address _tokenA, address _tokenB) external view returns (address, address, uint256, bool) {
-        _isNonZeroAddr(_tokenA);
-        _isNonZeroAddr(_tokenB);
-        if (_tokenA == _tokenB) {
-            revert InvalidTokenPair();
-        }
-        return _calculateFees(_tokenA, _tokenB);
+    /// @notice A public view function to get fees from Farm Factory
+    /// @return feeReceiver of feeToken in feeAmount
+    function getFees(address _deployerAccount)
+        external
+        view
+        returns (address feeReceiver, address feeToken, uint256 feeAmount)
+    {
+        (feeReceiver, feeToken, feeAmount) = IFarmFactory(FACTORY).getFeeParams(_deployerAccount);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.
-    /// @dev Function fetches all the fee params from sfarmFactory.
-    function _collectFee(address _tokenA, address _tokenB) internal virtual {
-        (address feeReceiver, address feeToken, uint256 feeAmount, bool claimable) = _calculateFees(_tokenA, _tokenB);
+    /// @dev Function fetches all the fee params from farmFactory.
+    function _collectFee() internal virtual {
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(FACTORY).getFeeParams(msg.sender);
         if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
-            emit FeeCollected(msg.sender, feeToken, feeAmount, claimable);
+            emit FeeCollected(msg.sender, feeToken, feeAmount);
         }
-    }
-
-    /// @notice An internal function to calculate fees
-    /// @notice and return feeReceiver, feeToken, feeAmount and claimable
-    function _calculateFees(address _tokenA, address _tokenB) internal view returns (address, address, uint256, bool) {
-        (address feeReceiver, address feeToken, uint256 feeAmount) = IFarmFactory(FACTORY).getFeeParams();
-        if (IFarmFactory(FACTORY).isPrivilegedDeployer(msg.sender)) {
-            // No fees for privileged deployers
-            feeAmount = 0;
-            return (feeReceiver, feeToken, feeAmount, false);
-        }
-        if (_checkToken(_tokenA) || _checkToken(_tokenB)) {
-            // DiscountedFee if either of the token is SPA or USDs
-            // This fees is claimable
-            return (feeReceiver, feeToken, discountedFee, true);
-        } else {
-            // No discount because neither of the token is SPA or USDs
-            return (feeReceiver, feeToken, feeAmount, false);
-        }
-    }
-
-    /// @notice Check if a token is either SPA | USDs.
-    /// @param _token Address of the desired token.
-    function _checkToken(address _token) internal pure returns (bool) {
-        return _token == SPA || _token == USDS;
     }
 
     /// @notice Validate address

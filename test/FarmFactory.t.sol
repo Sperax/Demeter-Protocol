@@ -14,8 +14,7 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
     FarmFactory public factoryImp;
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerRegistered(address deployer);
-    event FarmDeployerRemoved(address deployer);
+    event FarmDeployerUpdated(address deployer, bool registered);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
     event PrivilegeUpdated(address deployer, bool privilege);
 
@@ -56,11 +55,6 @@ contract InitializeTest is FarmFactoryTest {
         FarmFactory(factory).initialize(FACTORY_OWNER, address(0), 1e20);
     }
 
-    function test_revertsWhen_feeAmountIsZero() public useKnownActor(FACTORY_OWNER) {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.FeeCannotBeZero.selector));
-        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, 0);
-    }
-
     function test_init(uint256 feeAmt) public useKnownActor(FACTORY_OWNER) {
         address feeReceiver = FACTORY_OWNER;
         address feeToken = USDS;
@@ -72,7 +66,7 @@ contract InitializeTest is FarmFactoryTest {
         vm.expectEmit(true, true, true, false);
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt);
         FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt);
-        (_feeReceiver, _feeToken, _feeAmount) = FarmFactory(factory).getFeeParams();
+        (_feeReceiver, _feeToken, _feeAmount) = FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
         assertEq(_feeReceiver, feeReceiver);
         assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
@@ -117,7 +111,7 @@ contract RegisterFarmDeployerTest is FarmFactoryTest {
     function test_registerFarmDeployer() public useKnownActor(FACTORY_OWNER) initialized {
         address deployer = actors[5];
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRegistered(deployer);
+        emit FarmDeployerUpdated(deployer, true);
         FarmFactory(factory).registerFarmDeployer(deployer);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], deployer);
         assertEq(FarmFactory(factory).deployerRegistered(deployer), true);
@@ -137,7 +131,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 1);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRemoved(actors[11]);
+        emit FarmDeployerUpdated(actors[11], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
         assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[10]);
@@ -150,7 +144,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 2);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRemoved(actors[10]);
+        emit FarmDeployerUpdated(actors[10], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
         assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[11]);
