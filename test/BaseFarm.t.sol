@@ -217,6 +217,36 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         emit RewardsClaimed(currentActor, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(0);
     }
+
+    function test_claimRewards_max_rewards() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
+        uint256 time;
+        uint256 rwdRate = 1e16;
+        uint256 rwdBalance = BaseFarm(nonLockupFarm).getRewardBalance(SPA);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
+        skip(time + 100); //skip more than the available reward
+        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
+
+        vm.expectEmit(true, true, true, true);
+        emit RewardsClaimed(currentActor, rewardsForEachSubs);
+        BaseFarm(nonLockupFarm).claimRewards(0);
+    }
+
+    function test_claimRewards_rwd_rate_0() public setup depositSetup(nonLockupFarm, false) {
+        uint256 time = 15 days;
+        uint256[] memory rwdRate = new uint256[](1);
+        rwdRate[0] = 0;
+        vm.startPrank(SPA_REWARD_MANAGER);
+        BaseFarm(nonLockupFarm).setRewardRate(SPA, rwdRate);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        skip(time);
+        vm.startPrank(user);
+        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
+        vm.expectEmit(true, false, false, true);
+        emit RewardsClaimed(currentActor, rewardsForEachSubs);
+        BaseFarm(nonLockupFarm).claimRewards(0);
+        assertEq(rewardsForEachSubs[0][0], 0);
+    }
 }
 
 abstract contract WithdrawTest is BaseFarmTest {
@@ -307,11 +337,8 @@ abstract contract GetRewardFundInfoTest is BaseFarmTest {
 }
 
 abstract contract RecoverERC20Test is BaseFarmTest {
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
-        public
-        useKnownActor(owner)
-    {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardToken() public useKnownActor(owner) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawRewardToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
@@ -320,7 +347,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20_LockupFarm_(uint256 amt) public useKnownActor(owner) {
+    function testFuzz_recoverE20_LockupFarm(uint256 amt) public useKnownActor(owner) {
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(lockupFarm), 10e10);
         vm.expectEmit(true, true, false, false);
