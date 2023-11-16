@@ -60,7 +60,10 @@ contract BalancerFarmTest is
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,
     IncreaseDepositTest,
-    WithdrawPartiallyTest
+    WithdrawPartiallyTest,
+    RecoverERC20Test,
+    RecoverRewardFundsTest,
+    _SetupFarmTest
 {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
@@ -112,6 +115,9 @@ contract BalancerFarmTest is
         // Approve Farm fee
         IERC20(FEE_TOKEN()).approve(address(balancerFarmDeployer), 1e22);
         address farm = balancerFarmDeployer.createFarm(_data);
+
+        assertEq(Demeter_BalancerFarm(farm).FARM_ID(), "Demeter_BalancerV2_v1");
+
         return farm;
     }
 
@@ -122,10 +128,15 @@ contract BalancerFarmTest is
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(farm), amt);
-
+        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
+        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
         vm.expectEmit(true, true, false, true);
         emit Deposited(currentActor, locked, BaseFarm(farm).getNumDeposits(currentActor) + 1, amt);
         Demeter_BalancerFarm(farm).deposit(amt, locked);
+        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
+        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
+        assertEq(usrBalanceAfter, usrBalanceBefore - amt);
+        assertEq(farmBalanceAfter, farmBalanceBefore + amt);
     }
 
     /// @notice Farm specific deposit logic
