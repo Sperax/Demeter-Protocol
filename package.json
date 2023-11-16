@@ -17,7 +17,7 @@
     "slither-analyze": "slither .",
     "test": "forge test -vvv",
     "test-contract": "forge test -vvvv --match-contract",
-    "test-file": "forge test -vvv --match-path",
+    "test-file": "forge test -vvvv --match-path",
     "test-function": "forge test -vvv --match-test",
     "forge-coverage": "forge coverage --report lcov && lcov --remove ./lcov.info -o ./lcov.info 'test/*' && rm -rf ./coverage && genhtml lcov.info --output-dir coverage && mv lcov.info ./coverage",
     "coverage-minimum": "forge coverage --ir-minimum --report lcov && lcov --remove ./lcov.info -o ./lcov.info 'test/*' && rm -rf ./coverage && genhtml lcov.info --output-dir coverage && mv lcov.info ./coverage"
