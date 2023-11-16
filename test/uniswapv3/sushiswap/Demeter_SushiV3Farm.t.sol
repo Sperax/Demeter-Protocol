@@ -198,6 +198,7 @@ contract Demeter_SushiV3FarmInheritTest is
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
     ClaimUniswapFeeTest,
+    RecoverERC20Test,
     MiscellaneousTest
 {
     function setUp() public override(Demeter_SushiV3FarmTest, BaseFarmTest) {
