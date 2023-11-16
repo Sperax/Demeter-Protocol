@@ -84,7 +84,7 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(currentActor) {
+    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(user) {
         uint256 depositAmount1 = baseAmt * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = baseAmt * 10 ** ERC20(USDCe).decimals();
 

@@ -386,7 +386,7 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
 }
 
 abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
-    function test_revertWhen_FarmIsClosed() public useKnownActor(user) {
+    function test_revertWhen_FarmIsClosed() public useKnownActor(owner) {
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
