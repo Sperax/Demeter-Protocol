@@ -17,11 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../../BaseFarmDeployer.sol";
-import "./interfaces/IBalancerVault.sol";
-import {Demeter_BalancerFarm, RewardTokenData} from "./Demeter_BalancerFarm.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {BaseFarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {IBalancerVault} from "./interfaces/IBalancerVault.sol";
+import {Demeter_BalancerFarm} from "./Demeter_BalancerFarm.sol";
+import {RewardTokenData} from "../BaseE20Farm.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /// @title Deployer for Balancer farm
 /// @author Sperax Foundation
@@ -47,6 +48,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     // All the pool actions happen on Balancer's vault
     address public immutable BALANCER_VAULT;
+    // solhint-disable-next-line var-name-mixedcase
     string public DEPLOYER_NAME;
 
     // Custom Errors
@@ -81,7 +83,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, pairPool, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
+        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }

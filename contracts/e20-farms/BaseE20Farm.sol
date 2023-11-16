@@ -17,8 +17,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../BaseFarm.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 contract BaseE20Farm is BaseFarm {
     using SafeERC20 for IERC20;
@@ -122,13 +122,13 @@ contract BaseE20Farm is BaseFarm {
     /// @notice Function to lock a staked deposit
     /// @param _depositId The id of the deposit to be locked
     /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId) external nonReentrant {
+    function initiateCooldown(uint256 _depositId) external override nonReentrant {
         _initiateCooldown(_depositId);
     }
 
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
-    function withdraw(uint256 _depositId) external nonReentrant {
+    function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
         Deposit memory userDeposit = deposits[msg.sender][_depositId];
 

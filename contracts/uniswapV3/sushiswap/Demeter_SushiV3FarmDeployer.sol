@@ -18,7 +18,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
-import {Demeter_SushiV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_SushiV3Farm.sol";
+import {Demeter_SushiV3Farm} from "./Demeter_SushiV3Farm.sol";
+import {RewardTokenData, UniswapPoolData} from "../BaseUniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -55,7 +56,7 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
+        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         return farm;
     }
 }
