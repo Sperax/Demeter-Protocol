@@ -68,7 +68,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
+        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         return farm;
     }
 

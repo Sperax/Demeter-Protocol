@@ -8,7 +8,6 @@ import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
 import {UpgradeUtil} from "../test/utils/UpgradeUtil.t.sol";
-import {console} from "forge-std/console.sol";
 
 abstract contract FarmFactoryTest is TestNetworkConfig {
     UpgradeUtil internal upgradeUtil;

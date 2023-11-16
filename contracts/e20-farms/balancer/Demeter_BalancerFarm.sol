@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../BaseE20Farm.sol";
+import {BaseE20Farm} from "../BaseE20Farm.sol";
 
 /// @title Demeter Balancer Farm
 /// @author Sperax Foundation
