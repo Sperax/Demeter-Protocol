@@ -137,7 +137,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
 }
 
 abstract contract DepositTest is BaseFarmTest {
-    function test_deposit_noLockupFarm_revertsWhen_NoLiquidityInPositiony() public {
+    function test_deposit_noLockupFarm_revertsWhen_NoLiquidityInPosition() public {
         deposit(nonLockupFarm, false, 0, abi.encodeWithSelector(BaseFarm.NoLiquidityInPosition.selector));
     }
 
