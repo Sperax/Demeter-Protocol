@@ -61,7 +61,7 @@ contract BalancerFarmTest is
     UpdateCoolDownPeriodTest,
     IncreaseDepositTest,
     WithdrawPartiallyTest,
-    RecoverERC20Test,
+    RecoverERC20FarmE20Test,
     RecoverRewardFundsTest,
     _SetupFarmTest
 {
