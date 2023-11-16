@@ -14,8 +14,7 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
     FarmFactory public factoryImp;
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerRegistered(address deployer);
-    event FarmDeployerRemoved(address deployer);
+    event FarmDeployerUpdated(address deployer, bool registered);
     event FeeParamsUpdated(address receiver, address token, uint256 amount);
     event PrivilegeUpdated(address deployer, bool privilege);
 
@@ -112,7 +111,7 @@ contract RegisterFarmDeployerTest is FarmFactoryTest {
     function test_registerFarmDeployer() public useKnownActor(FACTORY_OWNER) initialized {
         address deployer = actors[5];
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRegistered(deployer);
+        emit FarmDeployerUpdated(deployer, true);
         FarmFactory(factory).registerFarmDeployer(deployer);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], deployer);
         assertEq(FarmFactory(factory).deployerRegistered(deployer), true);
@@ -132,7 +131,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 1);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRemoved(actors[11]);
+        emit FarmDeployerUpdated(actors[11], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
         assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[10]);
@@ -145,7 +144,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 2);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectEmit(true, true, false, false);
-        emit FarmDeployerRemoved(actors[10]);
+        emit FarmDeployerUpdated(actors[10], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
         assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[11]);
