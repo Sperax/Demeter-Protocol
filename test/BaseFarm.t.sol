@@ -7,7 +7,6 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
-import {console} from "forge-std/console.sol";
 
 abstract contract BaseFarmTest is TestNetworkConfig {
     struct Deposit {
