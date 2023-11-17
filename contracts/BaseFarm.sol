@@ -153,12 +153,16 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     error FarmIsPaused();
     error NotTheTokenManager();
     error InvalidAddress();
+    error ZeroAmount();
     error InvalidCooldownPeriod();
 
     // Disallow initialization of a implementation contract
     constructor() {
         _disableInitializers();
     }
+
+    function initiateCooldown(uint256 _depositId) external virtual;
+    function withdraw(uint256 _depositId) external virtual;
 
     /// @notice Claim rewards for the user.
     /// @param _depositId The id of the deposit
@@ -170,6 +174,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _rwdToken the reward token's address.
     /// @param _amount the amount of reward tokens to add.
     function addRewards(address _rwdToken, uint256 _amount) external nonReentrant {
+        if (_amount == 0) {
+            revert ZeroAmount();
+        }
         _farmNotClosed();
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
@@ -541,9 +548,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         deposits[_account][_depositId] = deposits[_account][deposits[_account].length - 1];
         deposits[_account].pop();
 
-        emit DepositWithdrawn(
-            _account, _userDeposit.tokenId, _userDeposit.startTime, _userDeposit.liquidity, totalRewards
-        );
+        emit DepositWithdrawn({
+            account: _account,
+            tokenId: _userDeposit.tokenId,
+            startTime: _userDeposit.startTime,
+            liquidity: _userDeposit.liquidity,
+            totalRewardsClaimed: totalRewards
+        });
     }
 
     /// @notice Claim rewards for the user.

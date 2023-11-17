@@ -17,8 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../BaseE20Farm.sol";
+import {BaseE20Farm} from "../BaseE20Farm.sol";
 
 contract Demeter_E20_farm is BaseE20Farm {
     string public constant FARM_ID = "Demeter_UniswapV2_E20_v1";

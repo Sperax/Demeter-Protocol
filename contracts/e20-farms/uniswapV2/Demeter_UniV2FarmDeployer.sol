@@ -17,11 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import "../../BaseFarmDeployer.sol";
-import "./interfaces/IUniswapV2Factory.sol";
-import {Demeter_E20_farm, RewardTokenData} from "./Demeter_E20_farm.sol";
-import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {BaseFarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
+import {Demeter_E20_farm} from "./Demeter_E20_farm.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {RewardTokenData} from "../BaseE20Farm.sol";
 
 contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -48,13 +49,13 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     }
 
     address public immutable PROTOCOL_FACTORY;
+    // solhint-disable-next-line var-name-mixedcase
     string public DEPLOYER_NAME;
 
     constructor(address _factory, address _protocolFactory, string memory _deployerName) BaseFarmDeployer(_factory) {
         _isNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         DEPLOYER_NAME = _deployerName;
-        discountedFee = 100e18; // 100 USDs
         farmImplementation = address(new Demeter_E20_farm());
     }
 
@@ -70,8 +71,8 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
-        _collectFee(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
+        _collectFee();
+        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }
