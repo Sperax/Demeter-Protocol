@@ -119,14 +119,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
         }
     }
 
-    function getRewardTokens(address farm) public view returns (address[] memory) {
-        address[] memory farmRewardTokens = new address[](rwdTokens.length + 1);
-        for (uint8 i = 0; i < rwdTokens.length + 1; ++i) {
-            farmRewardTokens[i] = BaseFarm(farm).rewardTokens(i);
-        }
-        return farmRewardTokens;
-    }
-
     function createFarm(uint256 startTime, bool lockup) public virtual returns (address);
 
     function deposit(address farm, bool locked, uint256 amt) public virtual;
@@ -134,6 +126,14 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
 
     function getPoolAddress() public virtual returns (address);
+
+    function getRewardTokens(address farm) public view returns (address[] memory) {
+        address[] memory farmRewardTokens = new address[](rwdTokens.length + 1);
+        for (uint8 i = 0; i < rwdTokens.length + 1; ++i) {
+            farmRewardTokens[i] = BaseFarm(farm).rewardTokens(i);
+        }
+        return farmRewardTokens;
+    }
 
     function generateRewardTokenData() public view returns (RewardTokenData[] memory rwdTokenData) {
         address[] memory rewardToken = rwdTokens;

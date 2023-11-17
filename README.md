@@ -17,14 +17,13 @@ Demeter automates the fundamental aspects of launching and managing decentralize
 
 - **Engineering support to launch and manage the farm** - The Audited Demeter Farm Factory contract will generate the pool and farm contracts for the Demeter user.
 - **Marketing support to make the community aware of the new farm** - Protocols that launch their farm through Demeter benefit from being whitelisted on the Demeter active farms dashboard. This exclusive list features all of the farms that are actively distributing rewards that were deployed with Demeter. Farmers will regularly look to this dashboard for new projects and become users of these protocols.
-- **Financial support through SPA incentives** - When paired against USDs or SPA, Demeter farms will receive fixed SPA emissions from the SPA gauge, boosting the farm APR. Fee for launching farms will also be discounted for these farms.
 
 ### Launching Demeter Farm
 
-1. Approve USDs spend
+1. Approve fee token to spend
 1. Input pool parameters and farm parameters and execute a transaction to create farm and pay the farm creation fee
    1. If pool does not exist then the transaction reverts.
-   1. If the user does not have enough USDs for fee payment then the transaction reverts. The fee is 100 USDs. If one of the pool tokens is SPA or USDs, then a discounted fee of 50 USDs is applicable.
+   1. If the user does not have enough fee tokens for fee payment then the transaction reverts. The fee is 100 USDs on Arbitrum.
 1. After creation of the farm contract, reward token managers can update reward related parameters.
 1. After creation of the farm contract, the farm admin can manage some attributes of the farm like start date, cooldown period, close/pause farm etc.
 
@@ -45,7 +44,7 @@ Demeter automates the fundamental aspects of launching and managing decentralize
 
 ### Fee
 
-Demeter will charge a flat $100 fee to launch the farm. When paired against USDs or SPA, the fee will discounted, only $50. The fee collected belongs to the SPA stakers and can be transferred directly to the wallet address where all Sperax protocol fees are collected. Fees have to be paid in USDs in the beginning, more payment methods can be added in future. Fee amount can be changed in future through governance.
+Demeter will charge a flat $100 fee to launch the farm. The fee collected belongs to the SPA stakers and can be transferred directly to the wallet address where all Sperax protocol fees are collected. Fees have to be paid in USDs on Arbitrum in the beginning, more payment methods can be added in future. Fee amount and fee token can be changed in future through governance.
 
 ### Farm Management
 
