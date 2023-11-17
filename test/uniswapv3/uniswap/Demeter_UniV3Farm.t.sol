@@ -12,7 +12,6 @@ import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3
 import "../../BaseFarm.t.sol";
 import "../BaseUniV3Farm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
-import "forge-std/console.sol";
 
 contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
     // Define variables
@@ -74,13 +73,6 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
         IERC20(FEE_TOKEN()).approve(address(uniswapV3FarmDeployer), 1e22);
         address farm = uniswapV3FarmDeployer.createFarm(_data);
         return farm;
-    }
-
-    // TODO this function should be removed from BaseFarm.t.sol and here
-    function getPoolAddress() public view override returns (address) {
-        // address poolAddress;
-        // (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
-        // return poolAddress;
     }
 
     /// @notice Farm specific deposit logic

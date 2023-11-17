@@ -6,7 +6,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 
-abstract contract BaseE20FarmTest is BaseFarmTest {}
+abstract contract BaseE20FarmTest is BaseFarmTest {
+    function getPoolAddress() public virtual returns (address);
+}
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
     function test_revertsWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {

@@ -236,7 +236,6 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         assertEq(BaseUniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
         assertEq(BaseUniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
         assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
-        // TODO add other checks? rewardTokens, rewardFunds, rewardData
     }
 }
 
@@ -365,7 +364,6 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
     }
 }
 
-// TODO rename once renamed in BaseFarm?
 abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
     function test_revertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
