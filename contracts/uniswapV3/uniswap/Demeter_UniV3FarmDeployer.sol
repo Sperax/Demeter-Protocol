@@ -18,7 +18,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
-import {Demeter_UniV3Farm, RewardTokenData, UniswapPoolData} from "./Demeter_UniV3Farm.sol";
+import {Demeter_UniV3Farm} from "./Demeter_UniV3Farm.sol";
+import {RewardTokenData, UniswapPoolData} from "../BaseUniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -41,7 +42,6 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v3";
 
     constructor(address _factory) BaseFarmDeployer(_factory) {
-        discountedFee = 50e18; // 50 USDs
         farmImplementation = address(new Demeter_UniV3Farm());
     }
 
@@ -54,9 +54,9 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
-        _collectFee(_data.uniswapPoolData.tokenA, _data.uniswapPoolData.tokenB);
+        _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmFactory(factory).registerFarm(farm, msg.sender);
+        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
         return farm;
     }
 }

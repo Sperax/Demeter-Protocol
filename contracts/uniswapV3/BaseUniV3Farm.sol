@@ -158,8 +158,10 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         return PositionValue.fees(INFPM(NFPM()), _tokenId);
     }
 
+    // solhint-disable-next-line func-name-mixedcase
     function NFPM() internal pure virtual returns (address);
 
+    // solhint-disable-next-line func-name-mixedcase
     function UNIV3_FACTORY() internal pure virtual returns (address);
 
     /// @notice Validate the position for the pool and get Liquidity
