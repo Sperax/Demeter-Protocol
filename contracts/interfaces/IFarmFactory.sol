@@ -6,7 +6,10 @@ interface IFarmFactory {
 
     function registerFarmDeployer(address _deployer) external;
 
-    function getFeeParams() external view returns (address feeFeceiver, address feeToken, uint256 feeAmount);
+    function getFeeParams(address _deployerAccount)
+        external
+        view
+        returns (address feeFeceiver, address feeToken, uint256 feeAmount);
 
     function isPrivilegedDeployer(address _user) external view returns (bool);
 }
