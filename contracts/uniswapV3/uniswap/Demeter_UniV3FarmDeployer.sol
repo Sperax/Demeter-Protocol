@@ -29,7 +29,7 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // cooldownPeriod -  cooldown period for locked deposits (in days)
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // uniswapPoolData - Init data for UniswapV3 pool.
-    //                  (tokenA, tokenB, feeTier, tickLower, tickUpper)
+    //                  (tokenA, tokenB, feeTier, tickLower, tickUpper, uniswapUtils, nfpmUtils)
     // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
     struct FarmData {
         address farmAdmin;

@@ -85,7 +85,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_LOWER
+                tickUpperAllowed: TICK_LOWER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -100,7 +102,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887273,
-                tickUpperAllowed: TICK_UPPER
+                tickUpperAllowed: TICK_UPPER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -116,7 +120,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                     tokenB: USDT,
                     feeTier: FEE_TIER,
                     tickLowerAllowed: -887271,
-                    tickUpperAllowed: TICK_UPPER
+                    tickUpperAllowed: TICK_UPPER,
+                    uniswapUtils: UNISWAP_UTILS,
+                    nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
                 }),
                 _rwdTokenData: generateRewardTokenData()
             });
@@ -131,7 +137,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                     tokenB: USDCe,
                     feeTier: FEE_TIER,
                     tickLowerAllowed: TICK_LOWER,
-                    tickUpperAllowed: 887271
+                    tickUpperAllowed: 887271,
+                    uniswapUtils: UNISWAP_UTILS,
+                    nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
                 }),
                 _rwdTokenData: generateRewardTokenData()
             });
@@ -147,7 +155,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887272 + 1
+                tickUpperAllowed: 887272 + 1,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -163,7 +173,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_UPPER
+                tickUpperAllowed: TICK_UPPER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -177,7 +189,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887273,
-                tickUpperAllowed: TICK_UPPER
+                tickUpperAllowed: TICK_UPPER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -191,7 +205,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887271,
-                tickUpperAllowed: TICK_UPPER
+                tickUpperAllowed: TICK_UPPER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -205,7 +221,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887272 + 1
+                tickUpperAllowed: 887272 + 1,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -219,7 +237,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887271
+                tickUpperAllowed: 887271,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });
@@ -235,7 +255,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_UPPER
+                tickUpperAllowed: TICK_UPPER,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             }),
             _rwdTokenData: generateRewardTokenData()
         });

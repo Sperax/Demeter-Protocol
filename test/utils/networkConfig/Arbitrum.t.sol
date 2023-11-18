@@ -32,6 +32,11 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     // @note Add only specific farm related params, try to group them together
     // Balancer
     address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    // UniswapUtils
+    address public constant UNISWAP_UTILS = 0xd2Aa19D3B7f8cdb1ea5B782c5647542055af415e;
+    // NonfungiblePositionManagerUtils
+    address constant NONFUNGIBLE_POSITION_MANAGER_UTILS = 0x7A7526d127CEF9c3b315B466685AFA6aF74275fb;
+
     // Sushiswap
     address public constant SUSHISWAP_FACTORY = 0x1af415a1EbA07a4986a52B6f2e7dE7003D82231e;
     address public constant SUSHISWAP_NFPM = 0xF0cBce1942A68BEB3d1b73F0dd86C8DCc363eF49;

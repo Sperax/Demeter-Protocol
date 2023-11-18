@@ -23,8 +23,11 @@ import {
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
     CollectParams
-} from "./interfaces/UniswapV3.sol";
-import {PositionValue} from "./libraries/PositionValue.sol";
+} from "./interfaces/IUniswapV3.sol";
+import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
+import {
+    INonfungiblePositionManagerUtils as INFPMUtils, Position
+} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 // Defines the Uniswap pool init data for constructor.
@@ -33,12 +36,15 @@ import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 // feeTier - Fee tier for the Uniswap pool
 // tickLowerAllowed - Lower bound of the tick range for farm
 // tickUpperAllowed - Upper bound of the tick range for farm
+// uniswapUtils - Address of the UniswapUtils contract
 struct UniswapPoolData {
     address tokenA;
     address tokenB;
     uint24 feeTier;
     int24 tickLowerAllowed;
     int24 tickUpperAllowed;
+    address uniswapUtils;
+    address nfpmUtils;
 }
 
 abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
@@ -46,6 +52,8 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
+    address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
+    address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -70,6 +78,9 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
+        _isNonZeroAddr(_uniswapPoolData.uniswapUtils);
+        _isNonZeroAddr(_uniswapPoolData.nfpmUtils);
+
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY()).getPool(
             _uniswapPoolData.tokenA, _uniswapPoolData.tokenB, _uniswapPoolData.feeTier
@@ -80,6 +91,8 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         _validateTickRange(_uniswapPoolData.tickLowerAllowed, _uniswapPoolData.tickUpperAllowed);
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
+        uniswapUtils = _uniswapPoolData.uniswapUtils;
+        nfpmUtils = _uniswapPoolData.nfpmUtils;
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
     }
@@ -133,12 +146,12 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = deposits[msg.sender][_depositId].tokenId;
 
-        INFPM pm = INFPM(NFPM());
-        (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
+        address pm = NFPM();
+        (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
         }
-        (uint256 amt0Recv, uint256 amt1Recv) = pm.collect(
+        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
             CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
@@ -155,7 +168,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
         // Validate token.
         _getLiquidity(_tokenId);
-        return PositionValue.fees(INFPM(NFPM()), _tokenId);
+        return IUniswapUtils(uniswapUtils).fees(NFPM(), _tokenId);
     }
 
     // solhint-disable-next-line func-name-mixedcase
@@ -170,21 +183,22 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
         /// @dev Get the info of the required token
-        (,, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity,,,,) =
-            INFPM(NFPM()).positions(_tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(NFPM(), _tokenId);
 
         /// @dev Check if the token belongs to correct pool
 
-        if (uniswapPool != IUniswapV3Factory(UNIV3_FACTORY()).getPool(token0, token1, fee)) {
+        if (
+            uniswapPool != IUniswapV3Factory(UNIV3_FACTORY()).getPool(positions.token0, positions.token1, positions.fee)
+        ) {
             revert IncorrectPoolToken();
         }
 
         /// @dev Check if the token adheres to the tick range
-        if (tickLower != tickLowerAllowed || tickUpper != tickUpperAllowed) {
+        if (positions.tickLower != tickLowerAllowed || positions.tickUpper != tickUpperAllowed) {
             revert IncorrectTickRange();
         }
 
-        return uint256(liquidity);
+        return uint256(positions.liquidity);
     }
 
     function _validateTickRange(int24 _tickLower, int24 _tickUpper) private view {

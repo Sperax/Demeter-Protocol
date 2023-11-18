@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../../contracts/uniswapV3/sushiswap/Demeter_SushiV3Farm.sol";
 import "../../../contracts/uniswapV3/sushiswap/Demeter_SushiV3FarmDeployer.sol";
-import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/UniswapV3.sol";
+import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../../BaseFarm.t.sol";
@@ -59,7 +59,9 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
             tokenB: USDCe,
             feeTier: FEE_TIER,
             tickLowerAllowed: TICK_LOWER,
-            tickUpperAllowed: TICK_UPPER
+            tickUpperAllowed: TICK_UPPER,
+            uniswapUtils: UNISWAP_UTILS,
+            nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
         Demeter_SushiV3FarmDeployer.FarmData memory _data = Demeter_SushiV3FarmDeployer.FarmData({
             farmAdmin: owner,
