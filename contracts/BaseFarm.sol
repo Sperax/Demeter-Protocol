@@ -242,7 +242,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
-        if (_extensionDays >= 100 && _extensionDays <= 300) {
+        if (_extensionDays < 100 && _extensionDays > 300) {
             revert InvalidExtension();
         }
 
