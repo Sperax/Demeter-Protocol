@@ -776,7 +776,10 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     }
 
     function test_start_time_noLockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
-        vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
+        // vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
+        farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
+        newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
+        // type(uint64).max
         address farm = createFarm(farmStartTime, false);
         vm.startPrank(owner);
         vm.expectEmit(true, true, false, true);
@@ -785,7 +788,9 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     }
 
     function test_start_time_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
-        vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
+        // vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
+        farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
+        newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
 
         address farm = createFarm(farmStartTime, true);
         vm.startPrank(owner);

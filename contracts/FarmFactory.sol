@@ -25,6 +25,7 @@ contract FarmFactory is OwnableUpgradeable {
     address public feeReceiver;
     address public feeToken;
     uint256 public feeAmount;
+    uint256 public extensionFeePerDay;
     address[] public farms;
     address[] public deployerList;
     mapping(address => bool) public farmRegistered;
@@ -34,7 +35,7 @@ contract FarmFactory is OwnableUpgradeable {
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
     event FarmDeployerUpdated(address deployer, bool registered);
-    event FeeParamsUpdated(address receiver, address token, uint256 amount);
+    event FeeParamsUpdated(address receiver, address token, uint256 amount, uint256 extensionFeePerDay);
     event PrivilegeUpdated(address deployer, bool privilege);
 
     // Custom Errors
@@ -53,9 +54,12 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
     /// @param _feeReceiver Receiver of the fees
-    function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount) external initializer {
+    function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay)
+        external
+        initializer
+    {
         OwnableUpgradeable.__Ownable_init();
-        updateFeeParams(_feeReceiver, _feeToken, _feeAmount);
+        updateFeeParams(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
     }
 
     /// @notice Register a farm created by registered Deployer
@@ -126,24 +130,28 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _deployerAccount The account creating the farm
     /// @return Returns FeeReceiver, feeToken address and feeTokenAmt
     /// @dev It returns fee amount as 0 if deployer account is privileged
-    function getFeeParams(address _deployerAccount) external view returns (address, address, uint256) {
+    function getFeeParams(address _deployerAccount) external view returns (address, address, uint256, uint256) {
         if (isPrivilegedDeployer[_deployerAccount]) {
-            return (feeReceiver, feeToken, 0);
+            return (feeReceiver, feeToken, 0, 0);
         }
-        return (feeReceiver, feeToken, feeAmount);
+        return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);
     }
 
     /// @notice Update the fee params for factory
     /// @param _receiver feeReceiver address
     /// @param _feeToken token address for fee
     /// @param _amount amount of token to be collected
-    function updateFeeParams(address _receiver, address _feeToken, uint256 _amount) public onlyOwner {
+    function updateFeeParams(address _receiver, address _feeToken, uint256 _amount, uint256 _extensionFeePerDay)
+        public
+        onlyOwner
+    {
         _isNonZeroAddr(_receiver);
         _isNonZeroAddr(_feeToken);
         feeReceiver = _receiver;
         feeToken = _feeToken;
         feeAmount = _amount;
-        emit FeeParamsUpdated(_receiver, _feeToken, _amount);
+        extensionFeePerDay = _extensionFeePerDay;
+        emit FeeParamsUpdated(_receiver, _feeToken, _amount, _extensionFeePerDay);
     }
 
     /// @notice Validate address

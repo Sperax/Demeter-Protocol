@@ -67,6 +67,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
@@ -82,6 +83,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        farmFactory = _factory;
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -129,7 +131,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = deposits[msg.sender][_depositId].tokenId;
 

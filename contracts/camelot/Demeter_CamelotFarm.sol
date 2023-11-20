@@ -45,6 +45,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         address _camelotPairPool,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
@@ -55,6 +56,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         }
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        farmFactory = _factory;
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -101,7 +103,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isValidDeposit(msg.sender, _depositId);
         INFTPool(nftPool).harvestPositionTo(deposits[msg.sender][_depositId].tokenId, msg.sender);
     }

@@ -67,7 +67,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 
-        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, pairPool, _data.rewardData);
+        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, FACTORY, pairPool, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required

@@ -44,12 +44,14 @@ contract BaseE20Farm is BaseFarm {
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize farmToken related data
         farmToken = _farmToken;
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        farmFactory = _factory;
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -69,7 +71,7 @@ contract BaseE20Farm is BaseFarm {
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant {
         // Validations
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isValidDeposit(msg.sender, _depositId);
         Deposit memory userDeposit = deposits[msg.sender][_depositId];
         if (_amount == 0) {
@@ -96,7 +98,7 @@ contract BaseE20Farm is BaseFarm {
     /// @dev Function is not available for locked deposits.
     function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant {
         //Validations
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[msg.sender][_depositId];
 

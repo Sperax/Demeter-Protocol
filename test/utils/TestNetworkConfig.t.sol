@@ -11,12 +11,13 @@ abstract contract TestNetworkConfig is Arbitrum {
         super.setUp();
         address _feeReceiver = actors[6];
         address _feeToken = USDS;
-        uint256 _feeAmount = 1e22;
+        uint256 _feeAmount = 1e20;
+        uint256 _extensionFeePerDay = 1e18;
         vm.startPrank(PROXY_OWNER);
         UpgradeUtil upgradeUtil = new UpgradeUtil();
         FarmFactory farmFactoryImpl = new FarmFactory();
         DEMETER_FACTORY = upgradeUtil.deployErc1967Proxy(address(farmFactoryImpl));
-        FarmFactory(DEMETER_FACTORY).initialize(_feeReceiver, _feeToken, _feeAmount);
+        FarmFactory(DEMETER_FACTORY).initialize(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
         vm.stopPrank();
     }
 }

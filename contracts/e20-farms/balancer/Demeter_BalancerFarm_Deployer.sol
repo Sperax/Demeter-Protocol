@@ -80,7 +80,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         _collectFee();
 
         Demeter_BalancerFarm farmInstance = Demeter_BalancerFarm(Clones.clone(farmImplementation));
-        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, pairPool, _data.rewardData);
+        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, FACTORY, pairPool, _data.rewardData);
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         IFarmFactory(FACTORY).registerFarm(farm, msg.sender);

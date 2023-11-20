@@ -21,6 +21,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 
 // Defines the reward data for constructor.
 // token - Address of the token
@@ -91,11 +92,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
+    address public farmFactory;
     bool public isPaused;
     bool public isClosed;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
+    uint256 public farmEndTime;
 
     // Reward info
     RewardFund[] public rewardFunds;
@@ -112,6 +115,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
+    event FarmEndTimeUpdated(uint256 newEndTime);
     event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
@@ -121,12 +125,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     event TokenManagerUpdated(address rwdToken, address oldTokenManager, address newTokenManager);
     event RewardTokenAdded(address rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
+    event ExtensionFeeCollected(address indexed creator, address token, uint256 extensionFee);
 
     // Custom Errors
     error InvalidRewardToken();
     error FarmDoesNotSupportLockup();
     error FarmAlreadyStarted();
     error InvalidTime();
+    error InvalidExtension();
     error FarmAlreadyInRequiredState();
     error CannotWithdrawRewardToken();
     error CannotWithdrawZeroAmount();
@@ -144,6 +150,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     error RewardTokenAlreadyAdded();
     error DepositDoesNotExist();
     error FarmIsClosed();
+    error FarmNotYetStarted();
+    error FarmHasExpired();
     error FarmIsPaused();
     error NotTheTokenManager();
     error InvalidAddress();
@@ -171,7 +179,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (_amount == 0) {
             revert ZeroAmount();
         }
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
         }
@@ -184,7 +192,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @notice Update the cooldown period
     /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         uint256 oldCooldownPeriod = cooldownPeriod;
         if (oldCooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
@@ -199,7 +207,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         if (lastFundUpdateTime <= block.timestamp) {
             revert FarmAlreadyStarted();
         }
@@ -207,14 +215,47 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             revert InvalidTime();
         }
 
+        if (_newStartTime < lastFundUpdateTime) {
+            uint256 timeDelta = lastFundUpdateTime - _newStartTime;
+            farmEndTime = farmEndTime - timeDelta;
+            emit FarmEndTimeUpdated(farmEndTime);
+        }
+
+        if (_newStartTime > lastFundUpdateTime) {
+            uint256 timeDelta = _newStartTime - lastFundUpdateTime;
+            farmEndTime = farmEndTime + timeDelta;
+            emit FarmEndTimeUpdated(farmEndTime);
+        }
+
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
     }
 
+    /// @notice Update the farm end time.
+    /// @dev Can be updated only before the farm expired or closed
+    ///      extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days
+    ///      extension is possible only after farm started
+    /// @param _extensionDays The number of days to extend the farm
+    function extendFarmEndTime(uint256 _extensionDays) external onlyOwner {
+        _farmNotClosedOrExpired();
+        if (lastFundUpdateTime > block.timestamp) {
+            revert FarmNotYetStarted();
+        }
+        if (_extensionDays >= 100 && _extensionDays <= 300) {
+            revert InvalidExtension();
+        }
+
+        _collectFee(_extensionDays);
+
+        farmEndTime = farmEndTime + _extensionDays * 1 days;
+
+        emit FarmEndTimeUpdated(farmEndTime);
+    }
+
     /// @notice Pause / UnPause the deposit
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         if (isPaused == _isPaused) {
             revert FarmAlreadyInRequiredState();
         }
@@ -226,7 +267,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @notice Recover rewardToken from the farm in case of EMERGENCY
     /// @dev Shuts down the farm completely
     function closeFarm() external onlyOwner nonReentrant {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _updateFarmRewardData();
         isPaused = true;
         isClosed = true;
@@ -272,7 +313,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _rwdToken The reward token's address
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isTokenManager(_rwdToken);
         _updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
@@ -283,7 +324,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _rwdToken The reward token's address.
     /// @param _newTknManager Address of the new token manager.
     function updateTokenManager(address _rwdToken, address _newTknManager) external {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
@@ -397,7 +438,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _depositId The id of the deposit
     /// @dev Anyone can call this function to claim rewards for the user
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
-        _farmNotClosed();
+        _farmNotClosedOrExpired();
         _isValidDeposit(_account, _depositId);
         _claimRewards(_account, _depositId);
     }
@@ -652,10 +693,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _tokenId The tokenId of the deposit
     /// @param _fundId The reward fund id
     /// @param _liquidity The liquidity of the deposit
-    function _subscribeRewardFund(uint8 _fundId, uint256 _tokenId, uint256 _liquidity) internal {
-        if (_fundId >= rewardFunds.length) {
-            revert InvalidFundId();
-        }
+    function _subscribeRewardFund(uint8 _fundId, uint256 _tokenId, uint256 _liquidity) private {
         // Subscribe to the reward fund
         uint256 numRewards = rewardTokens.length;
         subscriptions[_tokenId].push(
@@ -684,10 +722,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _account The user's address
     /// @param _depositId The deposit id corresponding to the user
     /// @dev The rewards claimed from the reward fund is persisted in the event
-    function _unsubscribeRewardFund(uint8 _fundId, address _account, uint256 _depositId) internal {
-        if (_fundId >= rewardFunds.length) {
-            revert InvalidFundId();
-        }
+    function _unsubscribeRewardFund(uint8 _fundId, address _account, uint256 _depositId) private {
         Deposit memory userDeposit = deposits[_account][_depositId];
         uint256 numRewards = rewardTokens.length;
 
@@ -772,6 +807,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _transferOwnership(msg.sender);
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
+        farmEndTime = _farmStartTime + 100 days;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -814,6 +850,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         emit FarmStartTimeUpdated(_farmStartTime);
+        emit FarmEndTimeUpdated(_farmStartTime + 100 days);
     }
 
     /// @notice Adds new reward token to the farm
@@ -872,10 +909,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
     }
 
-    /// @notice Validate if farm is not closed
-    function _farmNotClosed() internal view {
+    /// @notice Validate if farm is not closed or expired
+    function _farmNotClosedOrExpired() internal view {
         if (isClosed) {
             revert FarmIsClosed();
+        }
+        if (block.timestamp > farmEndTime) {
+            revert FarmHasExpired();
         }
     }
 
@@ -903,6 +943,20 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     function _isNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
+        }
+    }
+
+    /// @notice Collect fee and transfer it to feeReceiver.
+    /// @dev Function fetches all the fee params from farmFactory.
+    function _collectFee(uint256 _extensionDays) internal {
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        (address feeReceiver, address feeToken,, uint256 _extensionFeePerDay) =
+            IFarmFactory(farmFactory).getFeeParams(msg.sender);
+        uint256 extensionFeeAmount;
+        if (_extensionFeePerDay != 0) {
+            extensionFeeAmount = _extensionDays * _extensionFeePerDay;
+            IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
+            emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
         }
     }
 }
