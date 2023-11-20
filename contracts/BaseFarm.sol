@@ -950,11 +950,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @dev Function fetches all the fee params from farmFactory.
     function _collectFee(uint256 _extensionDays) internal {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
-        (address feeReceiver, address feeToken,, uint256 _extensionFeePerDay) =
+        (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
             IFarmFactory(farmFactory).getFeeParams(msg.sender);
         uint256 extensionFeeAmount;
-        if (_extensionFeePerDay != 0) {
-            extensionFeeAmount = _extensionDays * _extensionFeePerDay;
+        if (extensionFeePerDay != 0) {
+            extensionFeeAmount = _extensionDays * extensionFeePerDay;
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
             emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
         }
