@@ -37,6 +37,8 @@ interface INFTPool {
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
 
+    function lastTokenId() external view returns (uint256);
+
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 
     function getStakingPosition(uint256 tokenId)

@@ -11,7 +11,7 @@ abstract contract TestNetworkConfig is Arbitrum {
         super.setUp();
         address _feeReceiver = actors[6];
         address _feeToken = USDS;
-        uint256 _feeAmount = 1e22;
+        uint256 _feeAmount = 1e20;
         vm.startPrank(PROXY_OWNER);
         UpgradeUtil upgradeUtil = new UpgradeUtil();
         FarmFactory farmFactoryImpl = new FarmFactory();
