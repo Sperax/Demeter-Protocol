@@ -246,7 +246,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             revert InvalidExtension();
         }
 
-        _collectFee(_extensionDays);
+        _collectExtensionFee(_extensionDays);
 
         farmEndTime = farmEndTime + _extensionDays * 1 days;
 
@@ -804,9 +804,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit RewardTokenAdded(_token, _tknManager);
     }
 
-    /// @notice Collect fee and transfer it to feeReceiver.
+    /// @notice Collect farm extension fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
-    function _collectFee(uint256 _extensionDays) internal {
+    function _collectExtensionFee(uint256 _extensionDays) internal {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
         (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
             IFarmFactory(farmFactory).getFeeParams(msg.sender);
