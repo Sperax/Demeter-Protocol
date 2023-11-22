@@ -246,9 +246,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             revert InvalidExtension();
         }
 
-        _collectExtensionFee(_extensionDays);
-
         farmEndTime = farmEndTime + _extensionDays * 1 days;
+
+        _collectExtensionFee(_extensionDays);
 
         emit FarmEndTimeUpdated(farmEndTime);
     }
@@ -810,9 +810,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
         (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
             IFarmFactory(farmFactory).getFeeParams(msg.sender);
-        uint256 extensionFeeAmount;
         if (extensionFeePerDay != 0) {
-            extensionFeeAmount = _extensionDays * extensionFeePerDay;
+            uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
             emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
         }
