@@ -65,9 +65,7 @@ contract Demeter_CamelotFarmTest is
 
     function createFarm(uint256 startTime, bool lockup) public override useKnownActor(owner) returns (address) {
         address[] memory rewardToken = rwdTokens;
-        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](
-            rewardToken.length
-        );
+        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
@@ -111,20 +109,37 @@ contract Demeter_CamelotFarmTest is
         useKnownActor(user)
     {
         bytes memory lockup = locked ? abi.encode(true) : abi.encode(false);
+        uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId() + 1;
+        address poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
+        if (
+            keccak256(abi.encodePacked(revertMsg))
+                == keccak256(abi.encodePacked(BaseFarm.NoLiquidityInPosition.selector))
+        ) amt = 100;
         uint256 amt1 = amt * 10 ** ERC20(ASSET_1).decimals();
         deal(ASSET_1, user, amt1);
         uint256 amt2 = amt * 10 ** ERC20(ASSET_2).decimals();
         deal(ASSET_2, user, amt2);
-        IERC20(ASSET_1).safeIncreaseAllowance(POSITION_HELPER, amt1);
-        IERC20(ASSET_2).safeIncreaseAllowance(POSITION_HELPER, amt2);
+        IERC20(ASSET_1).forceApprove(POSITION_HELPER, amt1);
+        IERC20(ASSET_2).forceApprove(POSITION_HELPER, amt2);
         IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
             ASSET_1, ASSET_2, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
         );
-        uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId();
-        emit log_named_uint("cooldown", Demeter_CamelotFarm(farm).cooldownPeriod());
-        address poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
+        if (
+            keccak256(abi.encodePacked(revertMsg))
+                == keccak256(abi.encodePacked(BaseFarm.NoLiquidityInPosition.selector))
+        ) {
+            vm.mockCall(
+                poolAddress,
+                abi.encodeWithSelector(INFTPool.getStakingPosition.selector, tokenId),
+                abi.encode(0, 0, 0, 0, 0, 0, 0, 0)
+            );
+        }
         vm.expectRevert(revertMsg);
         IERC721(poolAddress).safeTransferFrom(user, farm, tokenId, lockup);
+        if (
+            keccak256(abi.encodePacked(revertMsg))
+                == keccak256(abi.encodePacked(BaseFarm.NoLiquidityInPosition.selector))
+        ) vm.clearMockedCalls();
     }
 
     function getPoolAddress() public view override returns (address poolAddress) {

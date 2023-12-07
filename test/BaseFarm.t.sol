@@ -242,7 +242,11 @@ abstract contract WithdrawTest is BaseFarmTest {
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(
-            currentActor, userDeposit.tokenId, block.timestamp - cooldownTime, 1e21, rewardsForEachSubs[0]
+            currentActor,
+            userDeposit.tokenId,
+            block.timestamp - cooldownTime,
+            userDeposit.liquidity,
+            rewardsForEachSubs[0]
         );
         BaseFarm(lockupFarm).withdraw(0);
         skip(time);
@@ -260,7 +264,9 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(
+            currentActor, userDeposit.tokenId, block.timestamp - time, userDeposit.liquidity, rewardsForEachSubs[0]
+        );
         BaseFarm(lockupFarm).withdraw(0);
     }
 
@@ -271,7 +277,9 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(
+            currentActor, userDeposit.tokenId, block.timestamp - time, userDeposit.liquidity, rewardsForEachSubs[0]
+        );
         BaseFarm(nonLockupFarm).withdraw(0);
     }
 }
@@ -292,7 +300,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
         public
         useKnownActor(owner)
     {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawRewardToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
