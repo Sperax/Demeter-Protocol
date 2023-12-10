@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../contracts/e20-farms/BaseE20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
@@ -51,6 +52,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
+    event FarmEndTimeUpdated(uint256 newEndTime);
     event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
@@ -781,10 +783,42 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
         // type(uint64).max
         address farm = createFarm(farmStartTime, false);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 timeDelta;
+
+        if (newStartTime > farmStartTime) {
+            timeDelta = newStartTime - farmStartTime;
+        } else if (newStartTime < farmStartTime) {
+            timeDelta = farmStartTime - newStartTime;
+        } else {
+            timeDelta = 0;
+        }
+
         vm.startPrank(owner);
         vm.expectEmit(true, true, false, true);
         emit FarmStartTimeUpdated(newStartTime);
         BaseFarm(farm).updateFarmStartTime(newStartTime);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        if (newStartTime > farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("if condition executed", 1);
+        } else if (newStartTime < farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("else if condition executed", 1);
+        } else {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("else condition executed", 1);
+        }
     }
 
     function test_start_time_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
@@ -793,11 +827,336 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
 
         address farm = createFarm(farmStartTime, true);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 timeDelta;
+
+        if (newStartTime > farmStartTime) {
+            timeDelta = newStartTime - farmStartTime;
+        } else if (newStartTime < farmStartTime) {
+            timeDelta = farmStartTime - newStartTime;
+        } else {
+            timeDelta = 0;
+        }
+
         vm.startPrank(owner);
         vm.expectEmit(true, true, false, true);
         emit FarmStartTimeUpdated(newStartTime);
         BaseFarm(farm).updateFarmStartTime(newStartTime);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        if (newStartTime > farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("if condition executed", 1);
+        } else if (newStartTime < farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("else if condition executed", 1);
+        } else {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+            emit log_named_uint("else condition executed", 1);
+        }
     }
+
+    // the above fuzz test contains very low range for newStartTime on the negative delta side and further it there is a chance it can miss the no delta case.
+    // so wrote the below tests.
+
+    function test_start_time_lockupFarm_end_time_withDelta(uint256 farmStartTime, uint256 newStartTime) public {
+        farmStartTime = block.timestamp + 50 days;
+        newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
+
+        address farm = createFarm(farmStartTime, true);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 timeDelta;
+
+        if (newStartTime > farmStartTime) {
+            timeDelta = newStartTime - farmStartTime;
+        } else if (newStartTime < farmStartTime) {
+            timeDelta = farmStartTime - newStartTime;
+        } else {
+            timeDelta = 0;
+        }
+
+        vm.startPrank(owner);
+        vm.expectEmit(true, true, false, true);
+        emit FarmStartTimeUpdated(newStartTime);
+
+        if (newStartTime > farmStartTime) {
+            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + timeDelta);
+        } else if (newStartTime < farmStartTime) {
+            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate - timeDelta);
+        }
+
+        BaseFarm(farm).updateFarmStartTime(newStartTime);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        if (newStartTime > farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        } else if (newStartTime < farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        } else {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        }
+    }
+
+    function test_start_time_noLockupFarm_end_time_withDelta(uint256 farmStartTime, uint256 newStartTime) public {
+        farmStartTime = block.timestamp + 50 days;
+        newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
+
+        address farm = createFarm(farmStartTime, false);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 timeDelta;
+
+        if (newStartTime > farmStartTime) {
+            timeDelta = newStartTime - farmStartTime;
+        } else if (newStartTime < farmStartTime) {
+            timeDelta = farmStartTime - newStartTime;
+        } else {
+            timeDelta = 0;
+        }
+
+        vm.startPrank(owner);
+        vm.expectEmit(true, true, false, true);
+        emit FarmStartTimeUpdated(newStartTime);
+        BaseFarm(farm).updateFarmStartTime(newStartTime);
+        vm.stopPrank();
+
+        if (newStartTime > farmStartTime) {
+            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + timeDelta);
+        } else if (newStartTime < farmStartTime) {
+            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate - timeDelta);
+        }
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        if (newStartTime > farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        } else if (newStartTime < farmStartTime) {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        } else {
+            assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
+            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(lastFundUpdateTime, newStartTime);
+        }
+    }
+
+    function test_start_time_lockupFarm_end_time_noDelta(uint256 farmStartTime) public {
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+
+        address farm = createFarm(farmStartTime, true);
+
+        vm.startPrank(owner);
+        vm.expectEmit(true, true, false, true);
+        emit FarmStartTimeUpdated(farmStartTime);
+        BaseFarm(farm).updateFarmStartTime(farmStartTime);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
+        assertEq(lastFundUpdateTime, farmStartTime);
+    }
+
+    function test_start_time_noLockupFarm_end_time_noDelta(uint256 farmStartTime) public {
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+
+        address farm = createFarm(farmStartTime, false);
+
+        vm.startPrank(owner);
+        vm.expectEmit(true, true, false, true);
+        emit FarmStartTimeUpdated(farmStartTime);
+        BaseFarm(farm).updateFarmStartTime(farmStartTime);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
+        assertEq(lastFundUpdateTime, farmStartTime);
+    }
+
+    function test_start_time_lockupFarm_end_time_withDelta_multiUpdate() public {
+        uint256 farmStartTime = block.timestamp + 50 days;
+        uint256 newStartTimeOne = block.timestamp + 70 days;
+        uint256 newStartTimeTwo = block.timestamp + 90 days;
+        uint256 newStartTimeThree = block.timestamp + 60 days;
+        uint256 newStartTimeFour = block.timestamp + 65 days;
+        uint256 newStartTimeFive = block.timestamp + 40 days;
+        uint256 newStartTimeSix = block.timestamp + 20 days;
+        uint256 newStartTimeSeven = block.timestamp + 30 days;
+        uint256 newStartTimeEight = block.timestamp + 35 days;
+
+        address farm = createFarm(farmStartTime, true);
+
+        vm.startPrank(owner);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeOne);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeTwo);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeThree);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeFour);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeFive);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeSix);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeSeven);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
+        assertEq(lastFundUpdateTime, newStartTimeEight);
+    }
+
+    function test_start_time_noLockupFarm_end_time_withDelta_multiUpdate() public {
+        uint256 farmStartTime = block.timestamp + 50 days;
+        uint256 newStartTimeOne = block.timestamp + 70 days;
+        uint256 newStartTimeTwo = block.timestamp + 90 days;
+        uint256 newStartTimeThree = block.timestamp + 60 days;
+        uint256 newStartTimeFour = block.timestamp + 65 days;
+        uint256 newStartTimeFive = block.timestamp + 40 days;
+        uint256 newStartTimeSix = block.timestamp + 20 days;
+        uint256 newStartTimeSeven = block.timestamp + 30 days;
+        uint256 newStartTimeEight = block.timestamp + 35 days;
+
+        address farm = createFarm(farmStartTime, false);
+
+        vm.startPrank(owner);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeOne);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeTwo);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeThree);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeFour);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeFive);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeSix);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeSeven);
+        BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
+        vm.stopPrank();
+
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
+
+        assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
+        assertEq(lastFundUpdateTime, newStartTimeEight);
+    }
+}
+
+abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
+    function test_extend_end_time_noLockupFarm_revertsWhen_FarmNotYetStarted(
+        uint256 extensionDays,
+        uint256 farmStartTime
+    ) public {
+        extensionDays = bound(extensionDays, 0, type(uint256).max);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, false);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
+        vm.startPrank(owner);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        vm.stopPrank();
+    }
+
+    function test_extend_end_time_lockupFarm_revertsWhen_FarmNotYetStarted(uint256 extensionDays, uint256 farmStartTime)
+        public
+    {
+        extensionDays = bound(extensionDays, 0, type(uint256).max);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, true);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
+        vm.startPrank(owner);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        vm.stopPrank();
+    }
+
+    function test_extend_end_time_noLockupFarm_revertsWhen_InvalidExtension(uint256 extensionDays)
+        public
+        useKnownActor(owner)
+    {
+        vm.assume(extensionDays < 100 || extensionDays > 300);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
+        BaseFarm(nonLockupFarm).extendFarmEndTime(0);
+    }
+
+    function test_extend_end_time_lockupFarm_revertsWhen_InvalidExtension(uint256 extensionDays)
+        public
+        useKnownActor(owner)
+    {
+        vm.assume(extensionDays < 100 || extensionDays > 300);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
+        BaseFarm(lockupFarm).extendFarmEndTime(0);
+    }
+
+    function test_extend_end_time_noLockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
+        public
+        useKnownActor(owner)
+    {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        BaseFarm(nonLockupFarm).closeFarm();
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseFarm(nonLockupFarm).extendFarmEndTime(extensionDays);
+    }
+
+    function test_extend_end_time_lockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
+        public
+        useKnownActor(owner)
+    {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        BaseFarm(lockupFarm).closeFarm();
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseFarm(lockupFarm).extendFarmEndTime(extensionDays);
+    }
+
+    function test_extend_end_time_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
+        public
+    {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, false);
+        uint256 farmEndTime = BaseFarm(farm).farmEndTime();
+        vm.warp(farmEndTime + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.startPrank(owner);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        vm.stopPrank();
+    }
+
+    function test_extend_end_time_lockupFarm_revertsWhen_farExpired(uint256 extensionDays, uint256 farmStartTime)
+        public
+    {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, true);
+        uint256 farmEndTime = BaseFarm(farm).farmEndTime();
+        vm.warp(farmEndTime + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.startPrank(owner);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        vm.stopPrank();
+    }
+
+    // function test_extend_end_time_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+    // }
+
+    // function test_extend_end_time_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+    // }
 }
 
 abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
