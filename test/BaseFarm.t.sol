@@ -1156,11 +1156,67 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    // function test_extend_end_time_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
-    // }
+    function test_extend_end_time_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, false);
+        vm.warp(farmStartTime + 1);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
 
-    // function test_extend_end_time_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
-    // }
+        uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
+        address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
+        address feeToken = FarmFactory(DEMETER_FACTORY).feeToken();
+
+        uint256 feeReceiverTokenBalanceBeforeExtension = IERC20(feeToken).balanceOf(feeReceiver);
+
+        vm.startPrank(owner);
+        IERC20(feeToken).approve(farm, 500 * 1e20);
+        vm.expectEmit(true, false, false, true);
+        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        vm.stopPrank();
+
+        uint256 feeReceiverTokenBalanceAfterExtension = IERC20(feeToken).balanceOf(feeReceiver);
+
+        assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + extensionDays * 1 days);
+        assertTrue(feeReceiverTokenBalanceAfterExtension > feeReceiverTokenBalanceBeforeExtension);
+        assertEq(
+            feeReceiverTokenBalanceAfterExtension,
+            feeReceiverTokenBalanceBeforeExtension + extensionDays * extensionFeePerDay
+        );
+    }
+
+    function test_extend_end_time_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(farmStartTime, true);
+        vm.warp(farmStartTime + 1);
+        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+
+        uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
+        address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
+        address feeToken = FarmFactory(DEMETER_FACTORY).feeToken();
+
+        uint256 feeReceiverTokenBalanceBeforeExtension = IERC20(feeToken).balanceOf(feeReceiver);
+
+        vm.startPrank(owner);
+        IERC20(feeToken).approve(farm, 500 * 1e20);
+        vm.expectEmit(true, false, false, true);
+        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
+        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        vm.stopPrank();
+
+        uint256 feeReceiverTokenBalanceAfterExtension = IERC20(feeToken).balanceOf(feeReceiver);
+
+        assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + extensionDays * 1 days);
+        assertTrue(feeReceiverTokenBalanceAfterExtension > feeReceiverTokenBalanceBeforeExtension);
+        assertEq(
+            feeReceiverTokenBalanceAfterExtension,
+            feeReceiverTokenBalanceBeforeExtension + extensionDays * extensionFeePerDay
+        );
+    }
 }
 
 abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
