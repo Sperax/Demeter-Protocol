@@ -1014,9 +1014,11 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTimeOne);
         BaseFarm(farm).updateFarmStartTime(newStartTimeTwo);
         BaseFarm(farm).updateFarmStartTime(newStartTimeThree);
+        vm.warp(block.timestamp + 1 days);
         BaseFarm(farm).updateFarmStartTime(newStartTimeFour);
         BaseFarm(farm).updateFarmStartTime(newStartTimeFive);
         BaseFarm(farm).updateFarmStartTime(newStartTimeSix);
+        vm.warp(block.timestamp + 2 days);
         BaseFarm(farm).updateFarmStartTime(newStartTimeSeven);
         BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
         vm.stopPrank();
@@ -1045,9 +1047,11 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTimeOne);
         BaseFarm(farm).updateFarmStartTime(newStartTimeTwo);
         BaseFarm(farm).updateFarmStartTime(newStartTimeThree);
+        vm.warp(block.timestamp + 1 days);
         BaseFarm(farm).updateFarmStartTime(newStartTimeFour);
         BaseFarm(farm).updateFarmStartTime(newStartTimeFive);
         BaseFarm(farm).updateFarmStartTime(newStartTimeSix);
+        vm.warp(block.timestamp + 2 days);
         BaseFarm(farm).updateFarmStartTime(newStartTimeSeven);
         BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
         vm.stopPrank();
