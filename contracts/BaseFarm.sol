@@ -107,11 +107,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     mapping(uint256 => Deposit) public deposits;
     mapping(uint256 => Subscription[]) public subscriptions;
 
-    event Deposited(address indexed account, uint256 depositId, bool locked, uint256 tokenId, uint256 liquidity);
+    event Deposited(
+        uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
+    );
     event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
     event DepositWithdrawn(
+        uint256 indexed depositId,
         address indexed account,
-        uint256 depositId,
         uint256 tokenId,
         uint256 startTime,
         uint256 liquidity,
@@ -487,7 +489,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         ++totalDeposits;
 
-        emit Deposited(_account, currentDeposits, _lockup, _tokenId, _liquidity);
+        emit Deposited(currentDeposits, _account, _lockup, _tokenId, _liquidity);
     }
 
     /// @notice Common logic for initiating cooldown.
@@ -552,8 +554,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         delete deposits[_depositId];
 
         emit DepositWithdrawn({
-            account: _account,
             depositId: _depositId,
+            account: _account,
             tokenId: _userDeposit.tokenId,
             startTime: _userDeposit.startTime,
             liquidity: _userDeposit.liquidity,
