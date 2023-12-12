@@ -71,7 +71,7 @@ contract BaseE20Farm is BaseFarm {
         // Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
+        Deposit memory userDeposit = deposits[_depositId];
         if (_amount == 0) {
             revert InvalidAmount();
         }
@@ -84,7 +84,7 @@ contract BaseE20Farm is BaseFarm {
 
         // Update deposit Information
         _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
-        deposits[msg.sender][_depositId].liquidity += _amount;
+        deposits[_depositId].liquidity += _amount;
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -98,7 +98,7 @@ contract BaseE20Farm is BaseFarm {
         //Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
 
         if (_amount == 0 || _amount >= userDeposit.liquidity) {
             revert InvalidAmount();
@@ -130,7 +130,7 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
+        Deposit memory userDeposit = deposits[_depositId];
 
         _withdraw(msg.sender, _depositId, userDeposit);
 

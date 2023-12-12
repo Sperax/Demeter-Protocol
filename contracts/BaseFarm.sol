@@ -55,6 +55,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     // Deposit information
+    // depositor address of the depositor
     // liquidity - amount of liquidity in the deposit
     // tokenId - maps to uniswap NFT token id
     // startTime - time of deposit
@@ -62,6 +63,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     // cooldownPeriod - cooldown period (if deposit is locked)
     // totalRewardsClaimed - total rewards claimed for the deposit
     struct Deposit {
+        address depositor;
         uint256 liquidity;
         uint256 tokenId;
         uint256 startTime;
@@ -96,18 +98,24 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
+    uint256 private totalDeposits;
 
     // Reward info
     RewardFund[] public rewardFunds;
     address[] public rewardTokens;
     mapping(address => RewardData) public rewardData;
-    mapping(address => Deposit[]) public deposits;
+    mapping(uint256 => Deposit) public deposits;
     mapping(uint256 => Subscription[]) public subscriptions;
 
-    event Deposited(address indexed account, bool locked, uint256 tokenId, uint256 liquidity);
+    event Deposited(address indexed account, uint256 depositId, bool locked, uint256 tokenId, uint256 liquidity);
     event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
     event DepositWithdrawn(
-        address indexed account, uint256 tokenId, uint256 startTime, uint256 liquidity, uint256[] totalRewardsClaimed
+        address indexed account,
+        uint256 depositId,
+        uint256 tokenId,
+        uint256 startTime,
+        uint256 liquidity,
+        uint256[] totalRewardsClaimed
     );
     event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
@@ -296,7 +304,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @return rewards The total accrued rewards for the deposit (uint256[])
     function computeRewards(address _account, uint256 _depositId) external view returns (uint256[] memory rewards) {
         _isValidDeposit(_account, _depositId);
-        Deposit memory userDeposit = deposits[_account][_depositId];
+        Deposit memory userDeposit = deposits[_depositId];
         Subscription[] memory depositSubs = subscriptions[userDeposit.tokenId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numDepositSubs = depositSubs.length;
@@ -334,20 +342,18 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         return rewards;
     }
 
-    /// @notice get number of deposits for an account
-    /// @param _account The user's address
-    function getNumDeposits(address _account) external view returns (uint256) {
-        return deposits[_account].length;
+    /// @notice Get total number of deposits in the farm
+    function getTotalDeposits() external view returns (uint256) {
+        return totalDeposits;
     }
 
-    /// @notice get deposit info for an account
-    /// @notice _account The user's address
-    /// @notice _depositId The id of the deposit
-    function getDeposit(address _account, uint256 _depositId) external view returns (Deposit memory) {
-        return deposits[_account][_depositId];
+    /// @notice Get deposit info for a deposit id
+    /// @param _depositId The id of the deposit
+    function getDeposit(uint256 _depositId) external view returns (Deposit memory) {
+        return deposits[_depositId];
     }
 
-    /// @notice get number of deposits for an account
+    /// @notice get number of subscriptions for an account
     /// @param _tokenId The token's id
     function getNumSubscriptions(uint256 _tokenId) external view returns (uint256) {
         return subscriptions[_tokenId].length;
@@ -458,6 +464,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         // Prepare data to be stored.
         Deposit memory userDeposit = Deposit({
+            depositor: _account,
             cooldownPeriod: 0,
             tokenId: _tokenId,
             startTime: block.timestamp,
@@ -474,10 +481,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, _liquidity);
         }
 
+        uint256 currentDeposits = totalDeposits;
         // @dev Add the deposit to the user's deposit list
-        deposits[_account].push(userDeposit);
+        deposits[currentDeposits] = userDeposit;
 
-        emit Deposited(_account, _lockup, _tokenId, _liquidity);
+        ++totalDeposits;
+
+        emit Deposited(_account, currentDeposits, _lockup, _tokenId, _liquidity);
     }
 
     /// @notice Common logic for initiating cooldown.
@@ -485,7 +495,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     function _initiateCooldown(uint256 _depositId) internal {
         _farmNotPaused();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
 
         // validate if the deposit is in locked state
         if (userDeposit.cooldownPeriod == 0) {
@@ -528,7 +538,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _claimRewards(_account, _depositId);
 
         // Store the total rewards earned
-        uint256[] memory totalRewards = deposits[_account][_depositId].totalRewardsClaimed;
+        uint256[] memory totalRewards = _userDeposit.totalRewardsClaimed;
 
         // unsubscribe the user from the common reward fund
         _unsubscribeRewardFund(COMMON_FUND_ID, _account, _depositId);
@@ -539,11 +549,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         // Update the user's deposit list
-        deposits[_account][_depositId] = deposits[_account][deposits[_account].length - 1];
-        deposits[_account].pop();
+        delete deposits[_depositId];
 
         emit DepositWithdrawn({
             account: _account,
+            depositId: _depositId,
             tokenId: _userDeposit.tokenId,
             startTime: _userDeposit.startTime,
             liquidity: _userDeposit.liquidity,
@@ -559,7 +569,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     function _claimRewards(address _account, uint256 _depositId) internal {
         _updateFarmRewardData();
 
-        Deposit storage userDeposit = deposits[_account][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
         Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
 
         uint256 numRewards = rewardTokens.length;
@@ -688,7 +698,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         if (_fundId >= rewardFunds.length) {
             revert InvalidFundId();
         }
-        Deposit memory userDeposit = deposits[_account][_depositId];
+        Deposit memory userDeposit = deposits[_depositId];
         uint256 numRewards = rewardTokens.length;
 
         // Unsubscribe from the reward fund
@@ -867,7 +877,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Validate the deposit for account
     function _isValidDeposit(address _account, uint256 _depositId) internal view {
-        if (_depositId >= deposits[_account].length) {
+        if (deposits[_depositId].depositor != _account) {
             revert DepositDoesNotExist();
         }
     }

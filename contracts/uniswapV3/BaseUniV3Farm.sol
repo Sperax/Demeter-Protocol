@@ -118,7 +118,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
+        Deposit memory userDeposit = deposits[_depositId];
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
@@ -131,7 +131,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        uint256 tokenId = deposits[msg.sender][_depositId].tokenId;
+        uint256 tokenId = deposits[_depositId].tokenId;
 
         INFPM pm = INFPM(NFPM());
         (uint256 amt0, uint256 amt1) = PositionValue.fees(pm, tokenId);
