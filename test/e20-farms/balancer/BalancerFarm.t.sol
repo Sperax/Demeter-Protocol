@@ -75,11 +75,7 @@ contract BalancerFarmTest is
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(
-            DEMETER_FACTORY,
-            BALANCER_VAULT,
-            "Balancer Deployer"
-        );
+        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_FACTORY, BALANCER_VAULT, "Balancer Deployer");
         factory.registerFarmDeployer(address(balancerFarmDeployer));
 
         // Configure rewardTokens
@@ -97,9 +93,7 @@ contract BalancerFarmTest is
 
     function createFarm(uint256 startTime, bool lockup) public override useKnownActor(owner) returns (address) {
         address[] memory rewardToken = rwdTokens;
-        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](
-            rewardToken.length
-        );
+        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
@@ -131,7 +125,7 @@ contract BalancerFarmTest is
         uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
         vm.expectEmit(true, true, false, true);
-        emit Deposited(currentActor, locked, BaseFarm(farm).getNumDeposits(currentActor) + 1, amt);
+        emit Deposited(currentActor, locked, BaseFarm(farm).getTotalDeposits() + 1, amt);
         Demeter_BalancerFarm(farm).deposit(amt, locked);
         uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);

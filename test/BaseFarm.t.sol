@@ -191,7 +191,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         skip(86400 * 2);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
-        uint256 deposits = BaseFarm(lockupFarm).getNumDeposits(currentActor);
+        uint256 deposits = BaseFarm(lockupFarm).getTotalDeposits();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
     }
@@ -238,7 +238,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).initiateCooldown(0);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(
@@ -257,7 +257,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
@@ -268,7 +268,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
         vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
@@ -312,7 +312,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
 
 abstract contract InitiateCooldownTest is BaseFarmTest {
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        (, uint256 tokenId, uint256 startTime,,) = BaseFarm(lockupFarm).deposits(currentActor, 0);
+        (,, uint256 tokenId, uint256 startTime,,) = BaseFarm(lockupFarm).deposits(0);
         skip(86400 * 7);
         vm.expectEmit(true, true, false, true);
         emit CooldownInitiated(currentActor, tokenId, startTime + ((COOLDOWN_PERIOD + 7) * 86400));
@@ -509,7 +509,7 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
 
 abstract contract GetDepositTest is BaseFarmTest {
     function test_getDeposit_nonLockupFarm() public setup useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
         assertEq(userDeposit.tokenId, 1);
     }
 }
@@ -533,13 +533,13 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
         BaseFarm(nonLockupFarm).getSubscriptionInfo(userDeposit.tokenId, 2);
     }
 
     function test_subInfo_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
 
         BaseFarm.Subscription memory numSubscriptions =
             BaseFarm(nonLockupFarm).getSubscriptionInfo(userDeposit.tokenId, 0);
@@ -547,7 +547,7 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     }
 
     function test_subInfo_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
 
         BaseFarm.Subscription memory numSubscriptions = BaseFarm(lockupFarm).getSubscriptionInfo(userDeposit.tokenId, 0);
         assertEq(numSubscriptions.fundId, 0);
