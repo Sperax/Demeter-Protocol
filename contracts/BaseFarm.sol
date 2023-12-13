@@ -98,7 +98,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
-    uint256 private totalDeposits;
+    uint256 internal totalDeposits;
 
     // Reward info
     RewardFund[] public rewardFunds;
@@ -298,6 +298,33 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
         emit TokenManagerUpdated(_rwdToken, msg.sender, _newTknManager);
+    }
+
+    /// @notice A function to be called if in case a user wants to see all of his deposits
+    /// @param _depositor Address of the account whose deposits are to be checked
+    /// @return _deposits An array of depositIds which belongs to the depositor
+    function getMyDeposits(address _depositor) external view returns (uint256[] memory) {
+        uint256 _count;
+        uint256 _totalDeposits = totalDeposits;
+        for (uint256 i; i < _totalDeposits;) {
+            if (_depositor == deposits[i].depositor) ++_count;
+            unchecked {
+                ++i;
+            }
+        }
+        uint256 j;
+        uint256[] memory _deposits = new uint256[](_count);
+        for (uint256 i; i < _totalDeposits;) {
+            if (_depositor == deposits[i].depositor) {
+                _deposits[j] = i;
+                ++j;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        return _deposits;
     }
 
     /// @notice Function to compute the total accrued rewards for a deposit
