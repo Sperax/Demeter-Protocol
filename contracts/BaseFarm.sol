@@ -300,33 +300,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         emit TokenManagerUpdated(_rwdToken, msg.sender, _newTknManager);
     }
 
-    /// @notice A function to be called if in case a user wants to see all of his deposits
-    /// @param _depositor Address of the account whose deposits are to be checked
-    /// @return _deposits An array of depositIds which belongs to the depositor
-    function getMyDeposits(address _depositor) external view returns (uint256[] memory) {
-        uint256 _count;
-        uint256 _totalDeposits = totalDeposits;
-        for (uint256 i; i < _totalDeposits;) {
-            if (_depositor == deposits[i].depositor) ++_count;
-            unchecked {
-                ++i;
-            }
-        }
-        uint256 j;
-        uint256[] memory _deposits = new uint256[](_count);
-        for (uint256 i; i < _totalDeposits;) {
-            if (_depositor == deposits[i].depositor) {
-                _deposits[j] = i;
-                ++j;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        return _deposits;
-    }
-
     /// @notice Function to compute the total accrued rewards for a deposit
     /// @param _account The user's address
     /// @param _depositId The id of the deposit
@@ -510,13 +483,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, _liquidity);
         }
 
-        uint256 currentDeposits = totalDeposits;
+        // @dev pre increment because we want deposit IDs to start with 1
+        uint256 currentDepositId = ++totalDeposits;
         // @dev Add the deposit to the user's deposit list
-        deposits[currentDeposits] = userDeposit;
+        deposits[currentDepositId] = userDeposit;
 
-        ++totalDeposits;
-
-        emit Deposited(currentDeposits, _account, _lockup, _tokenId, _liquidity);
+        emit Deposited(currentDepositId, _account, _lockup, _tokenId, _liquidity);
     }
 
     /// @notice Common logic for initiating cooldown.
