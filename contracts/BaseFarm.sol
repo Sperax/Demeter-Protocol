@@ -24,7 +24,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 
 // Defines the reward data for constructor.
 // token - Address of the token
-// tknManager - Authority to update rewardToken related Params.
+// tknManager - Authority to update rewardToken related params.
 struct RewardTokenData {
     address token;
     address tknManager;
@@ -44,7 +44,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     // Keeps track of a deposit's share in a reward fund.
-    // fund id - id of the subscribed reward fund
+    // fundId - id of the subscribed reward fund
     // rewardDebt - rewards claimed for a deposit corresponding to
     //              latest accRewardPerShare value of the budget
     // rewardClaimed - rewards claimed for a deposit from the reward fund
@@ -55,7 +55,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     // Deposit information
-    // depositor address of the depositor
+    // depositor - address of the depositor
     // liquidity - amount of liquidity in the deposit
     // tokenId - maps to uniswap NFT token id
     // startTime - time of deposit
@@ -110,26 +110,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     event Deposited(
         uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
     );
-    event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
-    event DepositWithdrawn(
-        uint256 indexed depositId,
-        address indexed account,
-        uint256 tokenId,
-        uint256 startTime,
-        uint256 liquidity,
-        uint256[] totalRewardsClaimed
-    );
-    event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
-    event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
+    event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
+    event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
+    event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
+    event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
-    event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
+    event CooldownPeriodUpdated(uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
-    event FundsRecovered(address indexed account, address rwdToken, uint256 amount);
-    event TokenManagerUpdated(address rwdToken, address oldTokenManager, address newTokenManager);
-    event RewardTokenAdded(address rwdToken, address rwdTokenManager);
+    event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
+    event TokenManagerUpdated(address indexed rwdToken, address newTokenManager);
+    event RewardTokenAdded(address indexed rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
 
     // Custom Errors
@@ -195,13 +188,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _farmNotClosed();
-        uint256 oldCooldownPeriod = cooldownPeriod;
-        if (oldCooldownPeriod == 0) {
+        if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
         _isValidCooldownPeriod(_newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
-        emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
+        emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
     /// @notice Update the farm start time.
@@ -297,7 +289,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
-        emit TokenManagerUpdated(_rwdToken, msg.sender, _newTknManager);
+        emit TokenManagerUpdated(_rwdToken, _newTknManager);
     }
 
     /// @notice Function to compute the total accrued rewards for a deposit
@@ -511,9 +503,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _claimRewards(msg.sender, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund
-        _unsubscribeRewardFund(LOCKUP_FUND_ID, msg.sender, _depositId);
+        _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
 
-        emit CooldownInitiated(msg.sender, userDeposit.tokenId, userDeposit.expiryDate);
+        emit CooldownInitiated(_depositId, userDeposit.expiryDate);
     }
 
     /// @notice Common logic for withdraw.
@@ -542,11 +534,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256[] memory totalRewards = _userDeposit.totalRewardsClaimed;
 
         // unsubscribe the user from the common reward fund
-        _unsubscribeRewardFund(COMMON_FUND_ID, _account, _depositId);
+        _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
 
         if (subscriptions[_userDeposit.tokenId].length != 0) {
             // To handle a lockup withdraw without cooldown (during farmPause)
-            _unsubscribeRewardFund(LOCKUP_FUND_ID, _account, _depositId);
+            _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
         }
 
         // Update the user's deposit list
@@ -554,9 +546,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         emit DepositWithdrawn({
             depositId: _depositId,
-            account: _account,
-            tokenId: _userDeposit.tokenId,
-            startTime: _userDeposit.startTime,
             liquidity: _userDeposit.liquidity,
             totalRewardsClaimed: totalRewards
         });
@@ -606,7 +595,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             }
         }
 
-        emit RewardsClaimed(_account, rewardsForEachSubs);
+        emit RewardsClaimed(_depositId, rewardsForEachSubs);
 
         // Transfer the claimed rewards to the User if any.
         for (uint8 iRwd; iRwd < numRewards;) {
@@ -692,10 +681,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Unsubscribe a reward fund from a deposit
     /// @param _fundId The reward fund id
-    /// @param _account The user's address
     /// @param _depositId The deposit id corresponding to the user
     /// @dev The rewards claimed from the reward fund is persisted in the event
-    function _unsubscribeRewardFund(uint8 _fundId, address _account, uint256 _depositId) internal {
+    function _unsubscribeRewardFund(uint8 _fundId, uint256 _depositId) internal {
         if (_fundId >= rewardFunds.length) {
             revert InvalidFundId();
         }
@@ -724,7 +712,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
                 // Remove the liquidity from the reward fund
                 rewardFunds[_fundId].totalLiquidity -= userDeposit.liquidity;
 
-                emit PoolUnsubscribed(_account, _fundId, _depositId, rewardClaimed);
+                emit PoolUnsubscribed(_depositId, _fundId, rewardClaimed);
 
                 break;
             }
