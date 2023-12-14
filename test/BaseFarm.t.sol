@@ -191,7 +191,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         skip(86400 * 2);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
-        uint256 deposits = BaseFarm(lockupFarm).getTotalDeposits();
+        uint256 deposits = BaseFarm(lockupFarm).totalDeposits();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
     }
@@ -312,10 +312,12 @@ abstract contract RecoverERC20Test is BaseFarmTest {
 
 abstract contract InitiateCooldownTest is BaseFarmTest {
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        (,, uint256 tokenId, uint256 startTime,,) = BaseFarm(lockupFarm).deposits(0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
         skip(86400 * 7);
         vm.expectEmit(true, true, false, true);
-        emit CooldownInitiated(currentActor, tokenId, startTime + ((COOLDOWN_PERIOD + 7) * 86400));
+        emit CooldownInitiated(
+            currentActor, userDeposit.tokenId, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400)
+        );
         BaseFarm(lockupFarm).initiateCooldown(0);
     }
 
