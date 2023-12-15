@@ -241,6 +241,16 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         return amount;
     }
 
+    /// @notice This function is called when liquidity is added to an existing position
+    function onNFTAddToPosition(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ )
+        external
+        view
+        returns (bool)
+    {
+        if (operator != address(this)) revert NotAllowed();
+        return true;
+    }
+
     // --------------------- Private  Functions ---------------------
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
