@@ -8,6 +8,11 @@ interface INFTPoolFactory {
 }
 
 interface IPair {
+    function getReserves()
+        external
+        view
+        returns (uint112 _reserve0, uint112 _reserve1, uint16 _token0FeePercent, uint16 _token1FeePercent);
+
     function token0() external view returns (address);
 
     function token1() external view returns (address);
@@ -135,4 +140,6 @@ interface IRouter {
         address to,
         uint256 deadline
     ) external returns (uint256 amountA, uint256 amountB);
+
+    function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) external pure returns (uint256 amountB);
 }

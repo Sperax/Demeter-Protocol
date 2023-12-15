@@ -251,6 +251,36 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         return true;
     }
 
+    /// @notice This function can be called before allocating funds into the strategy
+    ///         it accepts desired amounts, checks pool condition and returns the amount
+    ///         which will be needed/ accepted by the strategy for a balanced allocation
+    /// @param amountADesired Amount of token A that is desired to be allocated
+    /// @param amountBDesired Amount of token B that is desired to be allocated
+    /// @return amountA Amount A tokens which will be accepted in allocation
+    /// @return amountB Amount B tokens which will be accepted in allocation
+    function getDepositAmounts(uint256 amountADesired, uint256 amountBDesired)
+        external
+        view
+        returns (uint256 amountA, uint256 amountB)
+    {
+        (address pair,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        // address token0 = IPair(_lpToken).token0();
+        // address token1 = IPair(_lpToken).token1();
+        (uint112 reserveA, uint112 reserveB,,) = IPair(pair).getReserves();
+        if (reserveA == 0 && reserveB == 0) {
+            (amountA, amountB) = (amountADesired, amountBDesired);
+        } else {
+            uint256 amountBOptimal = IRouter(ROUTER).quote(amountADesired, reserveA, reserveB);
+            if (amountBOptimal <= amountBDesired) {
+                (amountA, amountB) = (amountADesired, amountBOptimal);
+            } else {
+                uint256 amountAOptimal = IRouter(ROUTER).quote(amountBDesired, reserveB, reserveA);
+                assert(amountAOptimal <= amountADesired);
+                (amountA, amountB) = (amountAOptimal, amountBDesired);
+            }
+        }
+    }
+
     // --------------------- Private  Functions ---------------------
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
