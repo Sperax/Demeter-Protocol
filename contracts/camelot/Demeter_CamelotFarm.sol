@@ -251,6 +251,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         return true;
     }
 
+    /// @notice This function is called when liquidity is withdrawn from an NFT position
+    function onNFTWithdraw(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ ) external view returns (bool) {
+        if (operator != address(this)) revert NotAllowed();
+        return true;
+    }
+
     /// @notice This function can be called before allocating funds into the strategy
     ///         it accepts desired amounts, checks pool condition and returns the amount
     ///         which will be needed/ accepted by the strategy for a balanced allocation
