@@ -210,11 +210,12 @@ contract Demeter_CamelotFarmTest is
         vm.expectEmit(true, false, false, true);
         emit DepositIncreased(user, tokenId, liquidity, minAmounts[0], minAmounts[1]);
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+        userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDeposit(user, 0);
         rewardsClaimed = userDeposit.totalRewardsClaimed;
         console.log("rewardsClaimed[0]: %s", rewardsClaimed[0]);
 
-        // assertEq(IERC20(ASSET_1).balanceOf(user) + minAmounts[0], amounts[0]+rewardsClaimed[0]);
-        // assertEq(IERC20(ASSET_2).balanceOf(user) + minAmounts[1], amounts[1]+rewardsClaimed[1]);
+        assertEq(IERC20(ASSET_1).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
+        assertEq(IERC20(ASSET_2).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
     function test_increaseDeposit_lockupFarm() public depositSetup(lockupFarm, false) useKnownActor(user) {
