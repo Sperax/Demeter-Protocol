@@ -134,7 +134,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             tokenA: token0,
             tokenB: token1,
             amountADesired: _amounts[0],
-            amountBDesired: _amounts[0],
+            amountBDesired: _amounts[1],
             amountAMin: _minAmounts[0],
             amountBMin: _minAmounts[1],
             to: address(this),
