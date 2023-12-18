@@ -217,17 +217,16 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         if (_newStartTime < lastFundUpdateTime) {
             farmEndTime = farmEndTime - (lastFundUpdateTime - _newStartTime);
-            emit FarmEndTimeUpdated(farmEndTime);
         }
 
         if (_newStartTime > lastFundUpdateTime) {
             farmEndTime = farmEndTime + (_newStartTime - lastFundUpdateTime);
-            emit FarmEndTimeUpdated(farmEndTime);
         }
 
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
+        emit FarmEndTimeUpdated(farmEndTime);
     }
 
     /// @notice Update the farm end time.
