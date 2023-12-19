@@ -90,6 +90,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     uint256 public constant MIN_COOLDOWN_PERIOD = 1; // In days
     uint256 public constant MAX_COOLDOWN_PERIOD = 30; // In days
     uint256 public constant MAX_NUM_REWARDS = 4;
+    uint256 public constant INITIAL_FARM_EXTENSION = 100 days;
 
     // Global Params
     address public farmFactory;
@@ -735,7 +736,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _transferOwnership(msg.sender);
         // Initialize farm global params
         lastFundUpdateTime = _farmStartTime;
-        farmEndTime = _farmStartTime + 100 days;
+        farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -778,7 +779,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         }
 
         emit FarmStartTimeUpdated(_farmStartTime);
-        emit FarmEndTimeUpdated(_farmStartTime + 100 days);
+        emit FarmEndTimeUpdated(_farmStartTime + INITIAL_FARM_EXTENSION);
     }
 
     /// @notice Adds new reward token to the farm
