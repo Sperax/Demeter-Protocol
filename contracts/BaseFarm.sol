@@ -300,7 +300,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     function computeRewards(address _account, uint256 _depositId) external view returns (uint256[] memory rewards) {
         _isValidDeposit(_account, _depositId);
         Deposit memory userDeposit = deposits[_depositId];
-        Subscription[] memory depositSubs = subscriptions[userDeposit.tokenId];
+        Subscription[] memory depositSubs = subscriptions[_depositId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numDepositSubs = depositSubs.length;
         uint256 numRewards = rewardTokens.length;
@@ -344,23 +344,23 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     /// @notice Get number of subscriptions for an account.
-    /// @param _tokenId The token's id.
-    function getNumSubscriptions(uint256 _tokenId) external view returns (uint256) {
-        return subscriptions[_tokenId].length;
+    /// @param _depositId The deposit id.
+    function getNumSubscriptions(uint256 _depositId) external view returns (uint256) {
+        return subscriptions[_depositId].length;
     }
 
     /// @notice Get subscription stats for a deposit.
-    /// @param _tokenId The token's id.
+    /// @param _depositId The deposit id.
     /// @param _subscriptionId The subscription's id.
-    function getSubscriptionInfo(uint256 _tokenId, uint256 _subscriptionId)
+    function getSubscriptionInfo(uint256 _depositId, uint256 _subscriptionId)
         external
         view
         returns (Subscription memory)
     {
-        if (_subscriptionId >= subscriptions[_tokenId].length) {
+        if (_subscriptionId >= subscriptions[_depositId].length) {
             revert SubscriptionDoesNotExist();
         }
-        return subscriptions[_tokenId][_subscriptionId];
+        return subscriptions[_depositId][_subscriptionId];
     }
 
     /// @notice Get reward rates for a rewardToken.
@@ -462,17 +462,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: _liquidity
         });
+
+        // @dev Pre increment because we want deposit IDs to start with 1.
+        uint256 currentDepositId = ++totalDeposits;
+
         // Add common fund subscription to the user's deposit.
-        _subscribeRewardFund(COMMON_FUND_ID, _tokenId, _liquidity);
+        _subscribeRewardFund(COMMON_FUND_ID, currentDepositId, _liquidity);
 
         if (_lockup) {
             // Add lockup fund subscription to the user's deposit.
             userDeposit.cooldownPeriod = cooldownPeriod;
-            _subscribeRewardFund(LOCKUP_FUND_ID, _tokenId, _liquidity);
+            _subscribeRewardFund(LOCKUP_FUND_ID, currentDepositId, _liquidity);
         }
 
-        // @dev Pre increment because we want deposit IDs to start with 1.
-        uint256 currentDepositId = ++totalDeposits;
         // @dev Set user's deposit info in deposits mapping.
         deposits[currentDepositId] = userDeposit;
 
@@ -532,7 +534,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // unsubscribe the user from the common reward fund.
         _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
 
-        if (subscriptions[_userDeposit.tokenId].length != 0) {
+        if (subscriptions[_depositId].length != 0) {
             // To handle a lockup withdraw without cooldown (during farmPause).
             _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
         }
@@ -556,7 +558,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
-        Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
+        Subscription[] storage depositSubs = subscriptions[_depositId];
 
         uint256 numRewards = rewardTokens.length;
         uint256 numSubs = depositSubs.length;
@@ -645,27 +647,27 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     }
 
     /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _tokenId The tokenId of the deposit.
+    /// @param _depositId The tokenId of the deposit.
     /// @param _fundId The reward fund id.
     /// @param _liquidity The liquidity of the deposit.
-    function _subscribeRewardFund(uint8 _fundId, uint256 _tokenId, uint256 _liquidity) internal {
+    function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) internal {
         if (_fundId >= rewardFunds.length) {
             revert InvalidFundId();
         }
         // Subscribe to the reward fund.
         uint256 numRewards = rewardTokens.length;
-        subscriptions[_tokenId].push(
+        subscriptions[_depositId].push(
             Subscription({
                 fundId: _fundId,
                 rewardDebt: new uint256[](numRewards),
                 rewardClaimed: new uint256[](numRewards)
             })
         );
-        uint256 subId = subscriptions[_tokenId].length - 1;
+        uint256 subId = subscriptions[_depositId].length - 1;
 
         // Initialize user's reward debt.
         for (uint8 iRwd; iRwd < numRewards;) {
-            subscriptions[_tokenId][subId].rewardDebt[iRwd] =
+            subscriptions[_depositId][subId].rewardDebt[iRwd] =
                 (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
             unchecked {
                 ++iRwd;
@@ -687,7 +689,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         uint256 numRewards = rewardTokens.length;
 
         // Unsubscribe from the reward fund.
-        Subscription[] storage depositSubs = subscriptions[userDeposit.tokenId];
+        Subscription[] storage depositSubs = subscriptions[_depositId];
         uint256 numSubs = depositSubs.length;
         for (uint256 iSub; iSub < numSubs;) {
             if (depositSubs[iSub].fundId == _fundId) {

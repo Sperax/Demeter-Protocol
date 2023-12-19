@@ -541,17 +541,12 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     }
 
     function test_subInfo_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
-
-        BaseFarm.Subscription memory numSubscriptions =
-            BaseFarm(nonLockupFarm).getSubscriptionInfo(userDeposit.tokenId, 0);
+        BaseFarm.Subscription memory numSubscriptions = BaseFarm(nonLockupFarm).getSubscriptionInfo(0, 0);
         assertEq(numSubscriptions.fundId, 0);
     }
 
     function test_subInfo_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
-
-        BaseFarm.Subscription memory numSubscriptions = BaseFarm(lockupFarm).getSubscriptionInfo(userDeposit.tokenId, 0);
+        BaseFarm.Subscription memory numSubscriptions = BaseFarm(lockupFarm).getSubscriptionInfo(0, 0);
         assertEq(numSubscriptions.fundId, 0);
     }
 }

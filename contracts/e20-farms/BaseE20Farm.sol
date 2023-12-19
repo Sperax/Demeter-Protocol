@@ -83,7 +83,7 @@ contract BaseE20Farm is BaseFarm {
         _claimRewards(msg.sender, _depositId);
 
         // Update deposit Information
-        _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
+        _updateSubscriptionForIncrease(_depositId, _amount);
         deposits[_depositId].liquidity += _amount;
 
         // Transfer the lp tokens to the farm
@@ -112,7 +112,7 @@ contract BaseE20Farm is BaseFarm {
         _claimRewards(msg.sender, _depositId);
 
         // Update deposit info
-        _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
+        _updateSubscriptionForDecrease(_depositId, _amount);
         userDeposit.liquidity -= _amount;
 
         // Transfer the lp tokens to the user
@@ -158,14 +158,14 @@ contract BaseE20Farm is BaseFarm {
     // --------------------- Private  Functions ---------------------
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique deposit id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
@@ -180,14 +180,14 @@ contract BaseE20Farm is BaseFarm {
     }
 
     /// @notice Update subscription data of a deposit after decrease in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForDecrease(uint256 _depositId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
