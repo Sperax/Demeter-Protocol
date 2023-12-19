@@ -37,16 +37,6 @@ abstract contract BaseFarmDeployer is Ownable {
         emit FarmImplementationUpdated(_newFarmImplementation);
     }
 
-    /// @notice A public view function to get fees from Farm Factory
-    /// @return feeReceiver of feeToken in feeAmount
-    function getFees(address _deployerAccount)
-        external
-        view
-        returns (address feeReceiver, address feeToken, uint256 feeAmount, uint256 extensionFeePerDay)
-    {
-        (feeReceiver, feeToken, feeAmount, extensionFeePerDay) = IFarmFactory(FACTORY).getFeeParams(_deployerAccount);
-    }
-
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
     function _collectFee() internal virtual {
