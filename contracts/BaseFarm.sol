@@ -803,7 +803,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
     /// @notice Collect farm extension fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.
-    function _collectExtensionFee(uint256 _extensionDays) internal {
+    function _collectExtensionFee(uint256 _extensionDays) private {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
         (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
             IFarmFactory(farmFactory).getFeeParams(msg.sender);
