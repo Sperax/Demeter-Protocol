@@ -33,9 +33,7 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        uniswapV3FarmDeployer = new Demeter_UniV3FarmDeployer(
-            DEMETER_FACTORY
-        );
+        uniswapV3FarmDeployer = new Demeter_UniV3FarmDeployer(DEMETER_FACTORY);
         factory.registerFarmDeployer(address(uniswapV3FarmDeployer));
 
         // Configure rewardTokens

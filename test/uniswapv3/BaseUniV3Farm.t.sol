@@ -32,9 +32,7 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
 
     function generateRewardTokenData() public view returns (RewardTokenData[] memory rwdTokenData) {
         address[] memory rewardToken = rwdTokens;
-        rwdTokenData = new RewardTokenData[](
-            rewardToken.length
-        );
+        rwdTokenData = new RewardTokenData[](rewardToken.length);
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }

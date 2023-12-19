@@ -63,7 +63,8 @@ contract BalancerFarmTest is
     IncreaseDepositTest,
     WithdrawPartiallyTest,
     RecoverERC20FarmE20Test,
-    RecoverRewardFundsTest
+    RecoverRewardFundsTest,
+    MulticallTest
 {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
@@ -75,11 +76,7 @@ contract BalancerFarmTest is
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(
-            DEMETER_FACTORY,
-            BALANCER_VAULT,
-            "Balancer Deployer"
-        );
+        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_FACTORY, BALANCER_VAULT, "Balancer Deployer");
         factory.registerFarmDeployer(address(balancerFarmDeployer));
 
         // Configure rewardTokens
@@ -97,9 +94,7 @@ contract BalancerFarmTest is
 
     function createFarm(uint256 startTime, bool lockup) public override useKnownActor(owner) returns (address) {
         address[] memory rewardToken = rwdTokens;
-        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](
-            rewardToken.length
-        );
+        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }

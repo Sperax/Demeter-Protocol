@@ -33,9 +33,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        sushiswapFarmDeployer = new Demeter_SushiV3FarmDeployer(
-            DEMETER_FACTORY
-        );
+        sushiswapFarmDeployer = new Demeter_SushiV3FarmDeployer(DEMETER_FACTORY);
         factory.registerFarmDeployer(address(sushiswapFarmDeployer));
 
         // Configure rewardTokens

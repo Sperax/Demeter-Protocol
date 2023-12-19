@@ -902,3 +902,66 @@ abstract contract _SetupFarmTest is BaseFarmTest {
         assertTrue(success);
     }
 }
+
+abstract contract MulticallTest is BaseFarmTest {
+    function test_Multicall(uint256 cooldownPeriod) public useKnownActor(owner) {
+        cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+        bytes[] memory data = new bytes[](2);
+        data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+        data[1] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
+
+        BaseFarm(lockupFarm).multicall(data);
+
+        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod);
+        assertEq(BaseFarm(lockupFarm).isClosed(), true);
+    }
+
+    function test_revertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {
+        // when any multiple calls fail
+        {
+            bytes[] memory data = new bytes[](1);
+            // This should revert as farm already started.
+            data[0] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
+
+            vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyStarted.selector));
+            BaseFarm(lockupFarm).multicall(data);
+        }
+
+        // when one of multiple calls fail
+        {
+            cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+            // When any single call fails the whole transaction should revert.
+            bytes[] memory data = new bytes[](3);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+            // This should revert as farm already started.
+            data[1] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
+            data[2] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
+
+            vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyStarted.selector));
+            BaseFarm(lockupFarm).multicall(data);
+        }
+
+        // checking sender
+        {
+            changePrank(user);
+            cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+            // When any single call fails the whole transaction should revert.
+            bytes[] memory data = new bytes[](3);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+
+            vm.expectRevert("Ownable: caller is not the owner");
+            BaseFarm(lockupFarm).multicall(data);
+        }
+    }
+
+    function test_revertWhen_CallInternalFunction() public useKnownActor(owner) {
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
+
+        vm.expectRevert("Address: low-level delegate call failed");
+        BaseFarm(lockupFarm).multicall(data);
+    }
+}
