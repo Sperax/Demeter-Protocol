@@ -466,6 +466,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         // @dev Pre increment because we want deposit IDs to start with 1.
         uint256 currentDepositId = ++totalDeposits;
 
+        // @dev Set user's deposit info in deposits mapping.
+        deposits[currentDepositId] = userDeposit;
+
         // Add common fund subscription to the user's deposit.
         _subscribeRewardFund(COMMON_FUND_ID, currentDepositId, _liquidity);
 
@@ -474,9 +477,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
             userDeposit.cooldownPeriod = cooldownPeriod;
             _subscribeRewardFund(LOCKUP_FUND_ID, currentDepositId, _liquidity);
         }
-
-        // @dev Set user's deposit info in deposits mapping.
-        deposits[currentDepositId] = userDeposit;
 
         emit Deposited(currentDepositId, _account, _lockup, _tokenId, _liquidity);
     }
