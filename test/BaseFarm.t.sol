@@ -889,12 +889,6 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         vm.expectEmit(true, true, false, true);
         emit FarmStartTimeUpdated(newStartTime);
 
-        if (newStartTime > farmStartTime) {
-            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + timeDelta);
-        } else if (newStartTime < farmStartTime) {
-            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate - timeDelta);
-        }
-
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
@@ -937,12 +931,6 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         emit FarmStartTimeUpdated(newStartTime);
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
-
-        if (newStartTime > farmStartTime) {
-            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + timeDelta);
-        } else if (newStartTime < farmStartTime) {
-            emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate - timeDelta);
-        }
 
         uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
@@ -1173,12 +1161,13 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
 
         vm.startPrank(owner);
         IERC20(feeToken).approve(farm, 500 * 1e20);
-        vm.expectEmit(true, false, false, true);
-        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         if (extensionFeePerDay != 0) {
+            vm.expectEmit(true, false, false, true);
             emit ExtensionFeeCollected(owner, feeToken, extensionFeeAmount);
         }
+        vm.expectEmit(true, false, false, true);
+        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         BaseFarm(farm).extendFarmEndTime(extensionDays);
         uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
@@ -1207,12 +1196,13 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
 
         vm.startPrank(owner);
         IERC20(feeToken).approve(farm, 500 * 1e20);
-        vm.expectEmit(true, false, false, true);
-        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         if (extensionFeePerDay != 0) {
+            vm.expectEmit(true, false, false, true);
             emit ExtensionFeeCollected(owner, feeToken, extensionFeeAmount);
         }
+        vm.expectEmit(true, false, false, true);
+        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         BaseFarm(farm).extendFarmEndTime(extensionDays);
         uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
