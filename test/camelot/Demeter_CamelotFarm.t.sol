@@ -192,6 +192,42 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
     }
 
+    function test_increaseDeposit_revertsWhen_InvalidAmount()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        uint256[2] memory amounts = [uint256(0), 0];
+        uint256[2] memory minAmounts = [uint256(0), 0];
+        amounts[0] = 0;
+        amounts[1] = 0;
+        skip(7 days);
+
+        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.InvalidAmount.selector));
+        Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+    }
+
+    function test_increaseDeposit_revertsWhen_depositInCoolDown()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        uint256[2] memory amounts = [uint256(0), 0];
+        uint256[2] memory minAmounts = [uint256(0), 0];
+        amounts[0] = 1e3 * 10 ** ERC20(ASSET_1).decimals();
+        amounts[1] = 1e3 * 10 ** ERC20(ASSET_2).decimals();
+
+        skip(7 days);
+        (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        deal(ASSET_1, user, amounts[0]);
+        deal(ASSET_2, user, amounts[1]);
+        IERC20(ASSET_1).safeIncreaseAllowance(lockupFarm, 1e22);
+        IERC20(ASSET_2).safeIncreaseAllowance(lockupFarm, 1e22);
+        Demeter_CamelotFarm(lockupFarm).initiateCooldown(0);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
+        Demeter_CamelotFarm(lockupFarm).increaseDeposit(0, amounts, minAmounts);
+    }
+
     function test_increaseDeposit_noLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
@@ -219,7 +255,7 @@ contract Demeter_CamelotFarmTest is
         assertEq(IERC20(ASSET_2).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
-    function test_increaseDeposit_lockupFarm() public depositSetup(lockupFarm, false) useKnownActor(user) {
+    function test_increaseDeposit_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         uint256[] memory rewardsClaimed = new uint256[](2);
