@@ -83,11 +83,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_LOWER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_LOWER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         // Fails for _tickLower < -887272
@@ -100,11 +100,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887273,
-                tickUpperAllowed: TICK_UPPER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         if (spacing > 1) {
@@ -118,11 +118,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                     tokenB: USDT,
                     feeTier: FEE_TIER,
                     tickLowerAllowed: -887271,
-                    tickUpperAllowed: TICK_UPPER,
-                    uniswapUtils: UNISWAP_UTILS,
-                    nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                    tickUpperAllowed: TICK_UPPER
                 }),
-                _rwdTokenData: generateRewardTokenData()
+                _rwdTokenData: generateRewardTokenData(),
+                _uniswapUtils: UNISWAP_UTILS,
+                _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
 
             // Fails for _tickUpper % spacing != 0
@@ -135,11 +135,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                     tokenB: USDCe,
                     feeTier: FEE_TIER,
                     tickLowerAllowed: TICK_LOWER,
-                    tickUpperAllowed: 887271,
-                    uniswapUtils: UNISWAP_UTILS,
-                    nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                    tickUpperAllowed: 887271
                 }),
-                _rwdTokenData: generateRewardTokenData()
+                _rwdTokenData: generateRewardTokenData(),
+                _uniswapUtils: UNISWAP_UTILS,
+                _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
         }
 
@@ -153,11 +153,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887272 + 1,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: 887272 + 1
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
 
@@ -171,11 +171,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_UPPER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -187,11 +187,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887273,
-                tickUpperAllowed: TICK_UPPER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -203,11 +203,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: -887271,
-                tickUpperAllowed: TICK_UPPER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -219,11 +219,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887272 + 1,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: 887272 + 1
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -235,11 +235,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887271,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: 887271
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
 
@@ -253,11 +253,11 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 tokenB: USDCe,
                 feeTier: FEE_TIER,
                 tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_UPPER,
-                uniswapUtils: UNISWAP_UTILS,
-                nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData()
+            _rwdTokenData: generateRewardTokenData(),
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         assertEq(BaseUniV3Farm(farmProxy).tickLowerAllowed(), TICK_LOWER);
@@ -266,6 +266,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         assertEq(BaseUniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
         assertEq(BaseUniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
         assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
+        assertEq(BaseUniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
+        assertEq(BaseUniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
 

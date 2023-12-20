@@ -36,15 +36,12 @@ import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 // feeTier - Fee tier for the Uniswap pool
 // tickLowerAllowed - Lower bound of the tick range for farm
 // tickUpperAllowed - Upper bound of the tick range for farm
-// uniswapUtils - Address of the UniswapUtils contract
 struct UniswapPoolData {
     address tokenA;
     address tokenB;
     uint24 feeTier;
     int24 tickLowerAllowed;
     int24 tickUpperAllowed;
-    address uniswapUtils;
-    address nfpmUtils;
 }
 
 abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
@@ -76,10 +73,12 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         UniswapPoolData memory _uniswapPoolData,
-        RewardTokenData[] memory _rwdTokenData
+        RewardTokenData[] memory _rwdTokenData,
+        address _uniswapUtils,
+        address _nfpmUtils
     ) external initializer {
-        _isNonZeroAddr(_uniswapPoolData.uniswapUtils);
-        _isNonZeroAddr(_uniswapPoolData.nfpmUtils);
+        _isNonZeroAddr(_uniswapUtils);
+        _isNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(UNIV3_FACTORY()).getPool(
@@ -91,8 +90,8 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         _validateTickRange(_uniswapPoolData.tickLowerAllowed, _uniswapPoolData.tickUpperAllowed);
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
-        uniswapUtils = _uniswapPoolData.uniswapUtils;
-        nfpmUtils = _uniswapPoolData.nfpmUtils;
+        uniswapUtils = _uniswapUtils;
+        nfpmUtils = _nfpmUtils;
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
     }

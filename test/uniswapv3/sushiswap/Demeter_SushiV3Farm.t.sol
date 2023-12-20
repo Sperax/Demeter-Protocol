@@ -33,7 +33,8 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        sushiswapFarmDeployer = new Demeter_SushiV3FarmDeployer(DEMETER_FACTORY);
+        sushiswapFarmDeployer =
+            new Demeter_SushiV3FarmDeployer(DEMETER_FACTORY, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS);
         factory.registerFarmDeployer(address(sushiswapFarmDeployer));
 
         // Configure rewardTokens
@@ -57,9 +58,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
             tokenB: USDCe,
             feeTier: FEE_TIER,
             tickLowerAllowed: TICK_LOWER,
-            tickUpperAllowed: TICK_UPPER,
-            uniswapUtils: UNISWAP_UTILS,
-            nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            tickUpperAllowed: TICK_UPPER
         });
         Demeter_SushiV3FarmDeployer.FarmData memory _data = Demeter_SushiV3FarmDeployer.FarmData({
             farmAdmin: owner,
