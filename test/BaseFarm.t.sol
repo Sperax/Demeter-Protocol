@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../contracts/e20-farms/BaseE20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
@@ -195,21 +196,52 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
     }
 
+    function test_claimRewards_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
+        skip(86400 * 15);
+        address[] memory rewardTokens = getRewardTokens(lockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 0);
+
+        vm.expectEmit(true, true, true, false); // Not checking the rewards claimed here
+        emit RewardsClaimed(currentActor, rewardsForEachSubs);
+        BaseFarm(lockupFarm).claimRewards(0);
+        // Checking the rewards claimed users balences
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
+    }
+
     function test_claimRewards_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         skip(86400 * 15);
-
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
 
         vm.expectEmit(true, true, true, true);
         emit RewardsClaimed(currentActor, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(0);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
     }
 
     function test_claimRewards_max_rewards() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256 time;
         uint256 rwdRate = 1e16;
         uint256 rwdBalance = BaseFarm(nonLockupFarm).getRewardBalance(SPA);
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
         skip(time + 100); //skip more than the available reward
@@ -218,11 +250,19 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         vm.expectEmit(true, true, true, true);
         emit RewardsClaimed(currentActor, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(0);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
     }
 
     function test_claimRewards_rwd_rate_0() public setup depositSetup(nonLockupFarm, false) {
         uint256 time = 15 days;
         uint256[] memory rwdRate = new uint256[](1);
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
         rwdRate[0] = 0;
         vm.startPrank(SPA_REWARD_MANAGER);
         BaseFarm(nonLockupFarm).setRewardRate(SPA, rwdRate);
@@ -234,6 +274,9 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         emit RewardsClaimed(currentActor, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(0);
         assertEq(rewardsForEachSubs[0][0], 0);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
     }
 }
 
