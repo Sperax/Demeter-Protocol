@@ -60,7 +60,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_SushiV3FarmDeployer.FarmData memory _data = Demeter_SushiV3FarmDeployer.FarmData({
+        BaseUniV3FarmDeployer.FarmData memory _data = BaseUniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
