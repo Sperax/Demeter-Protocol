@@ -23,7 +23,7 @@ import {RewardTokenData, UniswapPoolData} from "../BaseUniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_SushiV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -41,8 +41,16 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     string public constant DEPLOYER_NAME = "Demeter_SushiV3FarmDeployer_v3";
 
-    constructor(address _factory) BaseFarmDeployer(_factory) {
+    address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
+    address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+
+    constructor(address _factory, address _uniswapUtils, address _nfpmUtils) BaseFarmDeployer(_factory) {
+        _isNonZeroAddr(_uniswapUtils);
+        _isNonZeroAddr(_nfpmUtils);
+
         farmImplementation = address(new Demeter_SushiV3Farm());
+        uniswapUtils = _uniswapUtils;
+        nfpmUtils = _nfpmUtils;
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -50,7 +58,14 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _isNonZeroAddr(_data.farmAdmin);
         Demeter_SushiV3Farm farmInstance = Demeter_SushiV3Farm(Clones.clone(farmImplementation));
-        farmInstance.initialize(_data.farmStartTime, _data.cooldownPeriod, _data.uniswapPoolData, _data.rewardData);
+        farmInstance.initialize({
+            _farmStartTime: _data.farmStartTime,
+            _cooldownPeriod: _data.cooldownPeriod,
+            _uniswapPoolData: _data.uniswapPoolData,
+            _rwdTokenData: _data.rewardData,
+            _uniswapUtils: uniswapUtils,
+            _nfpmUtils: nfpmUtils
+        });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required

@@ -6,7 +6,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 
-abstract contract BaseE20FarmTest is BaseFarmTest {}
+abstract contract BaseE20FarmTest is BaseFarmTest {
+    function getPoolAddress() public virtual returns (address);
+}
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
     function test_revertsWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
@@ -220,5 +222,28 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
         assertEq(totalRewardClaimed, 2 * time * rewardRate);
+    }
+}
+
+abstract contract RecoverERC20FarmE20Test is BaseE20FarmTest {
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
+        public
+        useKnownActor(owner)
+    {
+        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
+        BaseFarm(lockupFarm).recoverERC20(USDCe);
+    }
+
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawZeroAmountE20() public useKnownActor(owner) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
+        BaseFarm(lockupFarm).recoverERC20(USDT);
+    }
+
+    function testFuzz_recoverERC20_LockupFarmE20(uint256 amt) public useKnownActor(owner) {
+        amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
+        deal(USDT, address(lockupFarm), 10e10);
+        vm.expectEmit(true, true, false, false);
+        emit RecoveredERC20(USDT, 10e10);
+        BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 }

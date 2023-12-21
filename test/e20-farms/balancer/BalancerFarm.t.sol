@@ -59,11 +59,11 @@ contract BalancerFarmTest is
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,
+    _SetupFarmTest,
     IncreaseDepositTest,
     WithdrawPartiallyTest,
-    RecoverERC20E20Test,
+    RecoverERC20FarmE20Test,
     RecoverRewardFundsTest,
-    _SetupFarmTest,
     MulticallTest
 {
     // Define variables
