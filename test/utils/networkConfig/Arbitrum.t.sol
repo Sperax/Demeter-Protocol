@@ -45,6 +45,12 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     address public constant UNISWAP_V3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     address public constant UNISWAP_V3_NFPM = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address public constant UNISWAP_V3_SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    // Camelot
+    address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
+    address public constant CAMELOT_FACTORY = 0x6EcCab422D763aC031210895C81787E87B43A652;
+    address public constant LP_TOKEN = 0x01efEd58B534d7a7464359A6F8d14D986125816B;
+    address public constant POSITION_HELPER = 0xe458018Ad4283C90fB7F5460e24C4016F81b8175;
+    address public constant ROUTER = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
 
     function fundFeeToken() public useKnownActor(owner) {
         uint256 amt = 1e22;
