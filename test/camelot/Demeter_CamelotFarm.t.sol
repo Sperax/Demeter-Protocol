@@ -10,6 +10,7 @@ import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm.sol";
 import "forge-std/console.sol";
 import {VmSafe} from "forge-std/Vm.sol";
+import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
 
 contract Demeter_CamelotFarmTest is
     DepositTest,
@@ -26,14 +27,14 @@ contract Demeter_CamelotFarmTest is
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,
-    // IncreaseDepositTest,
-    // WithdrawPartiallyTest,
     RecoverERC20Test,
     RecoverRewardFundsTest,
     _SetupFarmTest
 {
     using SafeERC20 for IERC20;
 
+    UpgradeUtil internal upgradeUtil;
+    Demeter_CamelotFarm public farmImpl;
     address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
     address public constant CAMELOT_FACTORY = 0x6EcCab422D763aC031210895C81787E87B43A652;
     address public constant LP_TOKEN = 0x01efEd58B534d7a7464359A6F8d14D986125816B;
@@ -145,8 +146,97 @@ contract Demeter_CamelotFarmTest is
         ) vm.clearMockedCalls();
     }
 
-    function getPoolAddress() public view override returns (address poolAddress) {
+    function getPoolAddress() public view returns (address poolAddress) {
         poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
+    }
+
+    function createFarmImplementation() public useKnownActor(owner) returns (address) {
+        address camelotProxy;
+        farmImpl = new Demeter_CamelotFarm();
+        upgradeUtil = new UpgradeUtil();
+        camelotProxy = upgradeUtil.deployErc1967Proxy(address(farmImpl));
+        return camelotProxy;
+    }
+    // @arcantheon the address of the camelot Pair Pool should be validated before initializing the farm
+    // Here is a counter example where I put the camelot pair pool as DAI asset and the test was passing
+
+    function test_initialize_revertsWhen_notCamelotPair() public {
+        address farm = createFarmImplementation();
+        address[] memory rewardToken = rwdTokens;
+        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
+        for (uint8 i = 0; i < rewardToken.length; ++i) {
+            rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
+        }
+        Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, ASSET_1, rwdTokenData);
+        IERC20(FEE_TOKEN()).approve(address(demeter_camelotFarm_deployer), 1e20);
+    }
+
+    function test_initialize_revertsWhen_camelotPairIsZero() public {
+        address farm = createFarmImplementation();
+        address[] memory rewardToken = rwdTokens;
+        RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
+        for (uint8 i = 0; i < rewardToken.length; ++i) {
+            rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
+        }
+        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.InvalidCamelotPoolConfig.selector));
+        Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, address(0), rwdTokenData);
+    }
+
+    function test_OnERC721Received_revertWhen_NotACamelotNFT() public {
+        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotACamelotNFT.selector));
+        Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
+    }
+
+    function test_OnERC721Received_revertWhen_NoData() public {
+        address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
+        vm.startPrank(nftPool);
+        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NoData.selector));
+        Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
+    }
+
+    function test_onNFTHarvest_revertWhen_notNftPool() public {
+        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotAllowed.selector));
+        Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
+    }
+
+    function test_onNFTHarvest() public {
+        address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
+        vm.startPrank(nftPool);
+        bool harvested = Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), user, 742, 1, 1);
+        assertEq(harvested, true);
+    }
+
+    function test_claimPoolRewards_revertsWhen_FarmIsClosed()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        skip(7 days);
+        vm.startPrank(BaseFarm(nonLockupFarm).owner());
+        BaseFarm(nonLockupFarm).closeFarm();
+        vm.startPrank(user);
+        uint256 PoolRewards = Demeter_CamelotFarm(nonLockupFarm).computePoolRewards(0);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        Demeter_CamelotFarm(nonLockupFarm).claimPoolRewards(0);
+        assertEq(0, PoolRewards);
+    }
+
+    function test_claimPoolRewards_revertsWhen_InvalidDeposit()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        skip(7 days);
+        uint256 PoolRewards = Demeter_CamelotFarm(nonLockupFarm).computePoolRewards(1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        Demeter_CamelotFarm(nonLockupFarm).claimPoolRewards(1);
+        assertEq(0, PoolRewards);
+    }
+
+    function test_claimPoolRewards_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
+        skip(14 days);
+
+        Demeter_CamelotFarm(nonLockupFarm).claimPoolRewards(0);
     }
 
     function test_increaseDeposit_revertsWhen_FarmIsPaused()
@@ -226,6 +316,36 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(lockupFarm).initiateCooldown(0);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         Demeter_CamelotFarm(lockupFarm).increaseDeposit(0, amounts, minAmounts);
+    }
+
+    function test_increaseDeposit_AmountA__noLockupFarm()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        uint256[2] memory amounts = [uint256(0), 0];
+        uint256[2] memory minAmounts = [uint256(0), 0];
+        uint256[] memory rewardsClaimed = new uint256[](2);
+        amounts[0] = 1e4 * 10 ** ERC20(ASSET_1).decimals();
+        amounts[1] = 1e3 * 10 ** ERC20(ASSET_2).decimals();
+
+        skip(7 days);
+        (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        deal(ASSET_1, user, amounts[0]);
+        deal(ASSET_2, user, amounts[1]);
+        IERC20(ASSET_1).safeIncreaseAllowance(nonLockupFarm, 1e23);
+        IERC20(ASSET_2).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDeposit(user, 0);
+        // uint256 tokenId = userDeposit.tokenId;
+        // uint256 liquidity = userDeposit.liquidity;
+        // vm.expectEmit(true, false, false, true);
+        // emit DepositIncreased(user, tokenId, liquidity, minAmounts[0], minAmounts[1]);
+        Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+        userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDeposit(user, 0);
+        rewardsClaimed = userDeposit.totalRewardsClaimed;
+
+        assertEq(IERC20(ASSET_1).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
+        assertEq(IERC20(ASSET_2).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
     function test_increaseDeposit_noLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
