@@ -16,7 +16,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
-        BaseE20Farm(lockupFarm).increaseDeposit(0, amt);
+        BaseE20Farm(lockupFarm).increaseDeposit(1, amt);
     }
 
     function testFuzz_revertsWhen_farmIsClosed(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
@@ -28,7 +28,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         vm.startPrank(owner);
         BaseE20Farm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseE20Farm(lockupFarm).increaseDeposit(0, amt);
+        BaseE20Farm(lockupFarm).increaseDeposit(1, amt);
     }
 
     function testFuzz_revertsWhen_depositInCoolDown(uint256 amt)
@@ -38,12 +38,12 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
     {
         address poolAddress = getPoolAddress();
         vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
-        BaseE20Farm(lockupFarm).initiateCooldown(0);
+        BaseE20Farm(lockupFarm).initiateCooldown(1);
         skip(86400 * 2);
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.DepositInCooldown.selector));
-        BaseE20Farm(lockupFarm).increaseDeposit(0, amt);
+        BaseE20Farm(lockupFarm).increaseDeposit(1, amt);
     }
 
     function testFuzz_lockupFarm(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
@@ -54,7 +54,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(lockupFarm);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
-        BaseE20Farm(lockupFarm).increaseDeposit(0, amt);
+        BaseE20Farm(lockupFarm).increaseDeposit(1, amt);
         uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(lockupFarm);
         assertEq(usrBalanceAfter, usrBalanceBefore - amt);
@@ -69,7 +69,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(nonLockupFarm);
         ERC20(poolAddress).approve(address(nonLockupFarm), amt);
-        BaseE20Farm(nonLockupFarm).increaseDeposit(0, amt);
+        BaseE20Farm(nonLockupFarm).increaseDeposit(1, amt);
         uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(nonLockupFarm);
         assertEq(usrBalanceAfter, usrBalanceBefore - amt);
@@ -88,8 +88,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         uint256[][] memory rewardsForEachSubs2 = new uint256[][](1);
         skip(time);
         vm.startPrank(user);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 2);
         //since the Deposit amounts are the same, The reward amounts should be the same.
 
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
@@ -99,23 +99,23 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         ERC20(poolAddress).approve(address(nonLockupFarm), amt);
 
         // We increased the first deposit by 100%
-        BaseE20Farm(nonLockupFarm).increaseDeposit(0, amt);
-        BaseFarm(nonLockupFarm).claimRewards(1);
+        BaseE20Farm(nonLockupFarm).increaseDeposit(1, amt);
+        BaseFarm(nonLockupFarm).claimRewards(2);
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
         assertEq(totalRewardClaimed, time * rewardRate);
 
         skip(time);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 2);
 
         //The first Deposit amount is the double than the second one so the the ratio should be 2/3 and 1/3
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
             assertEq(rewardsForEachSubs1[0][i], 2 * rewardsForEachSubs2[0][i]);
         }
-        BaseFarm(nonLockupFarm).claimRewards(0);
         BaseFarm(nonLockupFarm).claimRewards(1);
+        BaseFarm(nonLockupFarm).claimRewards(2);
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
@@ -126,7 +126,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
     function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
-        BaseE20Farm(lockupFarm).withdrawPartially(0, 0);
+        BaseE20Farm(lockupFarm).withdrawPartially(1, 0);
     }
 
     function test_revertsWhen_LockupFarm_PartialWithdrawNotPermitted()
@@ -136,7 +136,7 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
     {
         skip(86400 * 7);
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.PartialWithdrawNotPermitted.selector));
-        BaseE20Farm(lockupFarm).withdrawPartially(0, 10000);
+        BaseE20Farm(lockupFarm).withdrawPartially(1, 10000);
     }
 
     function test_revertsWhen_farmIsClosed() public depositSetup(nonLockupFarm, false) useKnownActor(owner) {
@@ -144,13 +144,13 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         BaseE20Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseE20Farm(nonLockupFarm).withdrawPartially(0, 10000);
+        BaseE20Farm(nonLockupFarm).withdrawPartially(1, 10000);
     }
 
     function test_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         skip(86400 * 7);
-        BaseE20Farm(nonLockupFarm).computeRewards(currentActor, 0);
-        BaseE20Farm(nonLockupFarm).withdrawPartially(0, 10000);
+        BaseE20Farm(nonLockupFarm).computeRewards(currentActor, 1);
+        BaseE20Farm(nonLockupFarm).withdrawPartially(1, 10000);
     }
 
     function testMaths_updateSubscriptionForDecrease() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
@@ -165,8 +165,8 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         uint256[][] memory rewardsForEachSubs2 = new uint256[][](1);
         skip(time);
         vm.startPrank(user);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 2);
         //since the Deposit amounts are the same, The reward amounts should be the same.
 
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
@@ -176,23 +176,23 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         ERC20(poolAddress).approve(address(nonLockupFarm), amt);
 
         // We withdrew 50% of the deposit
-        BaseE20Farm(nonLockupFarm).withdrawPartially(0, amt / 2);
-        BaseFarm(nonLockupFarm).claimRewards(1);
+        BaseE20Farm(nonLockupFarm).withdrawPartially(1, amt / 2);
+        BaseFarm(nonLockupFarm).claimRewards(2);
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
         assertEq(totalRewardClaimed, time * rewardRate);
 
         skip(time);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 0);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 2);
 
         //The first Deposit amount is the half than the second one so the the ratio should be 1/3 and 2/3
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
             assertEq(rewardsForEachSubs1[0][i], rewardsForEachSubs2[0][i] / 2);
         }
-        BaseFarm(nonLockupFarm).claimRewards(0);
         BaseFarm(nonLockupFarm).claimRewards(1);
+        BaseFarm(nonLockupFarm).claimRewards(2);
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
