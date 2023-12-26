@@ -474,7 +474,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
 
         if (_lockup) {
             // Add lockup fund subscription to the user's deposit.
-            userDeposit.cooldownPeriod = cooldownPeriod;
+            deposits[currentDepositId].cooldownPeriod = cooldownPeriod;
             _subscribeRewardFund(LOCKUP_FUND_ID, currentDepositId, _liquidity);
         }
 
