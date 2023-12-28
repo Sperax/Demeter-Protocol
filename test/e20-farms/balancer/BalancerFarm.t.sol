@@ -118,7 +118,12 @@ contract BalancerFarmTest is
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(user) {
+    function deposit(address farm, bool locked, uint256 baseAmt)
+        public
+        override
+        useKnownActor(user)
+        returns (uint256)
+    {
         assertEq(currentActor, actors[0], "Wrong actor");
         address poolAddress = getPoolAddress();
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
@@ -133,6 +138,7 @@ contract BalancerFarmTest is
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
         assertEq(usrBalanceAfter, usrBalanceBefore - amt);
         assertEq(farmBalanceAfter, farmBalanceBefore + amt);
+        return amt;
     }
 
     /// @notice Farm specific deposit logic

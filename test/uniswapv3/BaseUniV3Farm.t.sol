@@ -403,7 +403,7 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
     }
 
     function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 0;
+        uint256 depositId = 1;
         (,, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(depositId);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
@@ -429,11 +429,11 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
 
     function test_revertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoFeeToClaim.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
+        BaseUniV3Farm(lockupFarm).claimUniswapFee(1);
     }
 
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 0;
+        uint256 depositId = 1;
         _simulateSwap();
         (,, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(depositId);
         (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(tokenId);

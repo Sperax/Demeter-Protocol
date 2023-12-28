@@ -75,7 +75,12 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(user) {
+    function deposit(address farm, bool locked, uint256 baseAmt)
+        public
+        override
+        useKnownActor(user)
+        returns (uint256)
+    {
         uint256 depositAmount1 = baseAmt * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = baseAmt * 10 ** ERC20(USDCe).decimals();
 
@@ -104,6 +109,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         vm.expectEmit(true, true, false, true);
         emit Deposited(1, currentActor, locked, tokenId, liquidity);
         IERC721(Demeter_SushiV3Farm(farm).NFPM()).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+        return liquidity;
     }
 
     /// @notice Farm specific deposit logic
