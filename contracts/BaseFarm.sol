@@ -529,7 +529,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
         _claimRewards(_account, _depositId);
 
         // Store the total rewards earned.
-        uint256[] memory totalRewards = _userDeposit.totalRewardsClaimed;
+        uint256[] memory totalRewards = deposits[_depositId].totalRewardsClaimed;
 
         // unsubscribe the user from the common reward fund.
         _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
