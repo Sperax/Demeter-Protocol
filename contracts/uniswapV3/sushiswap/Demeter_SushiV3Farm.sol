@@ -24,12 +24,12 @@ contract Demeter_SushiV3Farm is BaseUniV3Farm {
     string public constant FARM_ID = "Demeter_SushiV3_v1";
 
     // solhint-disable-next-line func-name-mixedcase
-    function NFPM() internal pure override returns (address) {
+    function NFPM() public pure override returns (address) {
         return 0xF0cBce1942A68BEB3d1b73F0dd86C8DCc363eF49;
     }
 
     // solhint-disable-next-line func-name-mixedcase
-    function UNIV3_FACTORY() internal pure override returns (address) {
+    function UNIV3_FACTORY() public pure override returns (address) {
         return 0x1af415a1EbA07a4986a52B6f2e7dE7003D82231e;
     }
 }

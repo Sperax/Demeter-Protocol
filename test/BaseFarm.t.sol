@@ -4,6 +4,7 @@ pragma solidity 0.8.16;
 import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../contracts/e20-farms/BaseE20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
 import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
@@ -36,6 +37,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant COOLDOWN_PERIOD = 21;
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
+    address internal farmProxy;
     address internal lockupFarm;
     address internal nonLockupFarm;
     address internal invalidRewardToken;
@@ -124,8 +126,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
 
     function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
 
-    function getPoolAddress() public virtual returns (address);
-
     function getRewardTokens(address farm) public view returns (address[] memory) {
         address[] memory farmRewardTokens = new address[](rwdTokens.length + 1);
         for (uint8 i = 0; i < rwdTokens.length + 1; ++i) {
@@ -196,10 +196,55 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
     }
 
+    function test_claimRewards_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
+        skip(86400 * 15);
+        address[] memory rewardTokens = getRewardTokens(lockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+
+        vm.expectEmit(true, true, true, false); // Not checking the rewards claimed here
+        emit RewardsClaimed(1, rewardsForEachSubs);
+        BaseFarm(lockupFarm).claimRewards(0);
+        // Checking the rewards claimed users balences
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
+    }
+
     function test_claimRewards_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         skip(86400 * 15);
-
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+
+        vm.expectEmit(true, true, true, true);
+        emit RewardsClaimed(1, rewardsForEachSubs);
+        BaseFarm(nonLockupFarm).claimRewards(0);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
+    }
+
+    function test_claimRewards_max_rewards() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
+        uint256 time;
+        uint256 rwdRate = 1e16;
+        uint256 rwdBalance = BaseFarm(nonLockupFarm).getRewardBalance(SPA);
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
+        skip(time + 100); //skip more than the available reward
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
         vm.expectEmit(true, true, true, true);
@@ -294,11 +339,8 @@ abstract contract GetRewardFundInfoTest is BaseFarmTest {
 }
 
 abstract contract RecoverERC20Test is BaseFarmTest {
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
-        public
-        useKnownActor(owner)
-    {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardToken() public useKnownActor(owner) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawRewardToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
@@ -307,7 +349,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20_LockupFarm_(uint256 amt) public useKnownActor(owner) {
+    function testFuzz_recoverE20_LockupFarm(uint256 amt) public useKnownActor(owner) {
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(lockupFarm), 10e10);
         vm.expectEmit(true, true, false, false);
@@ -887,5 +929,68 @@ abstract contract _SetupFarmTest is BaseFarmTest {
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
         assertTrue(success);
+    }
+}
+
+abstract contract MulticallTest is BaseFarmTest {
+    function test_Multicall(uint256 cooldownPeriod) public useKnownActor(owner) {
+        cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+        bytes[] memory data = new bytes[](2);
+        data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+        data[1] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
+
+        BaseFarm(lockupFarm).multicall(data);
+
+        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod);
+        assertEq(BaseFarm(lockupFarm).isClosed(), true);
+    }
+
+    function test_revertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {
+        // when any multiple calls fail
+        {
+            bytes[] memory data = new bytes[](1);
+            // This should revert as farm already started.
+            data[0] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
+
+            vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyStarted.selector));
+            BaseFarm(lockupFarm).multicall(data);
+        }
+
+        // when one of multiple calls fail
+        {
+            cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+            // When any single call fails the whole transaction should revert.
+            bytes[] memory data = new bytes[](3);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+            // This should revert as farm already started.
+            data[1] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
+            data[2] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
+
+            vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyStarted.selector));
+            BaseFarm(lockupFarm).multicall(data);
+        }
+
+        // checking sender
+        {
+            changePrank(user);
+            cooldownPeriod = bound(cooldownPeriod, 1, 30);
+
+            // When any single call fails the whole transaction should revert.
+            bytes[] memory data = new bytes[](3);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+
+            vm.expectRevert("Ownable: caller is not the owner");
+            BaseFarm(lockupFarm).multicall(data);
+        }
+    }
+
+    function test_revertWhen_CallInternalFunction() public useKnownActor(owner) {
+        bytes[] memory data = new bytes[](1);
+        data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
+
+        vm.expectRevert("Address: low-level delegate call failed");
+        BaseFarm(lockupFarm).multicall(data);
     }
 }
