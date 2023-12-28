@@ -340,6 +340,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
     /// @notice Get deposit info for a deposit id
     /// @param _depositId The id of the deposit
     function getDeposit(uint256 _depositId) external view returns (Deposit memory) {
+        if (_depositId == 0 || _depositId > totalDeposits) {
+            revert DepositDoesNotExist();
+        }
         return deposits[_depositId];
     }
 
