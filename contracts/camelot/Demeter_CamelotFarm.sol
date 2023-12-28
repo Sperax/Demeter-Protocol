@@ -55,8 +55,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             revert InvalidCamelotPoolConfig();
         }
 
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
-        farmFactory = _factory;
+        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.

@@ -82,8 +82,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
 
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
-        farmFactory = _factory;
+        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
