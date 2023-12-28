@@ -43,22 +43,22 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     address user;
     address newTokenManager;
 
-    event Deposited(address indexed account, bool locked, uint256 tokenId, uint256 liquidity);
-    event CooldownInitiated(address indexed account, uint256 indexed tokenId, uint256 expiryDate);
-    event DepositWithdrawn(
-        address indexed account, uint256 tokenId, uint256 startTime, uint256 liquidity, uint256[] totalRewardsClaimed
+    event Deposited(
+        uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
     );
-    event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
-    event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
+    event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
+    event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
+    event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
+    event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
-    event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
+    event CooldownPeriodUpdated(uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
-    event FundsRecovered(address indexed account, address rwdToken, uint256 amount);
-    event TokenManagerUpdated(address rwdToken, address oldTokenManager, address newTokenManager);
-    event RewardTokenAdded(address rwdToken, address rwdTokenManager);
+    event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
+    event TokenManagerUpdated(address indexed rwdToken, address newTokenManager);
+    event RewardTokenAdded(address indexed rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
 
     modifier setup() {
@@ -206,7 +206,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
         vm.expectEmit(true, true, true, true);
-        emit RewardsClaimed(currentActor, rewardsForEachSubs);
+        emit RewardsClaimed(1, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(1);
     }
 }
@@ -244,9 +244,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(
-            currentActor, userDeposit.tokenId, block.timestamp - cooldownTime, 1e21, rewardsForEachSubs[0]
-        );
+        emit DepositWithdrawn(1, 1e21, rewardsForEachSubs[0]);
         BaseFarm(lockupFarm).withdraw(1);
         skip(time);
         BaseFarm(lockupFarm).getRewardBalance(SPA);
@@ -262,8 +260,16 @@ abstract contract WithdrawTest is BaseFarmTest {
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+        uint256[] memory data = userDeposit.totalRewardsClaimed;
+        emit log_named_uint("len", rewardsForEachSubs[0].length);
+        emit log_named_uint("one", rewardsForEachSubs[0][0]);
+        emit log_named_uint("two", rewardsForEachSubs[0][1]);
+        emit log_named_uint("three", rewardsForEachSubs[0][2]);
+        emit log_named_uint("data", data[0]);
+        emit log_named_uint("data", data[1]);
+        emit log_named_uint("data", data[2]);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1, 1e21, rewardsForEachSubs[0]);
         BaseFarm(lockupFarm).withdraw(1);
     }
 
@@ -274,7 +280,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(currentActor, userDeposit.tokenId, block.timestamp - time, 1e21, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1, 1e21, rewardsForEachSubs[0]);
         BaseFarm(nonLockupFarm).withdraw(1);
     }
 }
@@ -315,12 +321,10 @@ abstract contract RecoverERC20Test is BaseFarmTest {
 
 abstract contract InitiateCooldownTest is BaseFarmTest {
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         skip(86400 * 7);
         vm.expectEmit(true, true, false, true);
-        emit CooldownInitiated(
-            currentActor, userDeposit.tokenId, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400)
-        );
+        emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);
     }
 
@@ -514,6 +518,7 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
 
 abstract contract GetDepositTest is BaseFarmTest {
     function test_getDeposit_nonLockupFarm() public setup useKnownActor(user) {
+        // @todo -> Need to check why tokenId is 1. Since depositId starts from 1 there shd be no tokenId with depositId 0.
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
         assertEq(userDeposit.tokenId, 1);
     }
@@ -597,7 +602,7 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
             }
 
             vm.expectEmit(true, false, false, true);
-            emit TokenManagerUpdated(rwdToken, sender, _newTknManager);
+            emit TokenManagerUpdated(rwdToken, _newTknManager);
             BaseFarm(nonLockupFarm).updateTokenManager(rwdToken, _newTknManager);
         }
     }
@@ -616,8 +621,8 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
                 vm.startPrank(currentActor);
             }
 
-            vm.expectEmit(true, false, false, false);
-            emit TokenManagerUpdated(rwdToken, currentActor, _newTknManager);
+            vm.expectEmit(true, false, false, true);
+            emit TokenManagerUpdated(rwdToken, _newTknManager);
             BaseFarm(lockupFarm).updateTokenManager(rwdToken, _newTknManager);
         }
     }
@@ -640,7 +645,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
                 vm.startPrank(currentActor);
             }
 
-            vm.expectEmit(true, false, false, true);
+            vm.expectEmit(true, true, false, true);
             emit FundsRecovered(sender, rwdToken, rwdBalance);
             BaseFarm(nonLockupFarm).recoverRewardFunds(rwdToken, rwdBalance);
         }
@@ -662,7 +667,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
                 sender = currentActor;
                 vm.startPrank(currentActor);
             }
-            vm.expectEmit(true, false, false, true);
+            vm.expectEmit(true, true, false, true);
             emit FundsRecovered(sender, rwdToken, rwdBalance);
             BaseFarm(lockupFarm).recoverRewardFunds(rwdToken, rwdBalance);
         }
@@ -686,7 +691,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
                 vm.startPrank(currentActor);
             }
 
-            vm.expectEmit(true, false, false, true);
+            vm.expectEmit(true, true, false, true);
             emit FundsRecovered(sender, rwdToken, rwdToRecover);
             BaseFarm(lockupFarm).recoverRewardFunds(rwdToken, rwdToRecover);
 
@@ -834,7 +839,7 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         vm.assume(cooldownPeriod > 0 && cooldownPeriod < 31);
 
         vm.expectEmit(true, true, false, true);
-        emit CooldownPeriodUpdated(COOLDOWN_PERIOD, cooldownPeriod);
+        emit CooldownPeriodUpdated(cooldownPeriod);
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 }

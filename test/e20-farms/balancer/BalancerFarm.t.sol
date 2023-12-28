@@ -125,7 +125,7 @@ contract BalancerFarmTest is
         uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
         vm.expectEmit(true, true, false, true);
-        emit Deposited(currentActor, locked, BaseFarm(farm).totalDeposits() + 1, amt);
+        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, BaseE20Farm(farm).tokenNum() + 1, amt);
         Demeter_BalancerFarm(farm).deposit(amt, locked);
         uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
