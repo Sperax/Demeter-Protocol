@@ -514,16 +514,29 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
 }
 
 abstract contract GetDepositTest is BaseFarmTest {
-    function test_getDeposit_nonLockupFarm() public setup useKnownActor(user) {
-        // @todo -> Need to check why tokenId is 1. Since depositId starts from 1 there shd be no tokenId with depositId 0.
+    function test_getInvalidDeposit_nonLockupFarm()
+        public
+        setup
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
-        emit log_named_address("Depositor", userDeposit.depositor);
-        emit log_named_uint("liquidity", userDeposit.liquidity);
-        emit log_named_uint("tokenId", userDeposit.tokenId);
-        emit log_named_uint("startTime", userDeposit.startTime);
-        emit log_named_uint("expiryDate", userDeposit.expiryDate);
-        emit log_named_uint("cooldownPeriod", userDeposit.cooldownPeriod);
-        assertEq(userDeposit.tokenId, 1);
+
+        uint256 totalDeposits = BaseFarm(nonLockupFarm).totalDeposits();
+
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseFarm(nonLockupFarm).getDeposit(totalDeposits + 1);
+    }
+
+    function test_getInvalidDeposit_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(0);
+
+        uint256 totalDeposits = BaseFarm(lockupFarm).totalDeposits();
+
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseFarm(lockupFarm).getDeposit(totalDeposits + 1);
     }
 }
 
@@ -546,7 +559,7 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
         BaseFarm(nonLockupFarm).getSubscriptionInfo(userDeposit.tokenId, 2);
     }

@@ -46,6 +46,7 @@ interface ICustomOracle {
 
 contract BalancerFarmTest is
     DepositTest,
+    GetDepositTest,
     WithdrawTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
