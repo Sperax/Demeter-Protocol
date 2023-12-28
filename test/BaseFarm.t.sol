@@ -68,10 +68,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     modifier depositSetup(address farm, bool lockup) {
         addRewards(farm);
         setRewardRates(farm);
-        emit log_named_uint("COLDONPERIOD", BaseFarm(farm).cooldownPeriod());
         deposit(farm, lockup, 1e3);
-        BaseE20Farm.Deposit memory _userDeposit = BaseE20Farm(lockupFarm).getDeposit(1);
-        emit log_named_uint("COOLDOWN_PERIOD", _userDeposit.cooldownPeriod);
         _;
     }
 
@@ -520,6 +517,12 @@ abstract contract GetDepositTest is BaseFarmTest {
     function test_getDeposit_nonLockupFarm() public setup useKnownActor(user) {
         // @todo -> Need to check why tokenId is 1. Since depositId starts from 1 there shd be no tokenId with depositId 0.
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(0);
+        emit log_named_address("Depositor", userDeposit.depositor);
+        emit log_named_uint("liquidity", userDeposit.liquidity);
+        emit log_named_uint("tokenId", userDeposit.tokenId);
+        emit log_named_uint("startTime", userDeposit.startTime);
+        emit log_named_uint("expiryDate", userDeposit.expiryDate);
+        emit log_named_uint("cooldownPeriod", userDeposit.cooldownPeriod);
         assertEq(userDeposit.tokenId, 1);
     }
 }
