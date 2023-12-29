@@ -178,5 +178,34 @@ contract UpdatePrivilegeTest is FarmFactoryTest {
         emit PrivilegeUpdated(owner, true);
         FarmFactory(factory).updatePrivilege(owner, true);
         assertEq(FarmFactory(factory).isPrivilegedDeployer(owner), true);
+
+        // Test getFeeParams
+        (address _feeReceiver, address _feeToken, uint256 _feeAmount) = FarmFactory(factory).getFeeParams(owner);
+        assertEq(_feeReceiver, FACTORY_OWNER);
+        assertEq(_feeToken, USDS);
+        assertEq(_feeAmount, 0);
+    }
+}
+
+contract UpdateFeeParamsTest is FarmFactoryTest {
+    function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+        vm.startPrank(owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        FarmFactory(factory).updateFeeParams(owner, USDS, 1e20);
+    }
+
+    function test_updateFeeParams() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+        address feeReceiver = actors[5];
+        address feeToken = actors[6];
+        uint256 feeAmt = 1e20;
+        vm.expectEmit(false, false, false, false);
+        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt);
+        FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt);
+        // Test getFeeParams
+        (address _feeReceiver, address _feeToken, uint256 _feeAmount) =
+            FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
+        assertEq(_feeReceiver, feeReceiver);
+        assertEq(_feeToken, feeToken);
+        assertEq(_feeAmount, feeAmt);
     }
 }

@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISwapRouter} from "./ISwapRouter.sol";
-import {INonfungiblePositionManager} from "../interfaces/UniswapV3.sol";
+import {INonfungiblePositionManager} from "../interfaces/IUniswapV3.sol";
 
 /**
  * @title Token Swapping on UniswapV3 Arbitrum

@@ -22,6 +22,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
+import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 // Defines the reward data for constructor.
 // token - Address of the token
@@ -31,7 +32,7 @@ struct RewardTokenData {
     address tknManager;
 }
 
-abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable {
+abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
 
     // Defines the reward funds for the farm
