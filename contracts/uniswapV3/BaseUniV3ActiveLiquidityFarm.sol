@@ -21,9 +21,9 @@ import {BaseUniV3Farm} from "./BaseUniV3Farm.sol";
 import {IUniswapV3PoolDerivedState, IUniswapV3PoolState} from "./interfaces/IUniswapV3.sol";
 import {Deposit, Subscription, RewardFund} from "../interfaces/DataTypes.sol";
 
-/// @title ActiveLiquidityBaseUniV3Farm
+/// @title BaseUniV3ActiveLiquidityFarm
 /// @notice This contract inherits the BaseUniV3Farm contract and implements the reward distribution only for active liquidity.
-contract ActiveLiquidityBaseUniV3Farm is BaseUniV3Farm {
+contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
     uint256 public lastSecondsInside;
 
     /// @notice Function to compute the total accrued rewards for a deposit
