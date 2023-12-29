@@ -78,6 +78,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -95,6 +96,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -113,6 +115,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             BaseUniV3Farm(farmProxy).initialize({
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
+                _factory: DEMETER_FACTORY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: USDCe,
                     tokenB: USDT,
@@ -130,6 +133,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             BaseUniV3Farm(farmProxy).initialize({
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
+                _factory: DEMETER_FACTORY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: DAI,
                     tokenB: USDCe,
@@ -148,6 +152,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -166,6 +171,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -182,6 +188,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -198,6 +205,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -214,6 +222,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -230,6 +239,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -248,6 +258,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: COOLDOWN_PERIOD,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
