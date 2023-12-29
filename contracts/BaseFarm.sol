@@ -806,19 +806,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         emit RewardTokenAdded(_token, _tknManager);
     }
 
-    /// @notice Collect farm extension fee and transfer it to feeReceiver.
-    /// @dev Function fetches all the fee params from farmFactory.
-    function _collectExtensionFee(uint256 _extensionDays) private {
-        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
-        (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
-            IFarmFactory(farmFactory).getFeeParams(msg.sender);
-        if (extensionFeePerDay != 0) {
-            uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
-            IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
-            emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
-        }
-    }
-
     /// @notice Computes the accrued reward for a given fund id and time interval.
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
@@ -889,6 +876,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function _isNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
+        }
+    }
+
+    /// @notice Collect farm extension fee and transfer it to feeReceiver.
+    /// @dev Function fetches all the fee params from farmFactory.
+    function _collectExtensionFee(uint256 _extensionDays) private {
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
+            IFarmFactory(farmFactory).getFeeParams(msg.sender);
+        if (extensionFeePerDay != 0) {
+            uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
+            IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
+            emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
         }
     }
 
