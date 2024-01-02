@@ -107,7 +107,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         );
 
         vm.expectEmit(true, true, false, true);
-        emit Deposited(1, currentActor, locked, tokenId, liquidity);
+        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, tokenId, liquidity);
         IERC721(Demeter_SushiV3Farm(farm).NFPM()).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
         return liquidity;
     }

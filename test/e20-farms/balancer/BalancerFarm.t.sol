@@ -124,7 +124,7 @@ contract BalancerFarmTest is
         useKnownActor(user)
         returns (uint256)
     {
-        assertEq(currentActor, actors[0], "Wrong actor");
+        // assertEq(currentActor, actors[0], "Wrong actor");
         address poolAddress = getPoolAddress();
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
