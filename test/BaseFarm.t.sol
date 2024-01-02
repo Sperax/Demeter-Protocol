@@ -640,6 +640,17 @@ abstract contract RecoverERC20Test is BaseFarmTest {
 }
 
 abstract contract InitiateCooldownTest is BaseFarmTest {
+    // this check is to make sure someone else other than the depositor cannot initiate cooldown
+    function test_initiateCooldown_LockupFarm_revertsWhen_DepositDoesNotExist()
+        public
+        setup
+        depositSetup(lockupFarm, true)
+        useKnownActor(actors[9])
+    {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseFarm(lockupFarm).initiateCooldown(1);
+    }
+
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         skip(86400 * 7);
