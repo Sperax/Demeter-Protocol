@@ -90,7 +90,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
         _withdraw(msg.sender, _depositId, userDeposit);
         // Transfer the nft back to the user.
