@@ -75,6 +75,10 @@ contract InitializeTest is FarmFactoryTest {
         assertEq(_feeAmount, feeAmt);
         assertEq(_extensionFeePerDay, extensionFeePerDay);
         assertEq(FarmFactory(factory).owner(), currentActor);
+        assertEq(FarmFactory(factory).feeReceiver(), feeReceiver);
+        assertEq(FarmFactory(factory).feeToken(), feeToken);
+        assertEq(FarmFactory(factory).feeAmount(), feeAmt);
+        assertEq(FarmFactory(factory).extensionFeePerDay(), extensionFeePerDay);
     }
 }
 
