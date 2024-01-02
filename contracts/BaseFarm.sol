@@ -115,6 +115,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
+    event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
@@ -679,6 +680,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
         // Update the totalLiquidity for the fund.
         rewardFunds[_fundId].totalLiquidity += _liquidity;
+        emit PoolSubscribed(_depositId, _fundId);
     }
 
     /// @notice Unsubscribe a reward fund from a deposit.
