@@ -52,6 +52,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
+    event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
@@ -293,6 +294,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(true, false, false, true);
+        emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
+        vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
         BaseFarm(lockupFarm).withdraw(1);
         skip(time);
@@ -334,6 +337,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        vm.expectEmit(true, false, false, true);
+        emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
         vm.expectEmit(true, false, false, true);
         emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
         BaseFarm(nonLockupFarm).withdraw(1);

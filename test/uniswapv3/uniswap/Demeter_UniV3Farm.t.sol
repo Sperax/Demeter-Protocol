@@ -106,6 +106,15 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
             })
         );
 
+        if (!locked) {
+            vm.expectEmit(true, false, false, true);
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+        } else {
+            vm.expectEmit(true, false, false, true);
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            vm.expectEmit(true, false, false, true);
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+        }
         vm.expectEmit(true, true, false, true);
         emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, tokenId, liquidity);
         IERC721(Demeter_UniV3Farm(farm).NFPM()).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
