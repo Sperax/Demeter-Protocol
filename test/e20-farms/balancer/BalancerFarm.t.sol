@@ -59,11 +59,12 @@ contract BalancerFarmTest is
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,
+    _SetupFarmTest,
     IncreaseDepositTest,
     WithdrawPartiallyTest,
-    RecoverERC20Test,
+    RecoverERC20FarmE20Test,
     RecoverRewardFundsTest,
-    _SetupFarmTest
+    MulticallTest
 {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
