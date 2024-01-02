@@ -374,10 +374,7 @@ abstract contract GetRewardFundInfoTest is BaseFarmTest {
 }
 
 abstract contract RecoverERC20Test is BaseFarmTest {
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
-        public
-        useKnownActor(owner)
-    {
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardToken() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawRewardToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }

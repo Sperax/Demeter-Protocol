@@ -125,7 +125,9 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
     }
 }
 
-abstract contract RecoverERC20E20Test is BaseE20FarmTest {
+abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
         public
         useKnownActor(owner)
@@ -139,11 +141,13 @@ abstract contract RecoverERC20E20Test is BaseE20FarmTest {
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20_LockupFarm_(uint256 amt) public useKnownActor(owner) {
-        amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
-        deal(USDT, address(lockupFarm), 10e10);
-        vm.expectEmit(true, true, false, false);
-        emit RecoveredERC20(USDT, 10e10);
+    function test_recoverE20_LockupFarm() public useKnownActor(owner) {
+        uint256 amt = 1e3 * ERC20(USDT).decimals();
+        deal(USDT, address(lockupFarm), amt);
+        vm.expectEmit(USDT);
+        emit Transfer(lockupFarm, owner, amt);
+        vm.expectEmit(lockupFarm);
+        emit RecoveredERC20(USDT, amt);
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 }
@@ -222,28 +226,5 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
         assertEq(totalRewardClaimed, 2 * time * rewardRate);
-    }
-}
-
-abstract contract RecoverERC20FarmE20Test is BaseE20FarmTest {
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawRewardTokenOrFarmToken()
-        public
-        useKnownActor(owner)
-    {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDCe);
-    }
-
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawZeroAmountE20() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDT);
-    }
-
-    function testFuzz_recoverERC20_LockupFarmE20(uint256 amt) public useKnownActor(owner) {
-        amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
-        deal(USDT, address(lockupFarm), 10e10);
-        vm.expectEmit(true, true, false, false);
-        emit RecoveredERC20(USDT, 10e10);
-        BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 }
