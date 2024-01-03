@@ -58,7 +58,7 @@ contract BalancerFarmTest is
     UpdateTokenManagerTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
-    ExtendFarmEndTimeTest,
+    ExtendFarmDurationTest,
     UpdateCoolDownPeriodTest,
     _SetupFarmTest,
     IncreaseDepositTest,

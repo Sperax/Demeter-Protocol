@@ -232,7 +232,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     ///      extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days
     ///      extension is possible only after farm started
     /// @param _extensionDays The number of days to extend the farm
-    function extendFarmEndTime(uint256 _extensionDays) external onlyOwner nonReentrant {
+    function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _farmNotClosedOrExpired();
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();

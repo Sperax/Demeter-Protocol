@@ -1123,7 +1123,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     }
 }
 
-abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
+abstract contract ExtendFarmDurationTest is BaseFarmTest {
     function test_extend_end_time_noLockupFarm_revertsWhen_FarmNotYetStarted(
         uint256 extensionDays,
         uint256 farmStartTime
@@ -1133,7 +1133,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         address farm = createFarm(farmStartTime, false);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1145,7 +1145,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         address farm = createFarm(farmStartTime, true);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1155,7 +1155,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
     {
         vm.assume(extensionDays < 100 || extensionDays > 300);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(nonLockupFarm).extendFarmEndTime(0);
+        BaseFarm(nonLockupFarm).extendFarmDuration(0);
     }
 
     function test_extend_end_time_lockupFarm_revertsWhen_InvalidExtension(uint256 extensionDays)
@@ -1164,7 +1164,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
     {
         vm.assume(extensionDays < 100 || extensionDays > 300);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(lockupFarm).extendFarmEndTime(0);
+        BaseFarm(lockupFarm).extendFarmDuration(0);
     }
 
     function test_extend_end_time_noLockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
@@ -1174,7 +1174,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).extendFarmEndTime(extensionDays);
+        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extend_end_time_lockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
@@ -1184,7 +1184,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(lockupFarm).extendFarmEndTime(extensionDays);
+        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extend_end_time_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
@@ -1197,7 +1197,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1211,7 +1211,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1239,7 +1239,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
         vm.stopPrank();
 
@@ -1274,7 +1274,7 @@ abstract contract ExtendFarmEndTimeTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
-        BaseFarm(farm).extendFarmEndTime(extensionDays);
+        BaseFarm(farm).extendFarmDuration(extensionDays);
         uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
         vm.stopPrank();
 
