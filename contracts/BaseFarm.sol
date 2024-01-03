@@ -783,7 +783,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
 
         emit FarmStartTimeUpdated(_farmStartTime);
-        emit FarmEndTimeUpdated(_farmStartTime + INITIAL_FARM_EXTENSION);
     }
 
     /// @notice Adds new reward token to the farm
