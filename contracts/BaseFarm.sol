@@ -575,7 +575,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
             rewardsForEachSubs[iSub] = new uint256[](numRewards);
-            RewardFund memory fund = rewardFunds[fundId];
+            RewardFund storage fund = rewardFunds[fundId];
 
             for (uint256 iRwd; iRwd < numRewards;) {
                 // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
@@ -603,10 +603,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // Transfer the claimed rewards to the user if any.
         for (uint8 iRwd; iRwd < numRewards;) {
             if (totalRewards[iRwd] != 0) {
-                rewardData[rewardTokens[iRwd]].accRewardBal -= totalRewards[iRwd];
+                address rewardToken = rewardTokens[iRwd];
+                rewardData[rewardToken].accRewardBal -= totalRewards[iRwd];
                 // Update the total rewards earned for the deposit.
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-                IERC20(rewardTokens[iRwd]).safeTransfer(_account, totalRewards[iRwd]);
+                IERC20(rewardToken).safeTransfer(_account, totalRewards[iRwd]);
             }
             unchecked {
                 ++iRwd;
@@ -691,7 +692,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         if (_fundId >= rewardFunds.length) {
             revert InvalidFundId();
         }
-        Deposit memory userDeposit = deposits[_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
         uint256 numRewards = rewardTokens.length;
 
         // Unsubscribe from the reward fund.
