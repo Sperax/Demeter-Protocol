@@ -739,10 +739,10 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         skip(86400 * 7);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
-        emit log_named_uint("rewardsForEachSubs", rewardsForEachSubs[0][0]);
-        vm.expectEmit(true, false, false, true);
-        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[0]);
+        vm.expectEmit(true, false, false, false);
+        emit RewardsClaimed(1, rewardsForEachSubs); // not checking the rewardsForEachSubs data here
+        vm.expectEmit(true, false, false, false);
+        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[0]); // not checking the totalRewardsClaimed data here
         vm.expectEmit(true, true, false, true);
         emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);
