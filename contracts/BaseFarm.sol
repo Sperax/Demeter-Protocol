@@ -210,20 +210,17 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
         _farmNotClosedOrExpired();
-        if (lastFundUpdateTime <= block.timestamp) {
+        uint256 _lastFundUpdateTime = lastFundUpdateTime;
+        if (_lastFundUpdateTime <= block.timestamp) {
             revert FarmAlreadyStarted();
         }
         if (_newStartTime < block.timestamp) {
             revert InvalidTime();
         }
 
-        if (_newStartTime < lastFundUpdateTime) {
-            farmEndTime = farmEndTime - (lastFundUpdateTime - _newStartTime);
-        }
-
-        if (_newStartTime > lastFundUpdateTime) {
-            farmEndTime = farmEndTime + (_newStartTime - lastFundUpdateTime);
-        }
+        farmEndTime = (_newStartTime > _lastFundUpdateTime)
+            ? farmEndTime + (_newStartTime - _lastFundUpdateTime)
+            : farmEndTime - (_lastFundUpdateTime - _newStartTime);
 
         lastFundUpdateTime = _newStartTime;
 
