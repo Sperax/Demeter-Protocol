@@ -241,11 +241,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             revert InvalidExtension();
         }
 
-        farmEndTime = farmEndTime + _extensionDays * 1 days;
+        uint256 newFarmEndTime = farmEndTime + _extensionDays * 1 days;
+        farmEndTime = newFarmEndTime;
 
         _collectExtensionFee(_extensionDays);
 
-        emit FarmEndTimeUpdated(farmEndTime);
+        emit FarmEndTimeUpdated(newFarmEndTime);
     }
 
     /// @notice Pause / UnPause the deposit
