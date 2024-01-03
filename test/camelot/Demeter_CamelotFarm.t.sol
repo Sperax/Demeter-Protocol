@@ -5,7 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../BaseFarm.t.sol";
-import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/CamelotInterfaces.sol";
+import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/ICamelot.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";

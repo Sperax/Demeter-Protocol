@@ -19,7 +19,7 @@ pragma solidity 0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/CamelotInterfaces.sol";
+import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
 import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 contract Demeter_CamelotFarm is BaseFarm, INFTHandler {

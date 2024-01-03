@@ -20,7 +20,7 @@ import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {ICamelotFactory} from "./interfaces/CamelotInterfaces.sol";
+import {ICamelotFactory} from "./interfaces/ICamelot.sol";
 
 contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     // @dev the token Order is not important
