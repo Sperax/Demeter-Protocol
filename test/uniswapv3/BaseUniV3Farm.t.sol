@@ -404,12 +404,12 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
 
     function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        (,, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(depositId);
+        BaseFarm.Deposit memory _userDeposit = BaseUniV3Farm(lockupFarm).getDeposit(depositId);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
 
         vm.expectEmit(true, true, true, true);
-        emit Transfer(lockupFarm, currentActor, tokenId);
+        emit Transfer(lockupFarm, currentActor, _userDeposit.tokenId);
 
         BaseUniV3Farm(lockupFarm).withdraw(depositId);
     }
@@ -435,11 +435,11 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();
-        (,, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(depositId);
-        (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(tokenId);
+        BaseFarm.Deposit memory _userDeposit = BaseUniV3Farm(lockupFarm).getDeposit(depositId);
+        (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(_userDeposit.tokenId);
 
         vm.expectEmit(true, false, false, true);
-        emit PoolFeeCollected(currentActor, tokenId, amount0, amount1);
+        emit PoolFeeCollected(currentActor, _userDeposit.tokenId, amount0, amount1);
 
         BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }

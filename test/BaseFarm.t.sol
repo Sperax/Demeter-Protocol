@@ -49,7 +49,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
         uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
     );
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
-    event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
+    event DepositWithdrawn(uint256 indexed depositId);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
@@ -296,7 +296,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1);
         BaseFarm(lockupFarm).withdraw(1);
         skip(time);
         BaseFarm(lockupFarm).getRewardBalance(SPA);
@@ -319,7 +319,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1);
         BaseFarm(lockupFarm).withdraw(1);
         vm.stopPrank();
     }
@@ -340,7 +340,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1);
         BaseFarm(nonLockupFarm).withdraw(1);
         vm.stopPrank();
     }
@@ -361,7 +361,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).getDeposit(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(true, false, false, true);
-        emit DepositWithdrawn(1, liquidity, rewardsForEachSubs[0]);
+        emit DepositWithdrawn(1);
         BaseFarm(nonLockupFarm).withdraw(1);
         vm.stopPrank();
     }

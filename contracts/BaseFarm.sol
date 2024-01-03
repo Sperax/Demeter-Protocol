@@ -105,14 +105,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     RewardFund[] public rewardFunds;
     address[] public rewardTokens;
     mapping(address => RewardData) public rewardData;
-    mapping(uint256 => Deposit) public deposits;
-    mapping(uint256 => Subscription[]) public subscriptions;
+    mapping(uint256 => Deposit) internal deposits;
+    mapping(uint256 => Subscription[]) internal subscriptions;
 
     event Deposited(
         uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
     );
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
-    event DepositWithdrawn(uint256 indexed depositId, uint256 liquidity, uint256[] totalRewardsClaimed);
+    event DepositWithdrawn(uint256 indexed depositId);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
@@ -160,7 +160,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         _disableInitializers();
     }
 
+    /// @notice A function to be called to initiate cooldown.
+    /// @param _depositId Id of the deposit.
     function initiateCooldown(uint256 _depositId) external virtual;
+
+    /// @notice A function to be called to withdraw deposit.
+    /// @param _depositId Id of the deposit.
     function withdraw(uint256 _depositId) external virtual;
 
     /// @notice Claim rewards for the user.
@@ -471,17 +476,17 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // @dev Pre increment because we want deposit IDs to start with 1.
         uint256 currentDepositId = ++totalDeposits;
 
-        // @dev Set user's deposit info in deposits mapping.
-        deposits[currentDepositId] = userDeposit;
-
         // Add common fund subscription to the user's deposit.
         _subscribeRewardFund(COMMON_FUND_ID, currentDepositId, _liquidity);
 
         if (_lockup) {
             // Add lockup fund subscription to the user's deposit.
-            deposits[currentDepositId].cooldownPeriod = cooldownPeriod;
+            userDeposit.cooldownPeriod = cooldownPeriod;
             _subscribeRewardFund(LOCKUP_FUND_ID, currentDepositId, _liquidity);
         }
+
+        // @dev Set user's deposit info in deposits mapping.
+        deposits[currentDepositId] = userDeposit;
 
         emit Deposited(currentDepositId, _account, _lockup, _tokenId, _liquidity);
     }
@@ -547,11 +552,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // Delete user's deposit info from deposits mapping.
         delete deposits[_depositId];
 
-        emit DepositWithdrawn({
-            depositId: _depositId,
-            liquidity: _userDeposit.liquidity,
-            totalRewardsClaimed: totalRewards
-        });
+        emit DepositWithdrawn(_depositId);
     }
 
     /// @notice Claim rewards for the user.
@@ -650,81 +651,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             }
         }
         emit RewardRateUpdated(_rwdToken, _newRewardRates);
-    }
-
-    /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _depositId The tokenId of the deposit.
-    /// @param _fundId The reward fund id.
-    /// @param _liquidity The liquidity of the deposit.
-    function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) internal {
-        if (_fundId >= rewardFunds.length) {
-            revert InvalidFundId();
-        }
-        // Subscribe to the reward fund.
-        uint256 numRewards = rewardTokens.length;
-        subscriptions[_depositId].push(
-            Subscription({
-                fundId: _fundId,
-                rewardDebt: new uint256[](numRewards),
-                rewardClaimed: new uint256[](numRewards)
-            })
-        );
-        uint256 subId = subscriptions[_depositId].length - 1;
-
-        // Initialize user's reward debt.
-        for (uint8 iRwd; iRwd < numRewards;) {
-            subscriptions[_depositId][subId].rewardDebt[iRwd] =
-                (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
-            unchecked {
-                ++iRwd;
-            }
-        }
-        // Update the totalLiquidity for the fund.
-        rewardFunds[_fundId].totalLiquidity += _liquidity;
-        emit PoolSubscribed(_depositId, _fundId);
-    }
-
-    /// @notice Unsubscribe a reward fund from a deposit.
-    /// @param _fundId The reward fund id.
-    /// @param _depositId The deposit id corresponding to the user.
-    /// @dev The rewards claimed from the reward fund is persisted in the event.
-    function _unsubscribeRewardFund(uint8 _fundId, uint256 _depositId) internal {
-        if (_fundId >= rewardFunds.length) {
-            revert InvalidFundId();
-        }
-        Deposit storage userDeposit = deposits[_depositId];
-        uint256 numRewards = rewardTokens.length;
-
-        // Unsubscribe from the reward fund.
-        Subscription[] storage depositSubs = subscriptions[_depositId];
-        uint256 numSubs = depositSubs.length;
-        for (uint256 iSub; iSub < numSubs;) {
-            if (depositSubs[iSub].fundId == _fundId) {
-                // Persist the reward information.
-                uint256[] memory rewardClaimed = new uint256[](numRewards);
-
-                for (uint8 iRwd; iRwd < numRewards;) {
-                    rewardClaimed[iRwd] = depositSubs[iSub].rewardClaimed[iRwd];
-                    unchecked {
-                        ++iRwd;
-                    }
-                }
-
-                // Delete the subscription from the list.
-                depositSubs[iSub] = depositSubs[numSubs - 1];
-                depositSubs.pop();
-
-                // Remove the liquidity from the reward fund.
-                rewardFunds[_fundId].totalLiquidity -= userDeposit.liquidity;
-
-                emit PoolUnsubscribed(_depositId, _fundId, rewardClaimed);
-
-                break;
-            }
-            unchecked {
-                ++iSub;
-            }
-        }
     }
 
     /// @notice Function to update the FarmRewardData for all funds.
@@ -872,7 +798,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _account Address of the caller to be checked against depositor.
     /// @param _depositId Id of the deposit.
     function _isValidDeposit(address _account, uint256 _depositId) internal view {
-        if (deposits[_depositId].depositor != _account) {
+        if (deposits[_depositId].depositor != _account || _account == address(0)) {
             revert DepositDoesNotExist();
         }
     }
@@ -912,6 +838,74 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function _isNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
+        }
+    }
+
+    /// @notice Add subscription to the reward fund for a deposit.
+    /// @param _depositId The tokenId of the deposit.
+    /// @param _fundId The reward fund id.
+    /// @param _liquidity The liquidity of the deposit.
+    function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
+        // Subscribe to the reward fund.
+        uint256 numRewards = rewardTokens.length;
+        Subscription memory _subscription = Subscription({
+            fundId: _fundId,
+            rewardDebt: new uint256[](numRewards),
+            rewardClaimed: new uint256[](numRewards)
+        });
+
+        // Initialize user's reward debt.
+        for (uint8 iRwd; iRwd < numRewards;) {
+            _subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
+            unchecked {
+                ++iRwd;
+            }
+        }
+
+        subscriptions[_depositId].push(_subscription);
+
+        // Update the totalLiquidity for the fund.
+        rewardFunds[_fundId].totalLiquidity += _liquidity;
+        emit PoolSubscribed(_depositId, _fundId);
+    }
+
+    /// @notice Unsubscribe a reward fund from a deposit.
+    /// @param _fundId The reward fund id.
+    /// @param _depositId The deposit id corresponding to the user.
+    /// @dev The rewards claimed from the reward fund is persisted in the event.
+    function _unsubscribeRewardFund(uint8 _fundId, uint256 _depositId) private {
+        uint256 depositLiquidity = deposits[_depositId].liquidity;
+        uint256 numRewards = rewardTokens.length;
+
+        // Unsubscribe from the reward fund.
+        Subscription[] storage depositSubs = subscriptions[_depositId];
+        uint256 numSubs = depositSubs.length;
+        for (uint256 iSub; iSub < numSubs;) {
+            if (depositSubs[iSub].fundId == _fundId) {
+                // Persist the reward information.
+                uint256[] memory rewardClaimed = new uint256[](numRewards);
+
+                for (uint8 iRwd; iRwd < numRewards;) {
+                    rewardClaimed[iRwd] = depositSubs[iSub].rewardClaimed[iRwd];
+                    unchecked {
+                        ++iRwd;
+                    }
+                }
+
+                // Delete the subscription from the list.
+                depositSubs[iSub] = depositSubs[numSubs - 1];
+                depositSubs.pop();
+
+                // Remove the liquidity from the reward fund.
+                rewardFunds[_fundId].totalLiquidity -= depositLiquidity;
+
+                emit PoolUnsubscribed(_depositId, _fundId, rewardClaimed);
+
+                break;
+            }
+            unchecked {
+                ++iSub;
+            }
         }
     }
 }
