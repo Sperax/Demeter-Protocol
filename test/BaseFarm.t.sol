@@ -858,10 +858,8 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     }
 
     function test_start_time_noLockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
-        // vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
-        // type(uint64).max
         address farm = createFarm(farmStartTime, false);
         uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
         uint256 timeDelta;
@@ -887,22 +885,18 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("if condition executed", 1);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("else if condition executed", 1);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("else condition executed", 1);
         }
     }
 
     function test_start_time_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
-        // vm.assume(farmStartTime > block.timestamp + 2 && newStartTime == farmStartTime - 1);
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
 
@@ -931,17 +925,14 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("if condition executed", 1);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("else if condition executed", 1);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
             assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
-            emit log_named_uint("else condition executed", 1);
         }
     }
 
