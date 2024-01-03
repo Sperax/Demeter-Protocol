@@ -366,6 +366,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.stopPrank();
     }
 
+    // @todo -> Need to test the subscriptions similar to deposits in the below 6 test cases
+
     function test_withdraw_firstDeposit_lockupFarm_multipleDeposits() public setup {
         BaseFarm.Deposit[] memory multipleUserDeposits = new BaseFarm.Deposit[](10);
         addRewards(lockupFarm);
@@ -659,6 +661,11 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
         skip(86400 * 7);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+        emit log_named_uint("rewardsForEachSubs", rewardsForEachSubs[0][0]);
+        vm.expectEmit(true, false, false, true);
+        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[0]);
         vm.expectEmit(true, true, false, true);
         emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);
