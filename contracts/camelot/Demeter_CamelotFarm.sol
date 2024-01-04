@@ -269,8 +269,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         returns (uint256 amountA, uint256 amountB)
     {
         (address pair,,,,,,,) = INFTPool(nftPool).getPoolInfo();
-        // address token0 = IPair(_lpToken).token0();
-        // address token1 = IPair(_lpToken).token1();
         (uint112 reserveA, uint112 reserveB,,) = IPair(pair).getReserves();
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
