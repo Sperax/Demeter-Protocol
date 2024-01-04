@@ -848,7 +848,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
         // Subscribe to the reward fund.
         uint256 numRewards = rewardTokens.length;
-        Subscription memory _subscription = Subscription({
+        Subscription memory subscription = Subscription({
             fundId: _fundId,
             rewardDebt: new uint256[](numRewards),
             rewardClaimed: new uint256[](numRewards)
@@ -856,13 +856,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
         // Initialize user's reward debt.
         for (uint8 iRwd; iRwd < numRewards;) {
-            _subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
+            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
             unchecked {
                 ++iRwd;
             }
         }
 
-        subscriptions[_depositId].push(_subscription);
+        subscriptions[_depositId].push(subscription);
 
         // Update the totalLiquidity for the fund.
         rewardFunds[_fundId].totalLiquidity += _liquidity;
