@@ -127,7 +127,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     event TokenManagerUpdated(address rwdToken, address oldTokenManager, address newTokenManager);
     event RewardTokenAdded(address rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
-    event ExtensionFeeCollected(address indexed creator, address token, uint256 extensionFee);
+    event ExtensionFeeCollected(address token, uint256 extensionFee);
 
     // Custom Errors
     error InvalidRewardToken();
@@ -885,7 +885,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         if (extensionFeePerDay != 0) {
             uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
-            emit ExtensionFeeCollected(msg.sender, feeToken, extensionFeeAmount);
+            emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
     }
 

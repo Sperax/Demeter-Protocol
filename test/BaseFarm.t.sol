@@ -54,7 +54,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event FarmEndTimeUpdated(uint256 newEndTime);
-    event ExtensionFeeCollected(address indexed creator, address token, uint256 extensionFee);
+    event ExtensionFeeCollected(address token, uint256 extensionFee);
     event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
@@ -1234,7 +1234,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
 
         if (extensionFeePerDay != 0) {
             vm.expectEmit(true, false, false, true);
-            emit ExtensionFeeCollected(owner, feeToken, extensionFeeAmount);
+            emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
@@ -1269,7 +1269,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
 
         if (extensionFeePerDay != 0) {
             vm.expectEmit(true, false, false, true);
-            emit ExtensionFeeCollected(owner, feeToken, extensionFeeAmount);
+            emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
