@@ -26,7 +26,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     using SafeERC20 for IERC20;
 
     // constants
-
     string public constant FARM_ID = "Demeter_Camelot_v1";
     address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
 
