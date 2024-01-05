@@ -181,6 +181,7 @@ contract Demeter_UniV3FarmTestInheritTest is
     UpdateTokenManagerTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
+    CloseFarmTest,
     UpdateCoolDownPeriodTest,
     _SetupFarmTest,
     InitializeTest,

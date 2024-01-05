@@ -1523,6 +1523,60 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
     }
 }
 
+abstract contract CloseFarmTest is BaseFarmTest {
+    function test_closeFarm_noLockupFarm_revertsWhen_FarmAlreadyClosed() public useKnownActor(owner) {
+        BaseFarm(nonLockupFarm).closeFarm();
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseFarm(nonLockupFarm).closeFarm();
+    }
+
+    function test_closeFarm_lockupFarm_revertsWhen_FarmAlreadyClosed() public useKnownActor(owner) {
+        BaseFarm(lockupFarm).closeFarm();
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseFarm(lockupFarm).closeFarm();
+    }
+
+    function test_closeFarm_noLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
+        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        vm.warp(farmEndTime + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        BaseFarm(nonLockupFarm).closeFarm();
+    }
+
+    function test_closeFarm_lockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
+        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        vm.warp(farmEndTime + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        BaseFarm(lockupFarm).closeFarm();
+    }
+
+    function test_closeFarm_lockupFarm() public useKnownActor(owner) {
+        address[] memory rewardTokens = getRewardTokens(lockupFarm);
+        uint256[] memory rwdRate = new uint256[](2);
+        BaseFarm(lockupFarm).closeFarm();
+        assertEq(BaseFarm(lockupFarm).isClosed(), true);
+        assertEq(BaseFarm(lockupFarm).isPaused(), true);
+        for (uint256 i = 0; i < rwdTokens.length; i++) {
+            assertEq(BaseFarm(lockupFarm).getRewardRates(rewardTokens[i]), rwdRate);
+        }
+
+        // this function also recovers reward funds. Need to test that here.
+    }
+
+    function test_closeFarm_noLockupFarm() public useKnownActor(owner) {
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory rwdRate = new uint256[](1);
+        BaseFarm(nonLockupFarm).closeFarm();
+        assertEq(BaseFarm(nonLockupFarm).isClosed(), true);
+        assertEq(BaseFarm(nonLockupFarm).isPaused(), true);
+        for (uint256 i = 0; i < rwdTokens.length; i++) {
+            assertEq(BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[i]), rwdRate);
+        }
+
+        // this function also recovers reward funds. Need to test that here.
+    }
+}
+
 abstract contract _SetupFarmTest is BaseFarmTest {
     function test_revertWhen_InvalidFarmStartTime() public {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidFarmStartTime.selector));

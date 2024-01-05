@@ -60,6 +60,7 @@ contract BalancerFarmTest is
     UpdateFarmStartTimeTest,
     ExtendFarmDurationTest,
     UpdateCoolDownPeriodTest,
+    CloseFarmTest,
     _SetupFarmTest,
     IncreaseDepositTest,
     WithdrawPartiallyTest,
