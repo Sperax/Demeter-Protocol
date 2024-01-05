@@ -70,7 +70,7 @@ contract BaseE20Farm is BaseFarm {
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant {
         // Validations
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isValidDeposit(msg.sender, _depositId);
         Deposit memory userDeposit = deposits[msg.sender][_depositId];
         if (_amount == 0) {
@@ -97,7 +97,7 @@ contract BaseE20Farm is BaseFarm {
     /// @dev Function is not available for locked deposits.
     function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant {
         //Validations
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[msg.sender][_depositId];
 

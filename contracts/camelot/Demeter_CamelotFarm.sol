@@ -102,7 +102,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isValidDeposit(msg.sender, _depositId);
         INFTPool(nftPool).harvestPositionTo(deposits[msg.sender][_depositId].tokenId, msg.sender);
     }

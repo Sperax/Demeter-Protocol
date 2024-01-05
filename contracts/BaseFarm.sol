@@ -181,7 +181,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         if (_amount == 0) {
             revert ZeroAmount();
         }
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
         }
@@ -194,7 +194,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @notice Update the cooldown period
     /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         uint256 oldCooldownPeriod = cooldownPeriod;
         if (oldCooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
@@ -209,7 +209,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         uint256 _lastFundUpdateTime = lastFundUpdateTime;
         if (_lastFundUpdateTime <= block.timestamp) {
             revert FarmAlreadyStarted();
@@ -233,7 +233,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     ///      extension is possible only after farm started
     /// @param _extensionDays The number of days to extend the farm
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
@@ -251,7 +251,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
     /// @notice Pause / UnPause the deposit
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         if (isPaused == _isPaused) {
             revert FarmAlreadyInRequiredState();
         }
@@ -263,7 +263,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @notice Recover rewardToken from the farm in case of EMERGENCY
     /// @dev Shuts down the farm completely
     function closeFarm() external onlyOwner nonReentrant {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _updateFarmRewardData();
         isPaused = true;
         isClosed = true;
@@ -309,7 +309,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _rwdToken The reward token's address
     /// @param _newRewardRates The new reward rate for the fund (includes the precision)
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isTokenManager(_rwdToken);
         _updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
@@ -320,7 +320,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _rwdToken The reward token's address.
     /// @param _newTknManager Address of the new token manager.
     function updateTokenManager(address _rwdToken, address _newTknManager) external {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
@@ -434,7 +434,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _depositId The id of the deposit
     /// @dev Anyone can call this function to claim rewards for the user
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         _isValidDeposit(_account, _depositId);
         _claimRewards(_account, _depositId);
     }
@@ -840,7 +840,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     }
 
     /// @notice Validate if farm is not closed or expired
-    function _farmNotClosedOrExpired() internal view {
+    function _farmNotClosedOrNotExpired() internal view {
         if (isClosed) {
             revert FarmIsClosed();
         }
@@ -851,7 +851,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
     /// @notice Validate if farm is not paused
     function _farmNotPaused() internal view {
-        _farmNotClosedOrExpired();
+        _farmNotClosedOrNotExpired();
         if (isPaused) {
             revert FarmIsPaused();
         }
