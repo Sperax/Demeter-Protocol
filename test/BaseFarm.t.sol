@@ -359,6 +359,12 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
         BaseFarm(nonLockupFarm).withdraw(0);
     }
+
+    // function test_withdraw_lockupFarm_pausedAndExpired();
+    // function test_withdraw_lockupFarm_notPausedButExpired();
+
+    // function test_withdraw_nonLockupFarm_pausedAndExpired();
+    // function test_withdraw_nonLockupFarm_notPausedButExpired();
 }
 
 abstract contract GetRewardFundInfoTest is BaseFarmTest {

@@ -353,7 +353,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             Subscription memory sub = depositSubs[iSub];
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                if (funds[fundId].totalLiquidity != 0 && !isPaused) {
+                if (funds[fundId].totalLiquidity != 0 && !isPaused && (block.timestamp <= farmEndTime)) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
@@ -548,8 +548,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _userDeposit userDeposit struct.
     function _withdraw(address _account, uint256 _depositId, Deposit memory _userDeposit) internal {
         // Check for the withdrawal criteria
-        // Note: If farm is paused, skip the cooldown check
-        if (!isPaused) {
+        // Note: If farm is paused and/or expired, skip the cooldown check
+        if (!isPaused && (block.timestamp <= farmEndTime)) {
             if (_userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
@@ -690,7 +690,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         if (block.timestamp > lastFundUpdateTime) {
             // if farm is paused don't accrue any rewards.
             // only update the lastFundUpdateTime.
-            if (!isPaused) {
+            if (!isPaused && (block.timestamp <= farmEndTime)) {
                 uint256 time;
                 unchecked {
                     time = block.timestamp - lastFundUpdateTime;
@@ -851,6 +851,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
     /// @notice Validate if farm is not paused
     function _farmNotPaused() internal view {
+        _farmNotClosedOrExpired();
         if (isPaused) {
             revert FarmIsPaused();
         }
