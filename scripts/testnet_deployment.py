@@ -7,6 +7,7 @@ from brownie import (
     Demeter_UniV3FarmDeployer,
     Demeter_UniV3Farm,
     network,
+    interface,
     chain
 )
     
@@ -27,10 +28,14 @@ FEE_AMOUNT:int or bool = 1e18
 FEE_RECEIVER: str or bool = False
 REWARD_DATA = []
 DEPOSIT_AMOUNT = 1e18
+NFPM = "0xc36442b4a4522e871399cd717abdd847ab11fe88"
+LOCKUP = "0x0000000000000000000000000000000000000000000000000000000000000000"
+NON_LOCKUP = "0x0000000000000000000000000000000000000000000000000000000000000000"
 # Uniswap Pool Info
 UNISWAP_POOL_FEE = 3000
 UNISWAP_TICK_LOWER = -887220
 UNISWAP_TICK_UPPER = 887220
+SQRT_PRICE_X96 = 6394246151615933013102373015
 VERIFY = True
 
 class Token:
@@ -59,7 +64,16 @@ def deploy(deployments, contract, args, key):
     
 def createUniswapV3Farm(owner, farmFactory, uniswapV3FarmDeployer: Contract, data):
     print("\n -- Deploying Demeter_UniV3Farm USDs and SPA contract -- \n")
-    input("Is UniswapV3 pool created for USDs and SPA?. No not please create it first and then press enter to continue.")
+    token0Addr = data["USDs"]
+    token1Addr = data["SPA"]
+    nfpm = Contract.from_abi("NonfungiblePositionManager", NFPM, interface.INFPM.abi)
+    nfpm.createAndInitializePoolIfNecessary(
+        token0Addr,
+        token1Addr,
+        UNISWAP_POOL_FEE,
+        SQRT_PRICE_X96,
+        {"from": owner, "gas_limit": GAS_LIMIT}
+    )
     farmData = [
         owner,
         chain.time() + 100,
@@ -78,20 +92,19 @@ def createUniswapV3Farm(owner, farmFactory, uniswapV3FarmDeployer: Contract, dat
     demeterUniV3Farm = Contract.from_abi("Demeter_UniV3Farm", demeterUniV3Farm, Demeter_UniV3Farm.abi)
     return demeterUniV3Farm
 
-# Under dev
-# def deposit(owner, demeterUniV3Farm: Contract, data):
-#     token0Addr = data["USDs"]
-#     token1Addr = data["SPA"]
-#     nfpm = Contract.from_abi("NonfungiblePositionManager", demeterUniV3Farm.NFPM(), INFPM.abi)
-#     CustomERC20.at(token0Addr).mint(owner, DEPOSIT_AMOUNT)
-#     CustomERC20.at(token0Addr).approve(nfpm.address, DEPOSIT_AMOUNT)
+def deposit(owner, demeterUniV3Farm: Contract, data):
+    TX_ARGS = {"from": owner, "gas_limit": GAS_LIMIT, "allow_revert":True}
+    token0Addr = data["USDs"]
+    token1Addr = data["SPA"]
+    nfpm = Contract.from_abi("NonfungiblePositionManager", demeterUniV3Farm.NFPM(), interface.INFPM.abi)
+    CustomERC20.at(token0Addr).mint(owner, DEPOSIT_AMOUNT, TX_ARGS)
+    CustomERC20.at(token0Addr).approve(nfpm.address, DEPOSIT_AMOUNT, TX_ARGS)
 
-#     CustomERC20.at(token1Addr).mint(owner, DEPOSIT_AMOUNT)
-#     CustomERC20.at(token1Addr).approve(nfpm.address, DEPOSIT_AMOUNT)
+    CustomERC20.at(token1Addr).mint(owner, DEPOSIT_AMOUNT, TX_ARGS)
+    CustomERC20.at(token1Addr).approve(nfpm.address, DEPOSIT_AMOUNT, TX_ARGS)
 
-#     tx = nfpm.mint(token0Addr, token1Addr, UNISWAP_POOL_FEE, UNISWAP_TICK_LOWER,UNISWAP_TICK_UPPER, DEPOSIT_AMOUNT, 0,0,owner, chain.time() + 84600, {"from": owner, "gas_limit": GAS_LIMIT})
-#     print(tx.return_value)
-#     nfpm.safeTransferFrom(owner, demeterUniV3Farm, tx.return_value[0], {"from": owner, "gas_limit": GAS_LIMIT})
+    tx = nfpm.mint([token0Addr, token1Addr, UNISWAP_POOL_FEE, UNISWAP_TICK_LOWER,UNISWAP_TICK_UPPER, DEPOSIT_AMOUNT,DEPOSIT_AMOUNT, 0,0,owner, chain.time() + 84600], TX_ARGS)
+    nfpm.safeTransferFrom(owner, demeterUniV3Farm, tx.events[5]['tokenId'], NON_LOCKUP, TX_ARGS)
 
 
 def main():
@@ -194,6 +207,9 @@ def main():
         # Does not take account if FEE_RECEIVER is different
         if farmFactory.feeAmount() != FEE_AMOUNT:
             farmFactory.updateFeeParams(FEE_RECEIVER or owner, data["USDs"], FEE_AMOUNT, {"from": farmFactory.owner(), "gas_limit": GAS_LIMIT})
+
+    # Deposit
+    deposit(owner, demeterUniV3Farm, data)
 
 
     # Save deployment data
