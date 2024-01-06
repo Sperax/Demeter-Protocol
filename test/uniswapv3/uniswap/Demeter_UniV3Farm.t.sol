@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../../contracts/uniswapV3/uniswap/Demeter_UniV3Farm.sol";
 import "../../../contracts/uniswapV3/uniswap/Demeter_UniV3FarmDeployer.sol";
-import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
+import {INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../../BaseFarm.t.sol";

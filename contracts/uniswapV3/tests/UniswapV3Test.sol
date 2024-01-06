@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISwapRouter} from "./ISwapRouter.sol";
-import {INonfungiblePositionManager} from "../interfaces/IUniswapV3.sol";
+import {INFPM} from "../interfaces/IUniswapV3.sol";
 
 /**
  * @title Token Swapping on UniswapV3 Arbitrum
@@ -15,7 +15,7 @@ import {INonfungiblePositionManager} from "../interfaces/IUniswapV3.sol";
 contract UniswapV3Test {
     using SafeERC20 for IERC20;
 
-    INonfungiblePositionManager public nonfungiblePositionManager;
+    INFPM public nonfungiblePositionManager;
 
     ISwapRouter public immutable SWAP_ROUTER;
 
@@ -30,7 +30,7 @@ contract UniswapV3Test {
     // SWAP_ROUTER address -> 0x8A21F6768C1f8075791D08546Dadf6daA0bE820c
 
     constructor(address _nfpm, address _swapRouter) {
-        nonfungiblePositionManager = INonfungiblePositionManager(_nfpm);
+        nonfungiblePositionManager = INFPM(_nfpm);
         SWAP_ROUTER = ISwapRouter(_swapRouter);
     }
 

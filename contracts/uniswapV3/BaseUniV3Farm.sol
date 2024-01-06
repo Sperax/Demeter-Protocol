@@ -18,16 +18,9 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import {
-    INonfungiblePositionManager as INFPM,
-    IUniswapV3Factory,
-    IUniswapV3TickSpacing,
-    CollectParams
-} from "./interfaces/IUniswapV3.sol";
+import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing, CollectParams} from "./interfaces/IUniswapV3.sol";
 import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
-import {
-    INonfungiblePositionManagerUtils as INFPMUtils, Position
-} from "./interfaces/INonfungiblePositionManagerUtils.sol";
+import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 
 // Defines the Uniswap pool init data for constructor.
