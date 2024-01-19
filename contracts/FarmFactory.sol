@@ -54,6 +54,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
     /// @param _feeReceiver Receiver of the fees
+    /// @param _extensionFeePerDay Extension fee per day
     function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay)
         external
         initializer
@@ -128,7 +129,7 @@ contract FarmFactory is OwnableUpgradeable {
 
     /// @notice Get all the fee parameters for creating farm
     /// @param _deployerAccount The account creating the farm
-    /// @return Returns FeeReceiver, feeToken address and feeTokenAmt
+    /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay
     /// @dev It returns fee amount as 0 if deployer account is privileged
     function getFeeParams(address _deployerAccount) external view returns (address, address, uint256, uint256) {
         if (isPrivilegedDeployer[_deployerAccount]) {
@@ -141,6 +142,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @param _receiver feeReceiver address
     /// @param _feeToken token address for fee
     /// @param _amount amount of token to be collected
+    /// @param _extensionFeePerDay extension fee per day
     function updateFeeParams(address _receiver, address _feeToken, uint256 _amount, uint256 _extensionFeePerDay)
         public
         onlyOwner

@@ -40,6 +40,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _factory - Address of the farm factory
     /// @param _camelotPairPool - Camelot lp pool address
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(

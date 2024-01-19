@@ -67,8 +67,11 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _factory - Address of the farm factory
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rwdTokenData - init data for reward tokens
+    /// @param _uniswapUtils - address of our custom uniswap utils contract
+    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,

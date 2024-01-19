@@ -721,10 +721,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
     }
 
-    /// @notice Function to setup the reward funds during construction.
+    /// @notice Function to setup the reward funds and initialize the farm global params during construction.
     /// @param _farmStartTime - Time of farm start.
     /// @param _cooldownPeriod - cooldown period for locked deposits.
     /// @param _rwdTokenData - Reward data for each reward token.
+    /// @param _farmFactory - Address of the farm factory.
     function _setupFarm(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
