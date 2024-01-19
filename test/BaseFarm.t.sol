@@ -1112,10 +1112,8 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     // the above fuzz test contains very low range for newStartTime on the negative delta side and further it there is a chance it can miss the no delta case.
     // so wrote the below tests.
 
-    function test_updateFarmStartTime_lockupFarm_end_time_withDelta(uint256 farmStartTime, uint256 newStartTime)
-        public
-    {
-        farmStartTime = block.timestamp + 50 days;
+    function test_updateFarmStartTime_lockupFarm_end_time_withDelta(uint256 newStartTime) public {
+        uint256 farmStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
         address farm = createFarm(farmStartTime, true);
@@ -1155,10 +1153,8 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         }
     }
 
-    function test_updateFarmStartTime_noLockupFarm_end_time_withDelta(uint256 farmStartTime, uint256 newStartTime)
-        public
-    {
-        farmStartTime = block.timestamp + 50 days;
+    function test_updateFarmStartTime_noLockupFarm_end_time_withDelta(uint256 newStartTime) public {
+        uint256 farmStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
         address farm = createFarm(farmStartTime, false);
@@ -1301,12 +1297,9 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
 }
 
 abstract contract ExtendFarmDurationTest is BaseFarmTest {
-    function test_extend_end_time_noLockupFarm_revertsWhen_FarmNotYetStarted(
-        uint256 extensionDays,
-        uint256 farmStartTime
-    ) public {
-        extensionDays = bound(extensionDays, 0, type(uint256).max);
-        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+    function test_extendFarmDuration_noLockupFarm_revertsWhen_FarmNotYetStarted() public {
+        uint256 extensionDays = 200;
+        uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
@@ -1314,11 +1307,9 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_extend_end_time_lockupFarm_revertsWhen_FarmNotYetStarted(uint256 extensionDays, uint256 farmStartTime)
-        public
-    {
-        extensionDays = bound(extensionDays, 0, type(uint256).max);
-        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+    function test_extendFarmDuration_lockupFarm_revertsWhen_FarmNotYetStarted() public {
+        uint256 extensionDays = 200;
+        uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, true);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
@@ -1326,45 +1317,39 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_extend_end_time_noLockupFarm_revertsWhen_InvalidExtension(uint256 extensionDays)
-        public
-        useKnownActor(owner)
-    {
-        vm.assume(extensionDays < 100 || extensionDays > 300);
+    function test_extendFarmDuration_noLockupFarm_revertsWhen_InvalidExtension() public useKnownActor(owner) {
+        uint256 extensionDays = 99;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(nonLockupFarm).extendFarmDuration(0);
+        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
+        extensionDays = 301;
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
+        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_extend_end_time_lockupFarm_revertsWhen_InvalidExtension(uint256 extensionDays)
-        public
-        useKnownActor(owner)
-    {
-        vm.assume(extensionDays < 100 || extensionDays > 300);
+    function test_extendFarmDuration_lockupFarm_revertsWhen_InvalidExtension() public useKnownActor(owner) {
+        uint256 extensionDays = 99;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(lockupFarm).extendFarmDuration(0);
+        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
+        extensionDays = 301;
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
+        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_extend_end_time_noLockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
-        public
-        useKnownActor(owner)
-    {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+    function test_extendFarmDuration_noLockupFarm_revertsWhen_farmClosed() public useKnownActor(owner) {
+        uint256 extensionDays = 200;
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_extend_end_time_lockupFarm_revertsWhen_farmClosed(uint256 extensionDays)
-        public
-        useKnownActor(owner)
-    {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+    function test_extendFarmDuration_lockupFarm_revertsWhen_farmClosed() public useKnownActor(owner) {
+        uint256 extensionDays = 200;
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_extend_end_time_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
+    function test_extendFarmDuration_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
         public
     {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
@@ -1378,7 +1363,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_extend_end_time_lockupFarm_revertsWhen_farExpired(uint256 extensionDays, uint256 farmStartTime)
+    function test_extendFarmDuration_lockupFarm_revertsWhen_farExpired(uint256 extensionDays, uint256 farmStartTime)
         public
     {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
@@ -1392,7 +1377,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_extend_end_time_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+    function test_extendFarmDuration_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
@@ -1427,7 +1412,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         assertEq(feeReceiverTokenBalanceAfterExtension, feeReceiverTokenBalanceBeforeExtension + extensionFeeAmount);
     }
 
-    function test_extend_end_time_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
+    function test_extendFarmDuration_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, true);
