@@ -82,9 +82,6 @@ contract BaseE20Farm is BaseFarm {
         // claim the pending rewards for the deposit
         _claimRewards(msg.sender, _depositId);
 
-        // Update deposit and rewards Information
-        _updateFarmRewardData();
-
         // Update deposit Information
         _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
         deposits[msg.sender][_depositId].liquidity += _amount;
@@ -117,9 +114,6 @@ contract BaseE20Farm is BaseFarm {
         // Update deposit info
         _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
         userDeposit.liquidity -= _amount;
-
-        // Update deposit and rewards Information
-        _updateFarmRewardData();
 
         // Transfer the lp tokens to the user
         IERC20(farmToken).safeTransfer(msg.sender, _amount);

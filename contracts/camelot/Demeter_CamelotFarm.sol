@@ -114,9 +114,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             revert DepositIsInCooldown();
         }
 
-        // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
-
         uint256 tokenId = userDeposit.tokenId;
         (address _lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
 
@@ -143,8 +140,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         IERC20(_lpToken).safeApprove(nftPool, liquidity);
         INFTPool(nftPool).addToPosition(tokenId, liquidity);
 
-        // Update deposit and rewards Information
-        _updateFarmRewardData();
+        // claim the pending rewards for the deposit
+        _claimRewards(msg.sender, _depositId);
+
         _updateSubscriptionForIncrease(tokenId, liquidity);
         userDeposit.liquidity += liquidity;
 
@@ -187,9 +185,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             revert DecreaseDepositNotPermitted();
         }
 
-        // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
-
         uint256 tokenId = userDeposit.tokenId;
 
         // Withdraw liquidity from nft pool
@@ -202,10 +197,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             token0, token1, _liquidityToWithdraw, _minAmounts[0], _minAmounts[1], msg.sender, block.timestamp
         );
 
+        // claim the pending rewards for the deposit
+        _claimRewards(msg.sender, _depositId);
+
         // Update deposit Information
         _updateSubscriptionForDecrease(tokenId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
-        _updateFarmRewardData();
 
         emit DepositDecreased(msg.sender, tokenId, _liquidityToWithdraw, amountA, amountB);
     }
