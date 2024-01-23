@@ -58,7 +58,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     // Deposit information:
     // depositor - address of the depositor.
     // liquidity - amount of liquidity in the deposit.
-    // tokenId - maps to uniswap NFT token id.
     // startTime - time of deposit.
     // expiryDate - expiry time (if deposit is locked).
     // cooldownPeriod - cooldown period (if deposit is locked).
@@ -66,7 +65,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     struct Deposit {
         address depositor;
         uint256 liquidity;
-        uint256 tokenId;
         uint256 startTime;
         uint256 expiryDate;
         uint256 cooldownPeriod;
@@ -108,9 +106,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     mapping(uint256 => Deposit) internal deposits;
     mapping(uint256 => Subscription[]) internal subscriptions;
 
-    event Deposited(
-        uint256 indexed depositId, address indexed account, bool locked, uint256 tokenId, uint256 liquidity
-    );
+    event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
     event DepositWithdrawn(uint256 indexed depositId);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
@@ -444,9 +440,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @notice Common logic for deposit in the demeter farm.
     /// @param _account Address of the depositor.
     /// @param _lockup Lockup option for the deposit.
-    /// @param _tokenId Generated | provided id of position to be deposited.
     /// @param _liquidity Liquidity amount to be added to the pool.
-    function _deposit(address _account, bool _lockup, uint256 _tokenId, uint256 _liquidity) internal {
+    function _deposit(address _account, bool _lockup, uint256 _liquidity) internal {
         // Allow deposit only when farm is not paused.
         _farmNotPaused();
 
@@ -466,7 +461,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         Deposit memory userDeposit = Deposit({
             depositor: _account,
             cooldownPeriod: 0,
-            tokenId: _tokenId,
             startTime: block.timestamp,
             expiryDate: 0,
             totalRewardsClaimed: new uint256[](rewardTokens.length),
@@ -488,7 +482,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // @dev Set user's deposit info in deposits mapping.
         deposits[currentDepositId] = userDeposit;
 
-        emit Deposited(currentDepositId, _account, _lockup, _tokenId, _liquidity);
+        emit Deposited(currentDepositId, _account, _lockup, _liquidity);
     }
 
     /// @notice Common logic for initiating cooldown.
@@ -519,10 +513,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @notice Common logic for withdraw.
     /// @param _account address of the user.
     /// @param _depositId user's deposit id.
-    /// @param _userDeposit userDeposit struct.
-    function _withdraw(address _account, uint256 _depositId, Deposit memory _userDeposit) internal {
+    function _withdraw(address _account, uint256 _depositId) internal {
         // Check for the withdrawal criteria.
         // Note: If farm is paused, skip the cooldown check.
+        Deposit memory _userDeposit = deposits[_depositId];
         if (!isPaused) {
             if (_userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
@@ -537,9 +531,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
         // Compute the user's unclaimed rewards.
         _claimRewards(_account, _depositId);
-
-        // Store the total rewards earned.
-        uint256[] memory totalRewards = deposits[_depositId].totalRewardsClaimed;
 
         // unsubscribe the user from the common reward fund.
         _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
@@ -842,7 +833,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     }
 
     /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _depositId The tokenId of the deposit.
+    /// @param _depositId The unique ID of the deposit.
     /// @param _fundId The reward fund id.
     /// @param _liquidity The liquidity of the deposit.
     function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
