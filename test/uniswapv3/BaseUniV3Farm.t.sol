@@ -418,8 +418,54 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
         (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, tokenId);
 
-        vm.expectEmit(true, true, true, true);
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_paused() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 0;
+        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).farmPauseSwitch(true);
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, tokenId);
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_closed() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 0;
+        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).closeFarm();
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, tokenId);
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 0;
+        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
+        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, tokenId);
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_closedAndExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 0;
+        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).closeFarm();
+        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
         emit Transfer(lockupFarm, currentActor, tokenId);
 
         BaseUniV3Farm(lockupFarm).withdraw(depositId);
