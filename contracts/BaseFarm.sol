@@ -259,7 +259,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             revert CannotWithdrawZeroAmount();
         }
 
-        IERC20(_token).safeTransfer(owner(), balance);
+        IERC20(_token).safeTransfer(msg.sender, balance);
         emit RecoveredERC20(_token, balance);
     }
 
@@ -401,11 +401,13 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
         _farmNotClosed();
         _isValidDeposit(_account, _depositId);
-        _claimRewards(_account, _depositId);
+        _updateAndClaimFarmRewards(_account, _depositId);
     }
 
-    /// @notice Get the remaining reward balance for the farm.
-    /// @param _rwdToken The reward token's address
+    /// @notice Get the reward balance for specified reward token.
+    /// @param _rwdToken The address of the reward token.
+    /// @return The available reward balance for the specified reward token.
+    /// @dev This function calculates the available reward balance by considering the accrued rewards and the token supply.
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 
@@ -503,7 +505,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         userDeposit.cooldownPeriod = 0;
 
         // Claim the pending rewards for the user.
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Unsubscribe the deposit from the lockup reward fund.
         _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
@@ -531,7 +533,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
 
         // Compute the user's unclaimed rewards.
-        _claimRewards(_account, _depositId);
+        _updateAndClaimFarmRewards(_account, _depositId);
 
         // unsubscribe the user from the common reward fund.
         _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
@@ -552,7 +554,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _depositId The id of the deposit.
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant.
-    function _claimRewards(address _account, uint256 _depositId) internal {
+    function _updateAndClaimFarmRewards(address _account, uint256 _depositId) internal {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
@@ -614,15 +616,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @dev Function recovers minOf(_amount, rewardsLeft).
     /// @dev In case of partial withdraw of funds, the reward rate has to be set manually again.
     function _recoverRewardFunds(address _rwdToken, uint256 _amount) internal {
-        address emergencyRet = rewardData[_rwdToken].tknManager;
+        address recoverTo = rewardData[_rwdToken].tknManager;
         uint256 rewardsLeft = getRewardBalance(_rwdToken);
-        uint256 amountToRecover = _amount;
         if (_amount >= rewardsLeft) {
-            amountToRecover = rewardsLeft;
+            _amount = rewardsLeft;
         }
-        if (amountToRecover != 0) {
-            IERC20(_rwdToken).safeTransfer(emergencyRet, amountToRecover);
-            emit FundsRecovered(emergencyRet, _rwdToken, amountToRecover);
+        if (_amount != 0) {
+            IERC20(_rwdToken).safeTransfer(recoverTo, _amount);
+            emit FundsRecovered(recoverTo, _rwdToken, _amount);
         }
     }
 

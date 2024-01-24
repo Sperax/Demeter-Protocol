@@ -79,7 +79,7 @@ contract BaseE20Farm is BaseFarm {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
         _updateSubscriptionForIncrease(_depositId, _amount);
@@ -108,7 +108,7 @@ contract BaseE20Farm is BaseFarm {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit info
         _updateSubscriptionForDecrease(_depositId, _amount);
