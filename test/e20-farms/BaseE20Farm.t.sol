@@ -14,7 +14,7 @@ abstract contract BaseE20FarmTest is BaseFarmTest {
 }
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
-    function test_revertsWhen_InvalidAMOUNT() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_revertsWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
         uint256 amt = 0;
 
@@ -130,7 +130,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 }
 
 abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
-    function test_zeroAMOUNT() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 amount;
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
         BaseE20Farm(lockupFarm).withdrawPartially(DEPOSIT_ID, amount);
@@ -174,7 +174,7 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         vm.startPrank(user);
         rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
         rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
-        //since the Deposit AMOUNTs are the same, The reward AMOUNTs should be the same.
+        //since the Deposit amounts are the same, The reward amounts should be the same.
 
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
             assertEq(rewardsForEachSubs1[0][i], rewardsForEachSubs2[0][i]);
@@ -194,7 +194,7 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
         rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
 
-        //The first Deposit AMOUNT is the half than the second one so the the ratio should be 1/3 and 2/3
+        //The first Deposit amount is the half than the second one so the the ratio should be 1/3 and 2/3
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
             assertEq(rewardsForEachSubs1[0][i], rewardsForEachSubs2[0][i] / 2);
         }
@@ -216,7 +216,7 @@ abstract contract RecoverERC20FarmE20Test is BaseE20FarmTest {
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
-    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawZeroAMOUNTE20() public useKnownActor(owner) {
+    function test_recoverE20_LockupFarm_revertsWhen_CannotWithdrawZeroAmountE20() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
