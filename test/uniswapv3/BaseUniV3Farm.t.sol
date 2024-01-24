@@ -406,8 +406,7 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
         uint256 depositId = 1;
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
-
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
         emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
         BaseUniV3Farm(lockupFarm).withdraw(depositId);
     }
@@ -436,7 +435,7 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
         uint256 _tokenId = BaseUniV3Farm(lockupFarm).depositToTokenId(depositId);
         (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
 
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(address(lockupFarm));
         emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
 
         BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);

@@ -224,7 +224,7 @@ abstract contract RecoverERC20FarmE20Test is BaseE20FarmTest {
     function testFuzz_recoverERC20_LockupFarmE20(uint256 amt) public useKnownActor(owner) {
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(lockupFarm), 10e10);
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(address(lockupFarm));
         emit RecoveredERC20(USDT, 10e10);
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
