@@ -288,7 +288,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @dev Only the existing tokenManager for a reward can call this function.
     /// @param _rwdToken The reward token's address.
     /// @param _newTknManager Address of the new token manager.
-    function updateRewardTokenData(address _rwdToken, address _newTknManager) external {
+    function updateRewardData(address _rwdToken, address _newTknManager) external {
         _farmNotClosed();
         _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);

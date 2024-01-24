@@ -987,14 +987,14 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
         vm.startPrank(owner);
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm_revertsWhen_NotTheTokenManager() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.NotTheTokenManager.selector));
-        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm_revertsWhen_InvalidAddress()
@@ -1004,7 +1004,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = address(0);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidAddress.selector));
-        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm() public useKnownActor(owner) {
@@ -1023,7 +1023,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
 
             vm.expectEmit(address(nonLockupFarm));
             emit RewardDataUpdated(rwdToken, _newTknManager);
-            BaseFarm(nonLockupFarm).updateRewardTokenData(rwdToken, _newTknManager);
+            BaseFarm(nonLockupFarm).updateRewardData(rwdToken, _newTknManager);
         }
     }
 
@@ -1043,7 +1043,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
 
             vm.expectEmit(address(lockupFarm));
             emit RewardDataUpdated(rwdToken, _newTknManager);
-            BaseFarm(lockupFarm).updateRewardTokenData(rwdToken, _newTknManager);
+            BaseFarm(lockupFarm).updateRewardData(rwdToken, _newTknManager);
         }
     }
 }
