@@ -195,7 +195,7 @@ contract Demeter_SushiV3FarmInheritTest is
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateTokenManagerTest,
+    UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,

@@ -58,7 +58,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
     event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
-    event TokenManagerUpdated(address indexed rwdToken, address newTokenManager);
+    event RewardDataUpdated(address indexed rwdToken, address newTokenManager);
     event RewardTokenAdded(address indexed rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
 
@@ -987,7 +987,7 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     }
 }
 
-abstract contract UpdateTokenManagerTest is BaseFarmTest {
+abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
     function test_updateTknManager_nonLockupFarm_revertsWhen_FarmIsClosed() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
@@ -995,14 +995,14 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
         vm.startPrank(owner);
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm_revertsWhen_NotTheTokenManager() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.NotTheTokenManager.selector));
-        BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm_revertsWhen_InvalidAddress()
@@ -1012,7 +1012,7 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = address(0);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidAddress.selector));
-        BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
+        BaseFarm(nonLockupFarm).updateRewardTokenData(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_nonLockupFarm() public useKnownActor(owner) {
@@ -1030,8 +1030,8 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
             }
 
             vm.expectEmit(true, false, false, true);
-            emit TokenManagerUpdated(rwdToken, _newTknManager);
-            BaseFarm(nonLockupFarm).updateTokenManager(rwdToken, _newTknManager);
+            emit RewardDataUpdated(rwdToken, _newTknManager);
+            BaseFarm(nonLockupFarm).updateRewardTokenData(rwdToken, _newTknManager);
         }
     }
 
@@ -1050,8 +1050,8 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
             }
 
             vm.expectEmit(true, false, false, true);
-            emit TokenManagerUpdated(rwdToken, _newTknManager);
-            BaseFarm(lockupFarm).updateTokenManager(rwdToken, _newTknManager);
+            emit RewardDataUpdated(rwdToken, _newTknManager);
+            BaseFarm(lockupFarm).updateRewardTokenData(rwdToken, _newTknManager);
         }
     }
 }

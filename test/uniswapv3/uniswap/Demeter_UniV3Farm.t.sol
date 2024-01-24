@@ -193,7 +193,7 @@ contract Demeter_UniV3FarmTestInheritTest is
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateTokenManagerTest,
+    UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,

@@ -119,7 +119,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
     event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
-    event TokenManagerUpdated(address indexed rwdToken, address newTokenManager);
+    event RewardDataUpdated(address indexed rwdToken, address newTokenManager);
     event RewardTokenAdded(address indexed rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
 
@@ -288,12 +288,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @dev Only the existing tokenManager for a reward can call this function.
     /// @param _rwdToken The reward token's address.
     /// @param _newTknManager Address of the new token manager.
-    function updateTokenManager(address _rwdToken, address _newTknManager) external {
+    function updateRewardTokenData(address _rwdToken, address _newTknManager) external {
         _farmNotClosed();
         _isTokenManager(_rwdToken);
         _isNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
-        emit TokenManagerUpdated(_rwdToken, _newTknManager);
+        emit RewardDataUpdated(_rwdToken, _newTknManager);
     }
 
     /// @notice Function to compute the total accrued rewards for a deposit.

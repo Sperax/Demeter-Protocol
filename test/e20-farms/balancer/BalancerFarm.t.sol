@@ -56,7 +56,7 @@ contract BalancerFarmTest is
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateTokenManagerTest,
+    UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     UpdateCoolDownPeriodTest,
