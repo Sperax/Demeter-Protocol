@@ -52,7 +52,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
     address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
-    mapping(uint256 => uint256) public depositToToken;
+    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -117,8 +117,8 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         uint256 liquidity = _getLiquidity(_tokenId);
         // Validate the position and get the liquidity
 
-        _deposit(_from, abi.decode(_data, (bool)), liquidity);
-        depositToToken[totalDeposits] = _tokenId;
+        uint256 depositId = _deposit(_from, abi.decode(_data, (bool)), liquidity);
+        depositToTokenId[depositId] = _tokenId;
         return this.onERC721Received.selector;
     }
 
@@ -136,8 +136,8 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFPM(NFPM()).safeTransferFrom(address(this), msg.sender, depositToToken[_depositId]);
-        delete depositToToken[_depositId];
+        INFPM(NFPM()).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        delete depositToTokenId[_depositId];
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
@@ -146,7 +146,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        uint256 tokenId = depositToToken[_depositId];
+        uint256 tokenId = depositToTokenId[_depositId];
 
         address pm = NFPM();
         (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);

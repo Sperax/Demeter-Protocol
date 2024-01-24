@@ -441,7 +441,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _account Address of the depositor.
     /// @param _lockup Lockup option for the deposit.
     /// @param _liquidity Liquidity amount to be added to the pool.
-    function _deposit(address _account, bool _lockup, uint256 _liquidity) internal {
+    function _deposit(address _account, bool _lockup, uint256 _liquidity) internal returns (uint256) {
         // Allow deposit only when farm is not paused.
         _farmNotPaused();
 
@@ -483,6 +483,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         deposits[currentDepositId] = userDeposit;
 
         emit Deposited(currentDepositId, _account, _lockup, _liquidity);
+        return currentDepositId;
     }
 
     /// @notice Common logic for initiating cooldown.

@@ -66,7 +66,7 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
-    function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant {
+    function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         // Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -93,7 +93,7 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Amount to be withdrawn.
     /// @dev Function is not available for locked deposits.
-    function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant {
+    function withdrawPartially(uint256 _depositId, uint256 _amount) external nonReentrant {
         //Validations
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
@@ -129,11 +129,11 @@ contract BaseE20Farm is BaseFarm {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        uint256 _liquidity = deposits[_depositId].liquidity;
+        uint256 liquidity = deposits[_depositId].liquidity;
         _withdraw(msg.sender, _depositId);
 
         // Transfer the farmTokens to the user.
-        IERC20(farmToken).safeTransfer(msg.sender, _liquidity);
+        IERC20(farmToken).safeTransfer(msg.sender, liquidity);
     }
 
     // --------------------- Admin  Functions ---------------------

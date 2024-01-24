@@ -28,7 +28,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // Camelot nft pool
     address public nftPool;
 
-    mapping(uint256 => uint256) public depositToToken;
+    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
@@ -77,8 +77,8 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         }
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
-        _deposit(_from, abi.decode(_data, (bool)), liquidity);
-        depositToToken[totalDeposits] = _tokenId;
+        uint256 depositId = _deposit(_from, abi.decode(_data, (bool)), liquidity);
+        depositToTokenId[depositId] = _tokenId;
         return this.onERC721Received.selector;
     }
 
@@ -96,8 +96,8 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, depositToToken[_depositId]);
-        delete depositToToken[_depositId];
+        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        delete depositToTokenId[_depositId];
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
@@ -106,7 +106,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        INFTPool(nftPool).harvestPositionTo(depositToToken[_depositId], msg.sender);
+        INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }
 
     /// @notice callback function for harvestPosition().
