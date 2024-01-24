@@ -342,7 +342,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
     /// @notice Get deposit info for a deposit id
     /// @param _depositId The id of the deposit
-    function getDeposit(uint256 _depositId) external view returns (Deposit memory) {
+    function getDepositInfo(uint256 _depositId) external view returns (Deposit memory) {
         if (_depositId == 0 || _depositId > totalDeposits) {
             revert DepositDoesNotExist();
         }
@@ -519,14 +519,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function _withdraw(address _account, uint256 _depositId) internal {
         // Check for the withdrawal criteria.
         // Note: If farm is paused, skip the cooldown check.
-        Deposit memory _userDeposit = deposits[_depositId];
+        uint256 depositExpiryDate = deposits[_depositId].expiryDate;
         if (!isPaused) {
-            if (_userDeposit.cooldownPeriod != 0) {
+            if (deposits[_depositId].cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
-            if (_userDeposit.expiryDate != 0) {
+            if (depositExpiryDate != 0) {
                 // Cooldown is initiated for the user.
-                if (_userDeposit.expiryDate > block.timestamp) {
+                if (depositExpiryDate > block.timestamp) {
                     revert DepositIsInCooldown();
                 }
             }

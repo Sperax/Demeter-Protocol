@@ -280,7 +280,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         setRewardRates(lockupFarm);
         uint256 liquidity = deposit(lockupFarm, true, 1e3);
 
-        assertEq(BaseFarm(lockupFarm).getDeposit(1).liquidity, liquidity);
+        assertEq(BaseFarm(lockupFarm).getDepositInfo(1).liquidity, liquidity);
 
         vm.startPrank(user);
         uint256 time = 2 days;
@@ -289,7 +289,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).initiateCooldown(1);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        BaseFarm(lockupFarm).getDeposit(1);
+        BaseFarm(lockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
@@ -309,7 +309,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm(lockupFarm).getDeposit(1);
+        BaseFarm(lockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(user, 1);
         vm.expectEmit(address(lockupFarm));
         emit DepositWithdrawn(1);
@@ -322,13 +322,13 @@ abstract contract WithdrawTest is BaseFarmTest {
         setRewardRates(nonLockupFarm);
         uint256 liquidity = deposit(nonLockupFarm, false, 1e3);
 
-        assertEq(BaseFarm(nonLockupFarm).getDeposit(1).liquidity, liquidity);
+        assertEq(BaseFarm(nonLockupFarm).getDepositInfo(1).liquidity, liquidity);
 
         vm.startPrank(user);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm(nonLockupFarm).getDeposit(1);
+        BaseFarm(nonLockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(address(nonLockupFarm));
         emit PoolUnsubscribed(1, 0, rewardsForEachSubs[0]);
@@ -346,7 +346,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm(nonLockupFarm).getDeposit(1);
+        BaseFarm(nonLockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(user, 1);
         vm.expectEmit(address(nonLockupFarm));
         emit DepositWithdrawn(1);
@@ -363,7 +363,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(lockupFarm, true, i * 1e3);
-            multipleUserDeposits[i - 1] = BaseFarm(lockupFarm).getDeposit(i);
+            multipleUserDeposits[i - 1] = BaseFarm(lockupFarm).getDepositInfo(i);
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
             multipleUserLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
         }
@@ -375,7 +375,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).initiateCooldown(1);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        BaseFarm(lockupFarm).getDeposit(1);
+        BaseFarm(lockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[1], 1);
         BaseFarm(lockupFarm).withdraw(1);
         skip(time);
@@ -385,11 +385,11 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 1) {
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
@@ -397,7 +397,7 @@ abstract contract WithdrawTest is BaseFarmTest {
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(lockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(lockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(multipleUserDeposits[i - 1]))
                 );
                 assertEq(
@@ -421,7 +421,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(lockupFarm, true, i * 1e3);
-            userDeposits[i - 1] = BaseFarm(lockupFarm).getDeposit(i);
+            userDeposits[i - 1] = BaseFarm(lockupFarm).getDepositInfo(i);
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
             multipleUserLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
         }
@@ -433,7 +433,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).initiateCooldown(5);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        BaseFarm(lockupFarm).getDeposit(5);
+        BaseFarm(lockupFarm).getDepositInfo(5);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[5], 5);
         BaseFarm(lockupFarm).withdraw(5);
         skip(time);
@@ -443,11 +443,11 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 5) {
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
@@ -455,7 +455,7 @@ abstract contract WithdrawTest is BaseFarmTest {
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(lockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(lockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(userDeposits[i - 1]))
                 );
                 assertEq(
@@ -479,7 +479,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(lockupFarm, true, i * 1e3);
-            multipleUserDeposits[i - 1] = BaseFarm(lockupFarm).getDeposit(i);
+            multipleUserDeposits[i - 1] = BaseFarm(lockupFarm).getDepositInfo(i);
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
             multipleUserLockUpSubscriptions[i - 1] = BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
         }
@@ -491,7 +491,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).initiateCooldown(10);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        BaseFarm(lockupFarm).getDeposit(10);
+        BaseFarm(lockupFarm).getDepositInfo(10);
         rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[10], 10);
         BaseFarm(lockupFarm).withdraw(10);
         skip(time);
@@ -501,11 +501,11 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 10) {
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(lockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(lockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 0);
@@ -513,7 +513,7 @@ abstract contract WithdrawTest is BaseFarmTest {
                 BaseFarm(lockupFarm).getSubscriptionInfo(i, 1);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(lockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(lockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(multipleUserDeposits[i - 1]))
                 );
                 assertEq(
@@ -536,7 +536,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(nonLockupFarm, false, i * 1e3);
-            multipleUserDeposits[i - 1] = BaseFarm(nonLockupFarm).getDeposit(i);
+            multipleUserDeposits[i - 1] = BaseFarm(nonLockupFarm).getDepositInfo(i);
             // emit log_named_uint("numSubs", BaseFarm(nonLockupFarm).getNumSubscriptions(i));
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
         }
@@ -546,7 +546,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
-        BaseFarm(nonLockupFarm).getDeposit(1);
+        BaseFarm(nonLockupFarm).getDepositInfo(1);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[1], 1);
         BaseFarm(nonLockupFarm).withdraw(1);
         skip(time);
@@ -556,17 +556,17 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 1) {
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(multipleUserDeposits[i - 1]))
                 );
                 assertEq(
@@ -585,7 +585,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(nonLockupFarm, false, i * 1e3);
-            userDeposits[i - 1] = BaseFarm(nonLockupFarm).getDeposit(i);
+            userDeposits[i - 1] = BaseFarm(nonLockupFarm).getDepositInfo(i);
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
         }
 
@@ -594,7 +594,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
-        BaseFarm(nonLockupFarm).getDeposit(5);
+        BaseFarm(nonLockupFarm).getDepositInfo(5);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[5], 5);
         BaseFarm(nonLockupFarm).withdraw(5);
         skip(time);
@@ -604,17 +604,17 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 5) {
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(userDeposits[i - 1]))
                 );
                 assertEq(
@@ -633,7 +633,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             deposit(nonLockupFarm, false, i * 1e3);
-            multipleUserDeposits[i - 1] = BaseFarm(nonLockupFarm).getDeposit(i);
+            multipleUserDeposits[i - 1] = BaseFarm(nonLockupFarm).getDepositInfo(i);
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
         }
 
@@ -642,7 +642,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
-        BaseFarm(nonLockupFarm).getDeposit(10);
+        BaseFarm(nonLockupFarm).getDepositInfo(10);
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[10], 10);
         BaseFarm(nonLockupFarm).withdraw(10);
         skip(time);
@@ -652,17 +652,17 @@ abstract contract WithdrawTest is BaseFarmTest {
         for (uint256 i = 1; i <= 10; i++) {
             user = actors[i];
             if (i == 10) {
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).depositor, address(0));
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).liquidity, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).startTime, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).expiryDate, 0);
-                assertEq(BaseFarm(nonLockupFarm).getDeposit(i).cooldownPeriod, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).depositor, address(0));
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).liquidity, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).startTime, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).expiryDate, 0);
+                assertEq(BaseFarm(nonLockupFarm).getDepositInfo(i).cooldownPeriod, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(BaseFarm.SubscriptionDoesNotExist.selector));
                 BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
             } else {
                 assertEq(
-                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDeposit(i))),
+                    keccak256(abi.encode(BaseFarm(nonLockupFarm).getDepositInfo(i))),
                     keccak256(abi.encode(multipleUserDeposits[i - 1]))
                 );
                 assertEq(
@@ -718,7 +718,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
     }
 
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(1);
+        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDepositInfo(1);
         skip(86400 * 7);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         vm.expectEmit(true, false, false, false);
@@ -926,22 +926,22 @@ abstract contract GetDepositTest is BaseFarmTest {
         useKnownActor(user)
     {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseFarm(nonLockupFarm).getDeposit(0);
+        BaseFarm(nonLockupFarm).getDepositInfo(0);
 
         uint256 totalDeposits = BaseFarm(nonLockupFarm).totalDeposits();
 
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseFarm(nonLockupFarm).getDeposit(totalDeposits + 1);
+        BaseFarm(nonLockupFarm).getDepositInfo(totalDeposits + 1);
     }
 
     function test_getInvalidDeposit_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseFarm(lockupFarm).getDeposit(0);
+        BaseFarm(lockupFarm).getDepositInfo(0);
 
         uint256 totalDeposits = BaseFarm(lockupFarm).totalDeposits();
 
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseFarm(lockupFarm).getDeposit(totalDeposits + 1);
+        BaseFarm(lockupFarm).getDepositInfo(totalDeposits + 1);
     }
 }
 
