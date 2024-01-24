@@ -27,11 +27,7 @@ import {OperableDeposit} from "../OperableDeposit.sol";
 contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // constants
-    string public constant FARM_ID = "Demeter_Camelot_v1";
-    address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
-
-    // Camelot nft pool
+    // Camelot NFT pool address
     address public nftPool;
     // Camelot router
     address public constant ROUTER = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
@@ -55,19 +51,21 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     /// @param _camelotPairPool - Camelot lp pool address
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
+        string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         address _factory,
         address _camelotPairPool,
-        RewardTokenData[] memory _rwdTokenData
+        RewardTokenData[] memory _rwdTokenData,
+        address _nftPoolFactory
     ) external initializer {
         // initialize uniswap related data
-        nftPool = INFTPoolFactory(NFT_POOL_FACTORY).getPool(_camelotPairPool);
+        nftPool = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
         if (nftPool == address(0)) {
             revert InvalidCamelotPoolConfig();
         }
 
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
     }
 
