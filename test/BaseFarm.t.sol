@@ -725,7 +725,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         emit RewardsClaimed(1, rewardsForEachSubs); // not checking the rewardsForEachSubs data here
         vm.expectEmit(true, false, false, false);
         emit PoolUnsubscribed(1, 1, rewardsForEachSubs[0]); // not checking the totalRewardsClaimed data here
-        vm.expectEmit(true, false, false, false);
+        vm.expectEmit(address(lockupFarm));
         emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);
     }
