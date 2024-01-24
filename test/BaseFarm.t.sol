@@ -301,11 +301,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_withdraw_lockupFarm_paused() public depositSetup(lockupFarm, true) {
-        addRewards(lockupFarm);
-        setRewardRates(lockupFarm);
-
-        vm.startPrank(user);
+    function test_withdraw_lockupFarm_paused() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 time = 3 days;
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         vm.startPrank(owner);
@@ -342,11 +338,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.stopPrank();
     }
 
-    function test_withdraw_nonLockupFarm_paused() public depositSetup(nonLockupFarm, false) {
-        addRewards(nonLockupFarm);
-        setRewardRates(nonLockupFarm);
-
-        vm.startPrank(user);
+    function test_withdraw_nonLockupFarm_paused() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256 time = 3 days;
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
         vm.startPrank(owner);
