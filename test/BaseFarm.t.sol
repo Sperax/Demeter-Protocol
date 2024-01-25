@@ -1766,7 +1766,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmNotYetStarted.selector));
         vm.startPrank(owner);
         BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
@@ -1776,7 +1776,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, true);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmNotYetStarted.selector));
         vm.startPrank(owner);
         BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();

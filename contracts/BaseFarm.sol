@@ -145,7 +145,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     error RewardTokenAlreadyAdded();
     error DepositDoesNotExist();
     error FarmIsClosed();
-    error FarmNotYetStarted();
     error FarmIsPaused();
     error NotTheTokenManager();
     error InvalidAddress();

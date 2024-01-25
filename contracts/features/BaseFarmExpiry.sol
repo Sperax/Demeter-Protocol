@@ -17,6 +17,7 @@ abstract contract BaseFarmExpiry is BaseFarm {
 
     error InvalidExtension();
     error FarmHasExpired();
+    error FarmNotYetStarted();
 
     /// @notice Update the farm end time.
     /// @dev Can be updated only before the farm expired or closed
