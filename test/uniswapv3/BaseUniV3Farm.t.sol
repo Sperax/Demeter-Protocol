@@ -403,14 +403,11 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
     }
 
     function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 0;
-        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
+        uint256 depositId = 1;
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
-
-        vm.expectEmit(true, true, true, true);
-        emit Transfer(lockupFarm, currentActor, tokenId);
-
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
         BaseUniV3Farm(lockupFarm).withdraw(depositId);
     }
 }
@@ -429,17 +426,17 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
 
     function test_revertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoFeeToClaim.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
+        BaseUniV3Farm(lockupFarm).claimUniswapFee(1);
     }
 
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 0;
+        uint256 depositId = 1;
         _simulateSwap();
-        (, uint256 tokenId,,,) = BaseUniV3Farm(lockupFarm).deposits(currentActor, depositId);
-        (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(tokenId);
+        uint256 _tokenId = BaseUniV3Farm(lockupFarm).depositToTokenId(depositId);
+        (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
 
-        vm.expectEmit(true, false, false, true);
-        emit PoolFeeCollected(currentActor, tokenId, amount0, amount1);
+        vm.expectEmit(address(lockupFarm));
+        emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
 
         BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
