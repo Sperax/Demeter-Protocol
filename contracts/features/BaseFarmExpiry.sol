@@ -17,6 +17,8 @@ abstract contract BaseFarmExpiry is BaseFarm {
     error InvalidExtension();
     error FarmHasExpired();
 
+    // --------------------- Admin  Functions ---------------------
+
     /// @notice Update the farm start time.
     /// @dev Can be updated only before the farm start
     ///      New start time should be in future.
@@ -37,6 +39,7 @@ abstract contract BaseFarmExpiry is BaseFarm {
     ///      extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days
     ///      extension is possible only after farm started
     /// @param _extensionDays The number of days to extend the farm
+    // solhint-disable-next-line ordering
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _isFarmActive();
         if (lastFundUpdateTime > block.timestamp) {
@@ -54,12 +57,20 @@ abstract contract BaseFarmExpiry is BaseFarm {
         emit FarmEndTimeUpdated(newFarmEndTime);
     }
 
+    // --------------------- Internal  Functions ---------------------
+
     /// @notice Validate if farm is not closed or expired
     function _isFarmActive() internal view override {
         super._isFarmActive();
         if (block.timestamp > farmEndTime) {
             revert FarmHasExpired();
         }
+    }
+
+    /// @notice Validate if farm is not expired
+    /// @return bool true if farm is not expired
+    function _isFarmNotExpired() internal view override returns (bool) {
+        return (block.timestamp <= farmEndTime);
     }
 
     /// @notice Setup the farm data
@@ -73,11 +84,7 @@ abstract contract BaseFarmExpiry is BaseFarm {
         farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
     }
 
-    /// @notice Validate if farm is not expired
-    /// @return bool true if farm is not expired
-    function _isFarmNotExpired() internal view override returns (bool) {
-        return (block.timestamp <= farmEndTime);
-    }
+    // --------------------- Private  Functions ---------------------
 
     /// @notice Collect farm extension fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmFactory.

@@ -21,7 +21,6 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 // Defines the reward data for constructor.
@@ -218,6 +217,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     }
 
     /// @notice Pause / UnPause the deposit
+    // solhint-disable-next-line ordering
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
         _isFarmActive();
         if (isPaused == _isPaused) {
