@@ -10,6 +10,7 @@ abstract contract BaseFarmExpiry is BaseFarm {
 
     uint256 public constant INITIAL_FARM_EXTENSION = 100 days;
     uint256 public farmEndTime;
+    address public farmFactory;
 
     event FarmEndTimeUpdated(uint256 newEndTime);
     event ExtensionFeeCollected(address token, uint256 extensionFee);
@@ -82,6 +83,7 @@ abstract contract BaseFarmExpiry is BaseFarm {
     ) internal override {
         super._setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _farmFactory);
         farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
+        farmFactory = _farmFactory;
     }
 
     // --------------------- Private  Functions ---------------------

@@ -92,7 +92,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
-    address public farmFactory;
     bool public isPaused;
     bool public isClosed;
 
@@ -705,7 +704,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
         _transferOwnership(msg.sender);
         // Initialize farm global params
-        farmFactory = _farmFactory;
         lastFundUpdateTime = _farmStartTime;
 
         // Check for lockup functionality
