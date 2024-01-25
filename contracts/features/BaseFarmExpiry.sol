@@ -18,29 +18,11 @@ abstract contract BaseFarmExpiry is BaseFarm {
     error InvalidExtension();
     error FarmHasExpired();
 
-    // --------------------- Admin  Functions ---------------------
-
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
-    ///      New start time should be in future.
-    ///      Adjusts the farm end time accordingly.
-    /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) public override onlyOwner {
-        uint256 _currentLastFundUpdateTime = lastFundUpdateTime;
-
-        super.updateFarmStartTime(_newStartTime);
-
-        farmEndTime = (_newStartTime > _currentLastFundUpdateTime)
-            ? farmEndTime + (_newStartTime - _currentLastFundUpdateTime)
-            : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
-    }
-
     /// @notice Update the farm end time.
     /// @dev Can be updated only before the farm expired or closed
     ///      extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days
     ///      extension is possible only after farm started
     /// @param _extensionDays The number of days to extend the farm
-    // solhint-disable-next-line ordering
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _isFarmActive();
         if (lastFundUpdateTime > block.timestamp) {
@@ -58,7 +40,32 @@ abstract contract BaseFarmExpiry is BaseFarm {
         emit FarmEndTimeUpdated(newFarmEndTime);
     }
 
-    // --------------------- Internal  Functions ---------------------
+    /// @notice Update the farm start time.
+    /// @dev Can be updated only before the farm start
+    ///      New start time should be in future.
+    ///      Adjusts the farm end time accordingly.
+    /// @param _newStartTime The new farm start time.
+    function updateFarmStartTime(uint256 _newStartTime) public override onlyOwner {
+        uint256 _currentLastFundUpdateTime = lastFundUpdateTime;
+
+        super.updateFarmStartTime(_newStartTime);
+
+        farmEndTime = (_newStartTime > _currentLastFundUpdateTime)
+            ? farmEndTime + (_newStartTime - _currentLastFundUpdateTime)
+            : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
+    }
+
+    /// @notice Setup the farm data
+    function _setupFarm(
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        RewardTokenData[] memory _rwdTokenData,
+        address _farmFactory
+    ) internal override {
+        super._setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _farmFactory);
+        farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
+        farmFactory = _farmFactory;
+    }
 
     /// @notice Validate if farm is not closed or expired
     function _isFarmActive() internal view override {
@@ -72,18 +79,6 @@ abstract contract BaseFarmExpiry is BaseFarm {
     /// @return bool true if farm is not paused and not expired
     function _isFarmNotPaused() internal view override returns (bool) {
         return super._isFarmNotPaused() && (block.timestamp <= farmEndTime);
-    }
-
-    /// @notice Setup the farm data
-    function _setupFarm(
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        RewardTokenData[] memory _rwdTokenData,
-        address _farmFactory
-    ) internal override {
-        super._setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _farmFactory);
-        farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
-        farmFactory = _farmFactory;
     }
 
     // --------------------- Private  Functions ---------------------
