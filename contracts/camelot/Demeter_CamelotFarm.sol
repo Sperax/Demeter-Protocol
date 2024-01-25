@@ -21,8 +21,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
 import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {OperableDeposit} from "../OperableDeposit.sol";
 
-contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
+contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // constants
@@ -33,6 +34,8 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     address public nftPool;
     // Camelot router
     address public constant ROUTER = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
+
+    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
@@ -83,7 +86,8 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         }
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
-        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
+        uint256 depositId = _deposit(_from, abi.decode(_data, (bool)), liquidity);
+        depositToTokenId[depositId] = _tokenId;
         return this.onERC721Received.selector;
     }
 
@@ -98,7 +102,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     /// @param _depositId The id of the deposit to be increased.
     /// @param _amounts Desired amount of tokens to be increased.
     /// @param _minAmounts Minimum amount of tokens to be added as liquidity.
-    function increaseDeposit(uint8 _depositId, uint256[2] calldata _amounts, uint256[2] calldata _minAmounts)
+    function increaseDeposit(uint256 _depositId, uint256[2] calldata _amounts, uint256[2] calldata _minAmounts)
         external
         nonReentrant
     {
@@ -109,12 +113,12 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             revert InvalidAmount();
         }
 
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
         if (userDeposit.expiryDate != 0) {
             revert DepositIsInCooldown();
         }
 
-        uint256 tokenId = userDeposit.tokenId;
+        uint256 tokenId = depositToTokenId[_depositId];
         (address _lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
 
         address token0 = IPair(_lpToken).token0();
@@ -141,7 +145,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         INFTPool(nftPool).addToPosition(tokenId, liquidity);
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         _updateSubscriptionForIncrease(tokenId, liquidity);
         userDeposit.liquidity += liquidity;
@@ -154,28 +158,28 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             IERC20(token1).safeTransfer(msg.sender, _amounts[1] - amountB);
         }
 
-        emit DepositIncreased(msg.sender, tokenId, liquidity, amountA, amountB);
+        emit DepositIncreased(_depositId, liquidity);
     }
 
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
-        _withdraw(msg.sender, _depositId, userDeposit);
+        _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, userDeposit.tokenId);
+        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        delete depositToTokenId[_depositId];
     }
 
-    function decreaseDeposit(uint8 _depositId, uint256 _liquidityToWithdraw, uint256[2] calldata _minAmounts)
+    function decreaseDeposit(uint256 _depositId, uint256 _liquidityToWithdraw, uint256[2] calldata _minAmounts)
         external
         nonReentrant
     {
         _farmNotClosed(); // Withdraw instead of decrease deposit when a farm is closed.
         _isValidDeposit(msg.sender, _depositId); // Validate the deposit.
 
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
 
         if (_liquidityToWithdraw == 0) {
             revert CannotWithdrawZeroAmount();
@@ -185,7 +189,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
             revert DecreaseDepositNotPermitted();
         }
 
-        uint256 tokenId = userDeposit.tokenId;
+        uint256 tokenId = depositToTokenId[_depositId];
 
         // Withdraw liquidity from nft pool
         INFTPool(nftPool).withdrawFromPosition(tokenId, _liquidityToWithdraw);
@@ -193,18 +197,18 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
         address token0 = IPair(_lpToken).token0();
         address token1 = IPair(_lpToken).token1();
         IERC20(_lpToken).safeApprove(ROUTER, _liquidityToWithdraw);
-        (uint256 amountA, uint256 amountB) = IRouter(ROUTER).removeLiquidity(
+        IRouter(ROUTER).removeLiquidity(
             token0, token1, _liquidityToWithdraw, _minAmounts[0], _minAmounts[1], msg.sender, block.timestamp
         );
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
         _updateSubscriptionForDecrease(tokenId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
 
-        emit DepositDecreased(msg.sender, tokenId, _liquidityToWithdraw, amountA, amountB);
+        emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
@@ -213,7 +217,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _farmNotClosed();
         _isValidDeposit(msg.sender, _depositId);
-        INFTPool(nftPool).harvestPositionTo(deposits[msg.sender][_depositId].tokenId, msg.sender);
+        INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }
 
     /// @notice callback function for harvestPosition().
@@ -284,14 +288,14 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     // --------------------- Private  Functions ---------------------
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) internal override {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
@@ -306,14 +310,14 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
     }
 
     /// @notice Update subscription data of a deposit after decrease in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForDecrease(uint256 _depositId, uint256 _amount) internal override {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
