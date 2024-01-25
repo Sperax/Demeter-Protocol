@@ -516,7 +516,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _userDeposit userDeposit struct.
     function _withdraw(address _account, uint256 _depositId, Deposit memory _userDeposit) internal {
         // Check for the withdrawal criteria
-        // Note: If farm is paused and/or expired, skip the cooldown check
+        // Note: If farm is paused, skip the cooldown check
         if (_isFarmNotPaused()) {
             if (_userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
