@@ -65,7 +65,7 @@ contract InitializeTest is FarmFactoryTest {
         address _feeToken;
         uint256 _feeAmount;
         uint256 _extensionFeePerDay;
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(address(factory));
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         (_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay) =
@@ -93,7 +93,7 @@ contract RegisterFarmTest is FarmFactoryTest {
         address creator = actors[5];
 
         vm.startPrank(owner);
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(address(factory));
         emit FarmRegistered(farm, creator, owner);
         FarmFactory(factory).registerFarm(farm, creator);
         assertEq(FarmFactory(factory).getFarmList()[0], farm);
@@ -118,7 +118,7 @@ contract RegisterFarmDeployerTest is FarmFactoryTest {
 
     function test_registerFarmDeployer() public useKnownActor(FACTORY_OWNER) initialized {
         address deployer = actors[5];
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(address(factory));
         emit FarmDeployerUpdated(deployer, true);
         FarmFactory(factory).registerFarmDeployer(deployer);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], deployer);
@@ -138,7 +138,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         FarmFactory(factory).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 1);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(address(factory));
         emit FarmDeployerUpdated(actors[11], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
@@ -151,7 +151,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
         FarmFactory(factory).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 2);
         uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(address(factory));
         emit FarmDeployerUpdated(actors[10], false);
         FarmFactory(factory).removeDeployer(deployerId);
         assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
@@ -178,7 +178,7 @@ contract UpdatePrivilegeTest is FarmFactoryTest {
     }
 
     function test_updatePrivilege() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        vm.expectEmit(true, true, false, false);
+        vm.expectEmit(address(factory));
         emit PrivilegeUpdated(owner, true);
         FarmFactory(factory).updatePrivilege(owner, true);
         assertEq(FarmFactory(factory).isPrivilegedDeployer(owner), true);
@@ -205,7 +205,7 @@ contract UpdateFeeParamsTest is FarmFactoryTest {
         address feeToken = actors[6];
         uint256 feeAmt = 1e20;
         uint256 extensionFeePerDay = 1e18;
-        vm.expectEmit(false, false, false, true);
+        vm.expectEmit(address(factory));
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         // Test getFeeParams

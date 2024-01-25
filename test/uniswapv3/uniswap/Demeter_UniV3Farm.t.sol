@@ -75,7 +75,12 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public override useKnownActor(user) {
+    function deposit(address farm, bool locked, uint256 baseAmt)
+        public
+        override
+        useKnownActor(user)
+        returns (uint256)
+    {
         uint256 depositAmount1 = baseAmt * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = baseAmt * 10 ** ERC20(USDCe).decimals();
 
@@ -101,9 +106,19 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
             })
         );
 
-        vm.expectEmit(true, true, false, true);
-        emit Deposited(currentActor, locked, tokenId, liquidity);
+        if (!locked) {
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+        } else {
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+        }
+        vm.expectEmit(address(farm));
+        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
         IERC721(Demeter_UniV3Farm(farm).NFPM()).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+        return liquidity;
     }
 
     /// @notice Farm specific deposit logic
@@ -178,7 +193,7 @@ contract Demeter_UniV3FarmTestInheritTest is
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateTokenManagerTest,
+    UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
     CloseFarmTest,

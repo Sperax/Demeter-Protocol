@@ -26,7 +26,6 @@ contract BaseE20Farm is BaseFarmExpiry {
 
     // Token params
     address public farmToken;
-    uint256 public tokenNum;
 
     event PoolFeeCollected(address indexed recipient, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -60,7 +59,7 @@ contract BaseE20Farm is BaseFarmExpiry {
     /// @param _lockup The lockup flag (bool).
     function deposit(uint256 _amount, bool _lockup) external nonReentrant {
         // Execute common deposit logic.
-        _deposit(msg.sender, _lockup, ++tokenNum, _amount);
+        _deposit(msg.sender, _lockup, _amount);
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -70,11 +69,11 @@ contract BaseE20Farm is BaseFarmExpiry {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
-    function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant {
+    function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         // Validations
         _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
         if (_amount == 0) {
             revert InvalidAmount();
         }
@@ -83,11 +82,11 @@ contract BaseE20Farm is BaseFarmExpiry {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
-        _updateSubscriptionForIncrease(userDeposit.tokenId, _amount);
-        deposits[msg.sender][_depositId].liquidity += _amount;
+        _updateSubscriptionForIncrease(_depositId, _amount);
+        userDeposit.liquidity += _amount;
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -97,11 +96,11 @@ contract BaseE20Farm is BaseFarmExpiry {
     /// @param _depositId Deposit index for the user.
     /// @param _amount Amount to be withdrawn.
     /// @dev Function is not available for locked deposits.
-    function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant {
+    function withdrawPartially(uint256 _depositId, uint256 _amount) external nonReentrant {
         //Validations
         _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[msg.sender][_depositId];
+        Deposit storage userDeposit = deposits[_depositId];
 
         if (_amount == 0 || _amount >= userDeposit.liquidity) {
             revert InvalidAmount();
@@ -112,10 +111,10 @@ contract BaseE20Farm is BaseFarmExpiry {
         }
 
         // claim the pending rewards for the deposit
-        _claimRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit info
-        _updateSubscriptionForDecrease(userDeposit.tokenId, _amount);
+        _updateSubscriptionForDecrease(_depositId, _amount);
         userDeposit.liquidity -= _amount;
 
         // Transfer the lp tokens to the user
@@ -133,12 +132,11 @@ contract BaseE20Farm is BaseFarmExpiry {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
-
-        _withdraw(msg.sender, _depositId, userDeposit);
+        uint256 liquidity = deposits[_depositId].liquidity;
+        _withdraw(msg.sender, _depositId);
 
         // Transfer the farmTokens to the user.
-        IERC20(farmToken).safeTransfer(msg.sender, userDeposit.liquidity);
+        IERC20(farmToken).safeTransfer(msg.sender, liquidity);
     }
 
     // --------------------- Admin  Functions ---------------------
@@ -161,14 +159,14 @@ contract BaseE20Farm is BaseFarmExpiry {
     // --------------------- Private  Functions ---------------------
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique deposit id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForIncrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
@@ -183,14 +181,14 @@ contract BaseE20Farm is BaseFarmExpiry {
     }
 
     /// @notice Update subscription data of a deposit after decrease in liquidity.
-    /// @param _tokenId Unique token id for the deposit
+    /// @param _depositId Unique token id for the deposit
     /// @param _amount Amount to be increased.
-    function _updateSubscriptionForDecrease(uint256 _tokenId, uint256 _amount) private {
+    function _updateSubscriptionForDecrease(uint256 _depositId, uint256 _amount) private {
         uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_tokenId].length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_tokenId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_tokenId][iSub].fundId;
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {

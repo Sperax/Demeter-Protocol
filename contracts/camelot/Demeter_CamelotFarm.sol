@@ -29,6 +29,8 @@ contract Demeter_CamelotFarm is BaseFarmExpiry, INFTHandler {
     // Camelot nft pool
     address public nftPool;
 
+    mapping(uint256 => uint256) public depositToTokenId;
+
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
     // Custom Errors
@@ -78,7 +80,8 @@ contract Demeter_CamelotFarm is BaseFarmExpiry, INFTHandler {
         }
         uint256 liquidity = _getLiquidity(_tokenId);
         // Execute common deposit function
-        _deposit(_from, abi.decode(_data, (bool)), _tokenId, liquidity);
+        uint256 depositId = _deposit(_from, abi.decode(_data, (bool)), liquidity);
+        depositToTokenId[depositId] = _tokenId;
         return this.onERC721Received.selector;
     }
 
@@ -93,11 +96,11 @@ contract Demeter_CamelotFarm is BaseFarmExpiry, INFTHandler {
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
         _isValidDeposit(msg.sender, _depositId);
-        Deposit memory userDeposit = deposits[msg.sender][_depositId];
 
-        _withdraw(msg.sender, _depositId, userDeposit);
+        _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, userDeposit.tokenId);
+        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        delete depositToTokenId[_depositId];
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
@@ -106,7 +109,7 @@ contract Demeter_CamelotFarm is BaseFarmExpiry, INFTHandler {
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
-        INFTPool(nftPool).harvestPositionTo(deposits[msg.sender][_depositId].tokenId, msg.sender);
+        INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }
 
     /// @notice callback function for harvestPosition().
