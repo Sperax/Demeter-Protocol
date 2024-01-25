@@ -67,10 +67,10 @@ abstract contract BaseFarmExpiry is BaseFarm {
         }
     }
 
-    /// @notice Validate if farm is not expired
-    /// @return bool true if farm is not expired
-    function _isFarmNotExpired() internal view override returns (bool) {
-        return (block.timestamp <= farmEndTime);
+    /// @notice Validate if farm is not paused and not expired
+    /// @return bool true if farm is not paused and not expired
+    function _isFarmNotPaused() internal view override returns (bool) {
+        return super._isFarmNotPaused() && (block.timestamp <= farmEndTime);
     }
 
     /// @notice Setup the farm data
