@@ -182,7 +182,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         emit RewardAdded(_rwdToken, _amount);
     }
 
-    // --------------------- Admin  Functions ---------------------
     /// @notice Update the cooldown period
     /// @param _newCooldownPeriod The new cooldown period (in days)
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
@@ -196,27 +195,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         emit CooldownPeriodUpdated(oldCooldownPeriod, _newCooldownPeriod);
     }
 
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
-    ///      New start time should be in future.
-    /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
-        _isFarmActive();
-        uint256 _lastFundUpdateTime = lastFundUpdateTime;
-        if (_lastFundUpdateTime <= block.timestamp) {
-            revert FarmAlreadyStarted();
-        }
-        if (_newStartTime < block.timestamp) {
-            revert InvalidTime();
-        }
-
-        lastFundUpdateTime = _newStartTime;
-
-        emit FarmStartTimeUpdated(_newStartTime);
-    }
-
     /// @notice Pause / UnPause the deposit
-    // solhint-disable-next-line ordering
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
         _isFarmActive();
         if (isPaused == _isPaused) {
@@ -394,6 +373,25 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             revert RewardFundDoesNotExist();
         }
         return rewardFunds[_fundId];
+    }
+
+    /// @notice Update the farm start time.
+    /// @dev Can be updated only before the farm start
+    ///      New start time should be in future.
+    /// @param _newStartTime The new farm start time.
+    function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
+        _isFarmActive();
+        uint256 _lastFundUpdateTime = lastFundUpdateTime;
+        if (_lastFundUpdateTime <= block.timestamp) {
+            revert FarmAlreadyStarted();
+        }
+        if (_newStartTime < block.timestamp) {
+            revert InvalidTime();
+        }
+
+        lastFundUpdateTime = _newStartTime;
+
+        emit FarmStartTimeUpdated(_newStartTime);
     }
 
     /// @notice Claim rewards for the user.
