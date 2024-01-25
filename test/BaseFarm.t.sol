@@ -249,6 +249,34 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         vm.expectEmit(address(nonLockupFarm));
         emit RewardsClaimed(1, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(1);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
+    }
+
+    function test_claimRewards_rwd_rate_0() public setup depositSetup(nonLockupFarm, false) {
+        uint256 time = 15 days;
+        uint256 depositId = 1;
+        uint256[] memory rwdRate = new uint256[](1);
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory balances = new uint256[](rewardTokens.length);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
+        }
+        rwdRate[0] = 0;
+        vm.startPrank(SPA_REWARD_MANAGER);
+        BaseFarm(nonLockupFarm).setRewardRate(SPA, rwdRate);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        skip(time);
+        vm.startPrank(user);
+        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
+        vm.expectEmit(address(nonLockupFarm));
+        emit RewardsClaimed(depositId, rewardsForEachSubs);
+        BaseFarm(nonLockupFarm).claimRewards(depositId);
+        assertEq(rewardsForEachSubs[0][0], 0);
+        for (uint8 i; i < rewardTokens.length; ++i) {
+            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+        }
     }
 }
 
