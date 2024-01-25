@@ -91,7 +91,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     uint256 public constant MIN_COOLDOWN_PERIOD = 1; // In days
     uint256 public constant MAX_COOLDOWN_PERIOD = 30; // In days
     uint256 public constant MAX_NUM_REWARDS = 4;
-    uint256 public constant INITIAL_FARM_EXTENSION = 100 days;
 
     // Global Params
     address public farmFactory;
@@ -100,7 +99,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
-    uint256 public farmEndTime;
 
     // Reward info
     RewardFund[] public rewardFunds;
@@ -117,7 +115,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     event RewardsClaimed(address indexed account, uint256[][] rewardsForEachSubs);
     event PoolUnsubscribed(address indexed account, uint8 fundId, uint256 depositId, uint256[] totalRewardsClaimed);
     event FarmStartTimeUpdated(uint256 newStartTime);
-    event FarmEndTimeUpdated(uint256 newEndTime);
     event CooldownPeriodUpdated(uint256 oldCooldownPeriod, uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
@@ -127,14 +124,12 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     event TokenManagerUpdated(address rwdToken, address oldTokenManager, address newTokenManager);
     event RewardTokenAdded(address rwdToken, address rwdTokenManager);
     event FarmPaused(bool paused);
-    event ExtensionFeeCollected(address token, uint256 extensionFee);
 
     // Custom Errors
     error InvalidRewardToken();
     error FarmDoesNotSupportLockup();
     error FarmAlreadyStarted();
     error InvalidTime();
-    error InvalidExtension();
     error FarmAlreadyInRequiredState();
     error CannotWithdrawRewardToken();
     error CannotWithdrawZeroAmount();
@@ -153,7 +148,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     error DepositDoesNotExist();
     error FarmIsClosed();
     error FarmNotYetStarted();
-    error FarmHasExpired();
     error FarmIsPaused();
     error NotTheTokenManager();
     error InvalidAddress();
@@ -208,7 +202,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @dev Can be updated only before the farm start
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) external onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
         _isFarmActive();
         uint256 _lastFundUpdateTime = lastFundUpdateTime;
         if (_lastFundUpdateTime <= block.timestamp) {
@@ -218,35 +212,9 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             revert InvalidTime();
         }
 
-        farmEndTime = (_newStartTime > _lastFundUpdateTime)
-            ? farmEndTime + (_newStartTime - _lastFundUpdateTime)
-            : farmEndTime - (_lastFundUpdateTime - _newStartTime);
-
         lastFundUpdateTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
-    }
-
-    /// @notice Update the farm end time.
-    /// @dev Can be updated only before the farm expired or closed
-    ///      extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days
-    ///      extension is possible only after farm started
-    /// @param _extensionDays The number of days to extend the farm
-    function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
-        _isFarmActive();
-        if (lastFundUpdateTime > block.timestamp) {
-            revert FarmNotYetStarted();
-        }
-        if (_extensionDays < 100 || _extensionDays > 300) {
-            revert InvalidExtension();
-        }
-
-        uint256 newFarmEndTime = farmEndTime + _extensionDays * 1 days;
-        farmEndTime = newFarmEndTime;
-
-        _collectExtensionFee(_extensionDays);
-
-        emit FarmEndTimeUpdated(newFarmEndTime);
     }
 
     /// @notice Pause / UnPause the deposit
@@ -731,7 +699,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData,
         address _farmFactory
-    ) internal {
+    ) internal virtual {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
@@ -739,7 +707,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // Initialize farm global params
         farmFactory = _farmFactory;
         lastFundUpdateTime = _farmStartTime;
-        farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
 
         // Check for lockup functionality
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for
@@ -840,14 +807,19 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
     }
 
-    /// @notice Validate if farm is not closed or expired
-    function _isFarmActive() internal view {
+    /// @notice Validate if farm is active
+    /// @dev This function can be overridden to add any new/additional logic
+    function _isFarmActive() internal view virtual {
         if (isClosed) {
             revert FarmIsClosed();
         }
-        if (block.timestamp > farmEndTime) {
-            revert FarmHasExpired();
-        }
+    }
+
+    /// @notice Validate if farm is not expired
+    /// @dev By default farm never expires
+    ///      This function can be overridden to add expiry logic
+    function _isFarmNotExpired() internal view virtual returns (bool) {
+        return true;
     }
 
     /// @notice Validate if farm is not paused
@@ -856,12 +828,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         if (isPaused) {
             revert FarmIsPaused();
         }
-    }
-
-    /// @notice Validate if farm is not expired
-    /// @return bool true if farm is not expired
-    function _isFarmNotExpired() internal view returns (bool) {
-        return (block.timestamp <= farmEndTime);
     }
 
     /// @notice Validate the caller is the token Manager.
@@ -881,19 +847,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     function _isNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
-        }
-    }
-
-    /// @notice Collect farm extension fee and transfer it to feeReceiver.
-    /// @dev Function fetches all the fee params from farmFactory.
-    function _collectExtensionFee(uint256 _extensionDays) private {
-        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
-        (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
-            IFarmFactory(farmFactory).getFeeParams(msg.sender);
-        if (extensionFeePerDay != 0) {
-            uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
-            IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);
-            emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
     }
 

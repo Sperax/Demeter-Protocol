@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
+import {BaseFarmExpiry} from "../contracts/features/BaseFarmExpiry.sol";
 import {BaseE20Farm} from "../contracts/e20-farms/BaseE20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -168,9 +169,9 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).claimRewards(0);
     }
 
@@ -180,9 +181,9 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).claimRewards(0);
     }
 
@@ -440,7 +441,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     function test_withdraw_lockupFarm_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositTime = block.timestamp;
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        vm.warp(BaseFarm(lockupFarm).farmEndTime() + 1);
+        vm.warp(BaseFarmExpiry(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
@@ -455,10 +456,10 @@ abstract contract WithdrawTest is BaseFarmTest {
     function test_withdraw_lockupFarm_closedAndExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositTime = block.timestamp;
         BaseFarm(lockupFarm).getRewardBalance(SPA);
-        vm.warp(BaseFarm(lockupFarm).farmEndTime() - 100);
+        vm.warp(BaseFarmExpiry(lockupFarm).farmEndTime() - 100);
         vm.startPrank(owner);
         BaseFarm(lockupFarm).closeFarm(); // if farm is closed it is also paused
-        vm.warp(BaseFarm(lockupFarm).farmEndTime() + 1);
+        vm.warp(BaseFarmExpiry(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDeposit(currentActor, 0);
@@ -473,7 +474,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     function test_withdraw_nonLockupFarm_notClosedButExpired() public depositSetup(nonLockupFarm, false) {
         uint256 depositTime = block.timestamp;
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
-        vm.warp(BaseFarm(nonLockupFarm).farmEndTime() + 1);
+        vm.warp(BaseFarmExpiry(nonLockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
@@ -492,10 +493,10 @@ abstract contract WithdrawTest is BaseFarmTest {
     {
         uint256 depositTime = block.timestamp;
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
-        vm.warp(BaseFarm(nonLockupFarm).farmEndTime() - 100);
+        vm.warp(BaseFarmExpiry(nonLockupFarm).farmEndTime() - 100);
         vm.startPrank(owner);
         BaseFarm(nonLockupFarm).closeFarm(); // if farm is closed it is also paused
-        vm.warp(BaseFarm(nonLockupFarm).farmEndTime() + 1);
+        vm.warp(BaseFarmExpiry(nonLockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm.Deposit memory userDeposit = BaseFarm(nonLockupFarm).getDeposit(currentActor, 0);
@@ -568,12 +569,12 @@ abstract contract AddRewardsTest is BaseFarmTest {
         useKnownActor(user)
     {
         address[] memory rewardTokens = getRewardTokens(lockupFarm);
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         uint256 rwdAmt = 1000 * 10 ** ERC20(rewardTokens[0]).decimals();
         deal(address(rewardTokens[0]), currentActor, rwdAmt);
         ERC20(rewardTokens[0]).approve(lockupFarm, rwdAmt);
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).addRewards(rewardTokens[0], rwdAmt);
     }
 
@@ -584,12 +585,12 @@ abstract contract AddRewardsTest is BaseFarmTest {
         useKnownActor(user)
     {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         uint256 rwdAmt = 1000 * 10 ** ERC20(rewardTokens[0]).decimals();
         deal(address(rewardTokens[0]), currentActor, rwdAmt);
         ERC20(rewardTokens[0]).approve(nonLockupFarm, rwdAmt);
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).addRewards(rewardTokens[0], rwdAmt);
     }
 
@@ -677,8 +678,8 @@ abstract contract SetRewardRateTest is BaseFarmTest {
                 2 * 10 ** ERC20(rewardTokens[i]).decimals()
             );
         }
-        vm.warp(BaseFarm(nonLockupFarm).farmEndTime() + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.warp(BaseFarmExpiry(nonLockupFarm).farmEndTime() + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).setRewardRate(rewardTokens[0], rwdRate);
     }
 
@@ -702,8 +703,8 @@ abstract contract SetRewardRateTest is BaseFarmTest {
                 rwdRateLockup, 2 * 10 ** ERC20(rewardTokens[i]).decimals(), 4 * 10 ** ERC20(rewardTokens[i]).decimals()
             );
         }
-        vm.warp(BaseFarm(lockupFarm).farmEndTime() + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.warp(BaseFarmExpiry(lockupFarm).farmEndTime() + 1);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).setRewardRate(rewardTokens[0], rwdRate);
     }
 
@@ -875,18 +876,18 @@ abstract contract UpdateTokenManagerTest is BaseFarmTest {
     function test_updateTknManager_nonLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
     }
 
     function test_updateTknManager_LockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(lockupFarm);
         address _newTknManager = newTokenManager;
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).updateTokenManager(rewardTokens[0], _newTknManager);
     }
 
@@ -1061,18 +1062,18 @@ abstract contract FarmPauseSwitchTest is BaseFarmTest {
     function test_farmPause_noLockupFarm_revertsWhen_FarmHasExpired(bool _isPaused) public useKnownActor(owner) {
         bool isPaused = BaseFarm(nonLockupFarm).isPaused();
         vm.assume(_isPaused != isPaused);
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).farmPauseSwitch(_isPaused);
     }
 
     function test_farmPause_lockupFarm_revertsWhen_FarmHasExpired(bool _isPaused) public useKnownActor(owner) {
         bool isPaused = BaseFarm(lockupFarm).isPaused();
         vm.assume(_isPaused != isPaused);
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).farmPauseSwitch(_isPaused);
     }
 
@@ -1107,16 +1108,16 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
     }
 
     function test_updateFarmStartTime_nonLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
     function test_updateFarmStartTime_lockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).updateFarmStartTime(block.timestamp);
     }
 
@@ -1148,7 +1149,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -1165,7 +1166,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         if (newStartTime > farmStartTime) {
@@ -1188,7 +1189,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
 
         address farm = createFarm(farmStartTime, true);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -1205,7 +1206,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         if (newStartTime > farmStartTime) {
@@ -1231,7 +1232,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
         address farm = createFarm(farmStartTime, true);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -1249,7 +1250,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         if (newStartTime > farmStartTime) {
@@ -1272,7 +1273,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
         address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -1289,7 +1290,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         if (newStartTime > farmStartTime) {
@@ -1318,7 +1319,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(farmStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
@@ -1336,7 +1337,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(farmStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
@@ -1369,7 +1370,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
@@ -1402,7 +1403,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(newStartTimeEight);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarm(farm).lastFundUpdateTime();
 
         assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
@@ -1417,7 +1418,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         address farm = createFarm(farmStartTime, false);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1427,40 +1428,40 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         address farm = createFarm(farmStartTime, true);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
     function test_extendFarmDuration_noLockupFarm_revertsWhen_InvalidExtension() public useKnownActor(owner) {
         uint256 extensionDays = 99;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.InvalidExtension.selector));
+        BaseFarmExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
         extensionDays = 301;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.InvalidExtension.selector));
+        BaseFarmExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extendFarmDuration_lockupFarm_revertsWhen_InvalidExtension() public useKnownActor(owner) {
         uint256 extensionDays = 99;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.InvalidExtension.selector));
+        BaseFarmExpiry(lockupFarm).extendFarmDuration(extensionDays);
         extensionDays = 301;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidExtension.selector));
-        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.InvalidExtension.selector));
+        BaseFarmExpiry(lockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extendFarmDuration_noLockupFarm_revertsWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extendFarmDuration_lockupFarm_revertsWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(lockupFarm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(lockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_extendFarmDuration_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
@@ -1469,11 +1470,11 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTime = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1483,11 +1484,11 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.assume(extensionDays >= 100 && extensionDays <= 300);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, true);
-        uint256 farmEndTime = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         vm.startPrank(owner);
-        BaseFarm(farm).extendFarmDuration(extensionDays);
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -1496,7 +1497,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
         vm.warp(farmStartTime + 1);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
 
         uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
         address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
@@ -1515,8 +1516,8 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
-        BaseFarm(farm).extendFarmDuration(extensionDays);
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         vm.stopPrank();
 
         uint256 feeReceiverTokenBalanceAfterExtension = IERC20(feeToken).balanceOf(feeReceiver);
@@ -1531,7 +1532,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, true);
         vm.warp(farmStartTime + 1);
-        uint256 farmEndTimeBeforeUpdate = BaseFarm(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = BaseFarmExpiry(farm).farmEndTime();
 
         uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
         address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
@@ -1550,8 +1551,8 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
         vm.expectEmit(true, false, false, true);
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
-        BaseFarm(farm).extendFarmDuration(extensionDays);
-        uint256 farmEndTimeAfterUpdate = BaseFarm(farm).farmEndTime();
+        BaseFarmExpiry(farm).extendFarmDuration(extensionDays);
+        uint256 farmEndTimeAfterUpdate = BaseFarmExpiry(farm).farmEndTime();
         vm.stopPrank();
 
         uint256 feeReceiverTokenBalanceAfterExtension = IERC20(feeToken).balanceOf(feeReceiver);
@@ -1565,17 +1566,17 @@ abstract contract ExtendFarmDurationTest is BaseFarmTest {
 abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
     function test_updateCoolDown_noLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 cooldownPeriod = 15;
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 
     function test_updateCoolDown_lockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 cooldownPeriod = 15;
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 
@@ -1636,16 +1637,16 @@ abstract contract CloseFarmTest is BaseFarmTest {
     }
 
     function test_closeFarm_noLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
-        uint256 farmEndTime = BaseFarm(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(nonLockupFarm).closeFarm();
     }
 
     function test_closeFarm_lockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
-        uint256 farmEndTime = BaseFarm(lockupFarm).farmEndTime();
+        uint256 farmEndTime = BaseFarmExpiry(lockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmHasExpired.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarmExpiry.FarmHasExpired.selector));
         BaseFarm(lockupFarm).closeFarm();
     }
 

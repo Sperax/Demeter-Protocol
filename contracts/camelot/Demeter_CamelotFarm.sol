@@ -18,9 +18,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {INFTPoolFactory, INFTPool, INFTHandler} from "./interfaces/CamelotInterfaces.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarmExpiry} from "../features/BaseFarmExpiry.sol";
 
-contract Demeter_CamelotFarm is BaseFarm, INFTHandler {
+contract Demeter_CamelotFarm is BaseFarmExpiry, INFTHandler {
     // constants
     string public constant FARM_ID = "Demeter_Camelot_v1";
     address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;

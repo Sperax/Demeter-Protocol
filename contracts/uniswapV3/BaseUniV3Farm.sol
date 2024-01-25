@@ -28,7 +28,8 @@ import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
 import {
     INonfungiblePositionManagerUtils as INFPMUtils, Position
 } from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarmExpiry} from "../features/BaseFarmExpiry.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -44,7 +45,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
+abstract contract BaseUniV3Farm is BaseFarmExpiry, IERC721Receiver {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
