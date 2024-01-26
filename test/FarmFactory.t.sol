@@ -12,6 +12,12 @@ import {UpgradeUtil} from "../test/utils/UpgradeUtil.t.sol";
 abstract contract FarmFactoryTest is TestNetworkConfig {
     UpgradeUtil internal upgradeUtil;
     FarmFactory public factoryImp;
+    uint256 public constant FEE_AMOUNT = 1e20;
+    uint256 public constant FEE_AMOUNT_LOWER_BOUND = 1e18;
+    uint256 public constant FEE_AMOUNT_UPPER_BOUND = 1e25;
+    uint256 public constant EXTENSION_FEE_PER_DAY = 1e18;
+    uint256 public constant EXTENSION_FEE_PER_DAY_LOWER_BOUND = 1e18;
+    uint256 public constant EXTENSION_FEE_PER_DAY_UPPER_BOUND = 1e23;
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
     event FarmDeployerUpdated(address deployer, bool registered);
@@ -19,7 +25,7 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
     event PrivilegeUpdated(address deployer, bool privilege);
 
     modifier initialized() {
-        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, 1e20, 1e18);
+        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
         _;
     }
 
@@ -47,19 +53,20 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
 contract InitializeTest is FarmFactoryTest {
     function test_revertsWhen_receiverIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(address(0), USDS, 1e20, 1e18);
+        FarmFactory(factory).initialize(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_revertsWhen_tokenIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(FACTORY_OWNER, address(0), 1e20, 1e18);
+        FarmFactory(factory).initialize(FACTORY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(FACTORY_OWNER) {
         address feeReceiver = FACTORY_OWNER;
         address feeToken = USDS;
-        feeAmt = bound(feeAmt, 1e18, 1e25);
-        extensionFeePerDay = bound(extensionFeePerDay, 1e18, 1e23);
+        feeAmt = bound(feeAmt, FEE_AMOUNT_LOWER_BOUND, FEE_AMOUNT_UPPER_BOUND);
+        extensionFeePerDay =
+            bound(extensionFeePerDay, EXTENSION_FEE_PER_DAY_LOWER_BOUND, EXTENSION_FEE_PER_DAY_UPPER_BOUND);
 
         address _feeReceiver;
         address _feeToken;
@@ -197,14 +204,14 @@ contract UpdateFeeParamsTest is FarmFactoryTest {
     function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
-        FarmFactory(factory).updateFeeParams(owner, USDS, 1e20, 1e18);
+        FarmFactory(factory).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_updateFeeParams() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         address feeReceiver = actors[5];
         address feeToken = actors[6];
-        uint256 feeAmt = 1e20;
-        uint256 extensionFeePerDay = 1e18;
+        uint256 feeAmt = FEE_AMOUNT;
+        uint256 extensionFeePerDay = EXTENSION_FEE_PER_DAY;
         vm.expectEmit(address(factory));
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
