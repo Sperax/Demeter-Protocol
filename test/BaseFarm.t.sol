@@ -271,7 +271,6 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         // for testing purpose, reward rate is set in a way that we can claim max rewards before farm expiry.
         time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
-        emit log_named_uint("time", time);
         skip(time + 100); //skip more than the available reward
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
@@ -656,7 +655,6 @@ abstract contract WithdrawTest is BaseFarmTest {
             user = actors[i];
             deposit(nonLockupFarm, false, i * 1e3);
             multipleUserDeposits[i - 1] = BaseFarm(nonLockupFarm).getDepositInfo(i);
-            // emit log_named_uint("numSubs", BaseFarm(nonLockupFarm).getNumSubscriptions(i));
             multipleUserNonLockUpSubscriptions[i - 1] = BaseFarm(nonLockupFarm).getSubscriptionInfo(i, 0);
         }
 
