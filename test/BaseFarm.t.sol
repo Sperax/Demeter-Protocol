@@ -261,7 +261,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
 
     function test_claimRewards_max_rewards() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256 time;
-        uint256 rwdRate = 1e16;
+        uint256 rwdRate = 1e19;
         uint256 rwdBalance = BaseFarm(nonLockupFarm).getRewardBalance(SPA);
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         uint256[] memory balances = new uint256[](rewardTokens.length);
@@ -269,11 +269,10 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
             balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
         }
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        // @todo the below time skipping skips too long which won't work as we have introduced farm expiry. So commented. Need to discuss.
-        // time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
-        // emit log_named_uint("time", time);
-        // skip(time + 100); //skip more than the available reward
-        skip(10 days);
+        // for testing purpose, reward rate is set in a way that we can claim max rewards before farm expiry.
+        time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
+        emit log_named_uint("time", time);
+        skip(time + 100); //skip more than the available reward
         rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
         vm.expectEmit(address(nonLockupFarm));
