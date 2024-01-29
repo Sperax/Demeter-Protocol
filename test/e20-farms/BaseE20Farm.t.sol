@@ -5,6 +5,7 @@ import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
+import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {
     uint256 public constant DEPOSIT_ID = 1;
@@ -156,21 +157,21 @@ abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
     }
 }
 
-abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
+abstract contract DecreaseDepositTest is BaseE20FarmTest {
     function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 amount;
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
-        BaseE20Farm(lockupFarm).withdrawPartially(DEPOSIT_ID, amount);
+        BaseE20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amount);
     }
 
-    function test_revertsWhen_LockupFarm_PartialWithdrawNotPermitted()
+    function test_revertsWhen_LockupFarm_DecreaseDepositNotPermitted()
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
         skip(86400 * 7);
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.PartialWithdrawNotPermitted.selector));
-        BaseE20Farm(lockupFarm).withdrawPartially(DEPOSIT_ID, AMOUNT);
+        vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
+        BaseE20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
 
     function test_revertsWhen_farmIsClosed() public depositSetup(nonLockupFarm, false) useKnownActor(owner) {
@@ -178,13 +179,13 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         BaseE20Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseE20Farm(nonLockupFarm).withdrawPartially(DEPOSIT_ID, AMOUNT);
+        BaseE20Farm(nonLockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
 
     function test_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         skip(86400 * 7);
         BaseE20Farm(nonLockupFarm).computeRewards(currentActor, 1);
-        BaseE20Farm(nonLockupFarm).withdrawPartially(DEPOSIT_ID, AMOUNT);
+        BaseE20Farm(nonLockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
 
     function testMaths_updateSubscriptionForDecrease() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
@@ -210,7 +211,7 @@ abstract contract WithdrawPartiallyTest is BaseE20FarmTest {
         ERC20(poolAddress).approve(address(nonLockupFarm), amt);
 
         // We withdrew 50% of the deposit
-        BaseE20Farm(nonLockupFarm).withdrawPartially(DEPOSIT_ID, amt / 2);
+        BaseE20Farm(nonLockupFarm).decreaseDeposit(DEPOSIT_ID, amt / 2);
         BaseFarm(nonLockupFarm).claimRewards(DEPOSIT_ID + 1);
 
         //Check if all the rewards are distributed to the deposits

@@ -10,6 +10,7 @@ import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
+import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
 
 contract Demeter_CamelotFarmTest is
     DepositTest,
@@ -206,7 +207,6 @@ contract Demeter_CamelotFarmTest is
         useKnownActor(user)
     {
         skip(7 days);
-        uint256 PoolRewards = Demeter_CamelotFarm(nonLockupFarm).computePoolRewards(1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         Demeter_CamelotFarm(nonLockupFarm).claimPoolRewards(2);
     }
@@ -319,10 +319,30 @@ contract Demeter_CamelotFarmTest is
         // uint256 liquidity = userDeposit.liquidity;
         // vm.expectEmit(true, false, false, true);
         // emit DepositIncreased(user, tokenId, liquidity, minAmounts[0], minAmounts[1]);
+        BaseFarm.RewardFund memory _rwdFund = Demeter_CamelotFarm(nonLockupFarm).getRewardFundInfo(0);
+        uint256 totalFundLiqBefore = _rwdFund.totalLiquidity;
+
+        BaseFarm.Subscription memory sub = Demeter_CamelotFarm(nonLockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(nonLockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _rewardDebtBefore = sub.rewardDebt;
+
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        _rwdFund = Demeter_CamelotFarm(nonLockupFarm).getRewardFundInfo(0);
+        uint256 totalFundLiqAfter = _rwdFund.totalLiquidity;
+
+        sub = Demeter_CamelotFarm(nonLockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(nonLockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _rewardDebtAfter = sub.rewardDebt;
+        for (uint8 i; i < _rewardDebtBefore.length; i++) {
+            assertTrue(_rewardDebtAfter[i] > _rewardDebtBefore[i]);
+        }
+
         userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
         rewardsClaimed = userDeposit.totalRewardsClaimed;
 
+        assertTrue(totalFundLiqAfter > totalFundLiqBefore, "Failed to increase total liquidity");
         assertEq(IERC20(DAI).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
         assertEq(IERC20(USDCe).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
@@ -354,6 +374,8 @@ contract Demeter_CamelotFarmTest is
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         uint256[] memory rewardsClaimed = new uint256[](2);
+        uint256[] memory totalFundLiquidity = new uint256[](2);
+        uint256 depositId = 1;
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
@@ -363,10 +385,34 @@ contract Demeter_CamelotFarmTest is
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).safeIncreaseAllowance(lockupFarm, 1e22);
         IERC20(USDCe).safeIncreaseAllowance(lockupFarm, 1e22);
-        Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(lockupFarm).getDepositInfo(1);
-        Demeter_CamelotFarm(lockupFarm).increaseDeposit(1, amounts, minAmounts);
+        BaseFarm.RewardFund memory _rwdFund = Demeter_CamelotFarm(lockupFarm).getRewardFundInfo(0);
+        totalFundLiquidity[0] = _rwdFund.totalLiquidity;
+        BaseFarm.Subscription memory sub = Demeter_CamelotFarm(lockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(lockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _commonRewardDebtBefore = sub.rewardDebt;
+        sub = Demeter_CamelotFarm(lockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(lockupFarm).LOCKUP_FUND_ID()
+        );
+        uint256[] memory _lockupRewardDebtBefore = sub.rewardDebt;
+        Demeter_CamelotFarm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        _rwdFund = Demeter_CamelotFarm(lockupFarm).getRewardFundInfo(0);
+        totalFundLiquidity[1] = _rwdFund.totalLiquidity;
+        sub = Demeter_CamelotFarm(lockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(lockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _commonRewardDebtAfter = sub.rewardDebt;
+        sub = Demeter_CamelotFarm(lockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(lockupFarm).LOCKUP_FUND_ID()
+        );
+        uint256[] memory _lockupRewardDebtAfter = sub.rewardDebt;
+        for (uint8 i; i < _commonRewardDebtBefore.length; i++) {
+            assertTrue(_commonRewardDebtAfter[i] > _commonRewardDebtBefore[i]);
+            assertTrue(_lockupRewardDebtAfter[i] > _lockupRewardDebtBefore[i]);
+        }
         Demeter_CamelotFarm.Deposit memory userDepositAfter = Demeter_CamelotFarm(lockupFarm).getDepositInfo(1);
         rewardsClaimed = userDepositAfter.totalRewardsClaimed;
+        assertTrue(totalFundLiquidity[0] < totalFundLiquidity[1]);
         assertEq(IERC20(DAI).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
         assertEq(IERC20(USDCe).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
@@ -447,28 +493,47 @@ contract Demeter_CamelotFarmTest is
 
         Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(lockupFarm).getDepositInfo(1);
         uint256 liquidity = userDeposit.liquidity;
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.DecreaseDepositNotPermitted.selector));
+        vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
         Demeter_CamelotFarm(lockupFarm).decreaseDeposit(1, liquidity - 1e4, minAmounts);
     }
 
     function test_decreaseDeposit_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256[2] memory minAmounts = [uint256(0), 0];
-        Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(1);
-        uint256 tokenId = Demeter_CamelotFarm(nonLockupFarm).depositToTokenId(1);
-        uint256 depositIdLog;
+        uint256 depositId = 1;
+        Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
         uint256 liquidity = userDeposit.liquidity;
-        uint256 liquidityLog;
         uint256[] memory BalanceBefore = new uint256[](2);
 
         //skipping 7 days
         skip(7 days);
+        Demeter_CamelotFarm(nonLockupFarm).claimRewards(depositId);
         BalanceBefore[0] = IERC20(DAI).balanceOf(user);
         BalanceBefore[1] = IERC20(USDCe).balanceOf(user);
+        BaseFarm.RewardFund memory _rwdFund = Demeter_CamelotFarm(nonLockupFarm).getRewardFundInfo(0);
+        uint256 totalFundLiqBefore = _rwdFund.totalLiquidity;
+        BaseFarm.Subscription memory sub = Demeter_CamelotFarm(nonLockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(nonLockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _rewardDebtBefore = sub.rewardDebt;
         //We're not checking the data here
         vm.expectEmit(true, false, false, false);
         emit DepositDecreased(1, liquidity / 2);
-        Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(1, liquidity / 2, minAmounts);
-        Demeter_CamelotFarm.Deposit memory userDepositAfter = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(1);
+        Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(depositId, liquidity / 2, minAmounts);
+        Demeter_CamelotFarm.Deposit memory userDepositAfter =
+            Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
+        _rwdFund = Demeter_CamelotFarm(nonLockupFarm).getRewardFundInfo(0);
+        uint256 totalFundLiqAfter = _rwdFund.totalLiquidity;
+        sub = Demeter_CamelotFarm(nonLockupFarm).getSubscriptionInfo(
+            depositId, Demeter_CamelotFarm(nonLockupFarm).COMMON_FUND_ID()
+        );
+        uint256[] memory _rewardDebtAfter = sub.rewardDebt;
+        for (uint8 i; i < _rewardDebtBefore.length; i++) {
+            emit log_named_uint("rwd debt after", _rewardDebtAfter[i]);
+            emit log_named_uint("rwd debt before", _rewardDebtBefore[i]);
+            assertTrue(_rewardDebtAfter[i] < _rewardDebtBefore[i], "Reward debt failure");
+        }
+
+        assertTrue(totalFundLiqAfter < totalFundLiqBefore, "Failed to increase total liquidity");
 
         //Asserting Data
         assertApproxEqAbs(userDepositAfter.liquidity, liquidity / 2, 1);
