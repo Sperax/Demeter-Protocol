@@ -46,10 +46,10 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     ///      New start time should be in future.
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) public override onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) external override onlyOwner {
         uint256 _currentLastFundUpdateTime = lastFundUpdateTime;
 
-        super.updateFarmStartTime(_newStartTime);
+        _updateFarmStartTime(_newStartTime);
 
         farmEndTime = (_newStartTime > _currentLastFundUpdateTime)
             ? farmEndTime + (_newStartTime - _currentLastFundUpdateTime)
