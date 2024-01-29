@@ -44,7 +44,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
     error NotACamelotNFT();
     error NoData();
     error NotAllowed();
-    error DecreaseDepositNotPermitted();
     error InvalidAmount();
 
     /// @notice constructor
@@ -147,7 +146,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        _updateSubscriptionForIncrease(tokenId, liquidity);
+        _updateSubscriptionForIncrease(subscriptions[_depositId], rewardFunds, liquidity, rewardTokens.length);
         userDeposit.liquidity += liquidity;
 
         // Return excess tokens back to the user.
@@ -211,7 +210,9 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
-        _updateSubscriptionForDecrease(tokenId, _liquidityToWithdraw);
+        _updateSubscriptionForDecrease(
+            subscriptions[_depositId], rewardFunds, _liquidityToWithdraw, rewardTokens.length
+        );
         userDeposit.liquidity -= _liquidityToWithdraw;
 
         emit DepositDecreased(_depositId, _liquidityToWithdraw);
@@ -292,50 +293,6 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
     }
 
     // --------------------- Private  Functions ---------------------
-
-    /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _depositId Unique token id for the deposit
-    /// @param _amount Amount to be increased.
-    function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) internal override {
-        uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_depositId].length;
-        for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
-                unchecked {
-                    ++iRwd;
-                }
-            }
-            rewardFunds[_fundId].totalLiquidity += _amount;
-            unchecked {
-                ++iSub;
-            }
-        }
-    }
-
-    /// @notice Update subscription data of a deposit after decrease in liquidity.
-    /// @param _depositId Unique token id for the deposit
-    /// @param _amount Amount to be increased.
-    function _updateSubscriptionForDecrease(uint256 _depositId, uint256 _amount) internal override {
-        uint256 numRewards = rewardTokens.length;
-        uint256 numSubs = subscriptions[_depositId].length;
-        for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
-            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
-                unchecked {
-                    ++iRwd;
-                }
-            }
-            rewardFunds[_fundId].totalLiquidity -= _amount;
-            unchecked {
-                ++iSub;
-            }
-        }
-    }
 
     /// @notice Validate the position for the pool and get Liquidity
     /// @param _tokenId The tokenId of the position
