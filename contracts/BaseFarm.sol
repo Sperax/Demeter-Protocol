@@ -693,12 +693,11 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _farmStartTime - Time of farm start.
     /// @param _cooldownPeriod - cooldown period for locked deposits.
     /// @param _rwdTokenData - Reward data for each reward token.
-    /// @param _farmFactory - Address of the farm factory.
     function _setupFarm(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData,
-        address _farmFactory
+        address
     ) internal virtual {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
