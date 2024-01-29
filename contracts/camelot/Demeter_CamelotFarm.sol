@@ -197,9 +197,15 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         address token0 = IPair(_lpToken).token0();
         address token1 = IPair(_lpToken).token1();
         IERC20(_lpToken).safeApprove(ROUTER, _liquidityToWithdraw);
-        IRouter(ROUTER).removeLiquidity(
-            token0, token1, _liquidityToWithdraw, _minAmounts[0], _minAmounts[1], msg.sender, block.timestamp
-        );
+        IRouter(ROUTER).removeLiquidity({
+            tokenA: token0,
+            tokenB: token1,
+            liquidity: _liquidityToWithdraw,
+            amountAMin: _minAmounts[0],
+            amountBMin: _minAmounts[1],
+            to: msg.sender,
+            deadline: block.timestamp
+        });
 
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
