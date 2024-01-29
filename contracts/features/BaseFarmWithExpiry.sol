@@ -5,7 +5,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
 import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
 
-abstract contract BaseFarmExpiry is BaseFarm {
+abstract contract BaseFarmWithExpiry is BaseFarm {
     using SafeERC20 for IERC20;
 
     uint256 public constant INITIAL_FARM_EXTENSION = 100 days;

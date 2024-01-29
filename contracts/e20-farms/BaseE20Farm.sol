@@ -19,9 +19,9 @@ pragma solidity 0.8.16;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseFarmExpiry} from "../features/BaseFarmExpiry.sol";
+import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 
-contract BaseE20Farm is BaseFarmExpiry {
+contract BaseE20Farm is BaseFarmWithExpiry {
     using SafeERC20 for IERC20;
 
     // Token params
