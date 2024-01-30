@@ -5,6 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../BaseFarm.t.sol";
+import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/ICamelot.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm.sol";
@@ -12,25 +13,7 @@ import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
 
-contract Demeter_CamelotFarmTest is
-    DepositTest,
-    WithdrawTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateCoolDownPeriodTest,
-    RecoverERC20Test,
-    RecoverRewardFundsTest,
-    _SetupFarmTest
-{
+contract Demeter_CamelotFarmTest is BaseFarmTest {
     using SafeERC20 for IERC20;
 
     UpgradeUtil internal upgradeUtil;
@@ -41,7 +24,7 @@ contract Demeter_CamelotFarmTest is
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
 
         vm.startPrank(PROXY_OWNER);
@@ -508,5 +491,30 @@ contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
 
         //Asserting Data
         assertApproxEqAbs(userDepositAfter.liquidity, liquidity / 2, 1);
+    }
+}
+
+contract DemeterCamelotFarmInheritTest is
+    Demeter_CamelotFarmTest,
+    DepositTest,
+    WithdrawTest,
+    ClaimRewardsTest,
+    GetRewardFundInfoTest,
+    InitiateCooldownTest,
+    AddRewardsTest,
+    SetRewardRateTest,
+    GetRewardBalanceTest,
+    GetNumSubscriptionsTest,
+    SubscriptionInfoTest,
+    UpdateRewardTokenDataTest,
+    FarmPauseSwitchTest,
+    UpdateFarmStartTimeTest,
+    UpdateCoolDownPeriodTest,
+    RecoverERC20Test,
+    RecoverRewardFundsTest,
+    _SetupFarmTest
+{
+    function setUp() public override(Demeter_CamelotFarmTest, BaseFarmTest) {
+        super.setUp();
     }
 }
