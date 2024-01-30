@@ -100,7 +100,8 @@ abstract contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
 
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _factory);
+        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarmExpiry(_farmStartTime, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.

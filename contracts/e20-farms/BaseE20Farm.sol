@@ -51,7 +51,8 @@ contract BaseE20Farm is BaseFarmWithExpiry {
     ) external initializer {
         // initialize farmToken related data
         farmToken = _farmToken;
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _factory);
+        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarmExpiry(_farmStartTime, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.

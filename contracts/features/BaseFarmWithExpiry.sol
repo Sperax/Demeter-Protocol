@@ -2,7 +2,7 @@
 pragma solidity 0.8.16;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarm} from "../BaseFarm.sol";
 import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
 
 abstract contract BaseFarmWithExpiry is BaseFarm {
@@ -57,14 +57,8 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
             : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
     }
 
-    /// @notice Setup the farm data
-    function _setupFarm(
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        RewardTokenData[] memory _rwdTokenData,
-        address _farmFactory
-    ) internal override {
-        super._setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _farmFactory);
+    /// @notice Setup the farm data for farm expiry.
+    function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmFactory = _farmFactory;
     }
