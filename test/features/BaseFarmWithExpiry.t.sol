@@ -18,6 +18,9 @@ abstract contract BaseFarmWithExpiryTest is
     UpdateCoolDownPeriodTest,
     CloseFarmTest
 {
+    uint256 public constant MIN_EXTENSION = 100; // in days
+    uint256 public constant MAX_EXTENSION = 300; // in days
+
     event FarmEndTimeUpdated(uint256 newEndTime);
     event ExtensionFeeCollected(address token, uint256 extensionFee);
 }
@@ -63,15 +66,15 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 
         if (newStartTime > farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         }
     }
@@ -103,15 +106,15 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 
         if (newStartTime > farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         }
     }
@@ -147,15 +150,15 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 
         if (newStartTime > farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         }
     }
@@ -187,15 +190,15 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 
         if (newStartTime > farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else if (newStartTime < farmStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
-            assertEq(100 days, farmEndTimeAfterUpdate - newStartTime);
+            assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
             assertEq(lastFundUpdateTime, newStartTime);
         }
     }
@@ -214,7 +217,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
 
-        assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - farmStartTime);
         assertEq(lastFundUpdateTime, farmStartTime);
     }
 
@@ -232,7 +235,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
 
-        assertEq(100 days, farmEndTimeAfterUpdate - farmStartTime);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - farmStartTime);
         assertEq(lastFundUpdateTime, farmStartTime);
     }
 
@@ -265,7 +268,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
 
-        assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTimeEight);
         assertEq(lastFundUpdateTime, newStartTimeEight);
     }
 
@@ -298,7 +301,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
 
-        assertEq(100 days, farmEndTimeAfterUpdate - newStartTimeEight);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTimeEight);
         assertEq(lastFundUpdateTime, newStartTimeEight);
     }
 }
@@ -359,7 +362,7 @@ abstract contract ExtendFarmDurationWithExpiryTest is BaseFarmWithExpiryTest {
     function test_extendFarmDuration_noLockupFarm_revertsWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime)
         public
     {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
         uint256 farmEndTime = BaseFarmWithExpiry(farm).farmEndTime();
@@ -373,7 +376,7 @@ abstract contract ExtendFarmDurationWithExpiryTest is BaseFarmWithExpiryTest {
     function test_extendFarmDuration_lockupFarm_revertsWhen_farExpired(uint256 extensionDays, uint256 farmStartTime)
         public
     {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, true);
         uint256 farmEndTime = BaseFarmWithExpiry(farm).farmEndTime();
@@ -385,7 +388,7 @@ abstract contract ExtendFarmDurationWithExpiryTest is BaseFarmWithExpiryTest {
     }
 
     function test_extendFarmDuration_noLockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
         vm.warp(farmStartTime + 1);
@@ -420,7 +423,7 @@ abstract contract ExtendFarmDurationWithExpiryTest is BaseFarmWithExpiryTest {
     }
 
     function test_extendFarmDuration_lockupFarm(uint256 extensionDays, uint256 farmStartTime) public {
-        vm.assume(extensionDays >= 100 && extensionDays <= 300);
+        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, true);
         vm.warp(farmStartTime + 1);

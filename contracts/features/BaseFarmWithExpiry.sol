@@ -8,7 +8,8 @@ import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
 abstract contract BaseFarmWithExpiry is BaseFarm {
     using SafeERC20 for IERC20;
 
-    uint256 public constant INITIAL_FARM_EXTENSION = 100 days;
+    uint256 public constant MIN_EXTENSION = 100; // 100 days
+    uint256 public constant MAX_EXTENSION = 300; // 300 days
     uint256 public farmEndTime;
     address public farmFactory;
 
@@ -29,7 +30,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
-        if (_extensionDays < 100 || _extensionDays > 300) {
+        if (_extensionDays < MIN_EXTENSION || _extensionDays > MAX_EXTENSION) {
             revert InvalidExtension();
         }
 
@@ -64,7 +65,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
         address _farmFactory
     ) internal override {
         super._setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData, _farmFactory);
-        farmEndTime = _farmStartTime + INITIAL_FARM_EXTENSION;
+        farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmFactory = _farmFactory;
     }
 
