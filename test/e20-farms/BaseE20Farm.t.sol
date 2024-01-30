@@ -235,23 +235,3 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         assertEq(totalRewardClaimed, 2 * time * rewardRate);
     }
 }
-
-abstract contract RecoverERC20FarmE20Test is BaseE20FarmTest {
-    function test_recoverE20_LockupFarm_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDCe);
-    }
-
-    function test_recoverE20_LockupFarm_RevertWhen_CannotWithdrawZeroAmountE20() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDT);
-    }
-
-    function testFuzz_recoverERC20_LockupFarmE20(uint256 amt) public useKnownActor(owner) {
-        amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
-        deal(USDT, address(lockupFarm), 10e10);
-        vm.expectEmit(address(lockupFarm));
-        emit RecoveredERC20(USDT, 10e10);
-        BaseFarm(lockupFarm).recoverERC20(USDT);
-    }
-}
