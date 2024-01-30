@@ -152,7 +152,7 @@ contract Demeter_CamelotFarmTest is
         return camelotProxy;
     }
 
-    function test_initialize_revertsWhen_camelotPairIsZero() public {
+    function test_initialize_RevertWhen_camelotPairIsZero() public {
         address farm = createFarmImplementation();
         address[] memory rewardToken = rwdTokens;
         RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
@@ -187,7 +187,7 @@ contract Demeter_CamelotFarmTest is
         assertEq(harvested, true);
     }
 
-    function test_claimPoolRewards_revertsWhen_FarmIsClosed()
+    function test_claimPoolRewards_RevertWhen_FarmIsClosed()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -202,7 +202,7 @@ contract Demeter_CamelotFarmTest is
         assertEq(0, PoolRewards);
     }
 
-    function test_claimPoolRewards_revertsWhen_InvalidDeposit()
+    function test_claimPoolRewards_RevertWhen_InvalidDeposit()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -218,7 +218,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).claimPoolRewards(1);
     }
 
-    function test_increaseDeposit_revertsWhen_FarmIsPaused()
+    function test_increaseDeposit_RevertWhen_FarmIsPaused()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -241,7 +241,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
     }
 
-    function test_increaseDeposit_revertsWhen_InvalidDeposit()
+    function test_increaseDeposit_RevertWhen_InvalidDeposit()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -261,7 +261,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
     }
 
-    function test_increaseDeposit_revertsWhen_InvalidAmount()
+    function test_increaseDeposit_RevertWhen_InvalidAmount()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -276,7 +276,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(1, amounts, minAmounts);
     }
 
-    function test_increaseDeposit_revertsWhen_depositInCoolDown()
+    function test_increaseDeposit_RevertWhen_depositInCoolDown()
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
@@ -418,7 +418,7 @@ contract Demeter_CamelotFarmTest is
         assertEq(IERC20(USDCe).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
-    function test_decreaseDeposit_revertsWhen_FarmIsClosed()
+    function test_decreaseDeposit_RevertWhen_FarmIsClosed()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -442,7 +442,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(0, liquidity, minAmounts);
     }
 
-    function test_decreaseDeposit_revertsWhen_InvalidDeposit()
+    function test_decreaseDeposit_RevertWhen_InvalidDeposit()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
@@ -464,7 +464,7 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(numDeposits + 1, liquidity, minAmounts);
     }
 
-    function test_decreaseDeposit_revertsWhen_ZeroAmount()
+    function test_decreaseDeposit_RevertWhen_ZeroAmount()
         public
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)

@@ -45,12 +45,12 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
 }
 
 contract InitializeTest is FarmFactoryTest {
-    function test_revertsWhen_receiverIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
+    function test_RevertWhen_receiverIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
         FarmFactory(factory).initialize(address(0), USDS, 1e20);
     }
 
-    function test_revertsWhen_tokenIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
+    function test_RevertWhen_tokenIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
         FarmFactory(factory).initialize(FACTORY_OWNER, address(0), 1e20);
     }
@@ -75,7 +75,7 @@ contract InitializeTest is FarmFactoryTest {
 }
 
 contract RegisterFarmTest is FarmFactoryTest {
-    function test_revertsWhen_DeployerNotRegistered() public useKnownActor(FACTORY_OWNER) initialized {
+    function test_RevertWhen_DeployerNotRegistered() public useKnownActor(FACTORY_OWNER) initialized {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.DeployerNotRegistered.selector));
         FarmFactory(factory).registerFarm(actors[6], actors[4]);
     }
@@ -93,12 +93,12 @@ contract RegisterFarmTest is FarmFactoryTest {
 }
 
 contract RegisterFarmDeployerTest is FarmFactoryTest {
-    function test_revertsWhen_DeployerAddressIsZero() public useKnownActor(FACTORY_OWNER) initialized {
+    function test_RevertWhen_DeployerAddressIsZero() public useKnownActor(FACTORY_OWNER) initialized {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
         FarmFactory(factory).registerFarmDeployer(address(0));
     }
 
-    function test_revertsWhen_DeployerIsAlreadyRegistered()
+    function test_RevertWhen_DeployerIsAlreadyRegistered()
         public
         useKnownActor(FACTORY_OWNER)
         initialized
@@ -119,7 +119,7 @@ contract RegisterFarmDeployerTest is FarmFactoryTest {
 }
 
 contract RemoveFarmDeployerTest is FarmFactoryTest {
-    function test_revertsWhen_invalidDeployerId() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+    function test_RevertWhen_invalidDeployerId() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length);
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidDeployerId.selector));
         FarmFactory(factory).removeDeployer(deployerId);
@@ -153,7 +153,7 @@ contract RemoveFarmDeployerTest is FarmFactoryTest {
 }
 
 contract UpdatePrivilegeTest is FarmFactoryTest {
-    function test_revertsWhen_PrivilegeSameAsDesired()
+    function test_RevertWhen_PrivilegeSameAsDesired()
         public
         useKnownActor(FACTORY_OWNER)
         initialized
@@ -163,7 +163,7 @@ contract UpdatePrivilegeTest is FarmFactoryTest {
         FarmFactory(factory).updatePrivilege(owner, false);
     }
 
-    function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+    function test_RevertWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
         FarmFactory(factory).updatePrivilege(owner, false);
@@ -184,7 +184,7 @@ contract UpdatePrivilegeTest is FarmFactoryTest {
 }
 
 contract UpdateFeeParamsTest is FarmFactoryTest {
-    function test_revertsWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+    function test_RevertWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
         FarmFactory(factory).updateFeeParams(owner, USDS, 1e20);
