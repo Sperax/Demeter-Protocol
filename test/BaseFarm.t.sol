@@ -46,8 +46,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     address newTokenManager;
 
     event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
-    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
-    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
     event DepositWithdrawn(uint256 indexed depositId);
     event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);

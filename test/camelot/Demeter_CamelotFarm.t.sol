@@ -38,6 +38,9 @@ contract Demeter_CamelotFarmTest is
 
     Demeter_CamelotFarm_Deployer internal demeter_camelotFarm_deployer;
 
+    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
+    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
+
     function setUp() public override {
         super.setUp();
 
@@ -75,9 +78,7 @@ contract Demeter_CamelotFarmTest is
             rewardData: rwdTokenData
         });
         IERC20(FEE_TOKEN()).approve(address(demeter_camelotFarm_deployer), 1e20);
-        emit log_named_uint("Owner balance", IERC20(FEE_TOKEN()).balanceOf(owner));
         address farm = demeter_camelotFarm_deployer.createFarm(_data);
-        emit log_named_address("Created farm address", farm);
 
         assertEq(Demeter_CamelotFarm(farm).FARM_ID(), "Demeter_Camelot_v1");
         return farm;
@@ -89,8 +90,8 @@ contract Demeter_CamelotFarmTest is
         deal(DAI, user, amt1);
         uint256 amt2 = amt * 10 ** ERC20(USDCe).decimals();
         deal(USDCe, user, amt2);
-        IERC20(DAI).safeIncreaseAllowance(POSITION_HELPER, amt1);
-        IERC20(USDCe).safeIncreaseAllowance(POSITION_HELPER, amt2);
+        IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
+        IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
         IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
             DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
         );
@@ -234,8 +235,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsPaused.selector));
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
     }
@@ -254,8 +255,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
     }
@@ -289,8 +290,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(lockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(lockupFarm, 1e22);
+        IERC20(DAI).forceApprove(lockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(lockupFarm, 1e22);
         Demeter_CamelotFarm(lockupFarm).initiateCooldown(1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         Demeter_CamelotFarm(lockupFarm).increaseDeposit(1, amounts, minAmounts);
@@ -312,8 +313,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e23);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e23);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
         // uint256 tokenId = userDeposit.tokenId;
         // uint256 liquidity = userDeposit.liquidity;
@@ -359,8 +360,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         Demeter_CamelotFarm.Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
         userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
@@ -383,8 +384,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(lockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(lockupFarm, 1e22);
+        IERC20(DAI).forceApprove(lockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(lockupFarm, 1e22);
         BaseFarm.RewardFund memory _rwdFund = Demeter_CamelotFarm(lockupFarm).getRewardFundInfo(0);
         totalFundLiquidity[0] = _rwdFund.totalLiquidity;
         BaseFarm.Subscription memory sub = Demeter_CamelotFarm(lockupFarm).getSubscriptionInfo(
@@ -435,8 +436,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(0, liquidity, minAmounts);
     }
@@ -457,8 +458,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(numDeposits + 1, liquidity, minAmounts);
     }
@@ -476,8 +477,8 @@ contract Demeter_CamelotFarmTest is
         (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
-        IERC20(DAI).safeIncreaseAllowance(nonLockupFarm, 1e22);
-        IERC20(USDCe).safeIncreaseAllowance(nonLockupFarm, 1e22);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(1, 0, minAmounts);
     }
@@ -528,8 +529,6 @@ contract Demeter_CamelotFarmTest is
         );
         uint256[] memory _rewardDebtAfter = sub.rewardDebt;
         for (uint8 i; i < _rewardDebtBefore.length; i++) {
-            emit log_named_uint("rwd debt after", _rewardDebtAfter[i]);
-            emit log_named_uint("rwd debt before", _rewardDebtBefore[i]);
             assertTrue(_rewardDebtAfter[i] < _rewardDebtBefore[i], "Reward debt failure");
         }
 

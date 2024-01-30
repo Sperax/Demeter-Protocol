@@ -15,6 +15,8 @@ abstract contract BaseE20FarmTest is BaseFarmTest {
 }
 
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
+    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
+
     function test_revertsWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
         uint256 amt = 0;
@@ -158,6 +160,8 @@ abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
 }
 
 abstract contract DecreaseDepositTest is BaseE20FarmTest {
+    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
+
     function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 amount;
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.InvalidAmount.selector));
