@@ -162,19 +162,19 @@ contract Demeter_CamelotFarmTest is
         Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, address(0), rwdTokenData);
     }
 
-    function test_OnERC721Received_revertWhen_NotACamelotNFT() public {
+    function test_OnERC721Received_RevertWhen_NotACamelotNFT() public {
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotACamelotNFT.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_OnERC721Received_revertWhen_NoData() public {
+    function test_OnERC721Received_RevertWhen_NoData() public {
         address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
         vm.startPrank(nftPool);
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NoData.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_onNFTHarvest_revertWhen_notNftPool() public {
+    function test_onNFTHarvest_RevertWhen_notNftPool() public {
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotAllowed.selector));
         Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
     }

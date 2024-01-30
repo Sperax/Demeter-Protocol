@@ -1295,14 +1295,14 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
 }
 
 abstract contract _SetupFarmTest is BaseFarmTest {
-    function test_revertWhen_InvalidFarmStartTime() public {
+    function test_RevertWhen_InvalidFarmStartTime() public {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidFarmStartTime.selector));
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp - 200, false));
         assertTrue(success);
     }
 
-    function test_revertWhen_InvalidRewardData() public {
+    function test_RevertWhen_InvalidRewardData() public {
         rwdTokens.push(USDCe);
         rwdTokens.push(USDCe);
         rwdTokens.push(USDCe);
@@ -1314,7 +1314,7 @@ abstract contract _SetupFarmTest is BaseFarmTest {
         assertTrue(success);
     }
 
-    function test_revertWhen_RewardAlreadyAdded() public {
+    function test_RevertWhen_RewardAlreadyAdded() public {
         rwdTokens.push(SPA);
 
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.RewardTokenAlreadyAdded.selector));
@@ -1338,7 +1338,7 @@ abstract contract MulticallTest is BaseFarmTest {
         assertEq(BaseFarm(lockupFarm).isClosed(), true);
     }
 
-    function test_revertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {
+    function test_RevertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {
         // when any multiple calls fail
         {
             bytes[] memory data = new bytes[](1);
@@ -1378,7 +1378,7 @@ abstract contract MulticallTest is BaseFarmTest {
         }
     }
 
-    function test_revertWhen_CallInternalFunction() public useKnownActor(owner) {
+    function test_RevertWhen_CallInternalFunction() public useKnownActor(owner) {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
 
