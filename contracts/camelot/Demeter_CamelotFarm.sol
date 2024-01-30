@@ -118,16 +118,16 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         }
 
         uint256 tokenId = depositToTokenId[_depositId];
-        (address _lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
 
-        address token0 = IPair(_lpToken).token0();
-        address token1 = IPair(_lpToken).token1();
+        address token0 = IPair(lpToken).token0();
+        address token1 = IPair(lpToken).token1();
         IERC20(token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
         IERC20(token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
 
         // Approve token to the router contract.
-        IERC20(token0).safeIncreaseAllowance(ROUTER, _amounts[0]);
-        IERC20(token1).safeIncreaseAllowance(ROUTER, _amounts[1]);
+        IERC20(token0).forceApprove(ROUTER, _amounts[0]);
+        IERC20(token1).forceApprove(ROUTER, _amounts[1]);
 
         (uint256 amountA, uint256 amountB, uint256 liquidity) = IRouter(ROUTER).addLiquidity({
             tokenA: token0,
@@ -140,7 +140,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
             deadline: block.timestamp
         });
 
-        IERC20(_lpToken).safeApprove(nftPool, liquidity);
+        IERC20(lpToken).forceApprove(nftPool, liquidity);
         INFTPool(nftPool).addToPosition(tokenId, liquidity);
 
         // claim the pending rewards for the deposit
@@ -192,10 +192,10 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
 
         // Withdraw liquidity from nft pool
         INFTPool(nftPool).withdrawFromPosition(tokenId, _liquidityToWithdraw);
-        (address _lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
-        address token0 = IPair(_lpToken).token0();
-        address token1 = IPair(_lpToken).token1();
-        IERC20(_lpToken).safeApprove(ROUTER, _liquidityToWithdraw);
+        (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        address token0 = IPair(lpToken).token0();
+        address token1 = IPair(lpToken).token1();
+        IERC20(lpToken).forceApprove(ROUTER, _liquidityToWithdraw);
         IRouter(ROUTER).removeLiquidity({
             tokenA: token0,
             tokenB: token1,
