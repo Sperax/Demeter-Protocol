@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../../BaseFarm.t.sol";
 import "../BaseE20Farm.t.sol";
 
 import {Demeter_BalancerFarm} from "../../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
@@ -47,21 +46,21 @@ interface ICustomOracle {
 contract BalancerFarmTest is
     DepositTest,
     GetDepositTest,
-    WithdrawTest,
-    ClaimRewardsTest,
+    WithdrawWithExpiryTest,
+    ClaimRewardsWithExpiryTest,
     GetRewardFundInfoTest,
     InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
+    AddRewardsWithExpiryTest,
+    SetRewardRateWithExpiryTest,
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
+    UpdateRewardTokenDataWithExpiryTest,
+    FarmPauseSwitchWithExpiryTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationWithExpiryTest,
+    UpdateCoolDownPeriodWithExpiryTest,
+    CloseFarmWithExpiryTest,
     _SetupFarmTest,
     IncreaseDepositTest,
     WithdrawPartiallyTest,

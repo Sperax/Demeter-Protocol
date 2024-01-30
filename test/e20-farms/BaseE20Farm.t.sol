@@ -5,6 +5,7 @@ import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
+import "../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {
     uint256 public constant DEPOSIT_ID = 1;

@@ -9,7 +9,6 @@ import "../../../contracts/uniswapV3/sushiswap/Demeter_SushiV3FarmDeployer.sol";
 import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
-import "../../BaseFarm.t.sol";
 import "../BaseUniV3Farm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
 
@@ -186,21 +185,21 @@ contract FARM_IDTest is Demeter_SushiV3FarmTest {
 contract Demeter_SushiV3FarmInheritTest is
     Demeter_SushiV3FarmTest,
     DepositTest,
-    WithdrawTest,
-    ClaimRewardsTest,
+    WithdrawWithExpiryTest,
+    ClaimRewardsWithExpiryTest,
     GetRewardFundInfoTest,
     InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
+    AddRewardsWithExpiryTest,
+    SetRewardRateWithExpiryTest,
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
+    UpdateRewardTokenDataWithExpiryTest,
+    FarmPauseSwitchWithExpiryTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationWithExpiryTest,
+    UpdateCoolDownPeriodWithExpiryTest,
+    CloseFarmWithExpiryTest,
     _SetupFarmTest,
     InitializeTest,
     OnERC721ReceivedTest,
