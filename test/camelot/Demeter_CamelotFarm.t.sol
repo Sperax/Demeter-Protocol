@@ -512,6 +512,8 @@ contract DemeterCamelotFarmInheritTest is
     UpdateCoolDownPeriodTest,
     RecoverERC20Test,
     RecoverRewardFundsTest,
+    GetDepositTest,
+    MulticallTest,
     _SetupFarmTest
 {
     function setUp() public override(Demeter_CamelotFarmTest, BaseFarmTest) {
