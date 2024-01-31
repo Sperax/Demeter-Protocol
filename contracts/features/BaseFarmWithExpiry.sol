@@ -23,8 +23,8 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     /// @notice Update the farm end time.
     /// @dev Can be updated only before the farm expired or closed.
     ///      Extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days.
-    ///      extension is possible only after farm started
-    /// @param _extensionDays The number of days to extend the farm
+    ///      Extension is possible only after farm started.
+    /// @param _extensionDays The number of days to extend the farm.
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _isFarmActive();
         if (lastFundUpdateTime > block.timestamp) {
@@ -63,7 +63,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
         farmFactory = _farmFactory;
     }
 
-    /// @notice Validate if farm is not closed or expired
+    /// @notice Validate if farm is not closed or expired.
     function _isFarmActive() internal view override {
         super._isFarmActive();
         if (block.timestamp > farmEndTime) {
@@ -71,8 +71,8 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
         }
     }
 
-    /// @notice Validate if farm is not paused and not expired
-    /// @return bool true if farm is not paused and not expired
+    /// @notice Validate if farm is not paused and not expired.
+    /// @return bool true if farm is not paused and not expired.
     function _isFarmNotPaused() internal view override returns (bool) {
         return super._isFarmNotPaused() && (block.timestamp <= farmEndTime);
     }
