@@ -803,7 +803,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
     }
 
-    /// @notice Validate if farm is active.
+    /// @notice Validate if farm is active. Revert if farm is not active.
     /// @dev This function can be overridden to add any new/additional logic.
     function _isFarmActive() internal view virtual {
         if (isClosed) {
@@ -811,14 +811,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         }
     }
 
-    /// @notice Validate if farm is not paused.
+    /// @notice Validate if farm is not paused and return the status.
     /// @return bool true if farm is not paused.
     /// @dev This function can be overridden to add any new/additional logic.
     function _isFarmNotPaused() internal view virtual returns (bool) {
         return !isPaused;
     }
 
-    /// @notice Validate if farm is not paused.
+    /// @notice Validate if farm is not paused. Revert if farm is paused.
     function _farmNotPaused() internal view {
         _isFarmActive();
         if (isPaused) {
