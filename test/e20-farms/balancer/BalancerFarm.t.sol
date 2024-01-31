@@ -43,6 +43,7 @@ interface ICustomOracle {
     function getPrice() external view returns (uint256, uint256);
 }
 
+// RecoverERC20Test is replaced by RecoverERC20E20FarmTest
 contract BalancerFarmTest is
     DepositTest,
     GetDepositTest,
@@ -63,8 +64,8 @@ contract BalancerFarmTest is
     CloseFarmWithExpiryTest,
     _SetupFarmTest,
     IncreaseDepositTest,
-    WithdrawPartiallyTest,
-    RecoverERC20FarmE20Test,
+    DecreaseDepositTest,
+    RecoverERC20E20FarmTest,
     RecoverRewardFundsTest,
     MulticallTest
 {

@@ -41,7 +41,7 @@ contract UniswapV3Test {
         external
         returns (uint256 amountOut)
     {
-        IERC20(inputToken).safeApprove(address(SWAP_ROUTER), amountIn);
+        IERC20(inputToken).forceApprove(address(SWAP_ROUTER), amountIn);
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: inputToken,
             tokenOut: outputToken,

@@ -70,7 +70,7 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
 }
 
 abstract contract InitializeTest is BaseUniV3FarmTest {
-    function test_revertWhen_InvalidTickRange() public {
+    function test_RevertWhen_InvalidTickRange() public {
         address uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(DAI, USDCe, FEE_TIER);
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
 
@@ -167,7 +167,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         });
     }
 
-    function test_revertWhen_InvalidUniswapPoolConfig() public {
+    function test_RevertWhen_InvalidUniswapPoolConfig() public {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
@@ -284,17 +284,17 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
-    function test_revertWhen_NotAUniV3NFT() public {
+    function test_RevertWhen_NotAUniV3NFT() public {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NotAUniV3NFT.selector));
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_revertWhen_NoData() public useKnownActor(NFPM) {
+    function test_RevertWhen_NoData() public useKnownActor(NFPM) {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoData.selector));
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_revertWhen_IncorrectPoolToken() public useKnownActor(user) {
+    function test_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
         uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
 
@@ -325,7 +325,7 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), currentActor, tokenId, abi.encode(true));
     }
 
-    function test_revertWhen_IncorrectTickRange() public useKnownActor(user) {
+    function test_RevertWhen_IncorrectTickRange() public useKnownActor(user) {
         uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
 
@@ -409,7 +409,7 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
 }
 
 abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
-    function test_revertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
+    function test_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseUniV3Farm(lockupFarm).withdraw(0);
     }
@@ -469,18 +469,18 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
 }
 
 abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
-    function test_revertWhen_FarmIsClosed() public useKnownActor(owner) {
+    function test_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
-    function test_revertWhen_DepositDoesNotExist_during_claimUniswapFee() public useKnownActor(user) {
+    function test_RevertWhen_DepositDoesNotExist_during_claimUniswapFee() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
-    function test_revertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoFeeToClaim.selector));
         BaseUniV3Farm(lockupFarm).claimUniswapFee(1);
     }
