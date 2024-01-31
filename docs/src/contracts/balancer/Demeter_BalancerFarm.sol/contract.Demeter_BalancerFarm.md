@@ -82,14 +82,14 @@ function increaseDeposit(uint8 _depositId, uint256 _amount) external nonReentran
 |`_depositId`|`uint8`|Deposit index for the user.|
 |`_amount`|`uint256`|Desired amount|
 
-### withdrawPartially
+### decreaseDeposit
 
 Withdraw liquidity partially from an existing deposit.
 
 *Function is not available for locked deposits.*
 
 ```solidity
-function withdrawPartially(uint8 _depositId, uint256 _amount) external nonReentrant;
+function decreaseDeposit(uint8 _depositId, uint256 _amount) external nonReentrant;
 ```
 
 **Parameters**

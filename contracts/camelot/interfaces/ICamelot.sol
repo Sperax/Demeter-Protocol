@@ -7,6 +7,17 @@ interface INFTPoolFactory {
     function getPool(address _lpTokenAddr) external view returns (address);
 }
 
+interface IPair {
+    function getReserves()
+        external
+        view
+        returns (uint112 _reserve0, uint112 _reserve1, uint16 _token0FeePercent, uint16 _token1FeePercent);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+}
+
 interface INFTPool {
     function addToPosition(uint256 tokenId, uint256 amountToAdd) external;
 
@@ -31,6 +42,8 @@ interface INFTPool {
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
 
+    function lastTokenId() external view returns (uint256);
+
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
 
     function getStakingPosition(uint256 tokenId)
@@ -45,6 +58,20 @@ interface INFTPool {
             uint256 rewardDebt,
             uint256 boostPoints,
             uint256 totalMultiplier
+        );
+
+    function getPoolInfo()
+        external
+        view
+        returns (
+            address lpToken,
+            address grailToken,
+            address xGrailToken,
+            uint256 lastRewardTime,
+            uint256 accRewardsPerShare,
+            uint256 lpSupply,
+            uint256 lpSupplyWithMultiplier,
+            uint256 allocPoint
         );
 
     function pendingRewards(uint256 tokenId) external view returns (uint256);
@@ -90,4 +117,29 @@ interface IPositionHelper {
         INFTPool nftPool,
         uint256 lockDuration
     ) external payable;
+}
+
+interface IRouter {
+    function addLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
+
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint256 liquidity,
+        uint256 amountAMin,
+        uint256 amountBMin,
+        address to,
+        uint256 deadline
+    ) external returns (uint256 amountA, uint256 amountB);
+
+    function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) external pure returns (uint256 amountB);
 }
