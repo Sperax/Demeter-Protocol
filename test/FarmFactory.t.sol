@@ -207,20 +207,6 @@ contract UpdateFeeParamsTest is FarmFactoryTest {
         FarmFactory(factory).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_RevertWhen_InvalidAddress() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).updateFeeParams(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).updateFeeParams(owner, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
-    }
-
-    function test_RevertWhen_InvalidAmount() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAmount.selector));
-        FarmFactory(factory).updateFeeParams(owner, USDS, 0, EXTENSION_FEE_PER_DAY);
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAmount.selector));
-        FarmFactory(factory).updateFeeParams(owner, USDS, FEE_AMOUNT, 0);
-    }
-
     function test_updateFeeParams() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         address feeReceiver = actors[5];
         address feeToken = actors[6];

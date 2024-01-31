@@ -44,7 +44,6 @@ contract FarmFactory is OwnableUpgradeable {
     error InvalidDeployerId();
     error PrivilegeSameAsDesired();
     error InvalidAddress();
-    error InvalidAmount();
 
     // Disable initialization for the implementation contract
     constructor() {
@@ -150,8 +149,6 @@ contract FarmFactory is OwnableUpgradeable {
     {
         _isNonZeroAddr(_receiver);
         _isNonZeroAddr(_feeToken);
-        _isNonZeroAmount(_amount);
-        _isNonZeroAmount(_extensionFeePerDay);
         feeReceiver = _receiver;
         feeToken = _feeToken;
         feeAmount = _amount;
@@ -163,13 +160,6 @@ contract FarmFactory is OwnableUpgradeable {
     function _isNonZeroAddr(address _addr) private pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
-        }
-    }
-
-    /// @notice Validate amount
-    function _isNonZeroAmount(uint256 _amount) private pure {
-        if (_amount == 0) {
-            revert InvalidAmount();
         }
     }
 }
