@@ -24,7 +24,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     /// @dev Can be updated only before the farm expired or closed.
     ///      Extension should be incremented in multiples of 1 USDs/day with minimum of 100 days at a time and a maximum of 300 days.
     ///      Extension is possible only after farm started.
-    /// @param _extensionDays The number of days to extend the farm.
+    /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _isFarmActive();
         if (lastFundUpdateTime > block.timestamp) {
