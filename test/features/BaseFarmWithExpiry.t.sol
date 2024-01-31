@@ -7,17 +7,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../BaseFarm.t.sol";
 
-abstract contract BaseFarmWithExpiryTest is
-    UpdateFarmStartTimeTest,
-    WithdrawTest,
-    ClaimRewardsTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest
-{
+abstract contract BaseFarmWithExpiryTest is BaseFarmTest {
     uint256 public constant MIN_EXTENSION = 100; // in days
     uint256 public constant MAX_EXTENSION = 300; // in days
 
@@ -306,7 +296,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
     }
 }
 
-abstract contract ExtendFarmDurationWithExpiryTest is BaseFarmWithExpiryTest {
+abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
     function test_extendFarmDuration_noLockupFarm_revertsWhen_FarmNotYetStarted() public {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;

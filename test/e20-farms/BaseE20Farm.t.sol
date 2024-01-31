@@ -6,6 +6,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
+import "../BaseFarm.t.sol";
 import "../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {

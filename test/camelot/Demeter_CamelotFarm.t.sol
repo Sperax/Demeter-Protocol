@@ -5,6 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../BaseFarm.t.sol";
+import "../features/BaseFarmWithExpiry.t.sol";
 import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/ICamelot.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
@@ -499,18 +500,29 @@ contract DemeterCamelotFarmInheritTest is
     Demeter_CamelotFarmTest,
     DepositTest,
     WithdrawTest,
+    WithdrawWithExpiryTest,
     ClaimRewardsTest,
+    ClaimRewardsWithExpiryTest,
     GetRewardFundInfoTest,
     InitiateCooldownTest,
     AddRewardsTest,
+    AddRewardsWithExpiryTest,
     SetRewardRateTest,
+    SetRewardRateWithExpiryTest,
     GetRewardBalanceTest,
     GetNumSubscriptionsTest,
     SubscriptionInfoTest,
     UpdateRewardTokenDataTest,
+    UpdateRewardTokenDataWithExpiryTest,
     FarmPauseSwitchTest,
+    FarmPauseSwitchWithExpiryTest,
     UpdateFarmStartTimeTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationTest,
     UpdateCoolDownPeriodTest,
+    UpdateCoolDownPeriodWithExpiryTest,
+    CloseFarmTest,
+    CloseFarmWithExpiryTest,
     RecoverERC20Test,
     RecoverRewardFundsTest,
     GetDepositTest,

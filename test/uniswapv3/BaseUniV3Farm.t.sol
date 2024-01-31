@@ -8,7 +8,7 @@ import "../../contracts/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-// import "../BaseFarm.t.sol";
+import "../BaseFarm.t.sol";
 import "../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseUniV3FarmTest is BaseFarmTest {
