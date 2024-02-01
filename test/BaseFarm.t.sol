@@ -5,29 +5,9 @@ import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
+import {Deposit, Subscription, RewardData, RewardFund} from "../contracts/interfaces/DataTypes.sol";
 
 abstract contract BaseFarmTest is TestNetworkConfig {
-    struct Deposit {
-        uint256 liquidity;
-        uint256 tokenId;
-        uint256 startTime;
-        uint256 expiryDate;
-        uint256 cooldownPeriod;
-        uint256[] totalRewardsClaimed;
-    }
-
-    struct RewardData {
-        address tknManager;
-        uint8 id;
-        uint256 accRewardBal;
-    }
-
-    struct RewardFund {
-        uint256 totalLiquidity;
-        uint256[] rewardsPerSec;
-        uint256[] accRewardPerShare;
-    }
-
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
@@ -449,9 +429,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_firstDeposit_lockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory multipleUserDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
-        BaseFarm.Subscription[] memory multipleUserLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory multipleUserDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
+        Subscription[] memory multipleUserLockUpSubscriptions = new Subscription[](10);
         addRewards(lockupFarm);
         setRewardRates(lockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -507,9 +487,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_inBetweenDeposit_lockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory userDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
-        BaseFarm.Subscription[] memory multipleUserLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory userDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
+        Subscription[] memory multipleUserLockUpSubscriptions = new Subscription[](10);
         addRewards(lockupFarm);
         setRewardRates(lockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -565,9 +545,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_lastDeposit_lockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory multipleUserDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
-        BaseFarm.Subscription[] memory multipleUserLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory multipleUserDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
+        Subscription[] memory multipleUserLockUpSubscriptions = new Subscription[](10);
         addRewards(lockupFarm);
         setRewardRates(lockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -623,8 +603,8 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_firstDeposit_nonLockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory multipleUserDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory multipleUserDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
         addRewards(nonLockupFarm);
         setRewardRates(nonLockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -671,8 +651,8 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_inBetweenDeposit_nonLockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory userDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory userDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
         addRewards(nonLockupFarm);
         setRewardRates(nonLockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -719,8 +699,8 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_lastDeposit_nonLockupFarm_multipleDeposits() public setup {
-        BaseFarm.Deposit[] memory multipleUserDeposits = new BaseFarm.Deposit[](10);
-        BaseFarm.Subscription[] memory multipleUserNonLockUpSubscriptions = new BaseFarm.Subscription[](10);
+        Deposit[] memory multipleUserDeposits = new Deposit[](10);
+        Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
         addRewards(nonLockupFarm);
         setRewardRates(nonLockupFarm);
         for (uint256 i = 1; i <= 10; i++) {
@@ -811,7 +791,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
     }
 
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDepositInfo(1);
+        Deposit memory userDeposit = BaseFarm(lockupFarm).getDepositInfo(1);
         skip(86400 * 7);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         vm.expectEmit(true, false, false, false);
@@ -1062,12 +1042,12 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     }
 
     function test_subInfo_nonLockupFarm() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        BaseFarm.Subscription memory numSubscriptions = BaseFarm(nonLockupFarm).getSubscriptionInfo(1, 0);
+        Subscription memory numSubscriptions = BaseFarm(nonLockupFarm).getSubscriptionInfo(1, 0);
         assertEq(numSubscriptions.fundId, 0);
     }
 
     function test_subInfo_lockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
-        BaseFarm.Subscription memory numSubscriptions = BaseFarm(lockupFarm).getSubscriptionInfo(1, 0);
+        Subscription memory numSubscriptions = BaseFarm(lockupFarm).getSubscriptionInfo(1, 0);
         assertEq(numSubscriptions.fundId, 0);
     }
 }
