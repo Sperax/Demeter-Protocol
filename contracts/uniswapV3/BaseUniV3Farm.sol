@@ -163,11 +163,12 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(nfpm, tokenId);
+        address pm = nfpm;
+        (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
         }
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nfpm).collect(
+        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
             CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
