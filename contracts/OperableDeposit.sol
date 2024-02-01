@@ -17,9 +17,9 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarm} from "./BaseFarm.sol";
+import {BaseFarmStorage} from "./BaseFarmStorage.sol";
 
-abstract contract OperableDeposit {
+abstract contract OperableDeposit is BaseFarmStorage {
     uint256 public constant PRECISION = 1e18;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
@@ -28,27 +28,21 @@ abstract contract OperableDeposit {
     error DecreaseDepositNotPermitted();
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _subscription Subscription for the deposit passed.
-    /// @param _rewardFunds Reward funds added.
+    /// @param _depositId Unique deposit id for the deposit
     /// @param _amount _amount to be increased.
-    /// @param _numRewards Number of reward tokens added.
-    function _updateSubscriptionForIncrease(
-        BaseFarm.Subscription[] storage _subscription,
-        BaseFarm.RewardFund[] storage _rewardFunds,
-        uint256 _amount,
-        uint256 _numRewards
-    ) internal {
-        uint256 numSubs = _subscription.length;
+    function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) internal {
+        uint256 numRewards = rewardTokens.length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = _subscription[iSub].rewardDebt;
-            uint8 _fundId = _subscription[iSub].fundId;
-            for (uint8 iRwd; iRwd < _numRewards;) {
-                _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
+            for (uint8 iRwd; iRwd < numRewards;) {
+                _rewardDebt[iRwd] += ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
                 unchecked {
                     ++iRwd;
                 }
             }
-            _rewardFunds[_fundId].totalLiquidity += _amount;
+            rewardFunds[_fundId].totalLiquidity += _amount;
             unchecked {
                 ++iSub;
             }
@@ -56,27 +50,21 @@ abstract contract OperableDeposit {
     }
 
     /// @notice Update subscription data of a deposit after decrease in liquidity.
-    /// @param _subscription Subscription for the deposit passed.
-    /// @param _rewardFunds Reward funds added.
+    /// @param _depositId Unique deposit id for the deposit
     /// @param _amount _amount to be decreased.
-    /// @param _numRewards Number of reward tokens added.
-    function _updateSubscriptionForDecrease(
-        BaseFarm.Subscription[] storage _subscription,
-        BaseFarm.RewardFund[] storage _rewardFunds,
-        uint256 _amount,
-        uint256 _numRewards
-    ) internal {
-        uint256 numSubs = _subscription.length;
+    function _updateSubscriptionForDecrease(uint256 _depositId, uint256 _amount) internal {
+        uint256 numRewards = rewardTokens.length;
+        uint256 numSubs = subscriptions[_depositId].length;
         for (uint256 iSub; iSub < numSubs;) {
-            uint256[] storage _rewardDebt = _subscription[iSub].rewardDebt;
-            uint8 _fundId = _subscription[iSub].fundId;
-            for (uint8 iRwd; iRwd < _numRewards;) {
-                _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
+            uint256[] storage _rewardDebt = subscriptions[_depositId][iSub].rewardDebt;
+            uint8 _fundId = subscriptions[_depositId][iSub].fundId;
+            for (uint8 iRwd; iRwd < numRewards;) {
+                _rewardDebt[iRwd] -= ((_amount * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
                 unchecked {
                     ++iRwd;
                 }
             }
-            _rewardFunds[_fundId].totalLiquidity -= _amount;
+            rewardFunds[_fundId].totalLiquidity -= _amount;
             unchecked {
                 ++iSub;
             }
