@@ -146,6 +146,12 @@ abstract contract DepositTest is BaseFarmTest {
         deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsPaused.selector));
     }
 
+    function test_deposit_RevertWhen_FarmIsClosed() public {
+        vm.startPrank(BaseFarm(nonLockupFarm).owner());
+        BaseFarm(nonLockupFarm).closeFarm();
+        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+    }
+
     function test_deposit_noLockupFarm_deposit() public {
         deposit(nonLockupFarm, false, 1e2);
     }
@@ -1390,6 +1396,8 @@ abstract contract CloseFarmTest is BaseFarmTest {
     function test_closeFarm_lockupFarm() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(lockupFarm);
         uint256[] memory rwdRate = new uint256[](2);
+        vm.expectEmit(address(lockupFarm));
+        emit FarmClosed();
         BaseFarm(lockupFarm).closeFarm();
         assertEq(BaseFarm(lockupFarm).isClosed(), true);
         assertEq(BaseFarm(lockupFarm).isPaused(), true);
@@ -1403,6 +1411,8 @@ abstract contract CloseFarmTest is BaseFarmTest {
     function test_closeFarm_noLockupFarm() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         uint256[] memory rwdRate = new uint256[](1);
+        vm.expectEmit(address(nonLockupFarm));
+        emit FarmClosed();
         BaseFarm(nonLockupFarm).closeFarm();
         assertEq(BaseFarm(nonLockupFarm).isClosed(), true);
         assertEq(BaseFarm(nonLockupFarm).isPaused(), true);
