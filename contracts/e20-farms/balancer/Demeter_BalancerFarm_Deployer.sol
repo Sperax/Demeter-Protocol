@@ -50,8 +50,8 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
 
     /// @notice Constructor of the contract
     /// @param _factory Address of Sperax Farm Factory
+    /// @param _farmId Id of the farm
     /// @param _balancerVault Address of Balancer's Vault
-    /// @param _deployerName String containing a name of the deployer
     /// @dev Deploys one farm so that it can be cloned later
     constructor(address _factory, string memory _farmId, address _balancerVault) BaseFarmDeployer(_factory, _farmId) {
         _isNonZeroAddr(_balancerVault);

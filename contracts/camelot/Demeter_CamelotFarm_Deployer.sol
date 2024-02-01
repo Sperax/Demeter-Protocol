@@ -47,6 +47,11 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     address public immutable PROTOCOL_FACTORY;
     address public immutable NFT_POOL_FACTORY;
 
+    /// @notice Constructor of the contract
+    /// @param _factory Address of Farm Factory
+    /// @param _farmId Id of the farm
+    /// @param _protocolFactory Address of Camelot factory
+    /// @param _nftPoolFactory Address of Camelot NFT pool factory
     constructor(address _factory, string memory _farmId, address _protocolFactory, address _nftPoolFactory)
         BaseFarmDeployer(_factory, _farmId)
     {
@@ -73,7 +78,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
             _factory: FACTORY,
             _camelotPairPool: pairPool,
             _rwdTokenData: _data.rewardData,
-            _nftPoolFactory: nftPoolFactory
+            _nftPoolFactory: NFT_POOL_FACTORY
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
