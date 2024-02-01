@@ -89,24 +89,26 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         address _uniswapUtils,
         address _nfpmUtils
     ) external initializer {
+        _isNonZeroAddr(_uniV3Factory);
+        _isNonZeroAddr(_nfpm);
         _isNonZeroAddr(_uniswapUtils);
         _isNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
-        uniswapPool = IUniswapV3Factory(uniV3Factory).getPool(
+        uniswapPool = IUniswapV3Factory(_uniV3Factory).getPool(
             _uniswapPoolData.tokenA, _uniswapPoolData.tokenB, _uniswapPoolData.feeTier
         );
         if (uniswapPool == address(0)) {
             revert InvalidUniswapPoolConfig();
         }
         _validateTickRange(_uniswapPoolData.tickLowerAllowed, _uniswapPoolData.tickUpperAllowed);
+
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniV3Factory = _uniV3Factory;
         nfpm = _nfpm;
         uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
-
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
     }

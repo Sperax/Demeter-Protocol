@@ -22,7 +22,7 @@ import {BaseUniV3Farm, RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.s
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
