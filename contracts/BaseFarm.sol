@@ -291,14 +291,14 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
     /// @return rewards The total accrued rewards for the deposit (uint256[]).
-    function computeRewards(address _account, uint256 _depositId) external view returns (uint256[] memory rewards) {
+    function computeRewards(address _account, uint256 _depositId) external view returns (uint256[][] memory rewards) {
         _isValidDeposit(_account, _depositId);
         Deposit memory userDeposit = deposits[_depositId];
         Subscription[] memory depositSubs = subscriptions[_depositId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numDepositSubs = depositSubs.length;
         uint256 numRewards = rewardTokens.length;
-        rewards = new uint256[](numRewards);
+        rewards = new uint256[][](numDepositSubs);
 
         uint256 time = 0;
         // In case the reward is not updated.
@@ -311,6 +311,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
             Subscription memory sub = depositSubs[iSub];
+            rewards[iSub] = new uint256[](numRewards);
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 if (funds[fundId].totalLiquidity != 0 && _isFarmNotPaused()) {
@@ -318,7 +319,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
                 }
-                rewards[iRwd] +=
+                rewards[iSub][iRwd] =
                     ((userDeposit.liquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
                 unchecked {
                     ++iRwd;

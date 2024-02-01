@@ -99,8 +99,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         uint256[][] memory rewardsForEachSubs2 = new uint256[][](1);
         skip(time);
         vm.startPrank(user);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
+        rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
+        rewardsForEachSubs2 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
         //since the Deposit AMOUNTs are the same, The reward AMOUNTs should be the same.
 
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
@@ -118,8 +118,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         assertEq(totalRewardClaimed, time * rewardRate);
 
         skip(time);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
+        rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
+        rewardsForEachSubs2 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
 
         //The first Deposit AMOUNT is the double than the second one so the the ratio should be 2/3 and 1/3
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
@@ -203,8 +203,8 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         uint256[][] memory rewardsForEachSubs2 = new uint256[][](1);
         skip(time);
         vm.startPrank(user);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
+        rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
+        rewardsForEachSubs2 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
         //since the Deposit amounts are the same, The reward amounts should be the same.
 
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {
@@ -222,8 +222,8 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         assertEq(totalRewardClaimed, time * rewardRate);
 
         skip(time);
-        rewardsForEachSubs1[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
-        rewardsForEachSubs2[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
+        rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
+        rewardsForEachSubs2 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID + 1);
 
         //The first Deposit amount is the half than the second one so the the ratio should be 1/3 and 2/3
         for (uint8 i = 0; i < farmRewardTokens.length; ++i) {

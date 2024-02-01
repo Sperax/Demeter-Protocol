@@ -168,10 +168,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         vm.startPrank(owner);
         skip(86400 * 2);
         BaseFarm(lockupFarm).farmPauseSwitch(true);
-        vm.startPrank(user);
         skip(86400 * 2);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.startPrank(owner);
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
@@ -191,8 +188,6 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         BaseFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         skip(86400 * 2);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         uint256 deposits = BaseFarm(lockupFarm).totalDeposits();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
@@ -205,15 +200,18 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         for (uint8 i; i < rewardTokens.length; ++i) {
             balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
         }
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](2);
+        rewardsForEachSubs = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
 
-        vm.expectEmit(true, true, true, false); // Not checking the rewards claimed here
+        vm.expectEmit(address(lockupFarm)); // Not checking the rewards claimed here
         emit RewardsClaimed(1, rewardsForEachSubs);
         BaseFarm(lockupFarm).claimRewards(1);
         // Checking the rewards claimed users balences
         for (uint8 i; i < rewardTokens.length; ++i) {
-            assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+            assertEq(
+                IERC20(rewardTokens[i]).balanceOf(currentActor),
+                rewardsForEachSubs[0][i] + rewardsForEachSubs[1][i] + balances[i]
+            );
         }
     }
 
@@ -225,7 +223,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
             balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
         }
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
         vm.expectEmit(address(nonLockupFarm));
         emit RewardsClaimed(1, rewardsForEachSubs);
@@ -244,11 +242,11 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         for (uint8 i; i < rewardTokens.length; ++i) {
             balances[i] = IERC20(rewardTokens[i]).balanceOf(currentActor);
         }
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         // for testing purpose, reward rate is set in a way that we can claim max rewards before farm expiry.
         time = rwdBalance / rwdRate; //Max time to be skipped for claiming max reward
         skip(time + 100); //skip more than the available reward
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs = BaseFarm(nonLockupFarm).computeRewards(currentActor, 1);
 
         vm.expectEmit(address(nonLockupFarm));
         emit RewardsClaimed(1, rewardsForEachSubs);
@@ -273,7 +271,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         skip(time);
         vm.startPrank(user);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
+        rewardsForEachSubs = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
         emit RewardsClaimed(depositId, rewardsForEachSubs);
         BaseFarm(nonLockupFarm).claimRewards(depositId);
@@ -313,10 +311,14 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         vm.startPrank(owner);
         skip(time);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](2);
+        rewardsForEachSubs = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         BaseFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, depositId);
+        vm.expectEmit(address(lockupFarm));
+        emit PoolUnsubscribed(depositId, 0, rewardsForEachSubs[0]);
+        vm.expectEmit(address(lockupFarm));
+        emit PoolUnsubscribed(depositId, 1, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarm(lockupFarm).withdraw(depositId);
@@ -335,8 +337,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         BaseFarm(lockupFarm).closeFarm();
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(lockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarm(lockupFarm).withdraw(depositId);
@@ -358,12 +358,12 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(user);
         uint256 time = 2 days;
         uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
+        uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         BaseFarm(lockupFarm).getDepositInfo(depositId);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+        rewardsForEachSubs = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(depositId, 0, rewardsForEachSubs[0]);
         vm.expectEmit(address(lockupFarm));
@@ -392,7 +392,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getDepositInfo(depositId);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
+        rewardsForEachSubs = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
         emit PoolUnsubscribed(depositId, 0, rewardsForEachSubs[0]);
         vm.expectEmit(address(nonLockupFarm));
@@ -414,9 +414,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         BaseFarm(nonLockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        BaseFarm(nonLockupFarm).getDepositInfo(depositId);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(user, 1);
         vm.expectEmit(address(nonLockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarm(nonLockupFarm).withdraw(depositId);
@@ -436,8 +433,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         skip(time);
         BaseFarm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarm(nonLockupFarm).withdraw(depositId);
@@ -465,12 +460,10 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[1]);
         uint256 time = 2 days;
         uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(lockupFarm).initiateCooldown(1);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         BaseFarm(lockupFarm).getDepositInfo(1);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[1], 1);
         BaseFarm(lockupFarm).withdraw(1);
         skip(time);
         BaseFarm(lockupFarm).getRewardBalance(SPA);
@@ -523,12 +516,10 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[5]);
         uint256 time = 2 days;
         uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(lockupFarm).initiateCooldown(5);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         BaseFarm(lockupFarm).getDepositInfo(5);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[5], 5);
         BaseFarm(lockupFarm).withdraw(5);
         skip(time);
         BaseFarm(lockupFarm).getRewardBalance(SPA);
@@ -581,12 +572,10 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[10]);
         uint256 time = 2 days;
         uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(lockupFarm).initiateCooldown(10);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(SPA);
         BaseFarm(lockupFarm).getDepositInfo(10);
-        rewardsForEachSubs[0] = BaseFarm(lockupFarm).computeRewards(actors[10], 10);
         BaseFarm(lockupFarm).withdraw(10);
         skip(time);
         BaseFarm(lockupFarm).getRewardBalance(SPA);
@@ -637,10 +626,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[1]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
         BaseFarm(nonLockupFarm).getDepositInfo(1);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[1], 1);
         BaseFarm(nonLockupFarm).withdraw(1);
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
@@ -685,10 +672,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[5]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
         BaseFarm(nonLockupFarm).getDepositInfo(5);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[5], 5);
         BaseFarm(nonLockupFarm).withdraw(5);
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
@@ -733,10 +718,8 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[10]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
         BaseFarm(nonLockupFarm).getDepositInfo(10);
-        rewardsForEachSubs[0] = BaseFarm(nonLockupFarm).computeRewards(actors[10], 10);
         BaseFarm(nonLockupFarm).withdraw(10);
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(SPA);
@@ -813,11 +796,12 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         BaseFarm.Deposit memory userDeposit = BaseFarm(lockupFarm).getDepositInfo(1);
         skip(86400 * 7);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        vm.expectEmit(true, false, false, false);
-        emit RewardsClaimed(1, rewardsForEachSubs); // not checking the rewardsForEachSubs data here
-        vm.expectEmit(true, false, false, false);
-        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[0]); // not checking the totalRewardsClaimed data here
+        uint256[][] memory rewardsForEachSubs = new uint256[][](2);
+        rewardsForEachSubs = BaseFarm(lockupFarm).computeRewards(currentActor, 1);
+        vm.expectEmit(address(lockupFarm));
+        emit RewardsClaimed(1, rewardsForEachSubs);
+        vm.expectEmit(address(lockupFarm));
+        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
         emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);
