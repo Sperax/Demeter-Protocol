@@ -23,7 +23,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {BaseFarmStorage} from "./BaseFarmStorage.sol";
-import "./interfaces/DataTypes.sol";
+import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
 abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
