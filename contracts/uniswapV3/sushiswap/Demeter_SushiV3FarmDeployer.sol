@@ -61,6 +61,7 @@ contract Demeter_SushiV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         farmInstance.initialize({
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
+            _factory: FACTORY,
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniswapUtils: uniswapUtils,

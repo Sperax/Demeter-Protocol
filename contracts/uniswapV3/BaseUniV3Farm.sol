@@ -28,7 +28,8 @@ import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
 import {
     INonfungiblePositionManagerUtils as INFPMUtils, Position
 } from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -44,7 +45,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
+abstract contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
@@ -69,11 +70,15 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _factory - Address of the farm factory
     /// @param _uniswapPoolData - init data for UniswapV3 pool
     /// @param _rwdTokenData - init data for reward tokens
+    /// @param _uniswapUtils - address of our custom uniswap utils contract
+    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData,
         address _uniswapUtils,
@@ -96,6 +101,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
         nfpmUtils = _nfpmUtils;
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarmExpiry(_farmStartTime, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -144,7 +150,7 @@ abstract contract BaseUniV3Farm is BaseFarm, IERC721Receiver {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
+        _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 

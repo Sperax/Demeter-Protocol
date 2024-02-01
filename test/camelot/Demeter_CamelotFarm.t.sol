@@ -5,6 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../BaseFarm.t.sol";
+import "../features/BaseFarmWithExpiry.t.sol";
 import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/ICamelot.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
@@ -12,6 +13,7 @@ import "../../contracts/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
+import {FarmFactory} from "../../contracts/FarmFactory.sol";
 
 contract Demeter_CamelotFarmTest is BaseFarmTest {
     using SafeERC20 for IERC20;
@@ -143,7 +145,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.InvalidCamelotPoolConfig.selector));
-        Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, address(0), rwdTokenData);
+        Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, address(factory), address(0), rwdTokenData);
     }
 
     function test_OnERC721Received_RevertWhen_NotACamelotNFT() public {
@@ -498,6 +500,7 @@ contract DemeterCamelotFarmInheritTest is
     Demeter_CamelotFarmTest,
     DepositTest,
     WithdrawTest,
+    WithdrawWithExpiryTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
     InitiateCooldownTest,
@@ -509,7 +512,10 @@ contract DemeterCamelotFarmInheritTest is
     UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationTest,
     UpdateCoolDownPeriodTest,
+    CloseFarmTest,
     RecoverERC20Test,
     RecoverRewardFundsTest,
     GetDepositTest,

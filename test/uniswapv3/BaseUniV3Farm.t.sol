@@ -9,6 +9,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
 import "../BaseFarm.t.sol";
+import "../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseUniV3FarmTest is BaseFarmTest {
     uint8 public FEE_TIER = 100;
@@ -78,6 +79,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -95,6 +97,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -113,6 +116,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             BaseUniV3Farm(farmProxy).initialize({
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
+                _factory: DEMETER_FACTORY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: USDCe,
                     tokenB: USDT,
@@ -130,6 +134,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             BaseUniV3Farm(farmProxy).initialize({
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
+                _factory: DEMETER_FACTORY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: DAI,
                     tokenB: USDCe,
@@ -148,6 +153,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -166,6 +172,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -182,6 +189,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -198,6 +206,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -214,6 +223,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -230,6 +240,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -248,6 +259,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmStartTime: block.timestamp,
             _cooldownPeriod: COOLDOWN_PERIOD,
+            _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -408,6 +420,50 @@ abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
         skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
         vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
         emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_paused() public depositSetup(lockupFarm, true) {
+        uint256 depositId = 1;
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).farmPauseSwitch(true);
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_closed() public depositSetup(lockupFarm, true) {
+        uint256 depositId = 1;
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).closeFarm();
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 1;
+        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
+
+        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_closedAndExpired() public depositSetup(lockupFarm, true) {
+        uint256 depositId = 1;
+        vm.startPrank(owner);
+        BaseFarm(lockupFarm).closeFarm();
+        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
+        vm.startPrank(user);
+        vm.expectEmit(BaseUniV3Farm(lockupFarm).NFPM());
+        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
+
         BaseUniV3Farm(lockupFarm).withdraw(depositId);
     }
 }

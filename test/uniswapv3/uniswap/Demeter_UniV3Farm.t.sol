@@ -9,7 +9,6 @@ import "../../../contracts/uniswapV3/uniswap/Demeter_UniV3FarmDeployer.sol";
 import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
-import "../../BaseFarm.t.sol";
 import "../BaseUniV3Farm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
 
@@ -185,8 +184,10 @@ contract Demeter_UniV3FarmTestInheritTest is
     Demeter_UniV3FarmTest,
     DepositTest,
     WithdrawTest,
+    WithdrawWithExpiryTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
+    RecoverERC20Test,
     InitiateCooldownTest,
     AddRewardsTest,
     SetRewardRateTest,
@@ -196,6 +197,9 @@ contract Demeter_UniV3FarmTestInheritTest is
     UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationTest,
+    CloseFarmTest,
     UpdateCoolDownPeriodTest,
     _SetupFarmTest,
     InitializeTest,

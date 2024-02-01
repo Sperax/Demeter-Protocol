@@ -18,10 +18,11 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 import {OperableDeposit} from "../OperableDeposit.sol";
 
-contract BaseE20Farm is BaseFarm, OperableDeposit {
+contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Token params
@@ -38,17 +39,20 @@ contract BaseE20Farm is BaseFarm, OperableDeposit {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _factory - Address of the farm factory
     /// @param _farmToken Address of the farm token
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize farmToken related data
         farmToken = _farmToken;
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarmExpiry(_farmStartTime, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -68,7 +72,7 @@ contract BaseE20Farm is BaseFarm, OperableDeposit {
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         // Validations
-        _farmNotClosed();
+        _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
         if (_amount == 0) {
@@ -97,7 +101,7 @@ contract BaseE20Farm is BaseFarm, OperableDeposit {
     /// @dev Function is not available for locked deposits.
     function decreaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         //Validations
-        _farmNotClosed();
+        _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
 

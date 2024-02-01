@@ -20,10 +20,11 @@ pragma solidity 0.8.16;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
-import {BaseFarm, RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../BaseFarm.sol";
+import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 import {OperableDeposit} from "../OperableDeposit.sol";
 
-contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
+contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // constants
@@ -50,11 +51,13 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _factory - Address of the farm factory
     /// @param _camelotPairPool - Camelot lp pool address
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
+        address _factory,
         address _camelotPairPool,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
@@ -65,6 +68,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         }
 
         _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarmExpiry(_farmStartTime, _factory);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.
@@ -175,7 +179,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
         external
         nonReentrant
     {
-        _farmNotClosed(); // Withdraw instead of decrease deposit when a farm is closed.
+        _isFarmActive(); // Withdraw instead of decrease deposit when a farm is not active.
         _isValidDeposit(msg.sender, _depositId); // Validate the deposit.
 
         Deposit storage userDeposit = deposits[_depositId];
@@ -222,7 +226,7 @@ contract Demeter_CamelotFarm is BaseFarm, INFTHandler, OperableDeposit {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
-        _farmNotClosed();
+        _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
         INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }

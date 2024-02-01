@@ -3,7 +3,6 @@ pragma solidity 0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../../BaseFarm.t.sol";
 import "../BaseE20Farm.t.sol";
 
 import {Demeter_BalancerFarm} from "../../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
@@ -49,6 +48,7 @@ contract BalancerFarmTest is
     DepositTest,
     GetDepositTest,
     WithdrawTest,
+    WithdrawWithExpiryTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
     InitiateCooldownTest,
@@ -60,7 +60,10 @@ contract BalancerFarmTest is
     UpdateRewardTokenDataTest,
     FarmPauseSwitchTest,
     UpdateFarmStartTimeTest,
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationTest,
     UpdateCoolDownPeriodTest,
+    CloseFarmTest,
     _SetupFarmTest,
     IncreaseDepositTest,
     DecreaseDepositTest,

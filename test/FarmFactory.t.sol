@@ -12,14 +12,20 @@ import {UpgradeUtil} from "../test/utils/UpgradeUtil.t.sol";
 abstract contract FarmFactoryTest is TestNetworkConfig {
     UpgradeUtil internal upgradeUtil;
     FarmFactory public factoryImp;
+    uint256 public constant FEE_AMOUNT = 1e20;
+    uint256 public constant FEE_AMOUNT_LOWER_BOUND = 1e18;
+    uint256 public constant FEE_AMOUNT_UPPER_BOUND = 1e25;
+    uint256 public constant EXTENSION_FEE_PER_DAY = 1e18;
+    uint256 public constant EXTENSION_FEE_PER_DAY_LOWER_BOUND = 1e18;
+    uint256 public constant EXTENSION_FEE_PER_DAY_UPPER_BOUND = 1e23;
 
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
     event FarmDeployerUpdated(address deployer, bool registered);
-    event FeeParamsUpdated(address receiver, address token, uint256 amount);
+    event FeeParamsUpdated(address receiver, address token, uint256 amount, uint256 extensionFeePerDay);
     event PrivilegeUpdated(address deployer, bool privilege);
 
     modifier initialized() {
-        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, 1e20);
+        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
         _;
     }
 
@@ -47,30 +53,39 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
 contract InitializeTest is FarmFactoryTest {
     function test_RevertWhen_receiverIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(address(0), USDS, 1e20);
+        FarmFactory(factory).initialize(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_RevertWhen_tokenIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(FACTORY_OWNER, address(0), 1e20);
+        FarmFactory(factory).initialize(FACTORY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_init(uint256 feeAmt) public useKnownActor(FACTORY_OWNER) {
+    function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(FACTORY_OWNER) {
         address feeReceiver = FACTORY_OWNER;
         address feeToken = USDS;
-        feeAmt = bound(feeAmt, 1e18, 1e25);
+        feeAmt = bound(feeAmt, FEE_AMOUNT_LOWER_BOUND, FEE_AMOUNT_UPPER_BOUND);
+        extensionFeePerDay =
+            bound(extensionFeePerDay, EXTENSION_FEE_PER_DAY_LOWER_BOUND, EXTENSION_FEE_PER_DAY_UPPER_BOUND);
 
         address _feeReceiver;
         address _feeToken;
         uint256 _feeAmount;
+        uint256 _extensionFeePerDay;
         vm.expectEmit(address(factory));
-        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt);
-        FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt);
-        (_feeReceiver, _feeToken, _feeAmount) = FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
+        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        (_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay) =
+            FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
         assertEq(_feeReceiver, feeReceiver);
         assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
+        assertEq(_extensionFeePerDay, extensionFeePerDay);
         assertEq(FarmFactory(factory).owner(), currentActor);
+        assertEq(FarmFactory(factory).feeReceiver(), feeReceiver);
+        assertEq(FarmFactory(factory).feeToken(), feeToken);
+        assertEq(FarmFactory(factory).feeAmount(), feeAmt);
+        assertEq(FarmFactory(factory).extensionFeePerDay(), extensionFeePerDay);
     }
 }
 
@@ -176,10 +191,12 @@ contract UpdatePrivilegeTest is FarmFactoryTest {
         assertEq(FarmFactory(factory).isPrivilegedDeployer(owner), true);
 
         // Test getFeeParams
-        (address _feeReceiver, address _feeToken, uint256 _feeAmount) = FarmFactory(factory).getFeeParams(owner);
+        (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =
+            FarmFactory(factory).getFeeParams(owner);
         assertEq(_feeReceiver, FACTORY_OWNER);
         assertEq(_feeToken, USDS);
         assertEq(_feeAmount, 0);
+        assertEq(_extensionFeePerDay, 0);
     }
 }
 
@@ -187,21 +204,35 @@ contract UpdateFeeParamsTest is FarmFactoryTest {
     function test_RevertWhen_callerIsNotOwner() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
-        FarmFactory(factory).updateFeeParams(owner, USDS, 1e20);
+        FarmFactory(factory).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+    }
+
+    function test_RevertWhen_InvalidAddress() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
+        FarmFactory(factory).updateFeeParams(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
+        FarmFactory(factory).updateFeeParams(owner, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_updateFeeParams() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
         address feeReceiver = actors[5];
         address feeToken = actors[6];
-        uint256 feeAmt = 1e20;
+        uint256 feeAmt = FEE_AMOUNT;
+        uint256 extensionFeePerDay = EXTENSION_FEE_PER_DAY;
         vm.expectEmit(address(factory));
-        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt);
-        FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt);
+        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         // Test getFeeParams
-        (address _feeReceiver, address _feeToken, uint256 _feeAmount) =
+        (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =
             FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
         assertEq(_feeReceiver, feeReceiver);
         assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
+        assertEq(_extensionFeePerDay, extensionFeePerDay);
+        assertEq(FarmFactory(factory).owner(), currentActor);
+        assertEq(FarmFactory(factory).feeReceiver(), feeReceiver);
+        assertEq(FarmFactory(factory).feeToken(), feeToken);
+        assertEq(FarmFactory(factory).feeAmount(), feeAmt);
+        assertEq(FarmFactory(factory).extensionFeePerDay(), extensionFeePerDay);
     }
 }

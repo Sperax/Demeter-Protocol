@@ -9,7 +9,7 @@ interface IFarmFactory {
     function getFeeParams(address _deployerAccount)
         external
         view
-        returns (address feeFeceiver, address feeToken, uint256 feeAmount);
+        returns (address feeFeceiver, address feeToken, uint256 feeAmount, uint256 extensionFeePerDay);
 
     function isPrivilegedDeployer(address _user) external view returns (bool);
 }
