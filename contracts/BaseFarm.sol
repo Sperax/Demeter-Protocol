@@ -22,88 +22,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {BaseFarmStorage} from "./BaseFarmStorage.sol";
+import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
-// Defines the reward data for constructor.
-// token - Address of the token.
-// tknManager - Authority to update rewardToken related params.
-struct RewardTokenData {
-    address token;
-    address tknManager;
-}
-
-abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall {
+abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
-
-    // Defines the reward funds for the farm.
-    // totalLiquidity - amount of liquidity sharing the rewards in the fund.
-    // rewardsPerSec - the emission rate of the fund.
-    // accRewardPerShare - the accumulated reward per share.
-    struct RewardFund {
-        uint256 totalLiquidity;
-        uint256[] rewardsPerSec;
-        uint256[] accRewardPerShare;
-    }
-
-    // Keeps track of a deposit's share in a reward fund.
-    // fundId - id of the subscribed reward fund.
-    // rewardDebt - rewards claimed for a deposit corresponding to
-    //              latest accRewardPerShare value of the budget.
-    // rewardClaimed - rewards claimed for a deposit from the reward fund.
-    struct Subscription {
-        uint8 fundId;
-        uint256[] rewardDebt;
-        uint256[] rewardClaimed;
-    }
-
-    // Deposit information:
-    // depositor - address of the depositor.
-    // liquidity - amount of liquidity in the deposit.
-    // startTime - time of deposit.
-    // expiryDate - expiry time (if deposit is locked).
-    // cooldownPeriod - cooldown period (if deposit is locked).
-    // totalRewardsClaimed - total rewards claimed for the deposit.
-    struct Deposit {
-        address depositor;
-        uint256 liquidity;
-        uint256 startTime;
-        uint256 expiryDate;
-        uint256 cooldownPeriod;
-        uint256[] totalRewardsClaimed;
-    }
-
-    // Reward token related information.
-    // tknManager - Address that manages the rewardToken.
-    // id - Id of the rewardToken in the rewardTokens array.
-    // accRewardBal - The rewards accrued but pending to be claimed.
-    struct RewardData {
-        address tknManager;
-        uint8 id;
-        uint256 accRewardBal;
-    }
-
-    // constants
-    uint8 public constant COMMON_FUND_ID = 0;
-    uint8 public constant LOCKUP_FUND_ID = 1;
-    uint256 public constant PREC = 1e18;
-    uint256 public constant MIN_COOLDOWN_PERIOD = 1; // In days
-    uint256 public constant MAX_COOLDOWN_PERIOD = 30; // In days
-    uint256 public constant MAX_NUM_REWARDS = 4;
-
-    // Global Params
-    string public farmId;
-    bool public isPaused;
-    bool public isClosed;
-
-    uint256 public cooldownPeriod;
-    uint256 public lastFundUpdateTime;
-    uint256 public totalDeposits;
-
-    // Reward info
-    RewardFund[] public rewardFunds;
-    address[] public rewardTokens;
-    mapping(address => RewardData) public rewardData;
-    mapping(uint256 => Deposit) internal deposits;
-    mapping(uint256 => Subscription[]) internal subscriptions;
 
     event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);

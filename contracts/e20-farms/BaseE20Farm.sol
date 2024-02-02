@@ -20,7 +20,8 @@ pragma solidity 0.8.16;
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
 import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
-import {OperableDeposit} from "../OperableDeposit.sol";
+import {Deposit} from "../interfaces/DataTypes.sol";
+import {OperableDeposit} from "../features/OperableDeposit.sol";
 
 contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     using SafeERC20 for IERC20;
@@ -87,7 +88,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
-        _updateSubscriptionForIncrease(subscriptions[_depositId], rewardFunds, _amount, rewardTokens.length);
+        _updateSubscriptionForIncrease(_depositId, _amount);
         userDeposit.liquidity += _amount;
 
         // Transfer the lp tokens to the farm
@@ -118,7 +119,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit info
-        _updateSubscriptionForDecrease(subscriptions[_depositId], rewardFunds, _amount, rewardTokens.length);
+        _updateSubscriptionForDecrease(_depositId, _amount);
         userDeposit.liquidity -= _amount;
 
         // Transfer the lp tokens to the user

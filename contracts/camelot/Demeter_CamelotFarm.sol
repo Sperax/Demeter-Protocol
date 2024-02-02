@@ -22,7 +22,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
 import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
-import {OperableDeposit} from "../OperableDeposit.sol";
+import {Deposit} from "../interfaces/DataTypes.sol";
+import {OperableDeposit} from "../features/OperableDeposit.sol";
 
 contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
@@ -151,7 +152,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        _updateSubscriptionForIncrease(subscriptions[_depositId], rewardFunds, liquidity, rewardTokens.length);
+        _updateSubscriptionForIncrease(_depositId, liquidity);
         userDeposit.liquidity += liquidity;
 
         // Return excess tokens back to the user.
@@ -215,9 +216,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         // Update deposit Information
-        _updateSubscriptionForDecrease(
-            subscriptions[_depositId], rewardFunds, _liquidityToWithdraw, rewardTokens.length
-        );
+        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
 
         emit DepositDecreased(_depositId, _liquidityToWithdraw);
