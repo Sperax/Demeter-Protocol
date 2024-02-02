@@ -39,8 +39,8 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         vm.stopPrank();
 
         // Configure rewardTokens
-        rwdTokens.push(USDCe);
         rwdTokens.push(DAI);
+        rwdTokens.push(USDCe);
 
         invalidRewardToken = USDT;
 
