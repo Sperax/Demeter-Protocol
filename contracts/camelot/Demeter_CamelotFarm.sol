@@ -23,7 +23,7 @@ import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfac
 import {RewardTokenData} from "../BaseFarm.sol";
 import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
-import {OperableDeposit} from "../OperableDeposit.sol";
+import {OperableDeposit} from "../features/OperableDeposit.sol";
 
 contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;

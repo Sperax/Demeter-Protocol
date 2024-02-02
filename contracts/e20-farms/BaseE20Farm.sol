@@ -21,7 +21,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {RewardTokenData} from "../BaseFarm.sol";
 import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
-import {OperableDeposit} from "../OperableDeposit.sol";
+import {OperableDeposit} from "../features/OperableDeposit.sol";
 
 contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     using SafeERC20 for IERC20;

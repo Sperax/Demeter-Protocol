@@ -12,7 +12,7 @@ import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../contracts/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
-import {OperableDeposit} from "../../contracts/OperableDeposit.sol";
+import {OperableDeposit} from "../../contracts/features/OperableDeposit.sol";
 import {FarmFactory} from "../../contracts/FarmFactory.sol";
 import {Deposit, Subscription, RewardFund} from "../../contracts/interfaces/DataTypes.sol";
 

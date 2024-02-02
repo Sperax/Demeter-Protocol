@@ -17,8 +17,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmStorage} from "./BaseFarmStorage.sol";
-import {Subscription, RewardFund} from "./interfaces/DataTypes.sol";
+import {BaseFarmStorage} from "../BaseFarmStorage.sol";
+import {Subscription, RewardFund} from "../interfaces/DataTypes.sol";
 
 abstract contract OperableDeposit is BaseFarmStorage {
     uint256 public constant PRECISION = 1e18;
