@@ -44,12 +44,29 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "Demeter_CamelotFarmDeployer_v1";
     address public immutable PROTOCOL_FACTORY;
+    address public immutable ROUTER;
+    address public immutable NFT_POOL_FACTORY;
 
-    constructor(address _factory, address _protocolFactory) BaseFarmDeployer(_factory) {
+    /// @notice Constructor of the contract
+    /// @param _factory Address of Farm Factory
+    /// @param _farmId Id of the farm
+    /// @param _protocolFactory Address of Camelot factory
+    /// @param _router Address of Camelot router
+    /// @param _nftPoolFactory Address of Camelot NFT pool factory
+    constructor(
+        address _factory,
+        string memory _farmId,
+        address _protocolFactory,
+        address _router,
+        address _nftPoolFactory
+    ) BaseFarmDeployer(_factory, _farmId) {
         _isNonZeroAddr(_protocolFactory);
+        _isNonZeroAddr(_nftPoolFactory);
+
         PROTOCOL_FACTORY = _protocolFactory;
+        ROUTER = _router;
+        NFT_POOL_FACTORY = _nftPoolFactory;
         farmImplementation = address(new Demeter_CamelotFarm());
     }
 
@@ -62,11 +79,14 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 
         farmInstance.initialize({
+            _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
             _factory: FACTORY,
             _camelotPairPool: pairPool,
-            _rwdTokenData: _data.rewardData
+            _rwdTokenData: _data.rewardData,
+            _router: ROUTER,
+            _nftPoolFactory: NFT_POOL_FACTORY
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
