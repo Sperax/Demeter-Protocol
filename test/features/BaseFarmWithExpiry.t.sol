@@ -170,7 +170,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         }
 
         vm.startPrank(owner);
-        vm.expectEmit(true, true, false, true);
+        vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(newStartTime);
         BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
@@ -199,7 +199,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         address farm = createFarm(farmStartTime, true);
 
         vm.startPrank(owner);
-        vm.expectEmit(true, true, false, true);
+        vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(farmStartTime);
         BaseFarmWithExpiry(farm).updateFarmStartTime(farmStartTime);
         vm.stopPrank();
@@ -217,7 +217,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         address farm = createFarm(farmStartTime, false);
 
         vm.startPrank(owner);
-        vm.expectEmit(true, true, false, true);
+        vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(farmStartTime);
         BaseFarmWithExpiry(farm).updateFarmStartTime(farmStartTime);
         vm.stopPrank();
@@ -395,10 +395,10 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         IERC20(feeToken).approve(farm, 500 * 1e20);
 
         if (extensionFeePerDay != 0) {
-            vm.expectEmit(true, false, false, true);
+            vm.expectEmit(address(farm));
             emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(address(farm));
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         BaseFarmWithExpiry(farm).extendFarmDuration(extensionDays);
@@ -430,10 +430,10 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         IERC20(feeToken).approve(farm, 500 * 1e20);
 
         if (extensionFeePerDay != 0) {
-            vm.expectEmit(true, false, false, true);
+            vm.expectEmit(address(farm));
             emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(address(farm));
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         BaseFarmWithExpiry(farm).extendFarmDuration(extensionDays);
@@ -454,8 +454,6 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(lockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarmWithExpiry(lockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(lockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarmWithExpiry(lockupFarm).withdraw(depositId);
@@ -474,8 +472,6 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(lockupFarm).closeFarm(); // if farm is closed it is also paused
         vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarmWithExpiry(lockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(lockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarmWithExpiry(lockupFarm).withdraw(depositId);
@@ -491,8 +487,6 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(nonLockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarmWithExpiry(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarmWithExpiry(nonLockupFarm).withdraw(depositId);
@@ -515,8 +509,6 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).closeFarm(); // if farm is closed it is also paused
         vm.warp(BaseFarmWithExpiry(nonLockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
-        rewardsForEachSubs[0] = BaseFarmWithExpiry(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
         emit DepositWithdrawn(depositId);
         BaseFarmWithExpiry(nonLockupFarm).withdraw(depositId);
