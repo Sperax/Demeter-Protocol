@@ -4,8 +4,8 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../../../contracts/uniswapV3/sushiswap/Demeter_SushiV3Farm.sol";
-import "../../../contracts/uniswapV3/sushiswap/Demeter_SushiV3FarmDeployer.sol";
+import {BaseUniV3Farm} from "../../../contracts/uniswapV3/BaseUniV3Farm.sol";
+import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
 import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
@@ -15,8 +15,8 @@ import "../../utils/UpgradeUtil.t.sol";
 contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
     // Define variables
 
-    string public FARM_ID = "Demeter_SushiV3_v1";
-    Demeter_SushiV3FarmDeployer public sushiswapFarmDeployer;
+    string public constant FARM_NAME = "Demeter_SushiV3_v1";
+    Demeter_BaseUniV3FarmDeployer public sushiswapFarmDeployer;
 
     function setUp() public virtual override {
         super.setUp();
@@ -24,16 +24,18 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         NFPM = SUSHISWAP_NFPM;
         UNIV3_FACTORY = SUSHISWAP_FACTORY;
         SWAP_ROUTER = SUSHISWAP_SWAP_ROUTER;
+        FARM_ID = FARM_NAME;
 
         vm.startPrank(PROXY_OWNER);
-        address impl = address(new Demeter_SushiV3Farm());
+        address impl = address(new BaseUniV3Farm());
         UpgradeUtil upgradeUtil = new UpgradeUtil();
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        sushiswapFarmDeployer =
-            new Demeter_SushiV3FarmDeployer(DEMETER_FACTORY, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS);
+        sushiswapFarmDeployer = new Demeter_BaseUniV3FarmDeployer(
+            DEMETER_FACTORY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
+        );
         factory.registerFarmDeployer(address(sushiswapFarmDeployer));
 
         // Configure rewardTokens
@@ -59,7 +61,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_SushiV3FarmDeployer.FarmData memory _data = Demeter_SushiV3FarmDeployer.FarmData({
+        Demeter_BaseUniV3FarmDeployer.FarmData memory _data = Demeter_BaseUniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
@@ -84,12 +86,12 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         uint256 depositAmount2 = baseAmt * 10 ** ERC20(USDCe).decimals();
 
         deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(Demeter_SushiV3Farm(farm).NFPM(), depositAmount1);
+        IERC20(DAI).approve(NFPM, depositAmount1);
 
         deal(USDCe, currentActor, depositAmount2);
-        IERC20(USDCe).approve(Demeter_SushiV3Farm(farm).NFPM(), depositAmount2);
+        IERC20(USDCe).approve(NFPM, depositAmount2);
 
-        (uint256 tokenId, uint128 liquidity,,) = INFPM(Demeter_SushiV3Farm(farm).NFPM()).mint(
+        (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
             INFPM.MintParams({
                 token0: DAI,
                 token1: USDCe,
@@ -116,7 +118,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         }
         vm.expectEmit(address(farm));
         emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
-        IERC721(Demeter_SushiV3Farm(farm).NFPM()).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+        IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
         return liquidity;
     }
 
@@ -132,12 +134,12 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         uint256 depositAmount2 = _baseAmt * 10 ** ERC20(USDCe).decimals();
 
         deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(Demeter_SushiV3Farm(farm).NFPM(), depositAmount1);
+        IERC20(DAI).approve(NFPM, depositAmount1);
 
         deal(USDCe, currentActor, depositAmount2);
-        IERC20(USDCe).approve(Demeter_SushiV3Farm(farm).NFPM(), depositAmount2);
+        IERC20(USDCe).approve(NFPM, depositAmount2);
 
-        (uint256 tokenId, uint128 liquidity,,) = INFPM(Demeter_SushiV3Farm(farm).NFPM()).mint(
+        (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
             INFPM.MintParams({
                 token0: DAI,
                 token1: USDCe,
@@ -155,7 +157,7 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
 
         if (baseAmt == 0) {
             // Decreasing liquidity to zero.
-            INFPM(Demeter_SushiV3Farm(farm).NFPM()).decreaseLiquidity(
+            INFPM(NFPM).decreaseLiquidity(
                 INFPM.DecreaseLiquidityParams({
                     tokenId: tokenId,
                     liquidity: uint128(liquidity),
@@ -172,15 +174,6 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farm).onERC721Received(address(0), currentActor, tokenId, abi.encode(locked));
     }
 }
-
-contract FARM_IDTest is Demeter_SushiV3FarmTest {
-    function test_FARM_ID() public {
-        string memory farmId = Demeter_SushiV3Farm(farmProxy).FARM_ID();
-        assertEq(farmId, FARM_ID);
-    }
-}
-
-// Demeter_SushiV3FarmDeployer Test
 
 contract Demeter_SushiV3FarmInheritTest is
     Demeter_SushiV3FarmTest,
@@ -207,8 +200,7 @@ contract Demeter_SushiV3FarmInheritTest is
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
     ClaimUniswapFeeTest,
-    RecoverERC20Test,
-    MiscellaneousTest
+    RecoverERC20Test
 {
     function setUp() public override(Demeter_SushiV3FarmTest, BaseFarmTest) {
         super.setUp();

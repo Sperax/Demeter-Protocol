@@ -451,7 +451,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
 abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
     function test_withdraw_lockupFarm_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(lockupFarm).getRewardBalance(SPA);
+        BaseFarmWithExpiry(lockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
@@ -468,7 +468,7 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 
     function test_withdraw_lockupFarm_closedAndExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(lockupFarm).getRewardBalance(SPA);
+        BaseFarmWithExpiry(lockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() - 100);
         vm.startPrank(owner);
         BaseFarmWithExpiry(lockupFarm).closeFarm(); // if farm is closed it is also paused
@@ -488,7 +488,7 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 
     function test_withdraw_nonLockupFarm_notClosedButExpired() public depositSetup(nonLockupFarm, false) {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(nonLockupFarm).getRewardBalance(SPA);
+        BaseFarmWithExpiry(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(nonLockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
@@ -509,7 +509,7 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(nonLockupFarm).getRewardBalance(SPA);
+        BaseFarmWithExpiry(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         vm.warp(BaseFarmWithExpiry(nonLockupFarm).farmEndTime() - 100);
         vm.startPrank(owner);
         BaseFarmWithExpiry(nonLockupFarm).closeFarm(); // if farm is closed it is also paused
