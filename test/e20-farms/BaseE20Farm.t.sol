@@ -91,8 +91,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         address[] memory farmRewardTokens = getRewardTokens(nonLockupFarm);
         uint256 totalRewardClaimed = 0;
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        uint256[] memory rewardRates = new uint256[](rewardTokens.length);
-        rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
+        uint256[] memory rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
         address poolAddress = getPoolAddress();
         deposit(nonLockupFarm, false, 1e3);
         uint256 time = 2 days;
@@ -198,8 +197,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         address[] memory farmRewardTokens = getRewardTokens(nonLockupFarm);
         uint256 totalRewardClaimed = 0;
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        uint256[] memory rewardRates = new uint256[](rewardTokens.length);
-        rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
+        uint256[] memory rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
         address poolAddress = getPoolAddress();
         deposit(nonLockupFarm, false, 1e3);
         uint256 time = 2 days;
