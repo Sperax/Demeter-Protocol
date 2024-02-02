@@ -287,10 +287,10 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         emit RewardDataUpdated(_rwdToken, _newTknManager);
     }
 
-    /// @notice Function to compute the total accrued rewards for a deposit.
+    /// @notice Function to compute the total accrued rewards for a deposit for each subscription.
     /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
-    /// @return rewards The total accrued rewards for the deposit (uint256[]).
+    /// @return rewards The total accrued rewards for the deposit for each subscription (uint256[][]).
     function computeRewards(address _account, uint256 _depositId) external view returns (uint256[][] memory rewards) {
         _isValidDeposit(_account, _depositId);
         Deposit memory userDeposit = deposits[_depositId];
