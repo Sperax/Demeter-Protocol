@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "../BaseE20Farm.t.sol";
 
-import {Demeter_BalancerFarm} from "../../../contracts/e20-farms/balancer/Demeter_BalancerFarm.sol";
+import {BaseE20Farm} from "../../../contracts/e20-farms/BaseE20Farm.sol";
 import {Demeter_BalancerFarm_Deployer} from "../../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 
 struct JoinPoolRequest {
@@ -75,13 +75,15 @@ contract BalancerFarmTest is
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;
 
+    string public FARM_ID = "Demeter_BalancerV2_v1";
+
     function setUp() public override {
         super.setUp();
 
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_FACTORY, BALANCER_VAULT, "Balancer Deployer");
+        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_FACTORY, FARM_ID, BALANCER_VAULT);
         factory.registerFarmDeployer(address(balancerFarmDeployer));
 
         // Configure rewardTokens
@@ -116,7 +118,7 @@ contract BalancerFarmTest is
         IERC20(FEE_TOKEN()).approve(address(balancerFarmDeployer), 1e22);
         address farm = balancerFarmDeployer.createFarm(_data);
 
-        assertEq(Demeter_BalancerFarm(farm).FARM_ID(), "Demeter_BalancerV2_v1");
+        assertEq(BaseE20Farm(farm).farmId(), FARM_ID);
 
         return farm;
     }
@@ -146,7 +148,7 @@ contract BalancerFarmTest is
         }
         vm.expectEmit(address(farm));
         emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, amt);
-        Demeter_BalancerFarm(farm).deposit(amt, locked);
+        BaseE20Farm(farm).deposit(amt, locked);
         uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
         uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
         assertEq(usrBalanceAfter, usrBalanceBefore - amt);
@@ -166,7 +168,7 @@ contract BalancerFarmTest is
         ERC20(poolAddress).approve(address(farm), amt);
 
         vm.expectRevert(revertMsg);
-        Demeter_BalancerFarm(farm).deposit(amt, locked);
+        BaseE20Farm(farm).deposit(amt, locked);
     }
 
     function getPoolAddress() public view override returns (address) {

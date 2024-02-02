@@ -17,13 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
-import {Demeter_UniV3Farm} from "./Demeter_UniV3Farm.sol";
-import {RewardTokenData, UniswapPoolData} from "../BaseUniV3Farm.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
+import {BaseUniV3Farm, RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -39,33 +38,55 @@ contract Demeter_UniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    string public constant DEPLOYER_NAME = "Demeter_UniV3FarmDeployer_v3";
+    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
+    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
+    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract
+    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
-    address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
-    address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
-
-    constructor(address _factory, address _uniswapUtils, address _nfpmUtils) BaseFarmDeployer(_factory) {
+    /// @notice Constructor of the contract
+    /// @param _factory Address of Farm Factory
+    /// @param _farmId Id of the farm
+    /// @param _uniV3Factory Address of UniswapV3 factory
+    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
+    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
+    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    constructor(
+        address _factory,
+        string memory _farmId,
+        address _uniV3Factory,
+        address _nfpm,
+        address _uniswapUtils,
+        address _nfpmUtils
+    ) BaseFarmDeployer(_factory, _farmId) {
+        _isNonZeroAddr(_uniV3Factory);
+        _isNonZeroAddr(_nfpm);
         _isNonZeroAddr(_uniswapUtils);
         _isNonZeroAddr(_nfpmUtils);
 
-        farmImplementation = address(new Demeter_UniV3Farm());
-        uniswapUtils = _uniswapUtils;
-        nfpmUtils = _nfpmUtils;
+        UNI_V3_FACTORY = _uniV3Factory;
+        NFPM = _nfpm;
+        UNISWAP_UTILS = _uniswapUtils;
+        NFPM_UTILS = _nfpmUtils;
+        farmImplementation = address(new BaseUniV3Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _isNonZeroAddr(_data.farmAdmin);
-        Demeter_UniV3Farm farmInstance = Demeter_UniV3Farm(Clones.clone(farmImplementation));
+
+        BaseUniV3Farm farmInstance = BaseUniV3Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({
+            _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
             _factory: FACTORY,
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
-            _uniswapUtils: uniswapUtils,
-            _nfpmUtils: nfpmUtils
+            _uniV3Factory: UNI_V3_FACTORY,
+            _nfpm: NFPM,
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NFPM_UTILS
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);

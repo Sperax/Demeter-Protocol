@@ -59,6 +59,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
 
     /// @notice Setup the farm data for farm expiry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
+        _isNonZeroAddr(_farmFactory);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmFactory = _farmFactory;
     }

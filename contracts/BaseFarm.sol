@@ -615,12 +615,16 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _farmStartTime - Time of farm start.
     /// @param _cooldownPeriod - cooldown period for locked deposits.
     /// @param _rwdTokenData - Reward data for each reward token.
-    function _setupFarm(uint256 _farmStartTime, uint256 _cooldownPeriod, RewardTokenData[] memory _rwdTokenData)
-        internal
-    {
+    function _setupFarm(
+        string calldata _farmId,
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        RewardTokenData[] memory _rwdTokenData
+    ) internal {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
+        farmId = _farmId;
         _transferOwnership(msg.sender);
         // Initialize farm global params.
         lastFundUpdateTime = _farmStartTime;
@@ -644,8 +648,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         for (uint8 i; i < numFunds;) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards + 1),
-                accRewardPerShare: new uint256[](numRewards + 1)
+                rewardsPerSec: new uint256[](numRewards),
+                accRewardPerShare: new uint256[](numRewards)
             });
             rewardFunds.push(_rewardFund);
             unchecked {
@@ -653,10 +657,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
             }
         }
 
-        // Add SPA as default reward token in the farm.
-        _addRewardData(SPA, SPA_TOKEN_MANAGER);
-
-        // Initialize reward Data.
+        // Initialize reward Data
         for (uint8 iRwd; iRwd < numRewards;) {
             _addRewardData(_rwdTokenData[iRwd].token, _rwdTokenData[iRwd].tknManager);
             unchecked {

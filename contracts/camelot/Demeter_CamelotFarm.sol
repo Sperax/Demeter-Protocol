@@ -28,14 +28,10 @@ import {OperableDeposit} from "../OperableDeposit.sol";
 contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // constants
-    string public constant FARM_ID = "Demeter_Camelot_v1";
-    address public constant NFT_POOL_FACTORY = 0x6dB1EF0dF42e30acF139A70C1Ed0B7E6c51dBf6d;
-
-    // Camelot nft pool
+    // Camelot NFT pool address
     address public nftPool;
     // Camelot router
-    address public constant ROUTER = 0xc873fEcbd354f5A56E00E710B90EF4201db2448d;
+    address public router;
 
     mapping(uint256 => uint256) public depositToTokenId;
 
@@ -56,19 +52,24 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     /// @param _camelotPairPool - Camelot lp pool address
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
+        string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         address _factory,
         address _camelotPairPool,
-        RewardTokenData[] memory _rwdTokenData
+        RewardTokenData[] memory _rwdTokenData,
+        address _router,
+        address _nftPoolFactory
     ) external initializer {
+        _isNonZeroAddr(_router);
         // initialize uniswap related data
-        nftPool = INFTPoolFactory(NFT_POOL_FACTORY).getPool(_camelotPairPool);
+        nftPool = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
         if (nftPool == address(0)) {
             revert InvalidCamelotPoolConfig();
         }
 
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        router = _router;
+        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
     }
 
@@ -131,10 +132,10 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         IERC20(token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
 
         // Approve token to the router contract.
-        IERC20(token0).forceApprove(ROUTER, _amounts[0]);
-        IERC20(token1).forceApprove(ROUTER, _amounts[1]);
+        IERC20(token0).forceApprove(router, _amounts[0]);
+        IERC20(token1).forceApprove(router, _amounts[1]);
 
-        (uint256 amountA, uint256 amountB, uint256 liquidity) = IRouter(ROUTER).addLiquidity({
+        (uint256 amountA, uint256 amountB, uint256 liquidity) = IRouter(router).addLiquidity({
             tokenA: token0,
             tokenB: token1,
             amountADesired: _amounts[0],
@@ -200,8 +201,8 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
         address token0 = IPair(lpToken).token0();
         address token1 = IPair(lpToken).token1();
-        IERC20(lpToken).forceApprove(ROUTER, _liquidityToWithdraw);
-        IRouter(ROUTER).removeLiquidity({
+        IERC20(lpToken).forceApprove(router, _liquidityToWithdraw);
+        IRouter(router).removeLiquidity({
             tokenA: token0,
             tokenB: token1,
             liquidity: _liquidityToWithdraw,
@@ -284,11 +285,11 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal = IRouter(ROUTER).quote(amountADesired, reserveA, reserveB);
+            uint256 amountBOptimal = IRouter(router).quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal = IRouter(ROUTER).quote(amountBDesired, reserveB, reserveA);
+                uint256 amountAOptimal = IRouter(router).quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }

@@ -44,6 +44,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @param _farmToken Address of the farm token
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
+        string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         address _factory,
@@ -52,7 +53,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     ) external initializer {
         // initialize farmToken related data
         farmToken = _farmToken;
-        _setupFarm(_farmStartTime, _cooldownPeriod, _rwdTokenData);
+        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
     }
 

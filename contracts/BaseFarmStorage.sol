@@ -15,6 +15,7 @@ abstract contract BaseFarmStorage {
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
+    string public farmId;
     bool public isPaused;
     bool public isClosed;
 
