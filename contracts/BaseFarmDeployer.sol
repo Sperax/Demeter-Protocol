@@ -11,30 +11,34 @@ import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 abstract contract BaseFarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
-    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant USDS = 0xD74f5255D557944cf7Dd0E45FF521520002D5748;
     address public immutable FACTORY;
     // Stores the address of farmImplementation.
     address public farmImplementation;
 
+    // Name of the farm
+    string public farmId;
+
     event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(address indexed creator, address token, uint256 amount);
-    event FarmImplementationUpdated(address newFarmImplementation);
+    event FarmImplementationUpdated(address newFarmImplementation, string newFarmId);
 
     // Custom Errors
     error InvalidAddress();
 
-    constructor(address _factory) {
+    constructor(address _factory, string memory _farmId) {
         _isNonZeroAddr(_factory);
         FACTORY = _factory;
+        farmId = _farmId;
     }
 
     /// @notice Update farm implementation's address
     /// @dev only callable by owner
     /// @param _newFarmImplementation New farm implementation's address
-    function updateFarmImplementation(address _newFarmImplementation) external onlyOwner {
+    function updateFarmImplementation(address _newFarmImplementation, string calldata _newFarmId) external onlyOwner {
+        farmId = _newFarmId;
         farmImplementation = _newFarmImplementation;
-        emit FarmImplementationUpdated(_newFarmImplementation);
+
+        emit FarmImplementationUpdated(_newFarmImplementation, _newFarmId);
     }
 
     /// @notice Collect fee and transfer it to feeReceiver.

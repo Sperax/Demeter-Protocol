@@ -25,7 +25,6 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
 
     // Demeter constants
     // @note Add only demeter related constants and configurations
-    address public constant SPA_REWARD_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188;
     address public constant USDS_VAULT = 0x6Bbc476Ee35CBA9e9c3A59fc5b10d7a0BC6f74Ca;
 
     // Farm constants

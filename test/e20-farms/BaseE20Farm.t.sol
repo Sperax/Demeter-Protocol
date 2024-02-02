@@ -90,7 +90,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
     function testMaths_updateSubscriptionForIncrease() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         address[] memory farmRewardTokens = getRewardTokens(nonLockupFarm);
         uint256 totalRewardClaimed = 0;
-        uint256 rewardRate = 1e16;
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
         address poolAddress = getPoolAddress();
         deposit(nonLockupFarm, false, 1e3);
         uint256 time = 2 days;
@@ -115,7 +116,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
-        assertEq(totalRewardClaimed, time * rewardRate);
+
+        assertEq(totalRewardClaimed, time * rewardRates[0]);
 
         skip(time);
         rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
@@ -130,7 +132,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
-        assertEq(totalRewardClaimed, 2 * time * rewardRate);
+        assertEq(totalRewardClaimed, 2 * time * rewardRates[0]);
     }
 }
 
@@ -194,7 +196,8 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
     function testMaths_updateSubscriptionForDecrease() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         address[] memory farmRewardTokens = getRewardTokens(nonLockupFarm);
         uint256 totalRewardClaimed = 0;
-        uint256 rewardRate = 1e16;
+        address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+        uint256[] memory rewardRates = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[0]);
         address poolAddress = getPoolAddress();
         deposit(nonLockupFarm, false, 1e3);
         uint256 time = 2 days;
@@ -219,7 +222,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
-        assertEq(totalRewardClaimed, time * rewardRate);
+        assertEq(totalRewardClaimed, time * rewardRates[0]);
 
         skip(time);
         rewardsForEachSubs1 = BaseFarm(nonLockupFarm).computeRewards(currentActor, DEPOSIT_ID);
@@ -234,6 +237,6 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
 
         //Check if all the rewards are distributed to the deposits
         totalRewardClaimed += rewardsForEachSubs1[0][0] + rewardsForEachSubs2[0][0];
-        assertEq(totalRewardClaimed, 2 * time * rewardRate);
+        assertEq(totalRewardClaimed, 2 * time * rewardRates[0]);
     }
 }

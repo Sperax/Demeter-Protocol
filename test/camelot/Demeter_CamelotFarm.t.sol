@@ -18,6 +18,8 @@ import {FarmFactory} from "../../contracts/FarmFactory.sol";
 contract Demeter_CamelotFarmTest is BaseFarmTest {
     using SafeERC20 for IERC20;
 
+    string public FARM_ID = "Demeter_Camelot_v1";
+
     UpgradeUtil internal upgradeUtil;
     Demeter_CamelotFarm public farmImpl;
 
@@ -31,13 +33,14 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
 
         vm.startPrank(PROXY_OWNER);
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        demeter_camelotFarm_deployer = new Demeter_CamelotFarm_Deployer(DEMETER_FACTORY, CAMELOT_FACTORY);
+        demeter_camelotFarm_deployer =
+            new Demeter_CamelotFarm_Deployer(DEMETER_FACTORY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
         factory.registerFarmDeployer(address(demeter_camelotFarm_deployer));
         vm.stopPrank();
 
         // Configure rewardTokens
-        rwdTokens.push(USDCe);
         rwdTokens.push(DAI);
+        rwdTokens.push(USDCe);
 
         invalidRewardToken = USDT;
 
@@ -65,7 +68,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         IERC20(FEE_TOKEN()).approve(address(demeter_camelotFarm_deployer), 1e20);
         address farm = demeter_camelotFarm_deployer.createFarm(_data);
 
-        assertEq(Demeter_CamelotFarm(farm).FARM_ID(), "Demeter_Camelot_v1");
+        assertEq(Demeter_CamelotFarm(farm).farmId(), FARM_ID);
         return farm;
     }
 
@@ -145,7 +148,9 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.InvalidCamelotPoolConfig.selector));
-        Demeter_CamelotFarm(farm).initialize(block.timestamp, 0, address(factory), address(0), rwdTokenData);
+        Demeter_CamelotFarm(farm).initialize(
+            FARM_ID, block.timestamp, 0, address(factory), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
+        );
     }
 
     function test_OnERC721Received_RevertWhen_NotACamelotNFT() public {

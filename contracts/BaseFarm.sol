@@ -82,8 +82,6 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     }
 
     // constants
-    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant SPA_TOKEN_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188; // GaugeSPARewarder
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
@@ -92,6 +90,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params
+    string public farmId;
     bool public isPaused;
     bool public isClosed;
 
@@ -694,12 +693,16 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
     /// @param _farmStartTime - Time of farm start.
     /// @param _cooldownPeriod - cooldown period for locked deposits.
     /// @param _rwdTokenData - Reward data for each reward token.
-    function _setupFarm(uint256 _farmStartTime, uint256 _cooldownPeriod, RewardTokenData[] memory _rwdTokenData)
-        internal
-    {
+    function _setupFarm(
+        string calldata _farmId,
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        RewardTokenData[] memory _rwdTokenData
+    ) internal {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
+        farmId = _farmId;
         _transferOwnership(msg.sender);
         // Initialize farm global params.
         lastFundUpdateTime = _farmStartTime;
@@ -723,8 +726,8 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
         for (uint8 i; i < numFunds;) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
-                rewardsPerSec: new uint256[](numRewards + 1),
-                accRewardPerShare: new uint256[](numRewards + 1)
+                rewardsPerSec: new uint256[](numRewards),
+                accRewardPerShare: new uint256[](numRewards)
             });
             rewardFunds.push(_rewardFund);
             unchecked {
@@ -732,10 +735,7 @@ abstract contract BaseFarm is Ownable, ReentrancyGuard, Initializable, Multicall
             }
         }
 
-        // Add SPA as default reward token in the farm.
-        _addRewardData(SPA, SPA_TOKEN_MANAGER);
-
-        // Initialize reward Data.
+        // Initialize reward Data
         for (uint8 iRwd; iRwd < numRewards;) {
             _addRewardData(_rwdTokenData[iRwd].token, _rwdTokenData[iRwd].tknManager);
             unchecked {
