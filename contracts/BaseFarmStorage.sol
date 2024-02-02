@@ -5,8 +5,6 @@ import {RewardFund, RewardData, Deposit, Subscription} from "./interfaces/DataTy
 
 abstract contract BaseFarmStorage {
     // constants
-    address public constant SPA = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
-    address public constant SPA_TOKEN_MANAGER = 0x432c3BcdF5E26Ec010dF9C1ddf8603bbe261c188; // GaugeSPARewarder
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
