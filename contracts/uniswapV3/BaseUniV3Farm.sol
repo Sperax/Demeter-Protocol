@@ -159,7 +159,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _ensureFarmIsActive();
+        _ensureFarmIsNotClosed();
         _ensureItsValidDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 

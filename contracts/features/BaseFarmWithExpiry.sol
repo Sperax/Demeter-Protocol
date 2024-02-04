@@ -65,8 +65,8 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     }
 
     /// @notice Validate if farm is not closed or expired.
-    function _ensureFarmIsActive() internal view override {
-        super._ensureFarmIsActive();
+    function _ensureFarmIsNotClosed() internal view override {
+        super._ensureFarmIsNotClosed();
         if (block.timestamp > farmEndTime) {
             revert FarmHasExpired();
         }
@@ -74,8 +74,8 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
 
     /// @notice Validate if farm is not paused and not expired.
     /// @return bool true if farm is not paused and not expired.
-    function _isFarmNotPaused() internal view override returns (bool) {
-        return super._isFarmNotPaused() && (block.timestamp <= farmEndTime);
+    function _isFarmActive() internal view override returns (bool) {
+        return super._isFarmActive() && (block.timestamp <= farmEndTime);
     }
 
     // --------------------- Private  Functions ---------------------

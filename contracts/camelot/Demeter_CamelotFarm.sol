@@ -111,7 +111,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         external
         nonReentrant
     {
-        _farmNotPaused(); // Allow increase deposit only when farm is not paused.
+        _ensureFarmIsActive(); // Increase deposit is allowed only when farm is active.
         _ensureItsValidDeposit(msg.sender, _depositId); // Validate the deposit.
 
         if (_amounts[0] + _amounts[1] == 0) {
@@ -181,7 +181,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         external
         nonReentrant
     {
-        _ensureFarmIsActive(); // Withdraw instead of decrease deposit when a farm is not active.
+        _ensureFarmIsNotClosed(); // Withdraw instead of decrease deposit when a farm is closed.
         _ensureItsValidDeposit(msg.sender, _depositId); // Validate the deposit.
 
         Deposit storage userDeposit = deposits[_depositId];
@@ -226,7 +226,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
-        _ensureFarmIsActive();
+        _ensureFarmIsNotClosed();
         _ensureItsValidDeposit(msg.sender, _depositId);
         INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }

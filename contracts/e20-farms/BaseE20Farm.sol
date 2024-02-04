@@ -74,7 +74,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         // Validations
-        _ensureFarmIsActive();
+        _ensureFarmIsActive(); // Increase deposit is allowed only when farm is active.
         _ensureItsValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
         if (_amount == 0) {
@@ -103,7 +103,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @dev Function is not available for locked deposits.
     function decreaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         //Validations
-        _ensureFarmIsActive();
+        _ensureFarmIsNotClosed(); // Withdraw instead of decrease deposit when farm is closed.
         _ensureItsValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
 
