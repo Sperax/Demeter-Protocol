@@ -26,7 +26,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     ///      Extension is possible only after farm started.
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
-        _ensureFarmIsActive();
+        _ensureFarmIsNotClosed();
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
