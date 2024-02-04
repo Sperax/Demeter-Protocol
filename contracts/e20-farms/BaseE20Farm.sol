@@ -74,8 +74,8 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         // Validations
-        _isFarmActive();
-        _isValidDeposit(msg.sender, _depositId);
+        _ensureFarmIsActive();
+        _ensureItsValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
         if (_amount == 0) {
             revert InvalidAmount();
@@ -103,8 +103,8 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @dev Function is not available for locked deposits.
     function decreaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
         //Validations
-        _isFarmActive();
-        _isValidDeposit(msg.sender, _depositId);
+        _ensureFarmIsActive();
+        _ensureItsValidDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
 
         if (_amount == 0 || _amount >= userDeposit.liquidity) {
@@ -138,7 +138,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _isValidDeposit(msg.sender, _depositId);
+        _ensureItsValidDeposit(msg.sender, _depositId);
         uint256 liquidity = deposits[_depositId].liquidity;
         _withdraw(msg.sender, _depositId);
 

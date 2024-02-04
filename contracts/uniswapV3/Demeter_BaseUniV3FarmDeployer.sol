@@ -58,10 +58,10 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         address _uniswapUtils,
         address _nfpmUtils
     ) BaseFarmDeployer(_factory, _farmId) {
-        _isNonZeroAddr(_uniV3Factory);
-        _isNonZeroAddr(_nfpm);
-        _isNonZeroAddr(_uniswapUtils);
-        _isNonZeroAddr(_nfpmUtils);
+        _ensureItsNonZeroAddr(_uniV3Factory);
+        _ensureItsNonZeroAddr(_nfpm);
+        _ensureItsNonZeroAddr(_uniswapUtils);
+        _ensureItsNonZeroAddr(_nfpmUtils);
 
         UNI_V3_FACTORY = _uniV3Factory;
         NFPM = _nfpm;
@@ -73,7 +73,7 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
-        _isNonZeroAddr(_data.farmAdmin);
+        _ensureItsNonZeroAddr(_data.farmAdmin);
 
         BaseUniV3Farm farmInstance = BaseUniV3Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({

@@ -79,7 +79,7 @@ contract FarmFactory is OwnableUpgradeable {
     /// @notice Register a new farm deployer.
     /// @param  _deployer Address of deployer to be registered
     function registerFarmDeployer(address _deployer) external onlyOwner {
-        _isNonZeroAddr(_deployer);
+        _ensureItsNonZeroAddr(_deployer);
         if (deployerRegistered[_deployer]) {
             revert DeployerAlreadyRegistered();
         }
@@ -147,8 +147,8 @@ contract FarmFactory is OwnableUpgradeable {
         public
         onlyOwner
     {
-        _isNonZeroAddr(_receiver);
-        _isNonZeroAddr(_feeToken);
+        _ensureItsNonZeroAddr(_receiver);
+        _ensureItsNonZeroAddr(_feeToken);
         feeReceiver = _receiver;
         feeToken = _feeToken;
         feeAmount = _amount;
@@ -157,7 +157,7 @@ contract FarmFactory is OwnableUpgradeable {
     }
 
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) private pure {
+    function _ensureItsNonZeroAddr(address _addr) private pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
         }

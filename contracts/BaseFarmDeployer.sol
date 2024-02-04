@@ -26,7 +26,7 @@ abstract contract BaseFarmDeployer is Ownable {
     error InvalidAddress();
 
     constructor(address _factory, string memory _farmId) {
-        _isNonZeroAddr(_factory);
+        _ensureItsNonZeroAddr(_factory);
         FACTORY = _factory;
         farmId = _farmId;
     }
@@ -53,7 +53,7 @@ abstract contract BaseFarmDeployer is Ownable {
     }
 
     /// @notice Validate address
-    function _isNonZeroAddr(address _addr) internal pure {
+    function _ensureItsNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
         }

@@ -56,7 +56,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     constructor(address _factory, string memory _farmId, address _protocolFactory)
         BaseFarmDeployer(_factory, _farmId)
     {
-        _isNonZeroAddr(_protocolFactory);
+        _ensureItsNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         farmImplementation = address(new BaseE20Farm());
     }
@@ -64,7 +64,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
-        _isNonZeroAddr(_data.farmAdmin);
+        _ensureItsNonZeroAddr(_data.farmAdmin);
         BaseE20Farm farmInstance = BaseE20Farm(Clones.clone(farmImplementation));
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
@@ -88,7 +88,7 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
 
     function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
         pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
-        _isNonZeroAddr(pool);
+        _ensureItsNonZeroAddr(pool);
         return pool;
     }
 }
