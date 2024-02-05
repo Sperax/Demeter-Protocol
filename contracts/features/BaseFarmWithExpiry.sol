@@ -63,13 +63,6 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
         return super.isFarmOpen() && (block.timestamp <= farmEndTime);
     }
 
-    /// @notice Returns if farm is active.
-    ///         Farm is active if it is not paused, not closed and not expired.
-    /// @return bool true if farm is active.
-    function isFarmActive() public view override returns (bool) {
-        return super.isFarmActive() && (block.timestamp <= farmEndTime);
-    }
-
     /// @notice Setup the farm data for farm expiry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
         _validateNonZeroAddr(_farmFactory);

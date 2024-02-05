@@ -330,8 +330,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     ///         Farm is active if it is not paused and not closed.
     /// @return bool true if farm is active.
     /// @dev This function can be overridden to add any new/additional logic.
-    function isFarmActive() public view virtual returns (bool) {
-        return !isPaused && !isClosed;
+    function isFarmActive() public view returns (bool) {
+        return !isPaused && isFarmOpen();
     }
 
     /// @notice Get the reward balance for specified reward token.
