@@ -249,6 +249,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     function onNFTAddToPosition(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ )
         external
         view
+        override
         returns (bool)
     {
         if (operator != address(this)) revert NotAllowed();
@@ -256,7 +257,12 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     }
 
     /// @notice This function is called when liquidity is withdrawn from an NFT position
-    function onNFTWithdraw(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ ) external view returns (bool) {
+    function onNFTWithdraw(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ )
+        external
+        view
+        override
+        returns (bool)
+    {
         if (operator != address(this)) revert NotAllowed();
         return true;
     }
