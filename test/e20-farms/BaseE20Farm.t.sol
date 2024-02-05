@@ -57,32 +57,21 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function testFuzz_lockupFarm(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function testFuzz_IncreaseDepositTest(bool lockup, uint256 amt) public {
+        address farm;
+        farm = lockup ? lockupFarm : nonLockupFarm;
+        _depositSetup(farm, lockup);
+        vm.startPrank(user);
         address poolAddress = getPoolAddress();
         vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
 
-        deal(poolAddress, currentActor, amt);
-        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(lockupFarm);
-        ERC20(poolAddress).approve(address(lockupFarm), amt);
-        BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
-        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(lockupFarm);
-        assertEq(usrBalanceAfter, usrBalanceBefore - amt);
-        assertEq(farmBalanceAfter, farmBalanceBefore + amt);
-    }
-
-    function testFuzz_nonLockupFarm(uint256 amt) public depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        address poolAddress = getPoolAddress();
-        vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
-
-        deal(poolAddress, currentActor, amt);
-        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(nonLockupFarm);
-        ERC20(poolAddress).approve(address(nonLockupFarm), amt);
-        BaseE20Farm(nonLockupFarm).increaseDeposit(DEPOSIT_ID, amt);
-        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(nonLockupFarm);
+        deal(poolAddress, user, amt);
+        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(user);
+        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
+        ERC20(poolAddress).approve(address(farm), amt);
+        BaseE20Farm(farm).increaseDeposit(DEPOSIT_ID, amt);
+        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(user);
+        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
         assertEq(usrBalanceAfter, usrBalanceBefore - amt);
         assertEq(farmBalanceAfter, farmBalanceBefore + amt);
     }

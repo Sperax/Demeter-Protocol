@@ -183,6 +183,7 @@ contract Demeter_UniV3FarmTestInheritTest is
     ClaimRewardsTest,
     GetRewardFundInfoTest,
     RecoverERC20Test,
+    RecoverRewardFundsTest,
     InitiateCooldownTest,
     AddRewardsTest,
     SetRewardRateTest,
