@@ -119,10 +119,10 @@ abstract contract DepositTest is BaseFarmTest {
         deposit(nonLockupFarm, true, 1e2, abi.encodeWithSelector(BaseFarm.LockupFunctionalityIsDisabled.selector));
     }
 
-    function test_deposit_RevertWhen_FarmIsPaused() public {
+    function test_deposit_RevertWhen_FarmIsInactive() public {
         vm.startPrank(BaseFarm(nonLockupFarm).owner());
         BaseFarm(nonLockupFarm).farmPauseSwitch(true);
-        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsPaused.selector));
+        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
     }
 
     function test_deposit_RevertWhen_FarmIsClosed() public {
@@ -1045,29 +1045,27 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
 }
 
 abstract contract FarmPauseSwitchTest is BaseFarmTest {
-    function test_RevertWhen_FarmAlreadyInRequiredState(bool _isPaused) public useKnownActor(owner) {
-        bool isPaused = BaseFarm(nonLockupFarm).isPaused();
-        vm.assume(_isPaused == isPaused);
+    function test_RevertWhen_FarmAlreadyInRequiredState() public useKnownActor(owner) {
+        bool isFarmActive = BaseFarm(nonLockupFarm).isFarmActive();
+        isFarmActive = !isFarmActive;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyInRequiredState.selector));
-        BaseFarm(nonLockupFarm).farmPauseSwitch(_isPaused);
+        BaseFarm(nonLockupFarm).farmPauseSwitch(isFarmActive);
     }
 
-    function test_FarmPauseSwitch_RevertWhen_FarmIsClosed(bool _isPaused) public useKnownActor(owner) {
-        bool isPaused = BaseFarm(nonLockupFarm).isPaused();
-        vm.assume(_isPaused != isPaused);
+    function test_FarmPauseSwitch_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
+        bool isFarmActive = BaseFarm(nonLockupFarm).isFarmActive();
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).farmPauseSwitch(_isPaused);
+        BaseFarm(nonLockupFarm).farmPauseSwitch(isFarmActive);
     }
 
-    function test_farmPause(bool lockup, bool _isPaused) public useKnownActor(owner) {
+    function test_farmPause(bool lockup) public useKnownActor(owner) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        bool isPaused = BaseFarm(farm).isPaused();
-        vm.assume(_isPaused != isPaused);
+        bool isFarmActive = BaseFarm(farm).isFarmActive();
         vm.expectEmit(address(farm));
-        emit FarmPaused(_isPaused);
-        BaseFarm(farm).farmPauseSwitch(_isPaused);
+        emit FarmPaused(isFarmActive);
+        BaseFarm(farm).farmPauseSwitch(isFarmActive);
     }
 }
 
@@ -1159,8 +1157,8 @@ abstract contract CloseFarmTest is BaseFarmTest {
         vm.expectEmit(address(farm));
         emit FarmClosed();
         BaseFarm(farm).closeFarm();
-        assertEq(BaseFarm(farm).isClosed(), true);
-        assertEq(BaseFarm(farm).isPaused(), true);
+        assertEq(BaseFarm(farm).isFarmOpen(), false);
+        assertEq(BaseFarm(farm).isFarmActive(), false);
         for (uint256 i = 0; i < rwdTokens.length; i++) {
             assertEq(BaseFarm(farm).getRewardRates(rewardTokens[i]), rwdRate);
         }
@@ -1210,7 +1208,7 @@ abstract contract MulticallTest is BaseFarmTest {
         BaseFarm(lockupFarm).multicall(data);
 
         assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod);
-        assertEq(BaseFarm(lockupFarm).isClosed(), true);
+        assertEq(BaseFarm(lockupFarm).isFarmOpen(), false);
     }
 
     function test_RevertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {

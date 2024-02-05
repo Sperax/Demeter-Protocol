@@ -14,8 +14,8 @@ abstract contract BaseFarmStorage {
 
     // Global Params
     string public farmId;
-    bool public isPaused;
-    bool public isClosed;
+    bool internal isPaused;
+    bool internal isClosed;
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
