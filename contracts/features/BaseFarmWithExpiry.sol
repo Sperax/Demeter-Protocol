@@ -26,7 +26,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     ///      Extension is possible only after farm started.
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
-        _ensureFarmIsNotClosed();
+        _validateFarmOpen();
         if (lastFundUpdateTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
@@ -59,14 +59,14 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
 
     /// @notice Setup the farm data for farm expiry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
-        _ensureItsNonZeroAddr(_farmFactory);
+        _validateNonZeroAddr(_farmFactory);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmFactory = _farmFactory;
     }
 
     /// @notice Validate if farm is not closed or expired.
-    function _ensureFarmIsNotClosed() internal view override {
-        super._ensureFarmIsNotClosed();
+    function _validateFarmOpen() internal view override {
+        super._validateFarmOpen();
         if (block.timestamp > farmEndTime) {
             revert FarmHasExpired();
         }

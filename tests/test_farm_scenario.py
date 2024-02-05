@@ -317,7 +317,7 @@ def test_scenario_1(
     farm._updateFarmRewardData({'from': owner})
 
     with brownie.reverts('Invalid address'):
-        farm._ensureItsNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
+        farm._validateNonZeroAddr(brownie.ZERO_ADDRESS, {'from': owner})
     if(farm_name == 'test_farm_with_lockup'):
         withdraw_txn = farm.withdraw(
             0, {'from': accounts[1], 'gas_limit': GAS_LIMIT})

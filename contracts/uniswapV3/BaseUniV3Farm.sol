@@ -89,10 +89,10 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         address _uniswapUtils,
         address _nfpmUtils
     ) external initializer {
-        _ensureItsNonZeroAddr(_uniV3Factory);
-        _ensureItsNonZeroAddr(_nfpm);
-        _ensureItsNonZeroAddr(_uniswapUtils);
-        _ensureItsNonZeroAddr(_nfpmUtils);
+        _validateNonZeroAddr(_uniV3Factory);
+        _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_uniswapUtils);
+        _validateNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(_uniV3Factory).getPool(
@@ -147,7 +147,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _ensureItsValidDeposit(msg.sender, _depositId);
+        _validateDeposit(msg.sender, _depositId);
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
@@ -159,8 +159,8 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _ensureFarmIsNotClosed();
-        _ensureItsValidDeposit(msg.sender, _depositId);
+        _validateFarmOpen();
+        _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
         address pm = nfpm;
