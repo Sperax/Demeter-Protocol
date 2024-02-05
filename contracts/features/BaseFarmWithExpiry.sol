@@ -17,7 +17,6 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     event ExtensionFeeCollected(address token, uint256 extensionFee);
 
     error InvalidExtension();
-    error FarmHasExpired();
     error FarmNotYetStarted();
 
     /// @notice Update the farm end time.
@@ -57,25 +56,25 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
             : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
     }
 
+    /// @notice Returns if farm is open.
+    ///         Farm is open if it not closed and not expired.
+    /// @return bool true if farm is open.
+    function isFarmOpen() public view override returns (bool) {
+        return super.isFarmOpen() && (block.timestamp <= farmEndTime);
+    }
+
+    /// @notice Returns if farm is active.
+    ///         Farm is active if it is not paused, not closed and not expired.
+    /// @return bool true if farm is active.
+    function isFarmActive() public view override returns (bool) {
+        return super.isFarmActive() && (block.timestamp <= farmEndTime);
+    }
+
     /// @notice Setup the farm data for farm expiry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
         _validateNonZeroAddr(_farmFactory);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmFactory = _farmFactory;
-    }
-
-    /// @notice Validate if farm is not closed or expired.
-    function _validateFarmOpen() internal view override {
-        super._validateFarmOpen();
-        if (block.timestamp > farmEndTime) {
-            revert FarmHasExpired();
-        }
-    }
-
-    /// @notice Validate if farm is not paused and not expired.
-    /// @return bool true if farm is not paused and not expired.
-    function _isFarmActive() internal view override returns (bool) {
-        return super._isFarmActive() && (block.timestamp <= farmEndTime);
     }
 
     // --------------------- Private  Functions ---------------------

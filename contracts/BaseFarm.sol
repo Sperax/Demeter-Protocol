@@ -67,7 +67,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     error RewardTokenAlreadyAdded();
     error DepositDoesNotExist();
     error FarmIsClosed();
-    error FarmIsPaused();
+    error FarmIsInactive();
     error NotTheTokenManager();
     error InvalidAddress();
     error ZeroAmount();
@@ -236,7 +236,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
             rewards[iSub] = new uint256[](numRewards);
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                if (funds[fundId].totalLiquidity != 0 && _isFarmActive()) {
+                if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
@@ -316,6 +316,22 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _validateFarmOpen();
         _validateDeposit(_account, _depositId);
         _updateAndClaimFarmRewards(_account, _depositId);
+    }
+
+    /// @notice Returns if farm is open.
+    ///         Farm is open if it not closed.
+    /// @return bool true if farm is open.
+    /// @dev This function can be overridden to add any new/additional logic.
+    function isFarmOpen() public view virtual returns (bool) {
+        return !isClosed;
+    }
+
+    /// @notice Returns if farm is active.
+    ///         Farm is active if it is not paused and not closed.
+    /// @return bool true if farm is active.
+    /// @dev This function can be overridden to add any new/additional logic.
+    function isFarmActive() public view virtual returns (bool) {
+        return !isPaused && !isClosed;
     }
 
     /// @notice Get the reward balance for specified reward token.
@@ -450,7 +466,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         // Check for the withdrawal criteria.
         // Note: If farm is not active, skip the cooldown check.
         uint256 depositExpiryDate = deposits[_depositId].expiryDate;
-        if (_isFarmActive()) {
+        if (isFarmActive()) {
             if (deposits[_depositId].cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
@@ -581,7 +597,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         if (block.timestamp > lastFundUpdateTime) {
             // If farm is paused don't accrue any rewards,
             // only update the lastFundUpdateTime.
-            if (_isFarmActive()) {
+            if (isFarmActive()) {
                 uint256 time;
                 unchecked {
                     time = block.timestamp - lastFundUpdateTime;
@@ -727,30 +743,22 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         }
     }
 
-    /// @notice Validate if farm is not closed. Revert if farm is closed.
+    /// @notice Validate if farm is open. Revert otherwise.
     /// @dev This function can be overridden to add any new/additional logic.
-    function _validateFarmOpen() internal view virtual {
-        if (isClosed) {
+    function _validateFarmOpen() internal view {
+        if (!isFarmOpen()) {
             revert FarmIsClosed();
         }
     }
 
-    /// @notice Validate if farm is active. Revert if farm is not active.
+    /// @notice Validate if farm is active. Revert otherwise.
     ///         Farm is active if it is not paused and not closed.
     /// @dev This function can be overridden to add any new/additional logic.
-    // todo - need to check if this function should be virtual.
-    function _validateFarmActive() internal view virtual {
-        _validateFarmOpen();
-        if (isPaused) {
-            revert FarmIsPaused();
+    function _validateFarmActive() internal view {
+        _validateFarmOpen(); // although this is a redundant check, it will through appropriate error message.
+        if (!isFarmActive()) {
+            revert FarmIsInactive();
         }
-    }
-
-    /// @notice Validate if farm is not paused and return the status.
-    /// @return bool true if farm is not paused and not closed.
-    /// @dev This function can be overridden to add any new/additional logic.
-    function _isFarmActive() internal view virtual returns (bool) {
-        return !isPaused && !isClosed;
     }
 
     /// @notice Validate the caller is the token Manager. Revert otherwise.
