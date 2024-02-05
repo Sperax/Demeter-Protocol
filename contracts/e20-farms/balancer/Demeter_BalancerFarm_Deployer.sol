@@ -54,7 +54,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @param _balancerVault Address of Balancer's Vault
     /// @dev Deploys one farm so that it can be cloned later
     constructor(address _factory, string memory _farmId, address _balancerVault) BaseFarmDeployer(_factory, _farmId) {
-        _isNonZeroAddr(_balancerVault);
+        _validateNonZeroAddr(_balancerVault);
 
         BALANCER_VAULT = _balancerVault;
         farmImplementation = address(new BaseE20Farm());
@@ -65,7 +65,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @return Address of the new farm
     /// @dev The caller of this function should approve feeAmount (USDs) for this contract
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
-        _isNonZeroAddr(_data.farmAdmin);
+        _validateNonZeroAddr(_data.farmAdmin);
 
         address pairPool = validatePool(_data.poolId);
 
@@ -92,6 +92,6 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @param _poolId bytes32 Id of the pool
     function validatePool(bytes32 _poolId) public view returns (address pool) {
         (pool,) = IBalancerVault(BALANCER_VAULT).getPool(_poolId);
-        _isNonZeroAddr(pool);
+        _validateNonZeroAddr(pool);
     }
 }
