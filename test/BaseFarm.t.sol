@@ -599,7 +599,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[1]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(1);
         BaseFarm(nonLockupFarm).withdraw(1);
@@ -646,7 +645,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[5]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(5);
         BaseFarm(nonLockupFarm).withdraw(5);
@@ -693,7 +691,6 @@ abstract contract WithdrawTest is BaseFarmTest {
         vm.startPrank(actors[10]);
         uint256 time = COOLDOWN_PERIOD * 86400 + 100;
         skip(time);
-        uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(10);
         BaseFarm(nonLockupFarm).withdraw(10);
