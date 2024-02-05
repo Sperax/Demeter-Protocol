@@ -137,13 +137,6 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         return this.onERC721Received.selector;
     }
 
-    /// @notice Function to lock a staked deposit
-    /// @param _depositId The id of the deposit to be locked
-    /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId) external override nonReentrant {
-        _initiateCooldown(_depositId);
-    }
-
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {

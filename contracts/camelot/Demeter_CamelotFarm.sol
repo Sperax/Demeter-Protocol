@@ -96,13 +96,6 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         return this.onERC721Received.selector;
     }
 
-    /// @notice Function to lock a staked deposit
-    /// @param _depositId The id of the deposit to be locked
-    /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId) external override nonReentrant {
-        _initiateCooldown(_depositId);
-    }
-
     /// @notice Allow user to increase liquidity for a deposit.
     /// @param _depositId The id of the deposit to be increased.
     /// @param _amounts Desired amount of tokens to be increased.

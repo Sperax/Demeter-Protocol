@@ -78,10 +78,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _disableInitializers();
     }
 
-    /// @notice A function to be called to initiate cooldown.
-    /// @param _depositId Id of the deposit.
-    function initiateCooldown(uint256 _depositId) external virtual;
-
     /// @notice A function to be called to withdraw deposit.
     /// @param _depositId Id of the deposit.
     function withdraw(uint256 _depositId) external virtual;
@@ -90,6 +86,13 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _depositId The id of the deposit.
     function claimRewards(uint256 _depositId) external {
         claimRewards(msg.sender, _depositId);
+    }
+
+    /// @notice Function to lock a staked deposit.
+    /// @param _depositId The id of the deposit to be locked.
+    /// @dev _depositId is corresponding to the user's deposit.
+    function initiateCooldown(uint256 _depositId) external virtual nonReentrant {
+        _initiateCooldown(_depositId);
     }
 
     /// @notice Add rewards to the farm.
