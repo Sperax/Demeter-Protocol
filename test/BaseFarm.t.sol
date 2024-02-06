@@ -656,28 +656,21 @@ abstract contract AddRewardsTest is BaseFarmTest {
 abstract contract SetRewardRateTest is BaseFarmTest {
     function test_SetRewardRate_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         uint256[] memory rwdRate = new uint256[](1);
-        rwdRate[0] = 1e16;
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        vm.startPrank(owner);
+        rwdRate[0] = ERC20(rewardTokens[0]).decimals();
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseFarm(nonLockupFarm).setRewardRate(rewardTokens[0], rwdRate);
     }
 
-    function testFuzz_RevertWhen_InvalidRewardRatesLength(uint256 rwdRateNonLockup) public useKnownActor(owner) {
+    function testFuzz_RevertWhen_InvalidRewardRatesLength() public useKnownActor(owner) {
         uint256[] memory rwdRate = new uint256[](1);
-        rwdRate[0] = rwdRateNonLockup;
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        uint256[] memory oldRewardRate = new uint256[](1);
         for (uint8 i; i < rewardTokens.length; ++i) {
             uint8 decimals = ERC20(rewardTokens[i]).decimals();
-            oldRewardRate = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[i]);
-            rwdRateNonLockup = bound(rwdRateNonLockup, 1 * 10 ** decimals, 2 * 10 ** decimals);
-
+            rwdRate[0] = 2 * 10 ** decimals;
             vm.startPrank(currentActor);
-
             vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidRewardRatesLength.selector));
-
             BaseFarm(lockupFarm).setRewardRate(rewardTokens[i], rwdRate);
         }
     }
@@ -933,7 +926,7 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 
-    function testFuzz_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
+    function test_updateCoolDown_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         uint256 cooldownPeriod = 20;
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
