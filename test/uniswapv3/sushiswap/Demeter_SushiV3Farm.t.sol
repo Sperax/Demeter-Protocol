@@ -171,6 +171,7 @@ contract Demeter_SushiV3FarmInheritTest is
     WithdrawWithExpiryTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
+    RecoverRewardFundsTest,
     InitiateCooldownTest,
     AddRewardsTest,
     SetRewardRateTest,
