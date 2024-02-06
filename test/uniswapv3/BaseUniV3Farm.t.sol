@@ -322,6 +322,49 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
+    // Deposit test.
+    function test_onERC721Received(bool lockup) public useKnownActor(user) {
+        address farm;
+        farm = lockup ? lockupFarm : nonLockupFarm;
+        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
+        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+
+        deal(DAI, currentActor, depositAmount1);
+        IERC20(DAI).approve(NFPM, depositAmount1);
+
+        deal(USDCe, currentActor, depositAmount2);
+        IERC20(USDCe).approve(NFPM, depositAmount2);
+
+        (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
+            INFPM.MintParams({
+                token0: DAI,
+                token1: USDCe,
+                fee: FEE_TIER,
+                tickLower: TICK_LOWER,
+                tickUpper: TICK_UPPER,
+                amount0Desired: depositAmount1,
+                amount1Desired: depositAmount2,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: currentActor,
+                deadline: block.timestamp
+            })
+        );
+
+        if (!lockup) {
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+        } else {
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            vm.expectEmit(address(farm));
+            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+        }
+        vm.expectEmit(address(farm));
+        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+        IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
+    }
+
     function test_RevertWhen_NotAUniV3NFT() public {
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NotAUniV3NFT.selector));
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");

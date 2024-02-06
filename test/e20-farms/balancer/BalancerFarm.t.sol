@@ -65,6 +65,7 @@ contract BalancerFarmTest is
     UpdateCoolDownPeriodTest,
     CloseFarmTest,
     _SetupFarmTest,
+    E20FarmDepositTest,
     IncreaseDepositTest,
     DecreaseDepositTest,
     RecoverERC20E20FarmTest,
@@ -135,24 +136,7 @@ contract BalancerFarmTest is
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(farm), amt);
-        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
-        if (!locked) {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-        } else {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
-        }
-        vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, amt);
         BaseE20Farm(farm).deposit(amt, locked);
-        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
-        assertEq(usrBalanceAfter, usrBalanceBefore - amt);
-        assertEq(farmBalanceAfter, farmBalanceBefore + amt);
         return amt;
     }
 
