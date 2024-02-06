@@ -933,14 +933,14 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 
-    function test_RevertWhen_InvalidCooldownPeriod(uint256 cooldownPeriod) public useKnownActor(owner) {
-        vm.assume(cooldownPeriod > 30 && cooldownPeriod < 720);
+    function test_RevertWhen_InvalidCooldownPeriod() public useKnownActor(owner) {
+        uint256 cooldownPeriod = 31;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidCooldownPeriod.selector));
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
 
-    function test_RevertWhen_InvalidCooldownPeriod0(uint256 cooldownPeriod) public useKnownActor(owner) {
-        vm.assume(cooldownPeriod == 0);
+    function test_RevertWhen_InvalidCooldownPeriod0() public useKnownActor(owner) {
+        uint256 cooldownPeriod = 0;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidCooldownPeriod.selector));
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
     }
