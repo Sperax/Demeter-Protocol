@@ -85,7 +85,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
     function testFuzz_IncreaseDepositTest(bool lockup, uint256 amt) public {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         vm.startPrank(user);
         address poolAddress = getPoolAddress();
         vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());

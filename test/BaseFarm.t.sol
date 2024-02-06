@@ -56,11 +56,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
         newTokenManager = actors[3];
     }
 
-    function _depositSetup(address farm, bool lockup) public {
-        addRewards(farm);
-        setRewardRates(farm);
-        deposit(farm, lockup, 1e3);
-    }
+    function depositSetupFn(address farm, bool lockup) public depositSetup(farm, lockup) {}
 
     function addRewards(address farm) public useKnownActor(owner) {
         address[] memory farmRewardTokens = getRewardTokens(farm);
@@ -175,7 +171,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         uint256 rewardsForEachSubsLength;
         farm = lockup ? lockupFarm : nonLockupFarm;
         rewardsForEachSubsLength = lockup ? 2 : 1;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         skip(86400 * 15);
         vm.startPrank(user);
         address[] memory rewardTokens = getRewardTokens(farm);
@@ -325,7 +321,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     function test_withdraw_paused(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         uint256 depositId = 1;
         uint256 time = 3 days;
         BaseFarm(farm).getRewardBalance(rwdTokens[0]);
@@ -362,7 +358,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     function test_withdraw_closed(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         uint256 depositId = 1;
         uint256 time = 3 days;
         BaseFarm(farm).getRewardBalance(rwdTokens[0]);
@@ -725,7 +721,7 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
     function test_rewardBalance(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         for (uint8 i = 0; i < rwdTokens.length; ++i) {
             uint256 rwdBalance = BaseFarm(farm).getRewardBalance(rwdTokens[i]);
             assert(rwdBalance != 0);
@@ -768,7 +764,7 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     function test_subInfo(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         Subscription memory numSubscriptions = BaseFarm(farm).getSubscriptionInfo(1, 0);
         assertEq(numSubscriptions.fundId, 0);
     }
@@ -818,7 +814,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
     function test_recoverRewardFund_one(bool lockup) public {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
-        _depositSetup(farm, lockup);
+        depositSetupFn(farm, lockup);
         vm.startPrank(owner);
         address[] memory rewardTokens = getRewardTokens(farm);
 
