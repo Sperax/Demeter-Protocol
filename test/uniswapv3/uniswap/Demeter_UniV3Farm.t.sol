@@ -200,7 +200,9 @@ contract Demeter_UniV3FarmTestInheritTest is
     InitializeTest,
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
-    ClaimUniswapFeeTest
+    ClaimUniswapFeeTest,
+    IncreaseDepositTest,
+    DecreaseDepositTest
 {
     function setUp() public override(Demeter_UniV3FarmTest, BaseFarmTest) {
         super.setUp();
