@@ -124,12 +124,12 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    function test_recoverE20_LockupFarm_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
+    function test_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
-    function test_recoverE20_LockupFarm_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
+    function test_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }

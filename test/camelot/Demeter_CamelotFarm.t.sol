@@ -141,7 +141,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         return camelotProxy;
     }
 
-    function test_initialize_RevertWhen_camelotPairIsZero() public {
+    function test_RevertWhen_camelotPairIsZero() public {
         address farm = createFarmImplementation();
         address[] memory rewardToken = rwdTokens;
         RewardTokenData[] memory rwdTokenData = new RewardTokenData[](rewardToken.length);
@@ -153,20 +153,24 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
             FARM_ID, block.timestamp, 0, address(factory), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
         );
     }
+}
 
-    function test_OnERC721Received_RevertWhen_NotACamelotNFT() public {
+contract OnERC721ReceivedTest is Demeter_CamelotFarmTest {
+    function test_RevertWhen_NotACamelotNFT() public {
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotACamelotNFT.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_OnERC721Received_RevertWhen_NoData() public {
+    function test_RevertWhen_NoData() public {
         address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
         vm.startPrank(nftPool);
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NoData.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
+}
 
-    function test_onNFTHarvest_RevertWhen_notNftPool() public {
+contract OnNFTHarvestTest is Demeter_CamelotFarmTest {
+    function test_RevertWhen_notNftPool() public {
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotAllowed.selector));
         Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
     }
@@ -177,7 +181,9 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         bool harvested = Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), user, 742, 1, 1);
         assertEq(harvested, true);
     }
+}
 
+contract ClaimPoolRewardsTest is Demeter_CamelotFarmTest {
     function test_claimPoolRewards_RevertWhen_FarmIsClosed()
         public
         depositSetup(nonLockupFarm, false)
