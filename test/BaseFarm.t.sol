@@ -920,7 +920,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
 }
 
 abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
-    function testFuzz_updateCoolDown_noLockupFarm() public useKnownActor(owner) {
+    function test_updateCoolDown_noLockupFarm() public useKnownActor(owner) {
         uint256 cooldownPeriod = 20;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmDoesNotSupportLockup.selector));
         BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
