@@ -4,7 +4,14 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../../contracts/uniswapV3/BaseUniV3Farm.sol";
+import {
+    BaseE721Farm,
+    BaseUniV3Farm,
+    UniswapPoolData,
+    IUniswapV3Factory,
+    IUniswapV3TickSpacing,
+    INFPM
+} from "../../contracts/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
@@ -25,7 +32,6 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
 
     // Custom Errors
     error InvalidUniswapPoolConfig();
-    error NotAUniV3NFT();
     error NoData();
     error NoFeeToClaim();
     error IncorrectPoolToken();
@@ -91,7 +97,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -112,7 +118,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -134,7 +140,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nfpm: NFPM,
+                _nftContract: NFPM,
                 _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
@@ -155,7 +161,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nfpm: NFPM,
+                _nftContract: NFPM,
                 _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
@@ -177,7 +183,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -199,7 +205,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -219,7 +225,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -239,7 +245,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -259,7 +265,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -279,7 +285,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -301,7 +307,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -322,13 +328,13 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
-    function test_RevertWhen_NotAUniV3NFT() public {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NotAUniV3NFT.selector));
+    function test_RevertWhen_UnauthorisedNFTContract() public {
+        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.UnauthorisedNFTContract.selector));
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
     function test_RevertWhen_NoData() public useKnownActor(NFPM) {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoData.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.NoData.selector));
         BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 

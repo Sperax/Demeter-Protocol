@@ -15,6 +15,7 @@ import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../contracts/features/OperableDeposit.sol";
 import {FarmFactory} from "../../contracts/FarmFactory.sol";
 import {Deposit, Subscription, RewardFund} from "../../contracts/interfaces/DataTypes.sol";
+import {BaseE721Farm} from "../../contracts/e721-farms/BaseE721Farm.sol";
 
 contract Demeter_CamelotFarmTest is BaseFarmTest {
     using SafeERC20 for IERC20;
@@ -154,15 +155,15 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         );
     }
 
-    function test_OnERC721Received_RevertWhen_NotACamelotNFT() public {
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotACamelotNFT.selector));
+    function test_OnERC721Received_RevertWhen_UnauthorisedNFTContract() public {
+        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.UnauthorisedNFTContract.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
     function test_OnERC721Received_RevertWhen_NoData() public {
         address nftPool = Demeter_CamelotFarm(lockupFarm).nftContract();
         vm.startPrank(nftPool);
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NoData.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.NoData.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 

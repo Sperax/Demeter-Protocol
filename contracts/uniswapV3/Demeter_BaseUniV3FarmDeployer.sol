@@ -84,7 +84,7 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NFPM_UTILS
         });
