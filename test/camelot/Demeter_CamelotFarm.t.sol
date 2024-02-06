@@ -213,7 +213,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
 contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
     using SafeERC20 for IERC20;
 
-    function test_RevertWhen_FarmIsPaused() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
+    function test_RevertWhen_FarmIsInactive() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
@@ -228,7 +228,7 @@ contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsPaused.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
     }
 

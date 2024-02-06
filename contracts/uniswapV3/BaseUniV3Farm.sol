@@ -85,10 +85,10 @@ contract BaseUniV3Farm is BaseE721Farm {
         address _uniswapUtils,
         address _nfpmUtils
     ) external initializer {
-        _isNonZeroAddr(_uniV3Factory);
-        _isNonZeroAddr(_nfpm);
-        _isNonZeroAddr(_uniswapUtils);
-        _isNonZeroAddr(_nfpmUtils);
+        _validateNonZeroAddr(_uniV3Factory);
+        _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_uniswapUtils);
+        _validateNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(_uniV3Factory).getPool(
@@ -136,7 +136,7 @@ contract BaseUniV3Farm is BaseE721Farm {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _isValidDeposit(msg.sender, _depositId);
+        _validateDeposit(msg.sender, _depositId);
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
@@ -148,8 +148,8 @@ contract BaseUniV3Farm is BaseE721Farm {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _isFarmActive();
-        _isValidDeposit(msg.sender, _depositId);
+        _validateFarmOpen();
+        _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
         address pm = nftContract;

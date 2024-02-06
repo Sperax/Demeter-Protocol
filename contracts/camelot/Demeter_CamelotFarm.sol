@@ -57,7 +57,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
         address _router,
         address _nftPoolFactory
     ) external initializer {
-        _isNonZeroAddr(_router);
+        _validateNonZeroAddr(_router);
         // initialize uniswap related data
         nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
         if (nftContract == address(0)) {
@@ -100,8 +100,8 @@ contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
         external
         nonReentrant
     {
-        _farmNotPaused(); // Allow increase deposit only when farm is not paused.
-        _isValidDeposit(msg.sender, _depositId); // Validate the deposit.
+        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
+        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
 
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
@@ -158,7 +158,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _isValidDeposit(msg.sender, _depositId);
+        _validateDeposit(msg.sender, _depositId);
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
@@ -170,8 +170,8 @@ contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
         external
         nonReentrant
     {
-        _isFarmActive(); // Withdraw instead of decrease deposit when a farm is not active.
-        _isValidDeposit(msg.sender, _depositId); // Validate the deposit.
+        _validateFarmOpen(); // Withdraw instead of decrease deposit when a farm is closed.
+        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
 
         Deposit storage userDeposit = deposits[_depositId];
 
@@ -215,8 +215,8 @@ contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
-        _isFarmActive();
-        _isValidDeposit(msg.sender, _depositId);
+        _validateFarmOpen();
+        _validateDeposit(msg.sender, _depositId);
         INFTPool(nftContract).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }
 

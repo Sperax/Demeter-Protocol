@@ -67,7 +67,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     error RewardTokenAlreadyAdded();
     error DepositDoesNotExist();
     error FarmIsClosed();
-    error FarmIsPaused();
+    error FarmIsInactive();
     error NotTheTokenManager();
     error InvalidAddress();
     error ZeroAmount();
@@ -102,7 +102,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         if (_amount == 0) {
             revert ZeroAmount();
         }
-        _isFarmActive();
+        _validateFarmOpen();
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
         }
@@ -116,11 +116,11 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Update the cooldown period.
     /// @param _newCooldownPeriod The new cooldown period (in days).
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
-        _isFarmActive();
+        _validateFarmOpen();
         if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
-        _isValidCooldownPeriod(_newCooldownPeriod);
+        _validateCooldownPeriod(_newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
         emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
@@ -136,7 +136,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Pause / UnPause the farm.
     /// @param _isPaused Desired state of the farm (true to pause the farm).
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
-        _isFarmActive();
+        _validateFarmOpen();
         if (isPaused == _isPaused) {
             revert FarmAlreadyInRequiredState();
         }
@@ -148,7 +148,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Recover rewardToken from the farm in case of EMERGENCY.
     /// @dev Shuts down the farm completely.
     function closeFarm() external onlyOwner nonReentrant {
-        _isFarmActive();
+        _validateFarmOpen();
         _updateFarmRewardData();
         isPaused = true;
         isClosed = true;
@@ -185,7 +185,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _amount The amount of the reward tokens to be withdrawn.
     /// @dev Function recovers minOf(_amount, rewardsLeft).
     function recoverRewardFunds(address _rwdToken, uint256 _amount) external nonReentrant {
-        _isTokenManager(_rwdToken);
+        _validateTokenManager(_rwdToken);
         _updateFarmRewardData();
         _recoverRewardFunds(_rwdToken, _amount);
     }
@@ -194,8 +194,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
-        _isFarmActive();
-        _isTokenManager(_rwdToken);
+        _validateFarmOpen();
+        _validateTokenManager(_rwdToken);
         _updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
     }
@@ -205,9 +205,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _rwdToken The reward token's address.
     /// @param _newTknManager Address of the new token manager.
     function updateRewardData(address _rwdToken, address _newTknManager) external {
-        _isFarmActive();
-        _isTokenManager(_rwdToken);
-        _isNonZeroAddr(_newTknManager);
+        _validateFarmOpen();
+        _validateTokenManager(_rwdToken);
+        _validateNonZeroAddr(_newTknManager);
         rewardData[_rwdToken].tknManager = _newTknManager;
         emit RewardDataUpdated(_rwdToken, _newTknManager);
     }
@@ -217,7 +217,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _depositId The id of the deposit.
     /// @return rewards The total accrued rewards for the deposit for each subscription (uint256[][]).
     function computeRewards(address _account, uint256 _depositId) external view returns (uint256[][] memory rewards) {
-        _isValidDeposit(_account, _depositId);
+        _validateDeposit(_account, _depositId);
         Deposit memory userDeposit = deposits[_depositId];
         Subscription[] memory depositSubs = subscriptions[_depositId];
         RewardFund[] memory funds = rewardFunds;
@@ -239,7 +239,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
             rewards[iSub] = new uint256[](numRewards);
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                if (funds[fundId].totalLiquidity != 0 && _isFarmNotPaused()) {
+                if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
@@ -316,9 +316,25 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _depositId The id of the deposit.
     /// @dev Anyone can call this function to claim rewards for the user.
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
-        _isFarmActive();
-        _isValidDeposit(_account, _depositId);
+        _validateFarmOpen();
+        _validateDeposit(_account, _depositId);
         _updateAndClaimFarmRewards(_account, _depositId);
+    }
+
+    /// @notice Returns if farm is open.
+    ///         Farm is open if it not closed.
+    /// @return bool true if farm is open.
+    /// @dev This function can be overridden to add any new/additional logic.
+    function isFarmOpen() public view virtual returns (bool) {
+        return !isClosed;
+    }
+
+    /// @notice Returns if farm is active.
+    ///         Farm is active if it is not paused and not closed.
+    /// @return bool true if farm is active.
+    /// @dev This function can be overridden to add any new/additional logic.
+    function isFarmActive() public view returns (bool) {
+        return !isPaused && isFarmOpen();
     }
 
     /// @notice Get the reward balance for specified reward token.
@@ -361,8 +377,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _lockup Lockup option for the deposit.
     /// @param _liquidity Liquidity amount to be added to the pool.
     function _deposit(address _account, bool _lockup, uint256 _liquidity) internal returns (uint256) {
-        // Allow deposit only when farm is not paused.
-        _farmNotPaused();
+        // Allow deposit only when farm is not paused and not closed.
+        _validateFarmActive();
 
         if (cooldownPeriod == 0) {
             if (_lockup) {
@@ -408,8 +424,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Common logic for initiating cooldown.
     /// @param _depositId User's deposit Id.
     function _initiateCooldown(uint256 _depositId) internal {
-        _farmNotPaused();
-        _isValidDeposit(msg.sender, _depositId);
+        _validateFarmActive();
+        _validateDeposit(msg.sender, _depositId);
         Deposit storage userDeposit = deposits[_depositId];
 
         // Validate if the deposit is in locked state.
@@ -433,7 +449,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     function _updateFarmStartTime(uint256 _newStartTime) internal {
-        _isFarmActive();
+        _validateFarmOpen();
         if (lastFundUpdateTime <= block.timestamp) {
             revert FarmAlreadyStarted();
         }
@@ -451,9 +467,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _depositId user's deposit id.
     function _withdraw(address _account, uint256 _depositId) internal {
         // Check for the withdrawal criteria.
-        // Note: If farm is paused, skip the cooldown check.
+        // Note: If farm is not active, skip the cooldown check.
         uint256 depositExpiryDate = deposits[_depositId].expiryDate;
-        if (_isFarmNotPaused()) {
+        if (isFarmActive()) {
             if (deposits[_depositId].cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
@@ -584,7 +600,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         if (block.timestamp > lastFundUpdateTime) {
             // If farm is paused don't accrue any rewards,
             // only update the lastFundUpdateTime.
-            if (_isFarmNotPaused()) {
+            if (isFarmActive()) {
                 uint256 time;
                 unchecked {
                     time = block.timestamp - lastFundUpdateTime;
@@ -637,7 +653,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for the farm.
         uint8 numFunds = 1;
         if (_cooldownPeriod != 0) {
-            _isValidCooldownPeriod(_cooldownPeriod);
+            _validateCooldownPeriod(_cooldownPeriod);
             cooldownPeriod = _cooldownPeriod;
             numFunds = 2;
         }
@@ -677,8 +693,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _tknManager Address of the reward token Manager.
     function _addRewardData(address _token, address _tknManager) internal {
         // Validate if addresses are correct.
-        _isNonZeroAddr(_token);
-        _isNonZeroAddr(_tknManager);
+        _validateNonZeroAddr(_token);
+        _validateNonZeroAddr(_tknManager);
 
         if (rewardData[_token].tknManager != address(0)) {
             revert RewardTokenAlreadyAdded();
@@ -724,38 +740,33 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Validate the deposit for account.
     /// @param _account Address of the caller to be checked against depositor.
     /// @param _depositId Id of the deposit.
-    function _isValidDeposit(address _account, uint256 _depositId) internal view {
+    function _validateDeposit(address _account, uint256 _depositId) internal view {
         if (deposits[_depositId].depositor != _account || _account == address(0)) {
             revert DepositDoesNotExist();
         }
     }
 
-    /// @notice Validate if farm is active. Revert if farm is not active.
+    /// @notice Validate if farm is open. Revert otherwise.
     /// @dev This function can be overridden to add any new/additional logic.
-    function _isFarmActive() internal view virtual {
-        if (isClosed) {
+    function _validateFarmOpen() internal view {
+        if (!isFarmOpen()) {
             revert FarmIsClosed();
         }
     }
 
-    /// @notice Validate if farm is not paused and return the status.
-    /// @return bool true if farm is not paused.
+    /// @notice Validate if farm is active. Revert otherwise.
+    ///         Farm is active if it is not paused and not closed.
     /// @dev This function can be overridden to add any new/additional logic.
-    function _isFarmNotPaused() internal view virtual returns (bool) {
-        return !isPaused;
-    }
-
-    /// @notice Validate if farm is not paused. Revert if farm is paused.
-    function _farmNotPaused() internal view {
-        _isFarmActive();
-        if (isPaused) {
-            revert FarmIsPaused();
+    function _validateFarmActive() internal view {
+        _validateFarmOpen(); // although this is a redundant check, it will through appropriate error message.
+        if (!isFarmActive()) {
+            revert FarmIsInactive();
         }
     }
 
-    /// @notice Validate the caller is the token Manager.
+    /// @notice Validate the caller is the token Manager. Revert otherwise.
     /// @param _rwdToken Address of reward token.
-    function _isTokenManager(address _rwdToken) internal view {
+    function _validateTokenManager(address _rwdToken) internal view {
         if (msg.sender != rewardData[_rwdToken].tknManager) {
             revert NotTheTokenManager();
         }
@@ -763,7 +774,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
     /// @notice An internal function to validate cooldown period.
     /// @param _cooldownPeriod Period to be validated.
-    function _isValidCooldownPeriod(uint256 _cooldownPeriod) internal pure {
+    function _validateCooldownPeriod(uint256 _cooldownPeriod) internal pure {
         if (_cooldownPeriod < MIN_COOLDOWN_PERIOD || _cooldownPeriod > MAX_COOLDOWN_PERIOD) {
             revert InvalidCooldownPeriod();
         }
@@ -771,7 +782,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
     /// @notice Validate address.
     /// @param _addr Address to be validated.
-    function _isNonZeroAddr(address _addr) internal pure {
+    function _validateNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();
         }
