@@ -131,7 +131,7 @@ abstract contract DepositTest is BaseFarmTest {
         deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
     }
 
-    function test_deposit_deposit(bool lockup) public {
+    function test_deposit(bool lockup) public {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         deposit(farm, lockup, 1e2);
