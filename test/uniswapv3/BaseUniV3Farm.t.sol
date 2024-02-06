@@ -315,7 +315,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
         assertEq(BaseUniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(BaseUniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
-        assertEq(BaseUniV3Farm(farmProxy).nfpm(), NFPM);
+        assertEq(BaseUniV3Farm(farmProxy).nftContract(), NFPM);
         assertEq(BaseUniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
         assertEq(BaseUniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }

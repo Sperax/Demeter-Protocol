@@ -160,7 +160,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
     }
 
     function test_OnERC721Received_RevertWhen_NoData() public {
-        address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
+        address nftPool = Demeter_CamelotFarm(lockupFarm).nftContract();
         vm.startPrank(nftPool);
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NoData.selector));
         Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
@@ -172,7 +172,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
     }
 
     function test_onNFTHarvest() public {
-        address nftPool = Demeter_CamelotFarm(lockupFarm).nftPool();
+        address nftPool = Demeter_CamelotFarm(lockupFarm).nftContract();
         vm.startPrank(nftPool);
         bool harvested = Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), user, 742, 1, 1);
         assertEq(harvested, true);
