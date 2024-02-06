@@ -127,7 +127,7 @@ abstract contract DepositTest is BaseFarmTest {
         deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
     }
 
-    function test_deposit(bool lockup) public {
+    function testFuzz_deposit(bool lockup) public {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         deposit(farm, lockup, 1e2);
@@ -166,7 +166,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         BaseFarm(lockupFarm).claimRewards(deposits + 1);
     }
 
-    function test_claimRewards(bool lockup) public setup {
+    function testFuzz_claimRewards(bool lockup) public setup {
         address farm;
         uint256 rewardsForEachSubsLength;
         farm = lockup ? lockupFarm : nonLockupFarm;
@@ -318,7 +318,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         BaseFarm(lockupFarm).withdraw(1);
     }
 
-    function test_withdraw_paused(bool lockup) public setup {
+    function testFuzz_withdraw_paused(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
@@ -355,7 +355,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
     }
 
-    function test_withdraw_closed(bool lockup) public setup {
+    function testFuzz_withdraw_closed(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
@@ -379,7 +379,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
     }
 
-    function test_withdraw(bool lockup) public setup {
+    function testFuzz_withdraw(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         uint256 depositId = 1;
@@ -418,7 +418,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
     }
 
-    function test_withdraw_firstDeposit_multipleDeposits(bool lockup) public setup {
+    function testFuzz_withdraw_firstDeposit_multipleDeposits(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         Deposit[] memory multipleUserDeposits = new Deposit[](10);
@@ -464,7 +464,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
     }
 
-    function test_withdraw_inBetweenDeposit_multipleDeposits(bool lockup) public setup {
+    function testFuzz_withdraw_inBetweenDeposit_multipleDeposits(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         Deposit[] memory userDeposits = new Deposit[](10);
@@ -504,7 +504,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         );
     }
 
-    function test_withdraw_lastDeposit_multipleDeposits(bool lockup) public setup {
+    function testFuzz_withdraw_lastDeposit_multipleDeposits(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         Deposit[] memory multipleUserDeposits = new Deposit[](10);
@@ -711,7 +711,7 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).getRewardBalance(invalidRewardToken);
     }
 
-    function test_rewardBalance(bool lockup) public setup {
+    function testFuzz_rewardBalance(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
@@ -735,7 +735,7 @@ abstract contract GetDepositTest is BaseFarmTest {
 }
 
 abstract contract GetNumSubscriptionsTest is BaseFarmTest {
-    function test_getDeposit(bool lockup) public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
+    function testFuzz_getDeposit(bool lockup) public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         uint256 numSubscriptions = BaseFarm(farm).getNumSubscriptions(0);
@@ -754,7 +754,7 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).getSubscriptionInfo(1, 2);
     }
 
-    function test_subInfo(bool lockup) public setup {
+    function testFuzz_subInfo(bool lockup) public setup {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
@@ -788,7 +788,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
-    function test_updateTknManager(bool lockup) public useKnownActor(owner) {
+    function testFuzz_updateTknManager(bool lockup) public useKnownActor(owner) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         address[] memory rewardTokens = getRewardTokens(farm);
@@ -804,7 +804,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
 }
 
 abstract contract RecoverRewardFundsTest is BaseFarmTest {
-    function test_recoverRewardFund_one(bool lockup) public {
+    function testFuzz_recoverRewardFund_one(bool lockup) public {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
@@ -821,7 +821,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
         }
     }
 
-    function test_recoverRewardFund_two(bool lockup) public setup useKnownActor(owner) {
+    function testFuzz_recoverRewardFund_two(bool lockup) public setup useKnownActor(owner) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         address[] memory rewardTokens = getRewardTokens(farm);
@@ -837,7 +837,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
         }
     }
 
-    function test_recoverRewardFund_partially(bool lockup) public useKnownActor(owner) {
+    function testFuzz_recoverRewardFund_partially(bool lockup) public useKnownActor(owner) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         address[] memory rewardTokens = getRewardTokens(farm);
@@ -873,7 +873,7 @@ abstract contract FarmPauseSwitchTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).farmPauseSwitch(isFarmActive);
     }
 
-    function test_farmPause(bool lockup) public useKnownActor(owner) {
+    function testFuzz_farmPause(bool lockup) public useKnownActor(owner) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         bool isFarmActive = BaseFarm(farm).isFarmActive();
@@ -902,7 +902,7 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
         BaseFarm(farm).updateFarmStartTime(block.timestamp - 1);
     }
 
-    function test_updateFarmStartTime(bool lockup, uint256 farmStartTime, uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTime(bool lockup, uint256 farmStartTime, uint256 newStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
         address farm = createFarm(farmStartTime, lockup);
@@ -961,7 +961,7 @@ abstract contract CloseFarmTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).closeFarm();
     }
 
-    function test_closeFarm_lockupFarm(bool lockup) public useKnownActor(owner) {
+    function testFuzz_closeFarm_lockupFarm(bool lockup) public useKnownActor(owner) {
         address farm;
         uint256 rewardRateLength;
         farm = lockup ? lockupFarm : nonLockupFarm;

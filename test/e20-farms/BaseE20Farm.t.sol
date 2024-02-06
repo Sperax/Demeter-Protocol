@@ -17,7 +17,7 @@ abstract contract BaseE20FarmTest is BaseFarmTest {
 }
 
 abstract contract E20FarmDepositTest is BaseE20FarmTest {
-    function test_E20FarmDeposit(bool lockup) public useKnownActor(user) {
+    function testFuzz_E20FarmDeposit(bool lockup) public useKnownActor(user) {
         address farm;
         farm = lockup ? lockupFarm : nonLockupFarm;
         address poolAddress = getPoolAddress();

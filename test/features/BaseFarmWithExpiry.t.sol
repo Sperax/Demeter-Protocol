@@ -46,7 +46,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
-    function test_updateFarmStartTimeWithExpiry_noLockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTimeWithExpiry_noLockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
         address farm = createFarm(farmStartTime, false);
@@ -73,7 +73,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         );
     }
 
-    function test_updateFarmStartTimeWithExpiry_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTimeWithExpiry_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
 
@@ -104,7 +104,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
     // the above fuzz test contains very low range for newStartTime on the negative delta side and further it there is a chance it can miss the no delta case.
     // so wrote the below tests.
 
-    function test_updateFarmStartTime_lockupFarm_end_time_withDelta(uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTime_lockupFarm_end_time_withDelta(uint256 newStartTime) public {
         uint256 farmStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
@@ -133,7 +133,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         );
     }
 
-    function test_updateFarmStartTime_noLockupFarm_end_time_withDelta(uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTime_noLockupFarm_end_time_withDelta(uint256 newStartTime) public {
         uint256 farmStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
@@ -161,7 +161,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         );
     }
 
-    function test_updateFarmStartTime_lockupFarm_end_time_noDelta(bool lockup, uint256 farmStartTime) public {
+    function testFuzz_updateFarmStartTime_lockupFarm_end_time_noDelta(bool lockup, uint256 farmStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
 
         address farm = createFarm(farmStartTime, lockup);
@@ -179,7 +179,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         assertEq(lastFundUpdateTime, farmStartTime);
     }
 
-    function test_updateFarmStartTime_lockupFarm_end_time_withDelta_multiUpdate(bool lockup) public {
+    function testFuzz_updateFarmStartTime_lockupFarm_end_time_withDelta_multiUpdate(bool lockup) public {
         uint256 farmStartTime = block.timestamp + 50 days;
         uint256 newStartTimeOne = block.timestamp + 70 days;
         uint256 newStartTimeTwo = block.timestamp + 90 days;
@@ -252,7 +252,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         vm.stopPrank();
     }
 
-    function test_extendFarmDuration(bool lockup, uint256 extensionDays, uint256 farmStartTime) public {
+    function testFuzz_extendFarmDuration(bool lockup, uint256 extensionDays, uint256 farmStartTime) public {
         vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, lockup);
