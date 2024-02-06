@@ -161,15 +161,15 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
 
         address pm = nfpm;
         uint256 tokenId = depositToTokenId[_depositId];
-        (,, address token0, address token1,,,,,,,,) = INFPM(pm).positions(tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
 
         // Transfer tokens from user to the contract.
-        IERC20(token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
-        IERC20(token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
+        IERC20(positions.token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
+        IERC20(positions.token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
 
         // Approve token to the NFPM contract.
-        IERC20(token0).forceApprove(pm, _amounts[0]);
-        IERC20(token1).forceApprove(pm, _amounts[1]);
+        IERC20(positions.token0).forceApprove(pm, _amounts[0]);
+        IERC20(positions.token1).forceApprove(pm, _amounts[1]);
 
         // Increases liquidity in the current range
         (uint128 liquidity, uint256 amount0, uint256 amount1) = INFPM(pm).increaseLiquidity(
@@ -189,10 +189,10 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
 
         // Return the excess tokens to the user.
         if (amount0 < _amounts[0]) {
-            IERC20(token0).safeTransfer(msg.sender, _amounts[0] - amount0);
+            IERC20(positions.token0).safeTransfer(msg.sender, _amounts[0] - amount0);
         }
         if (amount1 < _amounts[1]) {
-            IERC20(token1).safeTransfer(msg.sender, _amounts[1] - amount1);
+            IERC20(positions.token1).safeTransfer(msg.sender, _amounts[1] - amount1);
         }
 
         emit DepositIncreased(_depositId, liquidity);
