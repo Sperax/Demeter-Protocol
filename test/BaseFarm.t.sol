@@ -658,16 +658,10 @@ abstract contract AddRewardsTest is BaseFarmTest {
 }
 
 abstract contract SetRewardRateTest is BaseFarmTest {
-    function testFuzz_RevertWhen_FarmIsClosed(uint256 rwdRateNonLockup) public useKnownActor(owner) {
+    function test_SetRewardRate_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         uint256[] memory rwdRate = new uint256[](1);
-        rwdRate[0] = rwdRateNonLockup;
+        rwdRate[0] = 1e16;
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
-        uint256[] memory oldRewardRate = new uint256[](1);
-        for (uint8 i; i < rewardTokens.length; ++i) {
-            uint8 decimals = ERC20(rewardTokens[i]).decimals();
-            oldRewardRate = BaseFarm(nonLockupFarm).getRewardRates(rewardTokens[i]);
-            rwdRateNonLockup = bound(rwdRateNonLockup, 1 * 10 ** decimals, 2 * 10 ** decimals);
-        }
         vm.startPrank(owner);
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));

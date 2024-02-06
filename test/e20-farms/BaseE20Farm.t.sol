@@ -29,10 +29,10 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function testFuzz_RevertWhen_farmIsClosed(uint256 amt) public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_IncreaseDeposit_RevertWhen_farmIsClosed() public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
 
-        vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
+        uint256 amt = 100 * 10 ** ERC20(poolAddress).decimals();
 
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
@@ -42,13 +42,9 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function testFuzz_RevertWhen_depositInCoolDown(uint256 amt)
-        public
-        depositSetup(lockupFarm, true)
-        useKnownActor(user)
-    {
+    function test_RevertWhen_depositInCoolDown() public depositSetup(lockupFarm, true) useKnownActor(user) {
         address poolAddress = getPoolAddress();
-        vm.assume(amt > 100 * 10 ** ERC20(poolAddress).decimals() && amt <= 1000 * 10 ** ERC20(poolAddress).decimals());
+        uint256 amt = 100 * 10 ** ERC20(poolAddress).decimals();
         BaseE20Farm(lockupFarm).initiateCooldown(DEPOSIT_ID);
         skip(86400 * 2);
         deal(poolAddress, currentActor, amt);

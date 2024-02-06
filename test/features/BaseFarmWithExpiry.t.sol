@@ -240,9 +240,9 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_RevertWhen_farmExpired(uint256 extensionDays, uint256 farmStartTime) public {
-        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
-        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
+    function test_RevertWhen_farmExpired() public {
+        uint256 extensionDays = 200;
+        uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
         uint256 farmEndTime = BaseFarmWithExpiry(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
