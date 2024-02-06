@@ -17,7 +17,6 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {
     INonfungiblePositionManager as INFPM,
     IUniswapV3Factory,
@@ -29,7 +28,7 @@ import {
     INonfungiblePositionManagerUtils as INFPMUtils, Position
 } from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
+import {BaseE721Farm} from "../e721-farms/BaseE721Farm.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -45,17 +44,14 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
+contract BaseUniV3Farm is BaseE721Farm {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
     address public uniV3Factory;
-    address public nfpm;
     address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
     address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
-
-    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -106,7 +102,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniV3Factory = _uniV3Factory;
-        nfpm = _nfpm;
+        nftContract = _nfpm;
         uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
@@ -123,7 +119,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         uint256 _tokenId,
         bytes calldata _data
     ) external override returns (bytes4) {
-        if (msg.sender != nfpm) {
+        if (msg.sender != nftContract) {
             revert NotAUniV3NFT();
         }
         if (_data.length == 0) {
@@ -144,7 +140,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFPM(nfpm).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        INFPM(nftContract).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
         delete depositToTokenId[_depositId];
     }
 
@@ -156,7 +152,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
         _isValidDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        address pm = nfpm;
+        address pm = nftContract;
         (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
@@ -178,7 +174,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
         // Validate token.
         _getLiquidity(_tokenId);
-        return IUniswapUtils(uniswapUtils).fees(nfpm, _tokenId);
+        return IUniswapUtils(uniswapUtils).fees(nftContract, _tokenId);
     }
 
     /// @notice Validate the position for the pool and get Liquidity
@@ -187,7 +183,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, IERC721Receiver {
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
         /// @dev Get the info of the required token
-        Position memory positions = INFPMUtils(nfpmUtils).positions(nfpm, _tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
         /// @dev Check if the token belongs to correct pool
 

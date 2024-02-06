@@ -21,19 +21,15 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
+import {BaseE721Farm} from "../e721-farms/BaseE721Farm.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../features/OperableDeposit.sol";
 
-contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit {
+contract Demeter_CamelotFarm is BaseE721Farm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // Camelot NFT pool address
-    address public nftPool;
     // Camelot router
     address public router;
-
-    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
@@ -63,8 +59,8 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     ) external initializer {
         _isNonZeroAddr(_router);
         // initialize uniswap related data
-        nftPool = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
-        if (nftPool == address(0)) {
+        nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
+        if (nftContract == address(0)) {
             revert InvalidCamelotPoolConfig();
         }
 
@@ -83,7 +79,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         uint256 _tokenId,
         bytes calldata _data
     ) external override returns (bytes4) {
-        if (msg.sender != nftPool) {
+        if (msg.sender != nftContract) {
             revert NotACamelotNFT();
         }
         if (_data.length == 0) {
@@ -117,7 +113,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         }
 
         uint256 tokenId = depositToTokenId[_depositId];
-        (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
         address token0 = IPair(lpToken).token0();
         address token1 = IPair(lpToken).token1();
@@ -139,8 +135,8 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
             deadline: block.timestamp
         });
 
-        IERC20(lpToken).forceApprove(nftPool, liquidity);
-        INFTPool(nftPool).addToPosition(tokenId, liquidity);
+        IERC20(lpToken).forceApprove(nftContract, liquidity);
+        INFTPool(nftContract).addToPosition(tokenId, liquidity);
 
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
@@ -166,7 +162,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
 
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
-        INFTPool(nftPool).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
+        INFTPool(nftContract).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
         delete depositToTokenId[_depositId];
     }
 
@@ -190,8 +186,8 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         uint256 tokenId = depositToTokenId[_depositId];
 
         // Withdraw liquidity from nft pool
-        INFTPool(nftPool).withdrawFromPosition(tokenId, _liquidityToWithdraw);
-        (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        INFTPool(nftContract).withdrawFromPosition(tokenId, _liquidityToWithdraw);
+        (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
         address token0 = IPair(lpToken).token0();
         address token1 = IPair(lpToken).token1();
         IERC20(lpToken).forceApprove(router, _liquidityToWithdraw);
@@ -221,7 +217,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _isFarmActive();
         _isValidDeposit(msg.sender, _depositId);
-        INFTPool(nftPool).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
+        INFTPool(nftContract).harvestPositionTo(depositToTokenId[_depositId], msg.sender);
     }
 
     /// @notice callback function for harvestPosition().
@@ -230,7 +226,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         override
         returns (bool)
     {
-        if (msg.sender != nftPool) {
+        if (msg.sender != nftContract) {
             revert NotAllowed();
         }
         emit PoolRewardsCollected(_to, _tokenId, _grailAmount, _xGrailAmount);
@@ -241,7 +237,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     /// @return amount Grail rewards.
     function computePoolRewards(uint256 _tokenId) external view returns (uint256 amount) {
         // Validate token.
-        amount = INFTPool(nftPool).pendingRewards(_tokenId);
+        amount = INFTPool(nftContract).pendingRewards(_tokenId);
         return amount;
     }
 
@@ -279,7 +275,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         view
         returns (uint256 amountA, uint256 amountB)
     {
-        (address pair,,,,,,,) = INFTPool(nftPool).getPoolInfo();
+        (address pair,,,,,,,) = INFTPool(nftContract).getPoolInfo();
         (uint112 reserveA, uint112 reserveB,,) = IPair(pair).getReserves();
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
@@ -303,7 +299,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
         /// @dev Get the info of the required token
-        (uint256 liquidity,,,,,,,) = INFTPool(nftPool).getStakingPosition(_tokenId);
+        (uint256 liquidity,,,,,,,) = INFTPool(nftContract).getStakingPosition(_tokenId);
 
         return uint256(liquidity);
     }
