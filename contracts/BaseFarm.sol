@@ -466,6 +466,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _account address of the user.
     /// @param _depositId user's deposit id.
     function _withdraw(address _account, uint256 _depositId) internal {
+        _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
         // Note: If farm is not active, skip the cooldown check.
         uint256 depositExpiryDate = deposits[_depositId].expiryDate;

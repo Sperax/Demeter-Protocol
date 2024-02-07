@@ -131,7 +131,6 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _validateDeposit(msg.sender, _depositId);
         uint256 liquidity = deposits[_depositId].liquidity;
         _withdraw(msg.sender, _depositId);
 

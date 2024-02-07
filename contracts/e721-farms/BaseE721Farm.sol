@@ -56,8 +56,6 @@ abstract contract BaseE721Farm is BaseFarmWithExpiry, IERC721Receiver {
     /// @notice Function to withdraw a deposit from the farm.
     /// @param _depositId The id of the deposit to be withdrawn
     function withdraw(uint256 _depositId) external override nonReentrant {
-        _validateDeposit(msg.sender, _depositId);
-
         _withdraw(msg.sender, _depositId);
         // Transfer the nft back to the user.
         IERC721(nftContract).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
