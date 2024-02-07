@@ -125,14 +125,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
-    ///      New start time should be in future.
-    /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) external virtual onlyOwner {
-        _updateFarmStartTime(_newStartTime);
-    }
-
     /// @notice Pause / UnPause the farm.
     /// @param _isPaused Desired state of the farm (true to pause the farm).
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
@@ -321,6 +313,24 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _updateAndClaimFarmRewards(_account, _depositId);
     }
 
+    /// @notice Update the farm start time.
+    /// @dev Can be updated only before the farm start
+    ///      New start time should be in future.
+    /// @param _newStartTime The new farm start time.
+    function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
+        _validateFarmOpen();
+        if (lastFundUpdateTime <= block.timestamp) {
+            revert FarmAlreadyStarted();
+        }
+        if (_newStartTime < block.timestamp) {
+            revert InvalidTime();
+        }
+
+        lastFundUpdateTime = _newStartTime;
+
+        emit FarmStartTimeUpdated(_newStartTime);
+    }
+
     /// @notice Returns if farm is open.
     ///         Farm is open if it not closed.
     /// @return bool true if farm is open.
@@ -444,22 +454,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
 
         emit CooldownInitiated(_depositId, userDeposit.expiryDate);
-    }
-
-    /// @notice Update the farm start time.
-    /// @param _newStartTime The new farm start time.
-    function _updateFarmStartTime(uint256 _newStartTime) internal {
-        _validateFarmOpen();
-        if (lastFundUpdateTime <= block.timestamp) {
-            revert FarmAlreadyStarted();
-        }
-        if (_newStartTime < block.timestamp) {
-            revert InvalidTime();
-        }
-
-        lastFundUpdateTime = _newStartTime;
-
-        emit FarmStartTimeUpdated(_newStartTime);
     }
 
     /// @notice Common logic for withdraw.

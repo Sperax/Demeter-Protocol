@@ -28,7 +28,8 @@ import {
     INonfungiblePositionManagerUtils as INFPMUtils, Position
 } from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseE721Farm} from "../e721-farms/BaseE721Farm.sol";
+import {BaseFarm, BaseE721Farm} from "../e721-farms/BaseE721Farm.sol";
+import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -44,7 +45,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract BaseUniV3Farm is BaseE721Farm {
+contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry {
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
@@ -141,6 +142,23 @@ contract BaseUniV3Farm is BaseE721Farm {
         // Validate token.
         _getLiquidity(_tokenId);
         return IUniswapUtils(uniswapUtils).fees(nftContract, _tokenId);
+    }
+
+    // --------------------- Public and overriding Functions ---------------------
+
+    /// @notice Update the farm start time.
+    /// @param _newStartTime The new farm start time.
+    /// @dev Calls BaseFarmWithExpiry's updateFarmStartTime function
+    function updateFarmStartTime(uint256 _newStartTime) public override(BaseFarm, BaseFarmWithExpiry) onlyOwner {
+        BaseFarmWithExpiry.updateFarmStartTime(_newStartTime);
+    }
+
+    /// @notice Returns if farm is open.
+    ///         Farm is open if it not closed.
+    /// @return bool true if farm is open.
+    /// @dev Calls BaseFarmWithExpiry's isOpenFarm function.
+    function isFarmOpen() public view override(BaseFarm, BaseFarmWithExpiry) returns (bool) {
+        return BaseFarmWithExpiry.isFarmOpen();
     }
 
     /// @notice Validate the position for the pool and get Liquidity

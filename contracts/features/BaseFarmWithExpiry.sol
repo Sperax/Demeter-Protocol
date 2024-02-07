@@ -46,10 +46,10 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     ///      New start time should be in future.
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) external override onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public virtual override onlyOwner {
         uint256 _currentLastFundUpdateTime = lastFundUpdateTime;
 
-        _updateFarmStartTime(_newStartTime);
+        super.updateFarmStartTime(_newStartTime);
 
         farmEndTime = (_newStartTime > _currentLastFundUpdateTime)
             ? farmEndTime + (_newStartTime - _currentLastFundUpdateTime)
@@ -59,7 +59,7 @@ abstract contract BaseFarmWithExpiry is BaseFarm {
     /// @notice Returns if farm is open.
     ///         Farm is open if it not closed and not expired.
     /// @return bool true if farm is open.
-    function isFarmOpen() public view override returns (bool) {
+    function isFarmOpen() public view virtual override returns (bool) {
         return super.isFarmOpen() && (block.timestamp <= farmEndTime);
     }
 
