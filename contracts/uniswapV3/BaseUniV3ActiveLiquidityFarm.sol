@@ -85,7 +85,7 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
     /// @return bool true if farm is active.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmActive() public view override returns (bool) {
-        return !isPaused && isFarmOpen() && !_isLiquidityActive();
+        return !isPaused && isFarmOpen() && _isLiquidityActive();
     }
 
     /// @notice Function to update the FarmRewardData for all funds
