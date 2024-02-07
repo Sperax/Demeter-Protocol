@@ -88,10 +88,10 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         claimRewards(msg.sender, _depositId);
     }
 
-    /// @notice Function to lock a staked deposit.
+    /// @notice Function to be called to initiate cooldown for a staked deposit.
     /// @param _depositId The id of the deposit to be locked.
     /// @dev _depositId is corresponding to the user's deposit.
-    function initiateCooldown(uint256 _depositId) external virtual nonReentrant {
+    function initiateCooldown(uint256 _depositId) external nonReentrant {
         _initiateCooldown(_depositId);
     }
 
