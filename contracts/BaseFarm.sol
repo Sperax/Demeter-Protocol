@@ -227,13 +227,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         uint256 numRewards = rewardTokens.length;
         rewards = new uint256[][](numDepositSubs);
 
-        uint256 time = 0;
-        // In case the reward is not updated.
-        if (block.timestamp > lastFundUpdateTime) {
-            unchecked {
-                time = block.timestamp - lastFundUpdateTime;
-            }
-        }
+        uint256 time = _getRewardAccrualTimeElapsed();
 
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
@@ -599,14 +593,11 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
     /// @notice Function to update the FarmRewardData for all funds.
     function _updateFarmRewardData() internal virtual {
-        if (block.timestamp > lastFundUpdateTime) {
+        uint256 time = _getRewardAccrualTimeElapsed();
+        if (time > 0) {
             // If farm is paused don't accrue any rewards,
             // only update the lastFundUpdateTime.
             if (isFarmActive()) {
-                uint256 time;
-                unchecked {
-                    time = block.timestamp - lastFundUpdateTime;
-                }
                 uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
@@ -629,7 +620,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
                     }
                 }
             }
-            lastFundUpdateTime = block.timestamp;
+            _updateLastRewardAccrualTime();
         }
     }
 
@@ -710,6 +701,11 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         emit RewardTokenAdded(_token, _tknManager);
     }
 
+    /// @notice Update the last reward accrual time.
+    function _updateLastRewardAccrualTime() internal virtual {
+        lastFundUpdateTime = block.timestamp;
+    }
+
     /// @notice Computes the accrued reward for a given fund id and time interval.
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
@@ -771,6 +767,14 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     function _validateTokenManager(address _rwdToken) internal view {
         if (msg.sender != rewardData[_rwdToken].tknManager) {
             revert NotTheTokenManager();
+        }
+    }
+
+    /// @notice Get the time elapsed since the last reward accrual.
+    /// @return time The time elapsed since the last reward accrual.
+    function _getRewardAccrualTimeElapsed() internal view virtual returns (uint256) {
+        unchecked {
+            return block.timestamp - lastFundUpdateTime;
         }
     }
 
