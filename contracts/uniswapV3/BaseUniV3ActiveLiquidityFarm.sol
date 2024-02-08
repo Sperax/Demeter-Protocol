@@ -23,7 +23,7 @@ import {IUniswapV3PoolDerivedState, IUniswapV3PoolState} from "./interfaces/IUni
 /// @title BaseUniV3ActiveLiquidityFarm
 /// @notice This contract inherits the BaseUniV3Farm contract and implements the reward distribution only for active liquidity.
 contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
-    uint256 public lastSecondsInside;
+    uint32 public lastSecondsInside;
 
     /// @notice Returns if farm is active.
     ///         Farm is active if it is not paused, not closed, and liquidity is active.
