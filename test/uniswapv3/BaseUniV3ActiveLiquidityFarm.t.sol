@@ -101,18 +101,22 @@ abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest {
             : vm.clearMockedCalls();
     }
 
-    function _mockUniswapV3PoolSnapshot(address farm, bool _shouldMock, uint256 _skipTime) internal {
+    function _mockUniswapV3PoolSnapshot(address farm, bool _shouldMock, uint256 _skipTime)
+        internal
+        returns (uint256 mockedSecondsInside)
+    {
         address uniswapPool = BaseUniV3ActiveLiquidityFarm(farm).uniswapPool();
         (int56 tickCumulativeInside, uint160 secondsPerLiquidityInsideX128, uint32 secondsInside) =
             IUniswapV3PoolDerivedState(uniswapPool).snapshotCumulativesInside(TICK_LOWER, TICK_UPPER);
 
+        mockedSecondsInside = secondsInside - _skipTime;
         _shouldMock
             ? vm.mockCall(
                 uniswapPool,
                 abi.encodeWithSelector(
                     IUniswapV3PoolDerivedState.snapshotCumulativesInside.selector, TICK_LOWER, TICK_UPPER
                 ),
-                abi.encode(tickCumulativeInside, secondsPerLiquidityInsideX128, secondsInside - _skipTime)
+                abi.encode(tickCumulativeInside, secondsPerLiquidityInsideX128, mockedSecondsInside)
             )
             : vm.clearMockedCalls();
     }
@@ -182,31 +186,24 @@ abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
         uint256[][] memory rewards = BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         uint256 activeTime = increaseTime - skipActiveTime;
 
+        // Change tick range seconds inside
+        uint256 secondsInside = _mockUniswapV3PoolSnapshot(nonLockupFarm, true, skipActiveTime);
+        uint256[][] memory rewardsForActiveLiquidity =
+            BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
+        vm.expectEmit(nonLockupFarm);
+        emit PoolUnsubscribed(depositId, 0, rewardsForActiveLiquidity[0]);
+        BaseUniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
         if (activeTime == 0) {
-            // Change tick range seconds inside
-            _mockUniswapV3PoolSnapshot(nonLockupFarm, true, skipActiveTime);
-            uint256[][] memory rewardsForActiveLiquidity =
-                BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
-
-            vm.expectEmit(nonLockupFarm);
-            emit PoolUnsubscribed(depositId, 0, rewardsForActiveLiquidity[0]);
-            BaseUniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {
                 assertEq(rewardsForActiveLiquidity[0][j], 0);
             }
         } else {
-            // Change tick range seconds inside
-            _mockUniswapV3PoolSnapshot(nonLockupFarm, true, skipActiveTime);
-            uint256[][] memory rewardsForActiveLiquidity =
-                BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
-
-            vm.expectEmit(nonLockupFarm);
-            emit PoolUnsubscribed(depositId, 0, rewardsForActiveLiquidity[0]);
-            BaseUniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
             uint256 timesDifference = increaseTime / activeTime;
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {
                 assertEq(rewards[0][j] / timesDifference, rewardsForActiveLiquidity[0][j]);
             }
         }
+
+        assertEq(BaseUniV3ActiveLiquidityFarm(nonLockupFarm).lastSecondsInside(), secondsInside);
     }
 }
