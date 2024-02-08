@@ -4,9 +4,9 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {BaseUniV3Farm} from "../../../contracts/uniswapV3/BaseUniV3Farm.sol";
-import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
-import {INonfungiblePositionManager as INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
+import {BaseUniV3Farm} from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
+import {INonfungiblePositionManager as INFPM} from "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../BaseUniV3Farm.t.sol";

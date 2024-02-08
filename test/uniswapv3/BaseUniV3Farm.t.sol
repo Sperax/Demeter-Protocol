@@ -11,7 +11,7 @@ import {
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
     INFPM
-} from "../../contracts/uniswapV3/BaseUniV3Farm.sol";
+} from "../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests

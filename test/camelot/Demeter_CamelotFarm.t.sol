@@ -7,9 +7,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import "../BaseFarm.t.sol";
 import "../features/BaseFarmWithExpiry.t.sol";
 import {BaseFarmTest} from "../BaseFarm.t.sol";
-import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/camelot/interfaces/ICamelot.sol";
-import "../../contracts/camelot/Demeter_CamelotFarm_Deployer.sol";
-import "../../contracts/camelot/Demeter_CamelotFarm.sol";
+import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/e721-farms/camelot/interfaces/ICamelot.sol";
+import "../../contracts/e721-farms/camelot/Demeter_CamelotFarm_Deployer.sol";
+import "../../contracts/e721-farms/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../contracts/features/OperableDeposit.sol";

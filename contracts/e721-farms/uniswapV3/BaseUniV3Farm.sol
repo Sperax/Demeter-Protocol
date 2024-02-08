@@ -27,9 +27,9 @@ import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
 import {
     INonfungiblePositionManagerUtils as INFPMUtils, Position
 } from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseFarm, BaseE721Farm} from "../e721-farms/BaseE721Farm.sol";
-import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
+import {RewardTokenData} from "../../BaseFarm.sol";
+import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
+import {BaseFarmWithExpiry} from "../../features/BaseFarmWithExpiry.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA

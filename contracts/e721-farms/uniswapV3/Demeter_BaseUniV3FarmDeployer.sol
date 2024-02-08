@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
 import {BaseUniV3Farm, RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
