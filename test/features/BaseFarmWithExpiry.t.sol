@@ -46,38 +46,10 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
-    function testFuzz_updateFarmStartTimeWithExpiry_noLockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTimeWithExpiry(bool lockup, uint256 farmStartTime, uint256 newStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
-        address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 timeDelta;
-
-        if (newStartTime > farmStartTime) {
-            timeDelta = newStartTime - farmStartTime;
-        } else if (newStartTime < farmStartTime) {
-            timeDelta = farmStartTime - newStartTime;
-        }
-
-        vm.startPrank(owner);
-        vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(newStartTime);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
-        vm.stopPrank();
-
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
-
-        _assertHelper(
-            farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
-        );
-    }
-
-    function testFuzz_updateFarmStartTimeWithExpiry_lockupFarm(uint256 farmStartTime, uint256 newStartTime) public {
-        farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
-        newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
-
-        address farm = createFarm(farmStartTime, true);
+        address farm = createFarm(farmStartTime, lockup);
         uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
@@ -104,11 +76,11 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
     // the above fuzz test contains very low range for newStartTime on the negative delta side and further it there is a chance it can miss the no delta case.
     // so wrote the below tests.
 
-    function testFuzz_updateFarmStartTime_lockupFarm_end_time_withDelta(uint256 newStartTime) public {
+    function testFuzz_updateFarmStartTime_end_time_withDelta(bool lockup, uint256 newStartTime) public {
         uint256 farmStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
-        address farm = createFarm(farmStartTime, true);
+        address farm = createFarm(farmStartTime, lockup);
         uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 timeDelta;
 
@@ -133,37 +105,8 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         );
     }
 
-    function testFuzz_updateFarmStartTime_noLockupFarm_end_time_withDelta(uint256 newStartTime) public {
-        uint256 farmStartTime = block.timestamp + 50 days;
-        newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
-
-        address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 timeDelta;
-
-        if (newStartTime > farmStartTime) {
-            timeDelta = newStartTime - farmStartTime;
-        } else if (newStartTime < farmStartTime) {
-            timeDelta = farmStartTime - newStartTime;
-        }
-
-        vm.startPrank(owner);
-        vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(newStartTime);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
-        vm.stopPrank();
-
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
-
-        _assertHelper(
-            farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
-        );
-    }
-
-    function testFuzz_updateFarmStartTime_lockupFarm_end_time_noDelta(bool lockup, uint256 farmStartTime) public {
+    function testFuzz_updateFarmStartTime_end_time_noDelta(bool lockup, uint256 farmStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
-
         address farm = createFarm(farmStartTime, lockup);
 
         vm.startPrank(owner);
@@ -179,7 +122,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         assertEq(lastFundUpdateTime, farmStartTime);
     }
 
-    function testFuzz_updateFarmStartTime_lockupFarm_end_time_withDelta_multiUpdate(bool lockup) public {
+    function testFuzz_updateFarmStartTime_end_time_withDelta_multiUpdate(bool lockup) public {
         uint256 farmStartTime = block.timestamp + 50 days;
         uint256 newStartTimeOne = block.timestamp + 70 days;
         uint256 newStartTimeTwo = block.timestamp + 90 days;
@@ -303,15 +246,17 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         assertEq(cooldownPeriod, 0);
     }
 
-    function test_withdraw_lockupFarm_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function testFuzz_withdraw_lockupFarm_notClosedButExpired(bool lockup) public {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(lockupFarm).getRewardBalance(rwdTokens[0]);
-        vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() + 1);
+        address farm = lockup ? lockupFarm : nonLockupFarm;
+        depositSetupFn(farm, lockup);
+        BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
         vm.startPrank(user);
-        vm.expectEmit(address(lockupFarm));
+        vm.expectEmit(address(farm));
         emit DepositWithdrawn(depositId);
-        BaseFarmWithExpiry(lockupFarm).withdraw(depositId);
-        Deposit memory depositInfo = BaseFarmWithExpiry(lockupFarm).getDepositInfo(depositId);
+        BaseFarmWithExpiry(farm).withdraw(depositId);
+        Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
         _assertHelper(
             depositInfo.depositor,
             depositInfo.liquidity,
@@ -321,18 +266,20 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         );
     }
 
-    function test_withdraw_lockupFarm_closedAndExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function testFuzz_withdraw_lockupFarm_closedAndExpired(bool lockup) public {
         uint256 depositId = 1;
-        BaseFarmWithExpiry(lockupFarm).getRewardBalance(rwdTokens[0]);
-        vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() - 100);
+        address farm = lockup ? lockupFarm : nonLockupFarm;
+        depositSetupFn(farm, lockup);
+        BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() - 100);
         vm.startPrank(owner);
-        BaseFarmWithExpiry(lockupFarm).closeFarm(); // if farm is closed it is also paused
-        vm.warp(BaseFarmWithExpiry(lockupFarm).farmEndTime() + 1);
+        BaseFarmWithExpiry(farm).closeFarm(); // if farm is closed it is also paused
+        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
         vm.startPrank(user);
-        vm.expectEmit(address(lockupFarm));
+        vm.expectEmit(address(farm));
         emit DepositWithdrawn(depositId);
-        BaseFarmWithExpiry(lockupFarm).withdraw(depositId);
-        Deposit memory depositInfo = BaseFarmWithExpiry(lockupFarm).getDepositInfo(depositId);
+        BaseFarmWithExpiry(farm).withdraw(depositId);
+        Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
         _assertHelper(
             depositInfo.depositor,
             depositInfo.liquidity,
