@@ -246,47 +246,61 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         assertEq(cooldownPeriod, 0);
     }
 
-    function testFuzz_withdraw_lockupFarm_notClosedButExpired(bool lockup) public {
+    function testFuzz_withdraw_lockupFarm_notClosedButExpired() public {
         uint256 depositId = 1;
-        address farm = lockup ? lockupFarm : nonLockupFarm;
-        depositSetupFn(farm, lockup);
-        BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
-        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
-        vm.startPrank(user);
-        vm.expectEmit(address(farm));
-        emit DepositWithdrawn(depositId);
-        BaseFarmWithExpiry(farm).withdraw(depositId);
-        Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
-        _assertHelper(
-            depositInfo.depositor,
-            depositInfo.liquidity,
-            depositInfo.startTime,
-            depositInfo.expiryDate,
-            depositInfo.cooldownPeriod
-        );
+        bool lockup;
+        address farm;
+        for (uint8 i; i < 2; ++i) {
+            lockup = i == 0 ? true : false;
+            farm = lockup ? lockupFarm : nonLockupFarm;
+            depositSetupFn(farm, lockup);
+            BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+            uint256 currentTimestamp = block.timestamp;
+            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
+            vm.startPrank(user);
+            vm.expectEmit(address(farm));
+            emit DepositWithdrawn(depositId);
+            BaseFarmWithExpiry(farm).withdraw(depositId);
+            Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
+            _assertHelper(
+                depositInfo.depositor,
+                depositInfo.liquidity,
+                depositInfo.startTime,
+                depositInfo.expiryDate,
+                depositInfo.cooldownPeriod
+            );
+            vm.warp(currentTimestamp); // reset the time
+        }
     }
 
-    function testFuzz_withdraw_lockupFarm_closedAndExpired(bool lockup) public {
+    function testFuzz_withdraw_lockupFarm_closedAndExpired() public {
         uint256 depositId = 1;
-        address farm = lockup ? lockupFarm : nonLockupFarm;
-        depositSetupFn(farm, lockup);
-        BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
-        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() - 100);
-        vm.startPrank(owner);
-        BaseFarmWithExpiry(farm).closeFarm(); // if farm is closed it is also paused
-        vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
-        vm.startPrank(user);
-        vm.expectEmit(address(farm));
-        emit DepositWithdrawn(depositId);
-        BaseFarmWithExpiry(farm).withdraw(depositId);
-        Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
-        _assertHelper(
-            depositInfo.depositor,
-            depositInfo.liquidity,
-            depositInfo.startTime,
-            depositInfo.expiryDate,
-            depositInfo.cooldownPeriod
-        );
+        bool lockup;
+        address farm;
+        for (uint8 i; i < 2; ++i) {
+            lockup = i == 0 ? true : false;
+            farm = lockup ? lockupFarm : nonLockupFarm;
+            depositSetupFn(farm, lockup);
+            BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+            uint256 currentTimestamp = block.timestamp;
+            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() - 100);
+            vm.startPrank(owner);
+            BaseFarmWithExpiry(farm).closeFarm(); // if farm is closed it is also paused
+            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
+            vm.startPrank(user);
+            vm.expectEmit(address(farm));
+            emit DepositWithdrawn(depositId);
+            BaseFarmWithExpiry(farm).withdraw(depositId);
+            Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
+            _assertHelper(
+                depositInfo.depositor,
+                depositInfo.liquidity,
+                depositInfo.startTime,
+                depositInfo.expiryDate,
+                depositInfo.cooldownPeriod
+            );
+            vm.warp(currentTimestamp); // reset the time
+        }
     }
 }
 
