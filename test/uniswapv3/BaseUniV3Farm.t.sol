@@ -323,46 +323,50 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
     // Deposit test.
-    function testFuzz_onERC721Received(bool lockup) public useKnownActor(user) {
+    function test_deposit_onERC721Received() public useKnownActor(user) {
         address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+        bool lockup;
+        for (uint8 j; j < 2; ++j) {
+            lockup = j == 0 ? true : false;
+            farm = lockup ? lockupFarm : nonLockupFarm;
+            uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
+            uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
 
-        deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(NFPM, depositAmount1);
+            deal(DAI, currentActor, depositAmount1);
+            IERC20(DAI).approve(NFPM, depositAmount1);
 
-        deal(USDCe, currentActor, depositAmount2);
-        IERC20(USDCe).approve(NFPM, depositAmount2);
+            deal(USDCe, currentActor, depositAmount2);
+            IERC20(USDCe).approve(NFPM, depositAmount2);
 
-        (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                fee: FEE_TIER,
-                tickLower: TICK_LOWER,
-                tickUpper: TICK_UPPER,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
+            (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
+                INFPM.MintParams({
+                    token0: DAI,
+                    token1: USDCe,
+                    fee: FEE_TIER,
+                    tickLower: TICK_LOWER,
+                    tickUpper: TICK_UPPER,
+                    amount0Desired: depositAmount1,
+                    amount1Desired: depositAmount2,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    recipient: currentActor,
+                    deadline: block.timestamp
+                })
+            );
 
-        if (!lockup) {
+            if (!lockup) {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            } else {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            }
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-        } else {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+            IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
         }
-        vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
-        IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
     }
 
     function test_RevertWhen_NotAUniV3NFT() public {

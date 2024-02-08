@@ -159,32 +159,36 @@ contract OnERC721ReceivedTest is Demeter_CamelotFarmTest {
     using SafeERC20 for IERC20;
 
     // Deposit test
-    function testFuzz_onERC721Received(bool lockup) public useKnownActor(user) {
+    function test_onERC721Received() public useKnownActor(user) {
         address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
-        uint256 amt1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        deal(DAI, user, amt1);
-        uint256 amt2 = 1e3 * 10 ** ERC20(USDCe).decimals();
-        deal(USDCe, user, amt2);
-        IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
-        IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
-        IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
-            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
-        );
-        uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId();
-        (uint256 liquidity,,,,,,,) = INFTPool(getPoolAddress()).getStakingPosition(tokenId);
-        if (!lockup) {
+        bool lockup;
+        for (uint8 j; j < 2; ++j) {
+            lockup = j == 0 ? true : false;
+            farm = lockup ? lockupFarm : nonLockupFarm;
+            uint256 amt1 = 1e3 * 10 ** ERC20(DAI).decimals();
+            deal(DAI, user, amt1);
+            uint256 amt2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+            deal(USDCe, user, amt2);
+            IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
+            IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
+            IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
+                DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
+            );
+            uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId();
+            (uint256 liquidity,,,,,,,) = INFTPool(getPoolAddress()).getStakingPosition(tokenId);
+            if (!lockup) {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            } else {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            }
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-        } else {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+            IERC721(getPoolAddress()).safeTransferFrom(user, farm, tokenId, abi.encode(lockup));
         }
-        vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
-        IERC721(getPoolAddress()).safeTransferFrom(user, farm, tokenId, abi.encode(lockup));
     }
 
     function test_RevertWhen_NotACamelotNFT() public {

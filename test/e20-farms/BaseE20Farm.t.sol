@@ -17,31 +17,35 @@ abstract contract BaseE20FarmTest is BaseFarmTest {
 }
 
 abstract contract E20FarmDepositTest is BaseE20FarmTest {
-    function testFuzz_E20FarmDeposit(bool lockup) public useKnownActor(user) {
+    function test_E20FarmDeposit() public useKnownActor(user) {
         address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
-        address poolAddress = getPoolAddress();
-        uint256 amt = 1e3 * 10 ** ERC20(poolAddress).decimals();
-        deal(poolAddress, currentActor, amt);
-        ERC20(poolAddress).approve(address(farm), amt);
-        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
-        if (!lockup) {
+        bool lockup;
+        for (uint8 j; j < 2; ++j) {
+            lockup = j == 0 ? true : false;
+            farm = lockup ? lockupFarm : nonLockupFarm;
+            address poolAddress = getPoolAddress();
+            uint256 amt = 1e3 * 10 ** ERC20(poolAddress).decimals();
+            deal(poolAddress, currentActor, amt);
+            ERC20(poolAddress).approve(address(farm), amt);
+            uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
+            uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
+            if (!lockup) {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+            } else {
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                vm.expectEmit(address(farm));
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            }
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-        } else {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+            emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, amt);
+            BaseE20Farm(farm).deposit(amt, lockup);
+            uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
+            uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
+            assertEq(usrBalanceAfter, usrBalanceBefore - amt);
+            assertEq(farmBalanceAfter, farmBalanceBefore + amt);
         }
-        vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, amt);
-        BaseE20Farm(farm).deposit(amt, lockup);
-        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
-        assertEq(usrBalanceAfter, usrBalanceBefore - amt);
-        assertEq(farmBalanceAfter, farmBalanceBefore + amt);
     }
 }
 
