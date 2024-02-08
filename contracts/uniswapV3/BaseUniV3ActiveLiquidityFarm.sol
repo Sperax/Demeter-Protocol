@@ -54,10 +54,8 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
         }
     }
 
-    function _isLiquidityActive() internal view returns (bool isActive) {
+    function _isLiquidityActive() internal view returns (bool) {
         (, int24 tick,,,,,) = IUniswapV3PoolState(uniswapPool).slot0();
-        if (tick >= tickLowerAllowed && tick <= tickUpperAllowed) {
-            isActive = true;
-        }
+        return (tick >= tickLowerAllowed && tick <= tickUpperAllowed);
     }
 }
