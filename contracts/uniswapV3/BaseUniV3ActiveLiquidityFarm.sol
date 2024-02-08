@@ -19,7 +19,6 @@ pragma solidity 0.8.16;
 
 import {BaseUniV3Farm} from "./BaseUniV3Farm.sol";
 import {IUniswapV3PoolDerivedState, IUniswapV3PoolState} from "./interfaces/IUniswapV3.sol";
-import {Deposit, Subscription, RewardFund} from "../interfaces/DataTypes.sol";
 
 /// @title BaseUniV3ActiveLiquidityFarm
 /// @notice This contract inherits the BaseUniV3Farm contract and implements the reward distribution only for active liquidity.
@@ -40,7 +39,7 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
         super._updateLastRewardAccrualTime();
         (,, uint32 secondsInside) =
             IUniswapV3PoolDerivedState(uniswapPool).snapshotCumulativesInside(tickLowerAllowed, tickUpperAllowed);
-        lastFundUpdateTime = block.timestamp;
+        lastSecondsInside = secondsInside;
     }
 
     /// @notice Get the time elapsed since the last reward accrual.
