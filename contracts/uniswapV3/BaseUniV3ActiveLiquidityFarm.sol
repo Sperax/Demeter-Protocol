@@ -27,9 +27,9 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
     uint256 public lastSecondsInside;
 
     /// @notice Returns if farm is active.
-    ///         Farm is active if it is not paused and not closed.
+    ///         Farm is active if it is not paused, not closed, and liquidity is active.
     /// @return bool true if farm is active.
-    /// @dev This function can be overridden to add any new/additional logic.
+    /// @dev This function checks if current tick is within this farm's tick range.
     function isFarmActive() public view override returns (bool) {
         return super.isFarmActive() && _isLiquidityActive();
     }
@@ -37,10 +37,10 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
     /// @notice Update the last reward accrual time.
     /// @dev This function is overridden from BaseFarm to incorporate reward distribution only for active liquidity.
     function _updateLastRewardAccrualTime() internal override {
+        super._updateLastRewardAccrualTime();
         (,, uint32 secondsInside) =
             IUniswapV3PoolDerivedState(uniswapPool).snapshotCumulativesInside(tickLowerAllowed, tickUpperAllowed);
         lastFundUpdateTime = block.timestamp;
-        lastSecondsInside = secondsInside;
     }
 
     /// @notice Get the time elapsed since the last reward accrual.
