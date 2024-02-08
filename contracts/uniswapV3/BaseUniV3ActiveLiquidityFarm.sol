@@ -48,9 +48,7 @@ contract BaseUniV3ActiveLiquidityFarm is BaseUniV3Farm {
     function _getRewardAccrualTimeElapsed() internal view override returns (uint256) {
         (,, uint32 secondsInside) =
             IUniswapV3PoolDerivedState(uniswapPool).snapshotCumulativesInside(tickLowerAllowed, tickUpperAllowed);
-        unchecked {
-            return secondsInside - lastSecondsInside;
-        }
+        return secondsInside - lastSecondsInside;
     }
 
     function _isLiquidityActive() internal view returns (bool) {
