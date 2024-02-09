@@ -39,7 +39,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         }
     }
 
-    function test_updateFarmStartTime_nonLockupFarm_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
+    function test_updateFarmStartTime_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 farmEndTime = BaseFarmWithExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
@@ -246,7 +246,7 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         assertEq(cooldownPeriod, 0);
     }
 
-    function testFuzz_withdraw_lockupFarm_notClosedButExpired() public {
+    function testFuzz_withdraw_notClosedButExpired() public {
         uint256 depositId = 1;
         for (uint8 i; i < 2; ++i) {
             bool lockup = i == 0 ? true : false;
@@ -271,10 +271,8 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
         }
     }
 
-    function testFuzz_withdraw_lockupFarm_closedAndExpired() public {
+    function testFuzz_withdraw_closedAndExpired() public {
         uint256 depositId = 1;
-        // bool lockup;
-        // address farm;
         for (uint8 i; i < 2; ++i) {
             bool lockup = i == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;

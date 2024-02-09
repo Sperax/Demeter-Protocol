@@ -588,7 +588,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20_LockupFarm(bool lockup, uint256 amt) public useKnownActor(owner) {
+    function testFuzz_recoverE20(bool lockup, uint256 amt) public useKnownActor(owner) {
         address farm = lockup ? lockupFarm : nonLockupFarm;
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(farm), 10e10);
@@ -600,7 +600,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
 
 abstract contract InitiateCooldownTest is BaseFarmTest {
     // this check is to make sure someone else other than the depositor cannot initiate cooldown
-    function test_initiateCooldown_LockupFarm_RevertWhen_DepositDoesNotExist()
+    function test_initiateCooldown_RevertWhen_DepositDoesNotExist()
         public
         setup
         depositSetup(lockupFarm, true)
@@ -637,7 +637,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
 }
 
 abstract contract AddRewardsTest is BaseFarmTest {
-    function test_addRewards_nonLockupFarm_RevertWhen_InvalidRewardToken() public useKnownActor(owner) {
+    function test_addRewards_RevertWhen_InvalidRewardToken() public useKnownActor(owner) {
         uint256 rwdAmt = 1 * 10 ** ERC20(invalidRewardToken).decimals();
         deal(address(invalidRewardToken), currentActor, rwdAmt);
         ERC20(invalidRewardToken).approve(nonLockupFarm, rwdAmt);
@@ -989,7 +989,7 @@ abstract contract CloseFarmTest is BaseFarmTest {
         BaseFarm(nonLockupFarm).closeFarm();
     }
 
-    function test_closeFarm_lockupFarm() public useKnownActor(owner) {
+    function test_closeFarm() public useKnownActor(owner) {
         for (uint8 j; j < 2; ++j) {
             bool lockup = j == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
