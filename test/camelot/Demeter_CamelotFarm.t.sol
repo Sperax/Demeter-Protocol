@@ -160,11 +160,9 @@ contract OnERC721ReceivedTest is Demeter_CamelotFarmTest {
 
     // Deposit test
     function test_onERC721Received() public useKnownActor(user) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 amt1 = 1e3 * 10 ** ERC20(DAI).decimals();
             deal(DAI, user, amt1);
             uint256 amt2 = 1e3 * 10 ** ERC20(USDCe).decimals();

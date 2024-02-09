@@ -248,11 +248,9 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 
     function testFuzz_withdraw_lockupFarm_notClosedButExpired() public {
         uint256 depositId = 1;
-        bool lockup;
-        address farm;
         for (uint8 i; i < 2; ++i) {
-            lockup = i == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = i == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
             uint256 currentTimestamp = block.timestamp;
@@ -275,11 +273,11 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 
     function testFuzz_withdraw_lockupFarm_closedAndExpired() public {
         uint256 depositId = 1;
-        bool lockup;
-        address farm;
+        // bool lockup;
+        // address farm;
         for (uint8 i; i < 2; ++i) {
-            lockup = i == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = i == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
             uint256 currentTimestamp = block.timestamp;

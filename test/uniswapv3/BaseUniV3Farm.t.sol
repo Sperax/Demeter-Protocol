@@ -324,11 +324,9 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
     // Deposit test.
     function test_deposit_onERC721Received() public useKnownActor(user) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
             uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
 

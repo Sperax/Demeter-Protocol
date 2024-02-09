@@ -128,11 +128,9 @@ abstract contract DepositTest is BaseFarmTest {
     }
 
     function test_deposit() public {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             deposit(farm, lockup, 1e2);
         }
     }
@@ -171,13 +169,10 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
     }
 
     function test_claimRewards() public setup {
-        address farm;
-        uint256 rewardsForEachSubsLength;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
-            rewardsForEachSubsLength = lockup ? 2 : 1;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
+            uint256 rewardsForEachSubsLength = lockup ? 2 : 1;
             depositSetupFn(farm, lockup);
             skip(86400 * 15);
             vm.startPrank(user);
@@ -327,11 +322,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_paused() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             uint256 depositId = 1;
             uint256 time = 3 days;
@@ -368,11 +361,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_closed() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             uint256 depositId = 1;
             uint256 time = 3 days;
@@ -396,11 +387,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 depositId = 1;
             addRewards(farm);
             setRewardRates(farm);
@@ -439,11 +428,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_firstDeposit_multipleDeposits() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             Deposit[] memory multipleUserDeposits = new Deposit[](10);
             Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
             Subscription[] memory multipleUserLockUpSubscriptions;
@@ -489,11 +476,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_inBetweenDeposit_multipleDeposits() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             Deposit[] memory userDeposits = new Deposit[](10);
             Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
             Subscription[] memory multipleUserLockUpSubscriptions;
@@ -533,11 +518,9 @@ abstract contract WithdrawTest is BaseFarmTest {
     }
 
     function test_withdraw_lastDeposit_multipleDeposits() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             Deposit[] memory multipleUserDeposits = new Deposit[](10);
             Subscription[] memory multipleUserNonLockUpSubscriptions = new Subscription[](10);
             Subscription[] memory multipleUserLockUpSubscriptions;
@@ -606,8 +589,7 @@ abstract contract RecoverERC20Test is BaseFarmTest {
     }
 
     function testFuzz_recoverE20_LockupFarm(bool lockup, uint256 amt) public useKnownActor(owner) {
-        address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
+        address farm = lockup ? lockupFarm : nonLockupFarm;
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(farm), 10e10);
         vm.expectEmit(address(farm));
@@ -669,8 +651,7 @@ abstract contract AddRewardsTest is BaseFarmTest {
     }
 
     function testFuzz_addRewards(bool lockup, uint256 rwdAmt) public useKnownActor(owner) {
-        address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
+        address farm = lockup ? lockupFarm : nonLockupFarm;
         address[] memory rewardTokens = getRewardTokens(farm);
         for (uint8 i; i < rewardTokens.length; ++i) {
             uint8 decimals = ERC20(rewardTokens[i]).decimals();
@@ -708,9 +689,7 @@ abstract contract SetRewardRateTest is BaseFarmTest {
     }
 
     function testFuzz_setRewardRate(bool lockup, uint256 rwdRateNonLockup, uint256 rwdRateLockup) public {
-        address farm;
-
-        farm = lockup ? lockupFarm : nonLockupFarm;
+        address farm = lockup ? lockupFarm : nonLockupFarm;
         uint256[] memory rwdRate;
         if (lockup) {
             rwdRate = new uint256[](2);
@@ -745,11 +724,9 @@ abstract contract GetRewardBalanceTest is BaseFarmTest {
     }
 
     function test_rewardBalance() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             for (uint8 i = 0; i < rwdTokens.length; ++i) {
                 uint256 rwdBalance = BaseFarm(farm).getRewardBalance(rwdTokens[i]);
@@ -773,11 +750,9 @@ abstract contract GetDepositTest is BaseFarmTest {
 
 abstract contract GetNumSubscriptionsTest is BaseFarmTest {
     function test_getDeposit() public setup depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 numSubscriptions = BaseFarm(farm).getNumSubscriptions(0);
             assertEq(numSubscriptions, 0);
         }
@@ -796,11 +771,9 @@ abstract contract SubscriptionInfoTest is BaseFarmTest {
     }
 
     function test_subInfo() public setup {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             Subscription memory numSubscriptions = BaseFarm(farm).getSubscriptionInfo(1, 0);
             assertEq(numSubscriptions.fundId, 0);
@@ -834,11 +807,9 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
     }
 
     function test_updateTknManager() public useKnownActor(owner) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             address[] memory rewardTokens = getRewardTokens(farm);
             address _newTknManager = newTokenManager;
             for (uint8 i; i < rewardTokens.length; ++i) {
@@ -854,11 +825,9 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
 
 abstract contract RecoverRewardFundsTest is BaseFarmTest {
     function test_recoverRewardFund_one() public {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
             vm.startPrank(owner);
             address[] memory rewardTokens = getRewardTokens(farm);
@@ -875,11 +844,9 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
     }
 
     function test_recoverRewardFund_two() public setup useKnownActor(owner) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             address[] memory rewardTokens = getRewardTokens(farm);
 
             for (uint8 i; i < rewardTokens.length; ++i) {
@@ -895,11 +862,9 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
     }
 
     function test_recoverRewardFund_partially() public useKnownActor(owner) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             address[] memory rewardTokens = getRewardTokens(farm);
 
             for (uint8 i; i < rewardTokens.length; ++i) {
@@ -935,11 +900,9 @@ abstract contract FarmPauseSwitchTest is BaseFarmTest {
     }
 
     function test_farmPause() public useKnownActor(owner) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             bool isFarmActive = BaseFarm(farm).isFarmActive();
             vm.expectEmit(address(farm));
             emit FarmPaused(isFarmActive);
@@ -1027,13 +990,10 @@ abstract contract CloseFarmTest is BaseFarmTest {
     }
 
     function test_closeFarm_lockupFarm() public useKnownActor(owner) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            uint256 rewardRateLength;
-            farm = lockup ? lockupFarm : nonLockupFarm;
-            rewardRateLength = lockup ? 2 : 1;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
+            uint256 rewardRateLength = lockup ? 2 : 1;
             address[] memory rewardTokens = getRewardTokens(farm);
             uint256[] memory rwdRate = new uint256[](rewardRateLength);
             vm.expectEmit(address(farm));

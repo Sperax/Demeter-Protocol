@@ -18,11 +18,9 @@ abstract contract BaseE20FarmTest is BaseFarmTest {
 
 abstract contract E20FarmDepositTest is BaseE20FarmTest {
     function test_E20FarmDeposit() public useKnownActor(user) {
-        address farm;
-        bool lockup;
         for (uint8 j; j < 2; ++j) {
-            lockup = j == 0 ? true : false;
-            farm = lockup ? lockupFarm : nonLockupFarm;
+            bool lockup = j == 0 ? true : false;
+            address farm = lockup ? lockupFarm : nonLockupFarm;
             address poolAddress = getPoolAddress();
             uint256 amt = 1e3 * 10 ** ERC20(poolAddress).decimals();
             deal(poolAddress, currentActor, amt);
@@ -87,8 +85,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
     }
 
     function testFuzz_IncreaseDepositTest(bool lockup, uint256 amt) public {
-        address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
+        address farm = lockup ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, lockup);
         vm.startPrank(user);
         address poolAddress = getPoolAddress();
