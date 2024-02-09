@@ -126,7 +126,6 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        uint256 tokenId = depositToTokenId[_depositId];
         (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
 
         address token0 = IPair(lpToken).token0();
@@ -150,7 +149,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         });
 
         IERC20(lpToken).forceApprove(nftPool, liquidity);
-        INFTPool(nftPool).addToPosition(tokenId, liquidity);
+        INFTPool(nftPool).addToPosition(depositToTokenId[_depositId], liquidity);
 
         _updateSubscriptionForIncrease(_depositId, liquidity);
         userDeposit.liquidity += liquidity;
@@ -200,9 +199,8 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
 
-        uint256 tokenId = depositToTokenId[_depositId];
         // Withdraw liquidity from nft pool
-        INFTPool(nftPool).withdrawFromPosition(tokenId, _liquidityToWithdraw);
+        INFTPool(nftPool).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
         (address lpToken,,,,,,,) = INFTPool(nftPool).getPoolInfo();
         address token0 = IPair(lpToken).token0();
         address token1 = IPair(lpToken).token1();
