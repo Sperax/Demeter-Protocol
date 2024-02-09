@@ -6,12 +6,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../BaseFarm.t.sol";
 import "../../features/BaseFarmWithExpiry.t.sol";
-import {BaseFarmTest} from "../../BaseFarm.t.sol";
 import {
     INFTPoolFactory, IPositionHelper, INFTPool
 } from "../../../contracts/e721-farms/camelot/interfaces/ICamelot.sol";
 import "../../../contracts/e721-farms/camelot/Demeter_CamelotFarm_Deployer.sol";
 import "../../../contracts/e721-farms/camelot/Demeter_CamelotFarm.sol";
+import "../BaseE721Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
@@ -19,7 +19,7 @@ import {FarmFactory} from "../../../contracts/FarmFactory.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {BaseE721Farm} from "../../../contracts/e721-farms/BaseE721Farm.sol";
 
-contract Demeter_CamelotFarmTest is BaseFarmTest {
+contract Demeter_CamelotFarmTest is BaseE721FarmTest {
     using SafeERC20 for IERC20;
 
     string public FARM_ID = "Demeter_Camelot_v1";
@@ -85,11 +85,11 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
         IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
         IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
-            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
+            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(nfpm()), 0
         );
-        uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId();
-        IERC721(getPoolAddress()).safeTransferFrom(user, farm, tokenId, lockup);
-        (uint256 liquidity,,,,,,,) = INFTPool(getPoolAddress()).getStakingPosition(tokenId);
+        uint256 tokenId = INFTPool(nfpm()).lastTokenId();
+        IERC721(nfpm()).safeTransferFrom(user, farm, tokenId, lockup);
+        (uint256 liquidity,,,,,,,) = INFTPool(nfpm()).getStakingPosition(tokenId);
         return liquidity;
     }
 
@@ -99,7 +99,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         useKnownActor(user)
     {
         bytes memory lockup = locked ? abi.encode(true) : abi.encode(false);
-        uint256 tokenId = INFTPool(getPoolAddress()).lastTokenId() + 1;
+        uint256 tokenId = INFTPool(nfpm()).lastTokenId() + 1;
         address poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
         if (
             keccak256(abi.encodePacked(revertMsg))
@@ -112,7 +112,7 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
         IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
         IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
-            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(getPoolAddress()), 0
+            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(nfpm()), 0
         );
         if (
             keccak256(abi.encodePacked(revertMsg))
@@ -132,7 +132,26 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         ) vm.clearMockedCalls();
     }
 
-    function getPoolAddress() public view returns (address poolAddress) {
+    function createPosition(address from) public override returns (uint256 tokenId, address nftContract) {
+        tokenId = INFTPool(nfpm()).lastTokenId() + 1;
+        uint256 amt = 100;
+        uint256 amt1 = amt * 10 ** ERC20(DAI).decimals();
+        deal(DAI, from, amt1);
+        uint256 amt2 = amt * 10 ** ERC20(USDCe).decimals();
+        deal(USDCe, from, amt2);
+        IERC20(DAI).forceApprove(POSITION_HELPER, amt1);
+        IERC20(USDCe).forceApprove(POSITION_HELPER, amt2);
+        IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
+            DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, from, INFTPool(nfpm()), 0
+        );
+        nftContract = nfpm();
+    }
+
+    function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
+        (liquidity,,,,,,,) = INFTPool(nfpm()).getStakingPosition(tokenId);
+    }
+
+    function nfpm() internal view override returns (address poolAddress) {
         poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
     }
 
@@ -155,18 +174,6 @@ contract Demeter_CamelotFarmTest is BaseFarmTest {
         Demeter_CamelotFarm(farm).initialize(
             FARM_ID, block.timestamp, 0, address(factory), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
         );
-    }
-
-    function test_OnERC721Received_RevertWhen_UnauthorisedNFTContract() public {
-        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.UnauthorisedNFTContract.selector));
-        Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
-    }
-
-    function test_OnERC721Received_RevertWhen_NoData() public {
-        address nftPool = Demeter_CamelotFarm(lockupFarm).nftContract();
-        vm.startPrank(nftPool);
-        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.NoData.selector));
-        Demeter_CamelotFarm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
     function test_onNFTHarvest_RevertWhen_notNftPool() public {
@@ -528,7 +535,9 @@ contract DemeterCamelotFarmInheritTest is
     RecoverRewardFundsTest,
     GetDepositTest,
     MulticallTest,
-    _SetupFarmTest
+    _SetupFarmTest,
+    NFTDepositTest,
+    WithdrawAdditionalTest
 {
     function setUp() public override(Demeter_CamelotFarmTest, BaseFarmTest) {
         super.setUp();

@@ -171,9 +171,11 @@ contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
         }
 
         vm.expectRevert(revertMsg);
-        changePrank(NFPM);
-        // This will not actually deposit, but this is enough to check for the reverts
-        BaseUniV3Farm(farm).onERC721Received(address(0), currentActor, tokenId, abi.encode(locked));
+        IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+    }
+
+    function nfpm() internal view override returns (address) {
+        return NFPM;
     }
 }
 
@@ -202,7 +204,8 @@ contract Demeter_UniV3FarmTestInheritTest is
     InitializeTest,
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
-    ClaimUniswapFeeTest
+    ClaimUniswapFeeTest,
+    NFTDepositTest
 {
     function setUp() public override(Demeter_UniV3FarmTest, BaseFarmTest) {
         super.setUp();
