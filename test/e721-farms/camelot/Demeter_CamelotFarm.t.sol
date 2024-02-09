@@ -4,18 +4,20 @@ pragma solidity 0.8.16;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../BaseFarm.t.sol";
-import "../features/BaseFarmWithExpiry.t.sol";
-import {BaseFarmTest} from "../BaseFarm.t.sol";
-import {INFTPoolFactory, IPositionHelper, INFTPool} from "../../contracts/e721-farms/camelot/interfaces/ICamelot.sol";
-import "../../contracts/e721-farms/camelot/Demeter_CamelotFarm_Deployer.sol";
-import "../../contracts/e721-farms/camelot/Demeter_CamelotFarm.sol";
+import "../../BaseFarm.t.sol";
+import "../../features/BaseFarmWithExpiry.t.sol";
+import {BaseFarmTest} from "../../BaseFarm.t.sol";
+import {
+    INFTPoolFactory, IPositionHelper, INFTPool
+} from "../../../contracts/e721-farms/camelot/interfaces/ICamelot.sol";
+import "../../../contracts/e721-farms/camelot/Demeter_CamelotFarm_Deployer.sol";
+import "../../../contracts/e721-farms/camelot/Demeter_CamelotFarm.sol";
 import {VmSafe} from "forge-std/Vm.sol";
-import {UpgradeUtil} from "../../test/utils/UpgradeUtil.t.sol";
-import {OperableDeposit} from "../../contracts/features/OperableDeposit.sol";
-import {FarmFactory} from "../../contracts/FarmFactory.sol";
-import {Deposit, Subscription, RewardFund} from "../../contracts/interfaces/DataTypes.sol";
-import {BaseE721Farm} from "../../contracts/e721-farms/BaseE721Farm.sol";
+import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
+import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
+import {FarmFactory} from "../../../contracts/FarmFactory.sol";
+import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
+import {BaseE721Farm} from "../../../contracts/e721-farms/BaseE721Farm.sol";
 
 contract Demeter_CamelotFarmTest is BaseFarmTest {
     using SafeERC20 for IERC20;

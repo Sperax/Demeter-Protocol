@@ -4,26 +4,28 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {BaseUniV3Farm} from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
-import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
-import {INonfungiblePositionManager as INFPM} from "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
+import {BaseUniV3Farm} from "../../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+import {Demeter_BaseUniV3FarmDeployer} from
+    "../../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
+import {INonfungiblePositionManager as INFPM} from
+    "../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../BaseUniV3Farm.t.sol";
-import "../../utils/UpgradeUtil.t.sol";
+import "../../../utils/UpgradeUtil.t.sol";
 
-contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
+contract Demeter_UniV3FarmTest is BaseUniV3FarmTest {
     // Define variables
 
-    string public constant FARM_NAME = "Demeter_SushiV3_v1";
-    Demeter_BaseUniV3FarmDeployer public sushiswapFarmDeployer;
+    string public FARM_NAME = "Demeter_UniV3_v4";
+    Demeter_BaseUniV3FarmDeployer public uniswapV3FarmDeployer;
 
     function setUp() public virtual override {
         super.setUp();
 
-        NFPM = SUSHISWAP_NFPM;
-        UNIV3_FACTORY = SUSHISWAP_FACTORY;
-        SWAP_ROUTER = SUSHISWAP_SWAP_ROUTER;
+        NFPM = UNISWAP_V3_NFPM;
+        UNIV3_FACTORY = UNISWAP_V3_FACTORY;
+        SWAP_ROUTER = UNISWAP_V3_SWAP_ROUTER;
         FARM_ID = FARM_NAME;
 
         vm.startPrank(PROXY_OWNER);
@@ -33,10 +35,10 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        sushiswapFarmDeployer = new Demeter_BaseUniV3FarmDeployer(
+        uniswapV3FarmDeployer = new Demeter_BaseUniV3FarmDeployer(
             DEMETER_FACTORY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
-        factory.registerFarmDeployer(address(sushiswapFarmDeployer));
+        factory.registerFarmDeployer(address(uniswapV3FarmDeployer));
 
         // Configure rewardTokens
         rwdTokens.push(USDCe);
@@ -70,8 +72,8 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         });
 
         // Approve Farm fee
-        IERC20(FEE_TOKEN()).approve(address(sushiswapFarmDeployer), 1e22);
-        address farm = sushiswapFarmDeployer.createFarm(_data);
+        IERC20(FEE_TOKEN()).approve(address(uniswapV3FarmDeployer), 1e22);
+        address farm = uniswapV3FarmDeployer.createFarm(_data);
         return farm;
     }
 
@@ -175,13 +177,14 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
     }
 }
 
-contract Demeter_SushiV3FarmInheritTest is
-    Demeter_SushiV3FarmTest,
+contract Demeter_UniV3FarmTestInheritTest is
+    Demeter_UniV3FarmTest,
     DepositTest,
     WithdrawTest,
     WithdrawWithExpiryTest,
     ClaimRewardsTest,
     GetRewardFundInfoTest,
+    RecoverERC20Test,
     InitiateCooldownTest,
     AddRewardsTest,
     SetRewardRateTest,
@@ -193,16 +196,15 @@ contract Demeter_SushiV3FarmInheritTest is
     UpdateFarmStartTimeTest,
     UpdateFarmStartTimeWithExpiryTest,
     ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
     CloseFarmTest,
+    UpdateCoolDownPeriodTest,
     _SetupFarmTest,
     InitializeTest,
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
-    ClaimUniswapFeeTest,
-    RecoverERC20Test
+    ClaimUniswapFeeTest
 {
-    function setUp() public override(Demeter_SushiV3FarmTest, BaseFarmTest) {
+    function setUp() public override(Demeter_UniV3FarmTest, BaseFarmTest) {
         super.setUp();
     }
 }

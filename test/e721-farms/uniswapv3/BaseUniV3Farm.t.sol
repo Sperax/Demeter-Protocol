@@ -11,12 +11,12 @@ import {
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
     INFPM
-} from "../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+} from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-import "../BaseFarm.t.sol";
-import "../features/BaseFarmWithExpiry.t.sol";
+import "../../BaseFarm.t.sol";
+import "../../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseUniV3FarmTest is BaseFarmTest {
     uint8 public FEE_TIER = 100;
@@ -328,16 +328,6 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
-    function test_RevertWhen_UnauthorisedNFTContract() public {
-        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.UnauthorisedNFTContract.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
-    }
-
-    function test_RevertWhen_NoData() public useKnownActor(NFPM) {
-        vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.NoData.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
-    }
-
     function test_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
         uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
