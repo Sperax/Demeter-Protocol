@@ -283,6 +283,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         /// @dev Get the info of the required token
         (uint256 liquidity,,,,,,,) = INFTPool(nftContract).getStakingPosition(_tokenId);
 
-        return uint256(liquidity);
+        return liquidity;
     }
 }
