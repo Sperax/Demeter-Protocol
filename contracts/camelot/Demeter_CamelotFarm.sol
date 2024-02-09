@@ -196,7 +196,7 @@ contract Demeter_CamelotFarm is BaseFarmWithExpiry, INFTHandler, OperableDeposit
 
         // Claim the pending rewards for the deposit and update farm reward data.
         _updateAndClaimFarmRewards(msg.sender, _depositId);
-        // Update deposit Information
+        // Update deposit information.
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
 
