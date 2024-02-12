@@ -4,7 +4,7 @@ pragma solidity 0.8.16;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {BaseFarmTest} from "../BaseFarm.t.sol";
 import {Deposit} from "../../contracts/interfaces/DataTypes.sol";
-import {BaseUniV3Farm, BaseE721Farm} from "../../contracts/e721-farms/uniswapv3/BaseUniV3Farm.sol";
+import {BaseUniV3Farm, BaseE721Farm} from "../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 
 abstract contract BaseE721FarmTest is BaseFarmTest {
