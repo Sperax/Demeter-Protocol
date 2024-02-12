@@ -13,7 +13,7 @@ import {
     INFPM
 } from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import {
-    INonfungiblePositionManagerUtils as INFPMUtils,
+    INFPMUtils,
     Position
 } from "../../../contracts/e721-farms/uniswapv3/interfaces/INonfungiblePositionManagerUtils.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";

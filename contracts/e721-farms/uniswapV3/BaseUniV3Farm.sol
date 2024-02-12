@@ -17,16 +17,9 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {
-    INonfungiblePositionManager as INFPM,
-    IUniswapV3Factory,
-    IUniswapV3TickSpacing,
-    CollectParams
-} from "./interfaces/IUniswapV3.sol";
+import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
 import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
-import {
-    INonfungiblePositionManagerUtils as INFPMUtils, Position
-} from "./interfaces/INonfungiblePositionManagerUtils.sol";
+import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {RewardTokenData} from "../../BaseFarm.sol";
 import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
 import {BaseFarmWithExpiry} from "../../features/BaseFarmWithExpiry.sol";
@@ -125,7 +118,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry {
             revert NoFeeToClaim();
         }
         (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
-            CollectParams({
+            INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
                 amount0Max: uint128(amt0),
