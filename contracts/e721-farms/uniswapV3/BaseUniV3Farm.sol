@@ -22,7 +22,6 @@ import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
 import {BaseFarmWithExpiry} from "../../features/BaseFarmWithExpiry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
 import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";

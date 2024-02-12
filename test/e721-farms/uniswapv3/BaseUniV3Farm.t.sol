@@ -16,7 +16,7 @@ import {
 import {
     INFPMUtils,
     Position
-} from "../../../contracts/e721-farms/uniswapv3/interfaces/INonfungiblePositionManagerUtils.sol";
+} from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
