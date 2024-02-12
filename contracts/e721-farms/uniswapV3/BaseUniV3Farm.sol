@@ -17,16 +17,16 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
+import {RewardTokenData} from "../../BaseFarm.sol";
+import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
+import {BaseFarmWithExpiry} from "../../features/BaseFarmWithExpiry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
 import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {RewardTokenData} from "../BaseFarm.sol";
-import {BaseFarmWithExpiry} from "../features/BaseFarmWithExpiry.sol";
-import {Deposit} from "../interfaces/DataTypes.sol";
-import {OperableDeposit} from "../features/OperableDeposit.sol";
+import {Deposit} from "../../interfaces/DataTypes.sol";
+import {OperableDeposit} from "../../features/OperableDeposit.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -42,7 +42,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
+contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params
@@ -50,18 +50,13 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
     int24 public tickUpperAllowed;
     address public uniswapPool;
     address public uniV3Factory;
-    address public nfpm;
     address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
     address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
-
-    mapping(uint256 => uint256) public depositToTokenId;
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
     // Custom Errors
     error InvalidUniswapPoolConfig();
-    error NotAUniV3NFT();
-    error NoData();
     error NoFeeToClaim();
     error IncorrectPoolToken();
     error IncorrectTickRange();
@@ -69,14 +64,17 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
     error InvalidAmount();
 
     /// @notice constructor
-    /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days
+    /// @param _farmId - String ID of the farm.
+    /// @param _farmStartTime - time of farm start.
+    /// @param _cooldownPeriod - cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _factory - Address of the farm factory
-    /// @param _uniswapPoolData - init data for UniswapV3 pool
-    /// @param _rwdTokenData - init data for reward tokens
-    /// @param _uniswapUtils - address of our custom uniswap utils contract
-    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
+    /// @param _factory - Address of the farm factory.
+    /// @param _uniswapPoolData - init data for UniswapV3 pool.
+    /// @param _rwdTokenData - init data for reward tokens.
+    /// @param _uniV3Factory - Factory contract of Uniswap V3.
+    /// @param _nftContract - NFT contract's address (NFPM).
+    /// @param _uniswapUtils - address of our custom uniswap utils contract.
+    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
@@ -85,12 +83,12 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData,
         address _uniV3Factory,
-        address _nfpm,
+        address _nftContract,
         address _uniswapUtils,
         address _nfpmUtils
     ) external initializer {
         _validateNonZeroAddr(_uniV3Factory);
-        _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_nftContract);
         _validateNonZeroAddr(_uniswapUtils);
         _validateNonZeroAddr(_nfpmUtils);
 
@@ -106,35 +104,11 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniV3Factory = _uniV3Factory;
-        nfpm = _nfpm;
+        nftContract = _nftContract;
         uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
-    }
-
-    /// @notice Function is called when user transfers the NFT to the contract.
-    /// @param _from The address of the owner.
-    /// @param _tokenId nft Id generated by uniswap v3.
-    /// @param _data The data should be the lockup flag (bool).
-    function onERC721Received(
-        address, // unused variable. not named
-        address _from,
-        uint256 _tokenId,
-        bytes calldata _data
-    ) external override returns (bytes4) {
-        if (msg.sender != nfpm) {
-            revert NotAUniV3NFT();
-        }
-        if (_data.length == 0) {
-            revert NoData();
-        }
-        uint256 liquidity = _getLiquidity(_tokenId);
-        // Validate the position and get the liquidity
-
-        uint256 depositId = _deposit(_from, abi.decode(_data, (bool)), liquidity);
-        depositToTokenId[depositId] = _tokenId;
-        return this.onERC721Received.selector;
     }
 
     /// @notice Allow user to increase liquidity for a deposit.
@@ -159,7 +133,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        address pm = nfpm;
+        address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
         Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
 
@@ -226,7 +200,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
 
-        address pm = nfpm;
+        address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
         // Decrease liquidity in the current range.
         (uint256 amount0, uint256 amount1) = INFPM(pm).decreaseLiquidity(
@@ -252,24 +226,6 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
-    /// @notice Function to lock a staked deposit
-    /// @param _depositId The id of the deposit to be locked
-    /// @dev _depositId is corresponding to the user's deposit
-    function initiateCooldown(uint256 _depositId) external override nonReentrant {
-        _initiateCooldown(_depositId);
-    }
-
-    /// @notice Function to withdraw a deposit from the farm.
-    /// @param _depositId The id of the deposit to be withdrawn
-    function withdraw(uint256 _depositId) external override nonReentrant {
-        _validateDeposit(msg.sender, _depositId);
-
-        _withdraw(msg.sender, _depositId);
-        // Transfer the nft back to the user.
-        INFPM(nfpm).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
-        delete depositToTokenId[_depositId];
-    }
-
     /// @notice Claim uniswap pool fee for a deposit.
     /// @dev Only the deposit owner can claim the fee.
     /// @param _depositId Id of the deposit
@@ -278,7 +234,7 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
         _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        address pm = nfpm;
+        address pm = nftContract;
         (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
@@ -300,16 +256,33 @@ contract BaseUniV3Farm is BaseFarmWithExpiry, OperableDeposit, IERC721Receiver {
     function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
         // Validate token.
         _getLiquidity(_tokenId);
-        return IUniswapUtils(uniswapUtils).fees(nfpm, _tokenId);
+        return IUniswapUtils(uniswapUtils).fees(nftContract, _tokenId);
+    }
+
+    // --------------------- Public and overriding Functions ---------------------
+
+    /// @notice Update the farm start time.
+    /// @param _newStartTime The new farm start time.
+    /// @dev Calls BaseFarmWithExpiry's updateFarmStartTime function
+    function updateFarmStartTime(uint256 _newStartTime) public override(BaseFarm, BaseFarmWithExpiry) onlyOwner {
+        BaseFarmWithExpiry.updateFarmStartTime(_newStartTime);
+    }
+
+    /// @notice Returns if farm is open.
+    ///         Farm is open if it not closed.
+    /// @return bool true if farm is open.
+    /// @dev Calls BaseFarmWithExpiry's isOpenFarm function.
+    function isFarmOpen() public view override(BaseFarm, BaseFarmWithExpiry) returns (bool) {
+        return BaseFarmWithExpiry.isFarmOpen();
     }
 
     /// @notice Validate the position for the pool and get Liquidity
     /// @param _tokenId The tokenId of the position
     /// @dev the position must adhere to the price ranges
     /// @dev Only allow specific pool token to be staked.
-    function _getLiquidity(uint256 _tokenId) private view returns (uint256) {
+    function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
-        Position memory positions = INFPMUtils(nfpmUtils).positions(nfpm, _tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
         /// @dev Check if the token belongs to correct pool
 

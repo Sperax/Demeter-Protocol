@@ -78,10 +78,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _disableInitializers();
     }
 
-    /// @notice A function to be called to initiate cooldown.
-    /// @param _depositId Id of the deposit.
-    function initiateCooldown(uint256 _depositId) external virtual;
-
     /// @notice A function to be called to withdraw deposit.
     /// @param _depositId Id of the deposit.
     function withdraw(uint256 _depositId) external virtual;
@@ -90,6 +86,13 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @param _depositId The id of the deposit.
     function claimRewards(uint256 _depositId) external {
         claimRewards(msg.sender, _depositId);
+    }
+
+    /// @notice Function to be called to initiate cooldown for a staked deposit.
+    /// @param _depositId The id of the deposit to be locked.
+    /// @dev _depositId is corresponding to the user's deposit.
+    function initiateCooldown(uint256 _depositId) external nonReentrant {
+        _initiateCooldown(_depositId);
     }
 
     /// @notice Add rewards to the farm.
@@ -120,14 +123,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _validateCooldownPeriod(_newCooldownPeriod);
         cooldownPeriod = _newCooldownPeriod;
         emit CooldownPeriodUpdated(_newCooldownPeriod);
-    }
-
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
-    ///      New start time should be in future.
-    /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) external virtual onlyOwner {
-        _updateFarmStartTime(_newStartTime);
     }
 
     /// @notice Pause / UnPause the farm.
@@ -317,6 +312,24 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         _updateAndClaimFarmRewards(_account, _depositId);
     }
 
+    /// @notice Update the farm start time.
+    /// @dev Can be updated only before the farm start
+    ///      New start time should be in future.
+    /// @param _newStartTime The new farm start time.
+    function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
+        _validateFarmOpen();
+        if (lastFundUpdateTime <= block.timestamp) {
+            revert FarmAlreadyStarted();
+        }
+        if (_newStartTime < block.timestamp) {
+            revert InvalidTime();
+        }
+
+        lastFundUpdateTime = _newStartTime;
+
+        emit FarmStartTimeUpdated(_newStartTime);
+    }
+
     /// @notice Returns if farm is open.
     ///         Farm is open if it not closed.
     /// @return bool true if farm is open.
@@ -442,26 +455,11 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         emit CooldownInitiated(_depositId, userDeposit.expiryDate);
     }
 
-    /// @notice Update the farm start time.
-    /// @param _newStartTime The new farm start time.
-    function _updateFarmStartTime(uint256 _newStartTime) internal {
-        _validateFarmOpen();
-        if (lastFundUpdateTime <= block.timestamp) {
-            revert FarmAlreadyStarted();
-        }
-        if (_newStartTime < block.timestamp) {
-            revert InvalidTime();
-        }
-
-        lastFundUpdateTime = _newStartTime;
-
-        emit FarmStartTimeUpdated(_newStartTime);
-    }
-
     /// @notice Common logic for withdraw.
     /// @param _account address of the user.
     /// @param _depositId user's deposit id.
     function _withdraw(address _account, uint256 _depositId) internal {
+        _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
         // Note: If farm is not active, skip the cooldown check.
         uint256 depositExpiryDate = deposits[_depositId].expiryDate;

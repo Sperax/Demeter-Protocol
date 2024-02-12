@@ -4,13 +4,14 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {BaseUniV3Farm} from "../../../contracts/uniswapV3/BaseUniV3Farm.sol";
-import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
-import {INFPM} from "../../../contracts/uniswapV3/interfaces/IUniswapV3.sol";
+import {BaseUniV3Farm} from "../../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+import {Demeter_BaseUniV3FarmDeployer} from
+    "../../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
+import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../BaseUniV3Farm.t.sol";
-import "../../utils/UpgradeUtil.t.sol";
+import "../../../utils/UpgradeUtil.t.sol";
 
 contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
     // Define variables
@@ -169,9 +170,11 @@ contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
         }
 
         vm.expectRevert(revertMsg);
-        changePrank(NFPM);
-        // This will not actually deposit, but this is enough to check for the reverts
-        BaseUniV3Farm(farm).onERC721Received(address(0), currentActor, tokenId, abi.encode(locked));
+        IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+    }
+
+    function nfpm() internal view override returns (address) {
+        return NFPM;
     }
 }
 
@@ -200,7 +203,10 @@ contract Demeter_SushiV3FarmInheritTest is
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
     ClaimUniswapFeeTest,
-    RecoverERC20Test
+    RecoverERC20Test,
+    NFTDepositTest,
+    IncreaseDepositTest,
+    DecreaseDepositTest
 {
     function setUp() public override(Demeter_SushiV3FarmTest, BaseFarmTest) {
         super.setUp();
