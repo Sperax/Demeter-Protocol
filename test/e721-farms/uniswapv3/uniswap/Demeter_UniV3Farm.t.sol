@@ -204,7 +204,9 @@ contract Demeter_UniV3FarmTestInheritTest is
     OnERC721ReceivedTest,
     WithdrawAdditionalTest,
     ClaimUniswapFeeTest,
-    NFTDepositTest
+    NFTDepositTest,
+    IncreaseDepositTest,
+    DecreaseDepositTest
 {
     function setUp() public override(Demeter_UniV3FarmTest, BaseFarmTest) {
         super.setUp();

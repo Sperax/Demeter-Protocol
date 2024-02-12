@@ -17,12 +17,17 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
-import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
-import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {RewardTokenData} from "../../BaseFarm.sol";
 import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
 import {BaseFarmWithExpiry} from "../../features/BaseFarmWithExpiry.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
+import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
+import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
+import {Deposit} from "../../interfaces/DataTypes.sol";
+import {OperableDeposit} from "../../features/OperableDeposit.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -38,7 +43,9 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry {
+contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
+    using SafeERC20 for IERC20;
+
     // UniswapV3 params
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
@@ -55,6 +62,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry {
     error IncorrectPoolToken();
     error IncorrectTickRange();
     error InvalidTickRange();
+    error InvalidAmount();
 
     /// @notice constructor
     /// @param _farmId - String ID of the farm.
@@ -102,6 +110,121 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry {
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _factory);
+    }
+
+    /// @notice Allow user to increase liquidity for a deposit.
+    /// @param _depositId The id of the deposit to be increased.
+    /// @param _amounts Desired amount of tokens to be increased.
+    /// @param _minAmounts Minimum amount of tokens to be added as liquidity.
+    function increaseDeposit(uint256 _depositId, uint256[2] calldata _amounts, uint256[2] calldata _minAmounts)
+        external
+        nonReentrant
+    {
+        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
+        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
+        if (_amounts[0] + _amounts[1] == 0) {
+            revert InvalidAmount();
+        }
+
+        Deposit storage userDeposit = deposits[_depositId];
+        if (userDeposit.expiryDate != 0) {
+            revert DepositIsInCooldown();
+        }
+
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        address pm = nftContract;
+        uint256 tokenId = depositToTokenId[_depositId];
+        Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
+
+        // Transfer tokens from user to the contract.
+        IERC20(positions.token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
+        IERC20(positions.token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
+
+        // Approve token to the NFPM contract.
+        IERC20(positions.token0).forceApprove(pm, _amounts[0]);
+        IERC20(positions.token1).forceApprove(pm, _amounts[1]);
+
+        // Increases liquidity in the current range
+        (uint128 liquidity, uint256 amount0, uint256 amount1) = INFPM(pm).increaseLiquidity(
+            INFPM.IncreaseLiquidityParams({
+                tokenId: tokenId,
+                amount0Desired: _amounts[0],
+                amount1Desired: _amounts[1],
+                amount0Min: _minAmounts[0],
+                amount1Min: _minAmounts[1],
+                deadline: block.timestamp
+            })
+        );
+
+        // Update deposit Information
+        _updateSubscriptionForIncrease(_depositId, liquidity);
+        userDeposit.liquidity += liquidity;
+
+        // Return the excess tokens to the user.
+        if (amount0 < _amounts[0]) {
+            IERC20(positions.token0).safeTransfer(msg.sender, _amounts[0] - amount0);
+        }
+        if (amount1 < _amounts[1]) {
+            IERC20(positions.token1).safeTransfer(msg.sender, _amounts[1] - amount1);
+        }
+
+        emit DepositIncreased(_depositId, liquidity);
+    }
+
+    /// @notice Withdraw liquidity partially from an existing deposit.
+    /// @param _depositId Deposit index for the user.
+    /// @param _liquidityToWithdraw Amount to be withdrawn.
+    /// @param _minAmounts Minimum amount of tokens to be received.
+    function decreaseDeposit(uint256 _depositId, uint128 _liquidityToWithdraw, uint256[2] calldata _minAmounts)
+        external
+        nonReentrant
+    {
+        _validateFarmOpen(); // Withdraw instead of decrease deposit when a farm is closed.
+        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
+
+        Deposit storage userDeposit = deposits[_depositId];
+
+        if (_liquidityToWithdraw == 0) {
+            revert CannotWithdrawZeroAmount();
+        }
+
+        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
+            revert DecreaseDepositNotPermitted();
+        }
+
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        // Update deposit Information
+        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
+        userDeposit.liquidity -= _liquidityToWithdraw;
+
+        address pm = nftContract;
+        uint256 tokenId = depositToTokenId[_depositId];
+        // Decrease liquidity in the current range.
+        (uint256 amount0, uint256 amount1) = INFPM(pm).decreaseLiquidity(
+            INFPM.DecreaseLiquidityParams({
+                tokenId: tokenId,
+                liquidity: _liquidityToWithdraw,
+                amount0Min: _minAmounts[0],
+                amount1Min: _minAmounts[1],
+                deadline: block.timestamp
+            })
+        );
+
+        // Transfer the tokens to the user.
+        INFPM(pm).collect(
+            INFPM.CollectParams({
+                tokenId: tokenId,
+                recipient: msg.sender,
+                amount0Max: uint128(amount0),
+                amount1Max: uint128(amount1)
+            })
+        );
+
+        emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.

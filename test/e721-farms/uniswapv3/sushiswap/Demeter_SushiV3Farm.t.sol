@@ -204,7 +204,9 @@ contract Demeter_SushiV3FarmInheritTest is
     WithdrawAdditionalTest,
     ClaimUniswapFeeTest,
     RecoverERC20Test,
-    NFTDepositTest
+    NFTDepositTest,
+    IncreaseDepositTest,
+    DecreaseDepositTest
 {
     function setUp() public override(Demeter_SushiV3FarmTest, BaseFarmTest) {
         super.setUp();

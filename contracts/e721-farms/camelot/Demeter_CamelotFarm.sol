@@ -88,7 +88,9 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             revert DepositIsInCooldown();
         }
 
-        uint256 tokenId = depositToTokenId[_depositId];
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
         address token0 = IPair(lpToken).token0();
@@ -112,10 +114,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         });
 
         IERC20(lpToken).forceApprove(nftContract, liquidity);
-        INFTPool(nftContract).addToPosition(tokenId, liquidity);
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        INFTPool(nftContract).addToPosition(depositToTokenId[_depositId], liquidity);
 
         _updateSubscriptionForIncrease(_depositId, liquidity);
         userDeposit.liquidity += liquidity;
@@ -148,10 +147,14 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             revert DecreaseDepositNotPermitted();
         }
 
-        uint256 tokenId = depositToTokenId[_depositId];
+        // Claim the pending rewards for the deposit and update farm reward data.
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        // Update deposit information.
+        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
+        userDeposit.liquidity -= _liquidityToWithdraw;
 
         // Withdraw liquidity from nft pool
-        INFTPool(nftContract).withdrawFromPosition(tokenId, _liquidityToWithdraw);
+        INFTPool(nftContract).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
         address token0 = IPair(lpToken).token0();
         address token1 = IPair(lpToken).token1();
@@ -165,13 +168,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             to: msg.sender,
             deadline: block.timestamp
         });
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
-
-        // Update deposit Information
-        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        userDeposit.liquidity -= _liquidityToWithdraw;
 
         emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
