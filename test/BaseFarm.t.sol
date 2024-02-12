@@ -801,7 +801,7 @@ abstract contract UpdateRewardTokenDataTest is BaseFarmTest {
 }
 
 abstract contract RecoverRewardFundsTest is BaseFarmTest {
-    function test_recoverRewardFund_one() public {
+    function test_recoverRewardFund_AfterAddRewards() public {
         for (uint8 j; j < 2; ++j) {
             bool lockup = j == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
@@ -820,7 +820,7 @@ abstract contract RecoverRewardFundsTest is BaseFarmTest {
         }
     }
 
-    function test_recoverRewardFund_two() public setup useKnownActor(owner) {
+    function test_recoverRewardFund_WithDirectlySentFunds() public setup useKnownActor(owner) {
         for (uint8 j; j < 2; ++j) {
             bool lockup = j == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
