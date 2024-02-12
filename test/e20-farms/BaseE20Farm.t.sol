@@ -60,7 +60,11 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function test_IncreaseDeposit_RevertWhen_farmIsClosed() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_IncreaseDeposit_revertsWhen_FarmIsInactive()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
         address poolAddress = getPoolAddress();
 
         uint256 amt = 100 * 10 ** ERC20(poolAddress).decimals();
@@ -68,8 +72,8 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         vm.startPrank(owner);
-        BaseE20Farm(lockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseE20Farm(lockupFarm).farmPauseSwitch(true);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
@@ -80,7 +84,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         skip(86400 * 2);
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.DepositInCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 

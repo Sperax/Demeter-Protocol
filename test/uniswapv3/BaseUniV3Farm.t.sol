@@ -10,6 +10,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 // import tests
 import "../BaseFarm.t.sol";
 import "../features/BaseFarmWithExpiry.t.sol";
+import {VmSafe} from "forge-std/Vm.sol";
 
 abstract contract BaseUniV3FarmTest is BaseFarmTest {
     uint8 public FEE_TIER = 100;
@@ -20,8 +21,9 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
     address public SWAP_ROUTER;
     string public FARM_ID;
 
+    uint256 constant depositId = 1;
+
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     // Custom Errors
     error InvalidUniswapPoolConfig();
@@ -492,6 +494,8 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
 }
 
 abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
     function test_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseUniV3Farm(lockupFarm).withdraw(0);
@@ -578,5 +582,200 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
         emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
 
         BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
+    }
+}
+
+abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
+    event IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
+
+    function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
+        vm.startPrank(owner);
+        BaseUniV3Farm(lockupFarm).farmPauseSwitch(true);
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+    }
+
+    function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+    }
+
+    function test_RevertWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidAmount.selector));
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [uint256(0), uint256(0)], [uint256(0), uint256(0)]);
+    }
+
+    function test_IncreaseDeposit_RevertWhen_DepositIsInCooldown()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        BaseUniV3Farm(lockupFarm).initiateCooldown(depositId);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+    }
+
+    function testFuzz_IncreaseDeposit(bool lockup, uint256 _depositAmount) public {
+        address farm;
+        farm = lockup ? lockupFarm : nonLockupFarm;
+        depositSetupFn(farm, lockup);
+
+        _depositAmount = bound(_depositAmount, 1, 1e7);
+        assertEq(currentActor, user);
+        assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
+
+        vm.startPrank(user);
+        uint256 tokenId = BaseUniV3Farm(farm).depositToTokenId(depositId);
+        uint256 depositAmount0 = _depositAmount * 10 ** ERC20(DAI).decimals();
+        uint256 depositAmount1 = _depositAmount * 10 ** ERC20(USDCe).decimals();
+        uint256[2] memory amounts = [depositAmount0, depositAmount1];
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+
+        deal(DAI, currentActor, depositAmount0);
+        deal(USDCe, currentActor, depositAmount1);
+        IERC20(DAI).approve(farm, depositAmount0);
+        IERC20(USDCe).approve(farm, depositAmount1);
+
+        uint256 oldLiquidity = BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity;
+        uint256[2] memory oldTotalFundLiquidity = [
+            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            lockup ? BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity : 0
+        ];
+
+        // TODO wanted to check for transfer events but solidity does not support two definitions for the same event
+        vm.expectEmit(DAI);
+        emit Approval(farm, NFPM, depositAmount0);
+        vm.expectEmit(USDCe);
+        emit Approval(farm, NFPM, depositAmount1);
+        vm.expectEmit(true, false, false, false, NFPM);
+        emit IncreaseLiquidity(tokenId, 0, 0, 0);
+        vm.expectEmit(true, false, false, false, farm);
+        emit DepositIncreased(depositId, 0);
+
+        vm.recordLogs();
+        BaseUniV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
+        VmSafe.Log[] memory entries = vm.getRecordedLogs();
+
+        uint128 loggedLiquidity;
+        uint256 loggedAmount0;
+        uint256 loggedAmount1;
+        bool found = false;
+
+        for (uint256 i = 0; i < entries.length; i++) {
+            if (entries[i].topics[0] == keccak256("IncreaseLiquidity(uint256,uint128,uint256,uint256)")) {
+                (loggedLiquidity, loggedAmount0, loggedAmount1) =
+                    abi.decode(entries[i].data, (uint128, uint256, uint256));
+            }
+            if (entries[i].topics[0] == keccak256("DepositIncreased(uint256,uint256)")) {
+                assertEq(
+                    abi.decode(entries[i].data, (uint256)),
+                    loggedLiquidity,
+                    "DepositIncreased event should have the same liquidity as IncreaseLiquidity event"
+                );
+                found = true;
+            }
+        }
+        assertTrue(found, "DepositIncreased event not found");
+        assertEq(IERC20(DAI).balanceOf(currentActor), depositAmount0 - loggedAmount0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), depositAmount1 - loggedAmount1);
+        assertEq(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity + loggedLiquidity);
+        assertEq(
+            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            oldTotalFundLiquidity[0] + loggedLiquidity
+        );
+        lockup
+            ? assertEq(
+                BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity,
+                oldTotalFundLiquidity[0] + loggedLiquidity
+            )
+            : assert(true);
+    }
+}
+
+abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
+    uint128 constant dummyLiquidityToWithdraw = 1;
+
+    event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
+    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
+
+    function test_DecreaseDeposit_RevertWhen_FarmIsClosed() public depositSetup(lockupFarm, true) {
+        vm.startPrank(owner);
+        BaseUniV3Farm(lockupFarm).closeFarm();
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+    }
+
+    function test_DecreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+    }
+
+    function test_DecreaseDeposit_RevertWhen_CannotWithdrawZeroAmount()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
+        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
+    }
+
+    function test_RevertWhen_DecreaseDepositNotPermitted() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
+        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+    }
+
+    // Decrease deposit test is always for non-lockup deposit.
+    function testFuzz_DecreaseDeposit(bool isLockupFarm, uint256 _liquidityToWithdraw) public {
+        address farm;
+        farm = isLockupFarm ? lockupFarm : nonLockupFarm;
+        depositSetupFn(farm, false);
+
+        uint128 oldLiquidity = uint128(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        assertEq(currentActor, user);
+        assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
+
+        vm.startPrank(user);
+        uint256 tokenId = BaseUniV3Farm(farm).depositToTokenId(depositId);
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+        uint256 oldCommonTotalLiquidity =
+            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
+        uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
+        uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
+
+        vm.expectEmit(true, false, false, false, NFPM);
+        emit DecreaseLiquidity(tokenId, 0, 0, 0);
+        vm.expectEmit(farm);
+        emit DepositDecreased(depositId, liquidityToWithdraw);
+
+        vm.recordLogs();
+        BaseUniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);
+        VmSafe.Log[] memory entries = vm.getRecordedLogs();
+
+        uint128 loggedLiquidity;
+        uint256 loggedAmount0;
+        uint256 loggedAmount1;
+        bool found = false;
+
+        for (uint256 i = 0; i < entries.length; i++) {
+            if (entries[i].topics[0] == keccak256("DecreaseLiquidity(uint256,uint128,uint256,uint256)")) {
+                (loggedLiquidity, loggedAmount0, loggedAmount1) =
+                    abi.decode(entries[i].data, (uint128, uint256, uint256));
+                found = true;
+            }
+        }
+        assertTrue(found, "DecreaseLiquidity event not found");
+        assertEq(loggedLiquidity, liquidityToWithdraw);
+        assertEq(IERC20(DAI).balanceOf(currentActor), oldUserToken0Balance + loggedAmount0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), oldUserToken1Balance + loggedAmount1);
+        assertEq(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
+        assertEq(
+            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            oldCommonTotalLiquidity - liquidityToWithdraw
+        );
     }
 }

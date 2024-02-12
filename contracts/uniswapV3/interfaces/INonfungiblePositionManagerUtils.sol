@@ -16,6 +16,6 @@ struct Position {
     uint128 tokensOwed1;
 }
 
-interface INonfungiblePositionManagerUtils {
+interface INFPMUtils {
     function positions(address positionManager, uint256 tokenId) external view returns (Position memory position);
 }
