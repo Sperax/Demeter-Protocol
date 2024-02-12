@@ -913,18 +913,18 @@ abstract contract FarmPauseSwitchTest is BaseFarmTest {
 }
 
 abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
-    function test_updateFarmStartTime_revertsWhen_FarmIsClosed() public useKnownActor(owner) {
+    function test_updateFarmStartTime_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
-    function test_updateFarmStartTime_revertsWhen_FarmAlreadyStarted() public useKnownActor(owner) {
+    function test_updateFarmStartTime_RevertWhen_FarmAlreadyStarted() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmAlreadyStarted.selector));
         BaseFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
-    function test_updateFarmStartTime_revertsWhen_InvalidTime() public {
+    function test_updateFarmStartTime_RevertWhen_InvalidTime() public {
         address farm = createFarm(block.timestamp + 2000, false);
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidTime.selector));

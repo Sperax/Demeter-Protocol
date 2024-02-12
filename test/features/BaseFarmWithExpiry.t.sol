@@ -39,7 +39,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         }
     }
 
-    function test_updateFarmStartTime_revertsWhen_FarmHasExpired() public useKnownActor(owner) {
+    function test_updateFarmStartTime_RevertWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 farmEndTime = BaseFarmWithExpiry(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));

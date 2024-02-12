@@ -60,7 +60,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function test_IncreaseDeposit_revertsWhen_FarmIsInactive()
+    function test_IncreaseDeposit_RevertWhen_FarmIsInactive()
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
