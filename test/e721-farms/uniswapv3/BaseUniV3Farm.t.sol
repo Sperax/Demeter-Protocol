@@ -4,15 +4,27 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../../contracts/uniswapV3/BaseUniV3Farm.sol";
+import {
+    BaseE721Farm,
+    BaseUniV3Farm,
+    UniswapPoolData,
+    IUniswapV3Factory,
+    IUniswapV3TickSpacing,
+    INFPM,
+    OperableDeposit
+} from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+import {
+    INFPMUtils,
+    Position
+} from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-import "../BaseFarm.t.sol";
-import "../features/BaseFarmWithExpiry.t.sol";
+import {BaseE721FarmTest, NFTDepositTest, WithdrawAdditionalTest} from "../BaseE721Farm.t.sol";
+import "../../features/BaseFarmWithExpiry.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 
-abstract contract BaseUniV3FarmTest is BaseFarmTest {
+abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
     uint8 public FEE_TIER = 100;
     int24 public TICK_LOWER = -887270;
     int24 public TICK_UPPER = 887270;
@@ -27,7 +39,6 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
 
     // Custom Errors
     error InvalidUniswapPoolConfig();
-    error NotAUniV3NFT();
     error NoData();
     error NoFeeToClaim();
     error IncorrectPoolToken();
@@ -70,6 +81,39 @@ abstract contract BaseUniV3FarmTest is BaseFarmTest {
         _swap(DAI, USDCe, FEE_TIER, depositAmount1);
         _swap(USDCe, DAI, FEE_TIER, depositAmount2);
     }
+
+    function createPosition(address from) public override returns (uint256 tokenId, address nftContract) {
+        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
+        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+
+        deal(DAI, from, depositAmount1);
+        IERC20(DAI).approve(nfpm(), depositAmount1);
+
+        deal(USDCe, from, depositAmount2);
+        IERC20(USDCe).approve(nfpm(), depositAmount2);
+
+        (uint256 _tokenId,,,) = INFPM(nfpm()).mint(
+            INFPM.MintParams({
+                token0: DAI,
+                token1: USDCe,
+                fee: FEE_TIER,
+                tickLower: TICK_LOWER,
+                tickUpper: TICK_UPPER,
+                amount0Desired: depositAmount1,
+                amount1Desired: depositAmount2,
+                amount0Min: 0,
+                amount1Min: 0,
+                recipient: from,
+                deadline: block.timestamp
+            })
+        );
+        return (_tokenId, nfpm());
+    }
+
+    function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
+        Position memory positions = INFPMUtils(NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
+        return uint256(positions.liquidity);
+    }
 }
 
 abstract contract InitializeTest is BaseUniV3FarmTest {
@@ -93,7 +137,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -114,7 +158,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -136,7 +180,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nfpm: NFPM,
+                _nftContract: NFPM,
                 _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
@@ -157,7 +201,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nfpm: NFPM,
+                _nftContract: NFPM,
                 _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
@@ -179,7 +223,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -201,7 +245,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -221,7 +265,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -241,7 +285,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -261,7 +305,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -281,7 +325,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -303,7 +347,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
@@ -317,68 +361,13 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
         assertEq(BaseUniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(BaseUniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
-        assertEq(BaseUniV3Farm(farmProxy).nfpm(), NFPM);
+        assertEq(BaseUniV3Farm(farmProxy).nftContract(), NFPM);
         assertEq(BaseUniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
         assertEq(BaseUniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
 
 abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
-    // Deposit test.
-    function test_deposit_onERC721Received() public useKnownActor(user) {
-        for (uint8 j; j < 2; ++j) {
-            bool lockup = j == 0 ? true : false;
-            address farm = lockup ? lockupFarm : nonLockupFarm;
-            uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-            uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
-
-            deal(DAI, currentActor, depositAmount1);
-            IERC20(DAI).approve(NFPM, depositAmount1);
-
-            deal(USDCe, currentActor, depositAmount2);
-            IERC20(USDCe).approve(NFPM, depositAmount2);
-
-            (uint256 tokenId, uint128 liquidity,,) = INFPM(NFPM).mint(
-                INFPM.MintParams({
-                    token0: DAI,
-                    token1: USDCe,
-                    fee: FEE_TIER,
-                    tickLower: TICK_LOWER,
-                    tickUpper: TICK_UPPER,
-                    amount0Desired: depositAmount1,
-                    amount1Desired: depositAmount2,
-                    amount0Min: 0,
-                    amount1Min: 0,
-                    recipient: currentActor,
-                    deadline: block.timestamp
-                })
-            );
-
-            if (!lockup) {
-                vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            } else {
-                vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-                vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
-            }
-            vm.expectEmit(address(farm));
-            emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
-            IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
-        }
-    }
-
-    function test_RevertWhen_NotAUniV3NFT() public {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NotAUniV3NFT.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
-    }
-
-    function test_RevertWhen_NoData() public useKnownActor(NFPM) {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoData.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
-    }
-
     function test_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
         uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
@@ -406,8 +395,7 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
         );
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectPoolToken.selector));
-        changePrank(NFPM);
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), currentActor, tokenId, abi.encode(true));
+        IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId, abi.encode(true));
     }
 
     function test_RevertWhen_IncorrectTickRange() public useKnownActor(user) {
@@ -451,107 +439,11 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
             })
         );
 
-        changePrank(NFPM);
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectTickRange.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), currentActor, tokenId1, abi.encode(true));
+        IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId1, abi.encode(true));
 
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectTickRange.selector));
-        BaseUniV3Farm(lockupFarm).onERC721Received(address(0), currentActor, tokenId2, abi.encode(true));
-    }
-
-    function test_onERC721Received() public useKnownActor(user) {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
-
-        deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(NFPM, depositAmount1);
-
-        deal(USDCe, currentActor, depositAmount2);
-        IERC20(USDCe).approve(NFPM, depositAmount2);
-
-        (uint256 tokenId,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                fee: FEE_TIER,
-                tickLower: TICK_LOWER,
-                tickUpper: TICK_UPPER,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
-
-        changePrank(NFPM);
-        assertEq(
-            BaseUniV3Farm(lockupFarm).onERC721Received(address(0), currentActor, tokenId, abi.encode(true)),
-            bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
-        );
-    }
-}
-
-abstract contract WithdrawAdditionalTest is BaseUniV3FarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
-    function test_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseUniV3Farm(lockupFarm).withdraw(0);
-    }
-
-    function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 1;
-        BaseFarm(lockupFarm).initiateCooldown(depositId);
-        skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
-        vm.expectEmit(NFPM);
-        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
-
-        BaseUniV3Farm(lockupFarm).withdraw(depositId);
-    }
-
-    function test_Withdraw_paused() public depositSetup(lockupFarm, true) {
-        uint256 depositId = 1;
-        vm.startPrank(owner);
-        BaseFarm(lockupFarm).farmPauseSwitch(true);
-        vm.startPrank(user);
-        vm.expectEmit(NFPM);
-        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
-
-        BaseUniV3Farm(lockupFarm).withdraw(depositId);
-    }
-
-    function test_Withdraw_closed() public depositSetup(lockupFarm, true) {
-        uint256 depositId = 1;
-        vm.startPrank(owner);
-        BaseFarm(lockupFarm).closeFarm();
-        vm.startPrank(user);
-        vm.expectEmit(NFPM);
-        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
-
-        BaseUniV3Farm(lockupFarm).withdraw(depositId);
-    }
-
-    function test_Withdraw_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 1;
-        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
-        vm.expectEmit(NFPM);
-        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
-
-        BaseUniV3Farm(lockupFarm).withdraw(depositId);
-    }
-
-    function test_Withdraw_closedAndExpired() public depositSetup(lockupFarm, true) {
-        uint256 depositId = 1;
-        vm.startPrank(owner);
-        BaseFarm(lockupFarm).closeFarm();
-        vm.warp(BaseUniV3Farm(lockupFarm).farmEndTime() + 1);
-        vm.startPrank(user);
-        vm.expectEmit(NFPM);
-        emit Transfer(lockupFarm, currentActor, BaseUniV3Farm(lockupFarm).depositToTokenId(depositId));
-
-        BaseUniV3Farm(lockupFarm).withdraw(depositId);
+        IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId2, abi.encode(true));
     }
 }
 

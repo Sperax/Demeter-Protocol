@@ -4,13 +4,13 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "../../contracts/uniswapV3/BaseUniV3ActiveLiquidityFarm.sol";
-import "../../contracts/uniswapV3/BaseUniV3Farm.sol";
+import "../../../contracts/e721-farms/uniswapV3/BaseUniV3ActiveLiquidityFarm.sol";
+import "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-import "../BaseFarm.t.sol";
-import "../features/BaseFarmWithExpiry.t.sol";
+import "../../BaseFarm.t.sol";
+import "../../features/BaseFarmWithExpiry.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 
 abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest {

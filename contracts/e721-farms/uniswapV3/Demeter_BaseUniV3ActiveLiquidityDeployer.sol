@@ -17,12 +17,13 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../BaseFarmDeployer.sol";
-import {BaseUniV3Farm, RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.sol";
+import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.sol";
+import {BaseUniV3ActiveLiquidityFarm} from "./BaseUniV3ActiveLiquidityFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_BaseUniV3ActiveLiquidityDeployer is BaseFarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -67,7 +68,7 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
         NFPM = _nfpm;
         UNISWAP_UTILS = _uniswapUtils;
         NFPM_UTILS = _nfpmUtils;
-        farmImplementation = address(new BaseUniV3Farm());
+        farmImplementation = address(new BaseUniV3ActiveLiquidityFarm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -75,7 +76,7 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
-        BaseUniV3Farm farmInstance = BaseUniV3Farm(Clones.clone(farmImplementation));
+        BaseUniV3ActiveLiquidityFarm farmInstance = BaseUniV3ActiveLiquidityFarm(Clones.clone(farmImplementation));
         farmInstance.initialize({
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
@@ -84,7 +85,7 @@ contract Demeter_BaseUniV3FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
-            _nfpm: NFPM,
+            _nftContract: NFPM,
             _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NFPM_UTILS
         });
