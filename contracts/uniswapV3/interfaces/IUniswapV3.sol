@@ -3,13 +3,6 @@ pragma solidity 0.8.16;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-struct CollectParams {
-    uint256 tokenId;
-    address recipient;
-    uint128 amount0Max;
-    uint128 amount1Max;
-}
-
 /// @title Non-fungible token for positions
 /// @notice Wraps Uniswap V3 positions in a non-fungible token interface which allows for them to be transferred
 /// and authorized.
@@ -28,7 +21,7 @@ interface IPoolInitializer {
         returns (address pool);
 }
 
-interface INonfungiblePositionManager is IPoolInitializer, IERC721 {
+interface INFPM is IPoolInitializer, IERC721 {
     struct MintParams {
         address token0;
         address token1;
@@ -43,12 +36,28 @@ interface INonfungiblePositionManager is IPoolInitializer, IERC721 {
         uint256 deadline;
     }
 
+    struct IncreaseLiquidityParams {
+        uint256 tokenId;
+        uint256 amount0Desired;
+        uint256 amount1Desired;
+        uint256 amount0Min;
+        uint256 amount1Min;
+        uint256 deadline;
+    }
+
     struct DecreaseLiquidityParams {
         uint256 tokenId;
         uint128 liquidity;
         uint256 amount0Min;
         uint256 amount1Min;
         uint256 deadline;
+    }
+
+    struct CollectParams {
+        uint256 tokenId;
+        address recipient;
+        uint128 amount0Max;
+        uint128 amount1Max;
     }
 
     /// @notice Creates a new position wrapped in a NFT
@@ -72,6 +81,21 @@ interface INonfungiblePositionManager is IPoolInitializer, IERC721 {
     /// @return amount0 The amount of fees collected in token0
     /// @return amount1 The amount of fees collected in token1
     function collect(CollectParams calldata params) external payable returns (uint256 amount0, uint256 amount1);
+
+    /// @notice Increases the amount of liquidity in a position, with tokens paid by the `msg.sender`
+    /// @param params tokenId The ID of the token for which liquidity is being increased,
+    /// amount0Desired The desired amount of token0 to be spent,
+    /// amount1Desired The desired amount of token1 to be spent,
+    /// amount0Min The minimum amount of token0 to spend, which serves as a slippage check,
+    /// amount1Min The minimum amount of token1 to spend, which serves as a slippage check,
+    /// deadline The time by which the transaction must be included to effect the change
+    /// @return liquidity The new liquidity amount as a result of the increase
+    /// @return amount0 The amount of token0 to acheive resulting liquidity
+    /// @return amount1 The amount of token1 to acheive resulting liquidity
+    function increaseLiquidity(IncreaseLiquidityParams calldata params)
+        external
+        payable
+        returns (uint128 liquidity, uint256 amount0, uint256 amount1);
 
     /// @notice Decreases the amount of liquidity in a position and accounts it to the position
     /// @param params tokenId The ID of the token for which liquidity is being decreased,
@@ -134,4 +158,54 @@ interface IUniswapV3Factory {
 
 interface IUniswapV3TickSpacing {
     function tickSpacing() external view returns (int24);
+}
+
+/// @title Pool state that is not stored
+/// @notice Contains view functions to provide information about the pool that is computed rather than stored on the
+/// blockchain. The functions here may have variable gas costs.
+interface IUniswapV3PoolDerivedState {
+    /// @notice Returns a snapshot of the tick cumulative, seconds per liquidity and seconds inside a tick range
+    /// @dev Snapshots must only be compared to other snapshots, taken over a period for which a position existed.
+    /// I.e., snapshots cannot be compared if a position is not held for the entire period between when the first
+    /// snapshot is taken and the second snapshot is taken.
+    /// @param tickLower The lower tick of the range
+    /// @param tickUpper The upper tick of the range
+    /// @return tickCumulativeInside The snapshot of the tick accumulator for the range
+    /// @return secondsPerLiquidityInsideX128 The snapshot of seconds per liquidity for the range
+    /// @return secondsInside The snapshot of seconds per liquidity for the range
+    function snapshotCumulativesInside(int24 tickLower, int24 tickUpper)
+        external
+        view
+        returns (int56 tickCumulativeInside, uint160 secondsPerLiquidityInsideX128, uint32 secondsInside);
+}
+
+/// @title Pool state that can change
+/// @notice These methods compose the pool's state, and can change with any frequency including multiple times
+/// per transaction
+interface IUniswapV3PoolState {
+    /// @notice The 0th storage slot in the pool stores many values, and is exposed as a single method to save gas
+    /// when accessed externally.
+    /// @return sqrtPriceX96 The current price of the pool as a sqrt(token1/token0) Q64.96 value
+    /// tick The current tick of the pool, i.e. according to the last tick transition that was run.
+    /// This value may not always be equal to SqrtTickMath.getTickAtSqrtRatio(sqrtPriceX96) if the price is on a tick
+    /// boundary.
+    /// observationIndex The index of the last oracle observation that was written,
+    /// observationCardinality The current maximum number of observations stored in the pool,
+    /// observationCardinalityNext The next maximum number of observations, to be updated when the observation.
+    /// feeProtocol The protocol fee for both tokens of the pool.
+    /// Encoded as two 4 bit values, where the protocol fee of token1 is shifted 4 bits and the protocol fee of token0
+    /// is the lower 4 bits. Used as the denominator of a fraction of the swap fee, e.g. 4 means 1/4th of the swap fee.
+    /// unlocked Whether the pool is currently locked to reentrancy
+    function slot0()
+        external
+        view
+        returns (
+            uint160 sqrtPriceX96,
+            int24 tick,
+            uint16 observationIndex,
+            uint16 observationCardinality,
+            uint16 observationCardinalityNext,
+            uint8 feeProtocol,
+            bool unlocked
+        );
 }

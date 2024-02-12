@@ -14,6 +14,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant COOLDOWN_PERIOD = 21;
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
+    uint256 public constant DEPOSIT_AMOUNT = 1e3;
     address internal farmProxy;
     address internal lockupFarm;
     address internal nonLockupFarm;
@@ -46,7 +47,7 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     modifier depositSetup(address farm, bool lockup) {
         addRewards(farm);
         setRewardRates(farm);
-        deposit(farm, lockup, 1e3);
+        deposit(farm, lockup, DEPOSIT_AMOUNT);
         _;
     }
 
@@ -88,6 +89,8 @@ abstract contract BaseFarmTest is TestNetworkConfig {
             }
         }
     }
+
+    function depositSetupFn(address farm, bool lockup) public virtual depositSetup(farm, lockup) {}
 
     function createFarm(uint256 startTime, bool lockup) public virtual returns (address);
 

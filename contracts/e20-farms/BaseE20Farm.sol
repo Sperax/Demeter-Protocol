@@ -33,7 +33,6 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
 
     // Custom Errors
     error InvalidAmount();
-    error DepositInCooldown();
     error CannotWithdrawRewardTokenOrFarmToken();
 
     /// @notice constructor
@@ -81,7 +80,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
         if (userDeposit.expiryDate != 0) {
-            revert DepositInCooldown();
+            revert DepositIsInCooldown();
         }
 
         // claim the pending rewards for the deposit
