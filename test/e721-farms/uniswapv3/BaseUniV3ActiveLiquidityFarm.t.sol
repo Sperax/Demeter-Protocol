@@ -191,7 +191,7 @@ abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
         uint256[][] memory rewardsForActiveLiquidity =
             BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(nonLockupFarm);
-        emit PoolUnsubscribed(depositId, 0, rewardsForActiveLiquidity[0]);
+        emit PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
         BaseUniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
         if (activeTime == 0) {
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {

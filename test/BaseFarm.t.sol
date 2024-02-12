@@ -8,6 +8,8 @@ import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {Deposit, Subscription, RewardData, RewardFund} from "../contracts/interfaces/DataTypes.sol";
 
 abstract contract BaseFarmTest is TestNetworkConfig {
+    uint8 public constant COMMON_FUND_ID = 0;
+    uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
@@ -336,10 +338,10 @@ abstract contract WithdrawTest is BaseFarmTest {
             BaseFarm(farm).farmPauseSwitch(true);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit PoolUnsubscribed(depositId, 0, rewardsForEachSubs[0]);
+            emit PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
             if (lockup) {
                 vm.expectEmit(address(farm));
-                emit PoolUnsubscribed(depositId, 1, rewardsForEachSubs[1]);
+                emit PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
             }
             vm.expectEmit(address(farm));
             emit DepositWithdrawn(depositId);
@@ -392,7 +394,7 @@ abstract contract WithdrawTest is BaseFarmTest {
             BaseFarm(farm).getDepositInfo(depositId);
             rewardsForEachSubs = BaseFarm(farm).computeRewards(currentActor, 1);
             vm.expectEmit(address(farm));
-            emit PoolUnsubscribed(depositId, 0, rewardsForEachSubs[0]);
+            emit PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
             vm.expectEmit(address(farm));
             emit DepositWithdrawn(depositId);
             BaseFarm(farm).withdraw(depositId);
@@ -595,7 +597,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         vm.expectEmit(address(lockupFarm));
         emit RewardsClaimed(1, rewardsForEachSubs);
         vm.expectEmit(address(lockupFarm));
-        emit PoolUnsubscribed(1, 1, rewardsForEachSubs[1]);
+        emit PoolUnsubscribed(1, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
         emit CooldownInitiated(1, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
         BaseFarm(lockupFarm).initiateCooldown(1);

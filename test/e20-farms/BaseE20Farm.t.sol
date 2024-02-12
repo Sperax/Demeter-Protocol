@@ -29,12 +29,12 @@ abstract contract E20FarmDepositTest is BaseE20FarmTest {
             uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
             emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, amt);

@@ -34,12 +34,12 @@ abstract contract NFTDepositTest is BaseE721FarmTest {
 
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
+                emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
             emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
