@@ -124,35 +124,22 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 
     function testFuzz_updateFarmStartTime_end_time_withDelta_multiUpdate(bool lockup) public {
         uint256 farmStartTime = block.timestamp + 50 days;
-        uint256 newStartTimeOne = block.timestamp + 70 days;
-        uint256 newStartTimeTwo = block.timestamp + 90 days;
-        uint256 newStartTimeThree = block.timestamp + 60 days;
-        uint256 newStartTimeFour = block.timestamp + 65 days;
-        uint256 newStartTimeFive = block.timestamp + 40 days;
-        uint256 newStartTimeSix = block.timestamp + 20 days;
-        uint256 newStartTimeSeven = block.timestamp + 30 days;
-        uint256 newStartTimeEight = block.timestamp + 35 days;
-
+        uint256 newStartTime;
         address farm = createFarm(farmStartTime, lockup);
 
         vm.startPrank(owner);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeOne);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeTwo);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeThree);
-        vm.warp(block.timestamp + 1 days);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeFour);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeFive);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeSix);
-        vm.warp(block.timestamp + 2 days);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeSeven);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTimeEight);
+        for (uint256 i; i < 8; ++i) {
+            vm.warp(block.timestamp + 1 days);
+            newStartTime = block.timestamp + (i + 1) * 10 days;
+            BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
+        }
         vm.stopPrank();
 
         uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
         uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
 
-        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTimeEight);
-        assertEq(lastFundUpdateTime, newStartTimeEight);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
+        assertEq(lastFundUpdateTime, newStartTime);
     }
 }
 
