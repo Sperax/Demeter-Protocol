@@ -252,18 +252,12 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
 }
 
 abstract contract WithdrawTest is BaseFarmTest {
-    function _assertHelperOne(
-        address depositor,
-        uint256 liquidity,
-        uint256 startTime,
-        uint256 expiryDate,
-        uint256 cooldownPeriod
-    ) internal {
-        assertEq(depositor, address(0));
-        assertEq(liquidity, 0);
-        assertEq(startTime, 0);
-        assertEq(expiryDate, 0);
-        assertEq(cooldownPeriod, 0);
+    function _assertHelperOne(Deposit memory depositInfo) internal {
+        assertEq(depositInfo.depositor, address(0));
+        assertEq(depositInfo.liquidity, 0);
+        assertEq(depositInfo.startTime, 0);
+        assertEq(depositInfo.expiryDate, 0);
+        assertEq(depositInfo.cooldownPeriod, 0);
     }
 
     function _assertHelperTwo(
@@ -351,13 +345,7 @@ abstract contract WithdrawTest is BaseFarmTest {
             emit DepositWithdrawn(depositId);
             BaseFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = BaseFarm(farm).getDepositInfo(depositId);
-            _assertHelperOne(
-                depositInfo.depositor,
-                depositInfo.liquidity,
-                depositInfo.startTime,
-                depositInfo.expiryDate,
-                depositInfo.cooldownPeriod
-            );
+            _assertHelperOne(depositInfo);
         }
     }
 
@@ -377,13 +365,7 @@ abstract contract WithdrawTest is BaseFarmTest {
             emit DepositWithdrawn(depositId);
             BaseFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = BaseFarm(farm).getDepositInfo(depositId);
-            _assertHelperOne(
-                depositInfo.depositor,
-                depositInfo.liquidity,
-                depositInfo.startTime,
-                depositInfo.expiryDate,
-                depositInfo.cooldownPeriod
-            );
+            _assertHelperOne(depositInfo);
         }
     }
 
@@ -418,13 +400,7 @@ abstract contract WithdrawTest is BaseFarmTest {
             BaseFarm(farm).getRewardBalance(rwdTokens[0]);
             vm.stopPrank();
             Deposit memory depositInfo = BaseFarm(farm).getDepositInfo(depositId);
-            _assertHelperOne(
-                depositInfo.depositor,
-                depositInfo.liquidity,
-                depositInfo.startTime,
-                depositInfo.expiryDate,
-                depositInfo.cooldownPeriod
-            );
+            _assertHelperOne(depositInfo);
         }
     }
 
