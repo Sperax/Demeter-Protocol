@@ -50,7 +50,11 @@ abstract contract E20FarmDepositTest is BaseE20FarmTest {
 abstract contract IncreaseDepositTest is BaseE20FarmTest {
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
 
-    function test_RevertWhen_InvalidAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_IncreaseDeposit_RevertWhen_InvalidAmount()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
         address poolAddress = getPoolAddress();
         uint256 amt = 0;
 
@@ -77,7 +81,11 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
 
-    function test_RevertWhen_depositInCoolDown() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_IncreaseDeposit_RevertWhen_depositInCoolDown()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
         address poolAddress = getPoolAddress();
         uint256 amt = 100 * 10 ** ERC20(poolAddress).decimals();
         BaseE20Farm(lockupFarm).initiateCooldown(DEPOSIT_ID);
@@ -158,12 +166,12 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    function test_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
+    function test_RecoverERC20_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
         BaseFarm(lockupFarm).recoverERC20(USDCe);
     }
 
-    function test_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
+    function test_RecoverERC20_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
         BaseFarm(lockupFarm).recoverERC20(USDT);
     }
@@ -188,7 +196,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amount);
     }
 
-    function test_RevertWhen_LockupFarm_DecreaseDepositNotPermitted()
+    function test_DecreaseDeposit_RevertWhen_LockupFarm_DecreaseDepositNotPermitted()
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
@@ -198,7 +206,11 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         BaseE20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
 
-    function test_RevertWhen_farmIsClosed() public depositSetup(nonLockupFarm, false) useKnownActor(owner) {
+    function test_DecreaseDeposit_RevertWhen_farmIsClosed()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(owner)
+    {
         skip(86400 * 7);
         BaseE20Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);

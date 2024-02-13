@@ -144,7 +144,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
 }
 
 abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
-    function test_RevertWhen_FarmNotYetStarted() public {
+    function test_ExtendFarmDuration_RevertWhen_FarmNotYetStarted() public {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
@@ -154,7 +154,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         vm.stopPrank();
     }
 
-    function test_RevertWhen_InvalidExtension() public useKnownActor(owner) {
+    function test_ExtendFarmDuration_RevertWhen_InvalidExtension() public useKnownActor(owner) {
         uint256 extensionDays = 99;
         vm.expectRevert(abi.encodeWithSelector(BaseFarmWithExpiry.InvalidExtension.selector));
         BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
@@ -163,14 +163,14 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_RevertWhen_farmClosed() public useKnownActor(owner) {
+    function test_ExtendFarmDuration_RevertWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
         BaseFarmWithExpiry(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
-    function test_RevertWhen_farmExpired() public {
+    function test_ExtendFarmDuration_RevertWhen_farmExpired() public {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);

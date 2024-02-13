@@ -14,12 +14,12 @@ abstract contract BaseE721FarmTest is BaseFarmTest {
 }
 
 abstract contract NFTDepositTest is BaseE721FarmTest {
-    function test_RevertWhen_UnauthorisedNFTContract() public {
+    function test_NFTDeposit_RevertWhen_UnauthorisedNFTContract() public {
         vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.UnauthorisedNFTContract.selector));
         BaseE721Farm(lockupFarm).onERC721Received(address(0), address(0), 0, "");
     }
 
-    function test_RevertWhen_NoData() public useKnownActor(user) {
+    function test_NFTDeposit_RevertWhen_NoData() public useKnownActor(user) {
         (uint256 tokenId, address nftContract) = createPosition(user);
         vm.expectRevert(abi.encodeWithSelector(BaseE721Farm.NoData.selector));
         IERC721(nftContract).safeTransferFrom(user, lockupFarm, tokenId, "");
@@ -56,7 +56,7 @@ abstract contract NFTDepositTest is BaseE721FarmTest {
 abstract contract WithdrawAdditionalTest is BaseE721FarmTest {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
-    function test_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
+    function test_Withdraw_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseE721Farm(lockupFarm).withdraw(0);
     }
