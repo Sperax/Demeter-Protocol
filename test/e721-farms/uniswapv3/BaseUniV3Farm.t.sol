@@ -460,8 +460,9 @@ abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
     }
 
     function test_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        uint256 depositId = 1;
         vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoFeeToClaim.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(1);
+        BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
 
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
