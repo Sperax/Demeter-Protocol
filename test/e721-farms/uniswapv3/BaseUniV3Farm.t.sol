@@ -20,7 +20,7 @@ import {
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-import {BaseE721FarmTest, NFTDepositTest, WithdrawAdditionalTest} from "../BaseE721Farm.t.sol";
+import {BaseE721FarmTest, BaseE721FarmInheritTest} from "../BaseE721Farm.t.sol";
 import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
 import "../../features/BaseFarmWithExpiry.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
@@ -813,3 +813,11 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         );
     }
 }
+
+abstract contract BaseUniV3FarmInheritTest is
+    InitializeTest,
+    OnERC721ReceivedTest,
+    ClaimUniswapFeeTest,
+    IncreaseDepositTest,
+    DecreaseDepositTest
+{}

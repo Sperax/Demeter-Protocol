@@ -44,34 +44,7 @@ interface ICustomOracle {
 }
 
 // RecoverERC20Test is replaced by RecoverERC20E20FarmTest
-contract BalancerFarmTest is
-    DepositTest,
-    GetDepositTest,
-    WithdrawTest,
-    WithdrawWithExpiryTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateFarmStartTimeWithExpiryTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
-    _SetupFarmTest,
-    E20FarmDepositTest,
-    IncreaseDepositTest,
-    DecreaseDepositTest,
-    RecoverERC20E20FarmTest,
-    RecoverRewardFundsTest,
-    MulticallTest
-{
+contract BalancerFarmTest is BaseFarmInheritTest, BaseFarmWithExpiryInheritTest, BaseE20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;

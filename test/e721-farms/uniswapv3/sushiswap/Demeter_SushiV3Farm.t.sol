@@ -13,51 +13,20 @@ import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUnis
 import "../BaseUniV3Farm.t.sol";
 import "../../../utils/UpgradeUtil.t.sol";
 
-contract Demeter_SushiV3FarmTest is BaseUniV3FarmTest {
+contract Demeter_SushiV3FarmTest is
+    BaseFarmInheritTest,
+    BaseE721FarmInheritTest,
+    BaseUniV3FarmInheritTest,
+    BaseFarmWithExpiryInheritTest
+{
     // Define variables
     string public constant FARM_NAME = "Demeter_SushiV3_v1";
 
-    function setUp() public virtual override {
+    function setUp() public virtual override(BaseFarmTest, BaseUniV3FarmTest) {
         NFPM = SUSHISWAP_NFPM;
         UNIV3_FACTORY = SUSHISWAP_FACTORY;
         SWAP_ROUTER = SUSHISWAP_SWAP_ROUTER;
         FARM_ID = FARM_NAME;
-        super.setUp();
-    }
-}
-
-contract Demeter_SushiV3FarmInheritTest is
-    Demeter_SushiV3FarmTest,
-    DepositTest,
-    WithdrawTest,
-    WithdrawWithExpiryTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    RecoverRewardFundsTest,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateFarmStartTimeWithExpiryTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
-    _SetupFarmTest,
-    InitializeTest,
-    OnERC721ReceivedTest,
-    WithdrawAdditionalTest,
-    ClaimUniswapFeeTest,
-    RecoverERC20Test,
-    NFTDepositTest,
-    IncreaseDepositTest,
-    DecreaseDepositTest
-{
-    function setUp() public override(Demeter_SushiV3FarmTest, BaseUniV3FarmTest, BaseFarmTest) {
-        Demeter_SushiV3FarmTest.setUp();
+        BaseUniV3FarmTest.setUp();
     }
 }

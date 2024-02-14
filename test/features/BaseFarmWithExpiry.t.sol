@@ -291,3 +291,8 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 // The above test cases are enough to cover the expiry logic and catch any changes in the expiry logic.
 // We need to make sure we are not removing the farm active checks from the non-tested functions in the contracts.
 // Even if we remove farm active checks by mistake, the tests in BaseFarm.t.sol will catch them due to its transient nature.
+abstract contract BaseFarmWithExpiryInheritTest is
+    UpdateFarmStartTimeWithExpiryTest,
+    ExtendFarmDurationTest,
+    WithdrawWithExpiryTest
+{}

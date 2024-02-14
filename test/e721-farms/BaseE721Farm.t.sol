@@ -2,12 +2,14 @@
 pragma solidity 0.8.16;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {BaseFarmTest} from "../BaseFarm.t.sol";
+import {BaseFarmTest, BaseFarmInheritTest} from "../BaseFarm.t.sol";
 import {Deposit} from "../../contracts/interfaces/DataTypes.sol";
 import {BaseUniV3Farm, BaseE721Farm} from "../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import {BaseFarm} from "../../contracts/BaseFarm.sol";
 
 abstract contract BaseE721FarmTest is BaseFarmTest {
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
     function createPosition(address from) public virtual returns (uint256 tokenId, address nftContract);
     function getLiquidity(uint256 tokenId) public view virtual returns (uint256 liquidity);
     function nfpm() internal view virtual returns (address);
@@ -54,8 +56,6 @@ abstract contract NFTDepositTest is BaseE721FarmTest {
 }
 
 abstract contract WithdrawAdditionalTest is BaseE721FarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
     function test_Withdraw_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseE721Farm(lockupFarm).withdraw(0);
@@ -109,3 +109,5 @@ abstract contract WithdrawAdditionalTest is BaseE721FarmTest {
         BaseE721Farm(lockupFarm).withdraw(depositId);
     }
 }
+
+abstract contract BaseE721FarmInheritTest is NFTDepositTest, WithdrawAdditionalTest {}

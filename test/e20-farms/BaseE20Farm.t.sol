@@ -10,6 +10,8 @@ import "../BaseFarm.t.sol";
 import "../features/BaseFarmWithExpiry.t.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     uint256 public constant DEPOSIT_ID = 1;
     uint256 public constant AMOUNT = 10000;
 
@@ -164,26 +166,10 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
 }
 
 abstract contract RecoverERC20E20FarmTest is BaseE20FarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    function test_RecoverERC20_RevertWhen_CannotWithdrawRewardTokenOrFarmToken() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawRewardTokenOrFarmToken.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDCe);
-    }
-
-    function test_RecoverERC20_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
-        BaseFarm(lockupFarm).recoverERC20(USDT);
-    }
-
-    function test_recoverE20_LockupFarm() public useKnownActor(owner) {
-        uint256 amt = 1e3 * ERC20(USDT).decimals();
-        deal(USDT, address(lockupFarm), amt);
-        vm.expectEmit(USDT);
-        emit Transfer(lockupFarm, owner, amt);
-        vm.expectEmit(lockupFarm);
-        emit RecoveredERC20(USDT, amt);
-        BaseFarm(lockupFarm).recoverERC20(USDT);
+    function test_RecoverERC20_RevertWhen_CannotWithdrawFarmToken() public useKnownActor(owner) {
+        address farmToken = BaseE20Farm(lockupFarm).farmToken();
+        vm.expectRevert(abi.encodeWithSelector(BaseE20Farm.CannotWithdrawFarmToken.selector));
+        BaseE20Farm(lockupFarm).recoverERC20(farmToken);
     }
 }
 
@@ -271,3 +257,10 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         assertEq(totalRewardClaimed, 2 * time * rewardRates[0]);
     }
 }
+
+abstract contract BaseE20FarmInheritTest is
+    E20FarmDepositTest,
+    IncreaseDepositTest,
+    RecoverERC20E20FarmTest,
+    DecreaseDepositTest
+{}

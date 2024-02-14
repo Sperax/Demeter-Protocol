@@ -1115,3 +1115,26 @@ abstract contract MulticallTest is BaseFarmTest {
         BaseFarm(lockupFarm).multicall(data);
     }
 }
+
+abstract contract BaseFarmInheritTest is
+    DepositTest,
+    ClaimRewardsTest,
+    WithdrawTest,
+    GetRewardFundInfoTest,
+    RecoverERC20Test,
+    InitiateCooldownTest,
+    AddRewardsTest,
+    SetRewardRateTest,
+    GetRewardBalanceTest,
+    GetDepositTest,
+    GetNumSubscriptionsTest,
+    SubscriptionInfoTest,
+    UpdateRewardTokenDataTest,
+    RecoverRewardFundsTest,
+    FarmPauseSwitchTest,
+    UpdateFarmStartTimeTest,
+    UpdateCoolDownPeriodTest,
+    CloseFarmTest,
+    _SetupFarmTest,
+    MulticallTest
+{}

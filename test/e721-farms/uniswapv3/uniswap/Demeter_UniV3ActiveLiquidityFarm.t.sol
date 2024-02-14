@@ -13,12 +13,17 @@ import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUnis
 import "../BaseUniV3ActiveLiquidityFarm.t.sol";
 import "../../../utils/UpgradeUtil.t.sol";
 
-contract Demeter_UniV3ActiveLiquidityFarmTest is BaseUniV3ActiveLiquidityFarmTest {
+contract Demeter_UniV3ActiveLiquidityFarmTest is
+    BaseFarmInheritTest,
+    BaseE721FarmInheritTest,
+    BaseUniV3FarmInheritTest,
+    BaseFarmWithExpiryInheritTest,
+    BaseUniV3ActiveLiquidityFarmInheritTest
+{
     // Define variables
-
     string public FARM_NAME = "Demeter_UniV3_v4";
 
-    function setUp() public virtual override {
+    function setUp() public virtual override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest) {
         NFPM = UNISWAP_V3_NFPM;
         UNIV3_FACTORY = UNISWAP_V3_FACTORY;
         SWAP_ROUTER = UNISWAP_V3_SWAP_ROUTER;
@@ -31,7 +36,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is BaseUniV3ActiveLiquidityFarmTes
     function createFarm(uint256 startTime, bool lockup)
         public
         virtual
-        override
+        override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest)
         useKnownActor(owner)
         returns (address)
     {
@@ -60,7 +65,12 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is BaseUniV3ActiveLiquidityFarmTes
     }
 
     /// @notice Farm specific deposit logic
-    function deposit(address farm, bool locked, uint256 baseAmt) public virtual override returns (uint256) {
+    function deposit(address farm, bool locked, uint256 baseAmt)
+        public
+        virtual
+        override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest)
+        returns (uint256)
+    {
         currentActor = user;
         (uint256 tokenId, uint128 liquidity) = _mintPosition(baseAmt, currentActor);
         vm.startPrank(user);
@@ -79,53 +89,5 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is BaseUniV3ActiveLiquidityFarmTes
         IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
         vm.stopPrank();
         return liquidity;
-    }
-}
-
-contract Demeter_UniV3FarmTestInheritTest is
-    Demeter_UniV3ActiveLiquidityFarmTest,
-    DepositTest,
-    WithdrawTest,
-    WithdrawWithExpiryTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    RecoverERC20Test,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateFarmStartTimeWithExpiryTest,
-    ExtendFarmDurationTest,
-    CloseFarmTest,
-    UpdateCoolDownPeriodTest,
-    _SetupFarmTest,
-    ActiveLiquidityTest
-{
-    function setUp()
-        public
-        override(Demeter_UniV3ActiveLiquidityFarmTest, BaseUniV3ActiveLiquidityFarmTest, BaseFarmTest)
-    {
-        Demeter_UniV3ActiveLiquidityFarmTest.setUp();
-    }
-
-    function createFarm(uint256 _startTime, bool _lockup)
-        public
-        override(Demeter_UniV3ActiveLiquidityFarmTest, BaseUniV3ActiveLiquidityFarmTest, BaseFarmTest)
-        returns (address)
-    {
-        return Demeter_UniV3ActiveLiquidityFarmTest.createFarm(_startTime, _lockup);
-    }
-
-    function deposit(address _farm, bool _locked, uint256 _baseAmt)
-        public
-        override(Demeter_UniV3ActiveLiquidityFarmTest, BaseUniV3ActiveLiquidityFarmTest, BaseFarmTest)
-        returns (uint256)
-    {
-        return Demeter_UniV3ActiveLiquidityFarmTest.deposit(_farm, _locked, _baseAmt);
     }
 }

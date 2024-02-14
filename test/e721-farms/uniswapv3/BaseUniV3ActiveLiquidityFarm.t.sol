@@ -15,10 +15,10 @@ import "../../features/BaseFarmWithExpiry.t.sol";
 import "./BaseUniV3Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 
-abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest, BaseUniV3FarmTest {
+abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseUniV3FarmTest {
     Demeter_BaseUniV3ActiveLiquidityDeployer public uniV3ActiveLiqFarmDeployer;
 
-    function setUp() public virtual override(BaseFarmTest, BaseUniV3FarmTest) {
+    function setUp() public virtual override {
         BaseFarmTest.setUp();
         vm.startPrank(PROXY_OWNER);
         address impl = address(new BaseUniV3Farm());
@@ -45,21 +45,11 @@ abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest, BaseUniV3Far
         nonLockupFarm = createFarm(block.timestamp, false);
     }
 
-    function createFarm(uint256 _startTime, bool _lockup)
-        public
-        virtual
-        override(BaseUniV3FarmTest, BaseFarmTest)
-        returns (address)
-    {
+    function createFarm(uint256 _startTime, bool _lockup) public virtual override returns (address) {
         return BaseUniV3FarmTest.createFarm(_startTime, _lockup);
     }
 
-    function deposit(address _farm, bool _locked, uint256 _baseAmt)
-        public
-        virtual
-        override(BaseUniV3FarmTest, BaseFarmTest)
-        returns (uint256)
-    {
+    function deposit(address _farm, bool _locked, uint256 _baseAmt) public virtual override returns (uint256) {
         return BaseUniV3FarmTest.deposit(_farm, _locked, _baseAmt);
     }
 
@@ -116,8 +106,6 @@ abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest, BaseUniV3Far
 // TODO add compute rewards tests
 // TODO fix the following tests
 abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
     function test_IsFarmActive_When_InactiveLiquidity() public {
         // Assuming farm is always in active liquidity as tick range is huge.
         assertTrue(BaseUniV3ActiveLiquidityFarm(lockupFarm).isFarmActive());
@@ -197,3 +185,5 @@ abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
         assertEq(BaseUniV3ActiveLiquidityFarm(nonLockupFarm).lastSecondsInside(), secondsInside);
     }
 }
+
+abstract contract BaseUniV3ActiveLiquidityFarmInheritTest is ActiveLiquidityTest {}

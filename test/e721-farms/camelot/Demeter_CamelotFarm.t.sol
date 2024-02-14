@@ -19,7 +19,7 @@ import {FarmFactory} from "../../../contracts/FarmFactory.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {BaseE721Farm} from "../../../contracts/e721-farms/BaseE721Farm.sol";
 
-contract Demeter_CamelotFarmTest is BaseE721FarmTest {
+abstract contract Demeter_CamelotFarmTest is BaseE721FarmTest {
     using SafeERC20 for IERC20;
 
     string public FARM_ID = "Demeter_Camelot_v1";
@@ -177,7 +177,7 @@ contract Demeter_CamelotFarmTest is BaseE721FarmTest {
     }
 }
 
-contract OnNFTHarvestTest is Demeter_CamelotFarmTest {
+abstract contract OnNFTHarvestTest is Demeter_CamelotFarmTest {
     function test_onNFTHarvest_RevertWhen_NotAllowed() public {
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.NotAllowed.selector));
         Demeter_CamelotFarm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
@@ -191,7 +191,7 @@ contract OnNFTHarvestTest is Demeter_CamelotFarmTest {
     }
 }
 
-contract ClaimPoolRewardsTest is Demeter_CamelotFarmTest {
+abstract contract ClaimPoolRewardsTest is Demeter_CamelotFarmTest {
     function test_claimPoolRewards_RevertWhen_FarmIsClosed()
         public
         depositSetup(nonLockupFarm, false)
@@ -224,7 +224,7 @@ contract ClaimPoolRewardsTest is Demeter_CamelotFarmTest {
     }
 }
 
-contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
+abstract contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
     using SafeERC20 for IERC20;
 
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive()
@@ -350,7 +350,7 @@ contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         assertEq(IERC20(USDCe).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
-    function test_noLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
+    function test_IncreaseDeposit_noLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256 depositId = 1;
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
@@ -373,7 +373,7 @@ contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         assertEq(IERC20(USDCe).balanceOf(user) + minAmounts[1], amounts[1] + rewardsClaimed[1]);
     }
 
-    function test_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_IncreaseDeposit_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         uint256[] memory rewardsClaimed = new uint256[](2);
@@ -421,7 +421,7 @@ contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
     }
 }
 
-contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
+abstract contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
     using SafeERC20 for IERC20;
 
     function test_DecreaseDeposit_RevertWhen_FarmIsClosed()
@@ -491,7 +491,7 @@ contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
         Demeter_CamelotFarm(nonLockupFarm).decreaseDeposit(depositId, 0, minAmounts);
     }
 
-    function test_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_DecreaseDeposit_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
@@ -506,7 +506,7 @@ contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
         Demeter_CamelotFarm(lockupFarm).decreaseDeposit(1, liquidity - 1e4, minAmounts);
     }
 
-    function test_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
+    function test_DecreaseDeposit_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256[2] memory minAmounts = [uint256(0), 0];
         uint256 depositId = 1;
         Deposit memory userDeposit = Demeter_CamelotFarm(nonLockupFarm).getDepositInfo(depositId);
@@ -547,32 +547,13 @@ contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
 }
 
 contract DemeterCamelotFarmInheritTest is
-    Demeter_CamelotFarmTest,
-    DepositTest,
-    WithdrawTest,
-    WithdrawWithExpiryTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateFarmStartTimeWithExpiryTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
-    RecoverERC20Test,
-    RecoverRewardFundsTest,
-    GetDepositTest,
-    MulticallTest,
-    _SetupFarmTest,
-    NFTDepositTest,
-    WithdrawAdditionalTest
+    BaseFarmInheritTest,
+    BaseE721FarmInheritTest,
+    BaseFarmWithExpiryInheritTest,
+    OnNFTHarvestTest,
+    ClaimPoolRewardsTest,
+    CamelotIncreaseDepositTest,
+    CamelotDecreaseDepositTest
 {
     function setUp() public override(Demeter_CamelotFarmTest, BaseFarmTest) {
         super.setUp();
