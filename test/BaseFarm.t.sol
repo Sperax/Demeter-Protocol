@@ -79,8 +79,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
             for (uint8 i; i < farmRewardTokens.length; ++i) {
                 rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.01
                 rwdRate[1] = 2 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.02
-
-                vm.startPrank(owner);
                 BaseFarm(farm).setRewardRate(farmRewardTokens[i], rwdRate);
             }
         } else {
@@ -88,7 +86,6 @@ abstract contract BaseFarmTest is TestNetworkConfig {
             address[] memory farmRewardTokens = getRewardTokens(farm);
             for (uint8 i; i < farmRewardTokens.length; ++i) {
                 rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.01
-                vm.startPrank(owner);
                 BaseFarm(farm).setRewardRate(farmRewardTokens[i], rwdRate);
             }
         }
@@ -719,8 +716,6 @@ abstract contract SetRewardRateTest is BaseFarmTest {
                 rwdRateLockup = bound(rwdRateLockup, 2 * 10 ** decimals, 4 * 10 ** decimals);
                 rwdRate[1] = rwdRateLockup;
             }
-
-            vm.startPrank(currentActor);
 
             vm.expectEmit(address(farm));
             emit RewardRateUpdated(rewardTokens[i], rwdRate);
