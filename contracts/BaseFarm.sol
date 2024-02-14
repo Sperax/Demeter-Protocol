@@ -215,8 +215,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         returns (uint256[][] memory rewards)
     {
         _validateDeposit(_account, _depositId);
-        Deposit memory userDeposit = deposits[_depositId];
-        Subscription[] memory depositSubs = subscriptions[_depositId];
+        uint256 userLiquidity = deposits[_depositId].liquidity;
+        Subscription[] storage depositSubs = subscriptions[_depositId];
         RewardFund[] memory funds = rewardFunds;
         uint256 numDepositSubs = depositSubs.length;
         uint256 numRewards = rewardTokens.length;
@@ -226,7 +226,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
-            Subscription memory sub = depositSubs[iSub];
+            Subscription storage sub = depositSubs[iSub];
             rewards[iSub] = new uint256[](numRewards);
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
@@ -236,7 +236,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
                 }
                 rewards[iSub][iRwd] =
-                    ((userDeposit.liquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
+                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
                 unchecked {
                     ++iRwd;
                 }
@@ -461,15 +461,16 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     function _withdraw(address _account, uint256 _depositId) internal {
         _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
-        // Note: If farm is not active, skip the cooldown check.
-        uint256 depositExpiryDate = deposits[_depositId].expiryDate;
+        // Note: If farm is paused, skip the cooldown check.
         if (isFarmActive()) {
-            if (deposits[_depositId].cooldownPeriod != 0) {
+            Deposit storage userDeposit = deposits[_depositId];
+            if (userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
-            if (depositExpiryDate != 0) {
+            uint256 expiryDate = userDeposit.expiryDate;
+            if (expiryDate != 0) {
                 // Cooldown is initiated for the user.
-                if (depositExpiryDate > block.timestamp) {
+                if (expiryDate > block.timestamp) {
                     revert DepositIsInCooldown();
                 }
             }
