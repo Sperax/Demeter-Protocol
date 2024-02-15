@@ -114,7 +114,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days).
+    /// @param _newCooldownPeriod The new cooldown period (in seconds).
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
@@ -443,7 +443,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         }
 
         // Update the deposit expiry time & lock status.
-        userDeposit.expiryDate = block.timestamp + (userDeposit.cooldownPeriod * 1 days);
+        userDeposit.expiryDate = block.timestamp + (userDeposit.cooldownPeriod);
         userDeposit.cooldownPeriod = 0;
 
         // Claim the pending rewards for the user.
