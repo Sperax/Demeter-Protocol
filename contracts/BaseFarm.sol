@@ -443,7 +443,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         }
 
         // Update the deposit expiry time & lock status.
-        userDeposit.expiryDate = block.timestamp + (userDeposit.cooldownPeriod);
+        userDeposit.expiryDate = block.timestamp + userDeposit.cooldownPeriod;
         userDeposit.cooldownPeriod = 0;
 
         // Claim the pending rewards for the user.
