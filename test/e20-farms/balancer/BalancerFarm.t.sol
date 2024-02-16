@@ -44,33 +44,7 @@ interface ICustomOracle {
 }
 
 // RecoverERC20Test is replaced by RecoverERC20E20FarmTest
-contract BalancerFarmTest is
-    DepositTest,
-    GetDepositTest,
-    WithdrawTest,
-    WithdrawWithExpiryTest,
-    ClaimRewardsTest,
-    GetRewardFundInfoTest,
-    InitiateCooldownTest,
-    AddRewardsTest,
-    SetRewardRateTest,
-    GetRewardBalanceTest,
-    GetNumSubscriptionsTest,
-    SubscriptionInfoTest,
-    UpdateRewardTokenDataTest,
-    FarmPauseSwitchTest,
-    UpdateFarmStartTimeTest,
-    UpdateFarmStartTimeWithExpiryTest,
-    ExtendFarmDurationTest,
-    UpdateCoolDownPeriodTest,
-    CloseFarmTest,
-    _SetupFarmTest,
-    IncreaseDepositTest,
-    DecreaseDepositTest,
-    RecoverERC20E20FarmTest,
-    RecoverRewardFundsTest,
-    MulticallTest
-{
+contract BalancerFarmTest is BaseFarmInheritTest, BaseFarmWithExpiryInheritTest, BaseE20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;
@@ -135,24 +109,7 @@ contract BalancerFarmTest is
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(farm), amt);
-        uint256 usrBalanceBefore = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
-        if (!locked) {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-        } else {
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 0);
-            vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, 1);
-        }
-        vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, amt);
         BaseE20Farm(farm).deposit(amt, locked);
-        uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
-        uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
-        assertEq(usrBalanceAfter, usrBalanceBefore - amt);
-        assertEq(farmBalanceAfter, farmBalanceBefore + amt);
         return amt;
     }
 
