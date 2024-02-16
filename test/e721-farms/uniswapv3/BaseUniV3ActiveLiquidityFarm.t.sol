@@ -5,71 +5,52 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../../contracts/e721-farms/uniswapV3/BaseUniV3ActiveLiquidityFarm.sol";
+import "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3ActiveLiquidityDeployer.sol";
 import "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
 import "../../BaseFarm.t.sol";
 import "../../features/BaseFarmWithExpiry.t.sol";
+import "./BaseUniV3Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 
-abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest {
-    uint24 public FEE_TIER = 100;
-    int24 public TICK_LOWER = -887270;
-    int24 public TICK_UPPER = 887270;
-    address public NFPM;
-    address public UNIV3_FACTORY;
-    address public SWAP_ROUTER;
-    string public FARM_ID;
+abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseUniV3FarmTest {
+    Demeter_BaseUniV3ActiveLiquidityDeployer public uniV3ActiveLiqFarmDeployer;
 
-    uint256 constant depositId = 1;
+    function setUp() public virtual override {
+        BaseFarmTest.setUp();
+        vm.startPrank(PROXY_OWNER);
+        address impl = address(new BaseUniV3Farm());
+        UpgradeUtil upgradeUtil = new UpgradeUtil();
+        farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
+        // Deploy and register farm deployer
+        FarmFactory factory = FarmFactory(DEMETER_FACTORY);
+        uniV3ActiveLiqFarmDeployer = new Demeter_BaseUniV3ActiveLiquidityDeployer(
+            DEMETER_FACTORY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
+        );
+        factory.registerFarmDeployer(address(uniV3ActiveLiqFarmDeployer));
 
-    // Custom Errors
-    error InvalidUniswapPoolConfig();
-    error NotAUniV3NFT();
-    error NoData();
-    error NoFeeToClaim();
-    error IncorrectPoolToken();
-    error IncorrectTickRange();
-    error InvalidTickRange();
+        // Configure rewardTokens
+        rwdTokens.push(USDCe);
+        rwdTokens.push(DAI);
 
-    function generateRewardTokenData() public view returns (RewardTokenData[] memory rwdTokenData) {
-        address[] memory rewardToken = rwdTokens;
-        rwdTokenData = new RewardTokenData[](rewardToken.length);
-        for (uint8 i = 0; i < rewardToken.length; ++i) {
-            rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
-        }
+        invalidRewardToken = USDT;
+
+        vm.stopPrank();
+
+        // Create and setup Farms
+        lockupFarm = createFarm(block.timestamp, true);
+        nonLockupFarm = createFarm(block.timestamp, false);
     }
 
-    function _swap(address inputToken, address outputToken, uint24 poolFee, uint256 amountIn)
-        internal
-        returns (uint256 amountOut)
-    {
-        deal(address(inputToken), currentActor, amountIn);
-
-        IERC20(inputToken).approve(address(SWAP_ROUTER), amountIn);
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-            tokenIn: inputToken,
-            tokenOut: outputToken,
-            fee: poolFee,
-            recipient: currentActor,
-            deadline: block.timestamp,
-            amountIn: amountIn,
-            amountOutMinimum: 0,
-            sqrtPriceLimitX96: 0
-        });
-        // Executes the swap.
-        amountOut = ISwapRouter(SWAP_ROUTER).exactInputSingle(params);
+    function createFarm(uint256 _startTime, bool _lockup) public virtual override returns (address) {
+        return BaseUniV3FarmTest.createFarm(_startTime, _lockup);
     }
 
-    function _simulateSwap() internal {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
-
-        _swap(DAI, USDCe, FEE_TIER, depositAmount1);
-        _swap(USDCe, DAI, FEE_TIER, depositAmount2);
+    function deposit(address _farm, bool _locked, uint256 _baseAmt) public virtual override returns (uint256) {
+        return BaseUniV3FarmTest.deposit(_farm, _locked, _baseAmt);
     }
 
     function _mockUniswapV3PoolTick(address farm, bool _shouldMock) internal {
@@ -125,8 +106,6 @@ abstract contract BaseUniV3ActiveLiquidityFarmTest is BaseFarmTest {
 // TODO add compute rewards tests
 // TODO fix the following tests
 abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
     function test_IsFarmActive_When_InactiveLiquidity() public {
         // Assuming farm is always in active liquidity as tick range is huge.
         assertTrue(BaseUniV3ActiveLiquidityFarm(lockupFarm).isFarmActive());
@@ -191,7 +170,7 @@ abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
         uint256[][] memory rewardsForActiveLiquidity =
             BaseUniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(nonLockupFarm);
-        emit PoolUnsubscribed(depositId, 0, rewardsForActiveLiquidity[0]);
+        emit PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
         BaseUniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
         if (activeTime == 0) {
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {
@@ -203,7 +182,8 @@ abstract contract ActiveLiquidityTest is BaseUniV3ActiveLiquidityFarmTest {
                 assertEq(rewards[0][j] / timesDifference, rewardsForActiveLiquidity[0][j]);
             }
         }
-
         assertEq(BaseUniV3ActiveLiquidityFarm(nonLockupFarm).lastSecondsInside(), secondsInside);
     }
 }
+
+abstract contract BaseUniV3ActiveLiquidityFarmInheritTest is ActiveLiquidityTest {}

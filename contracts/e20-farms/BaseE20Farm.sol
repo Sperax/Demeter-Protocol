@@ -33,7 +33,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
 
     // Custom Errors
     error InvalidAmount();
-    error CannotWithdrawRewardTokenOrFarmToken();
+    error CannotWithdrawFarmToken();
 
     /// @notice constructor
     /// @param _farmStartTime - time of farm start
@@ -141,16 +141,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
     /// @param _token Address of token to be recovered
     function recoverERC20(address _token) external override onlyOwner nonReentrant {
-        if (rewardData[_token].tknManager != address(0) || _token == farmToken) {
-            revert CannotWithdrawRewardTokenOrFarmToken();
-        }
-
-        uint256 balance = IERC20(_token).balanceOf(address(this));
-        if (balance == 0) {
-            revert CannotWithdrawZeroAmount();
-        }
-
-        IERC20(_token).safeTransfer(owner(), balance);
-        emit RecoveredERC20(_token, balance);
+        if (_token == farmToken) revert CannotWithdrawFarmToken();
+        _recoverE20(_token);
     }
 }

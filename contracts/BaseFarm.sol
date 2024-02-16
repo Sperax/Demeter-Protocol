@@ -159,17 +159,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered.
     function recoverERC20(address _token) external virtual onlyOwner nonReentrant {
-        if (rewardData[_token].tknManager != address(0)) {
-            revert CannotWithdrawRewardToken();
-        }
-
-        uint256 balance = IERC20(_token).balanceOf(address(this));
-        if (balance == 0) {
-            revert CannotWithdrawZeroAmount();
-        }
-
-        IERC20(_token).safeTransfer(msg.sender, balance);
-        emit RecoveredERC20(_token, balance);
+        _recoverE20(_token);
     }
 
     // --------------------- Token Manager Functions ---------------------
@@ -380,6 +370,20 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
             return 0;
         }
         return (supply - rewardsAcc);
+    }
+
+    function _recoverE20(address _token) internal {
+        if (rewardData[_token].tknManager != address(0)) {
+            revert CannotWithdrawRewardToken();
+        }
+
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        if (balance == 0) {
+            revert CannotWithdrawZeroAmount();
+        }
+
+        IERC20(_token).safeTransfer(msg.sender, balance);
+        emit RecoveredERC20(_token, balance);
     }
 
     /// @notice Common logic for deposit in the demeter farm.
