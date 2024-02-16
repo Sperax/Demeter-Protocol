@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {FarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../FarmDeployer.sol";
+import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -50,10 +50,10 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable PROTOCOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _factory Address of Farm Factory
+    /// @param _registry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of UniswapV2 factory
-    constructor(address _factory, string memory _farmId, address _protocolFactory) FarmDeployer(_factory, _farmId) {
+    constructor(address _registry, string memory _farmId, address _protocolFactory) FarmDeployer(_registry, _farmId) {
         _validateNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         farmImplementation = address(new E20Farm());
@@ -71,7 +71,7 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _factory: FACTORY,
+            _registry: REGISTRY,
             _farmToken: pairPool,
             _rwdTokenData: _data.rewardData
         });
@@ -79,7 +79,7 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         address farm = address(farmInstance);
         // Calculate and collect fee if required
         _collectFee();
-        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
+        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }

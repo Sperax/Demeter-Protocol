@@ -43,14 +43,14 @@ contract Demeter_CamelotFarm is E721Farm, ExpirableFarm, INFTHandler, OperableDe
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _factory - Address of the farm factory
+    /// @param _registry - Address of the farm registry
     /// @param _camelotPairPool - Camelot lp pool address
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
-        address _factory,
+        address _registry,
         address _camelotPairPool,
         RewardTokenData[] memory _rwdTokenData,
         address _router,
@@ -65,7 +65,7 @@ contract Demeter_CamelotFarm is E721Farm, ExpirableFarm, INFTHandler, OperableDe
 
         router = _router;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _factory);
+        _setupFarmExpiry(_farmStartTime, _registry);
     }
 
     /// @notice Allow user to increase liquidity for a deposit.

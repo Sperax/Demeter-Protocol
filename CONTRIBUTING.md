@@ -78,7 +78,7 @@ To set up a development environment for Demeter Protocol, follow these steps:
 
 1. Add the logic you would like to add for deposits and withdrawals over Farm and then call the internal functions of Farm for consistency.
 
-1. Farm deployers must collect fees, validate pool while creating a farm and must register the farm in the official FarmFactory contract. Feel free to add/ remove any variables which are needed as per different protocols.
+1. Farm deployers must collect fees, validate pool while creating a farm and must register the farm in the official FarmRegistry contract. Feel free to add/ remove any variables which are needed as per different protocols.
 
 1. Write extensive tests in foundry under tests/protocol-name/ directory as:
 

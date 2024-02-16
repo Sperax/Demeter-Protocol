@@ -5,13 +5,13 @@ import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {E20Farm} from "../contracts/e20-farms/E20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
-import {FarmFactory} from "../contracts/FarmFactory.sol";
+import {FarmRegistry} from "../contracts/FarmRegistry.sol";
 import {FarmDeployer} from "../contracts/FarmDeployer.sol";
 import {UpgradeUtil} from "../test/utils/UpgradeUtil.t.sol";
 
-abstract contract FarmFactoryTest is TestNetworkConfig {
+abstract contract FarmRegistryTest is TestNetworkConfig {
     UpgradeUtil internal upgradeUtil;
-    FarmFactory public factoryImp;
+    FarmRegistry public registryImp;
     uint256 public constant FEE_AMOUNT = 1e20;
     uint256 public constant FEE_AMOUNT_LOWER_BOUND = 1e18;
     uint256 public constant FEE_AMOUNT_UPPER_BOUND = 1e25;
@@ -25,44 +25,44 @@ abstract contract FarmFactoryTest is TestNetworkConfig {
     event PrivilegeUpdated(address deployer, bool privilege);
 
     modifier initialized() {
-        FarmFactory(factory).initialize(FACTORY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        FarmRegistry(registry).initialize(REGISTRY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
         _;
     }
 
     modifier deployerRegistered() {
-        FarmFactory(factory).registerFarmDeployer(owner);
+        FarmRegistry(registry).registerFarmDeployer(owner);
         _;
     }
 
     function setUp() public override {
         super.setUp();
-        factoryImp = new FarmFactory();
+        registryImp = new FarmRegistry();
         upgradeUtil = new UpgradeUtil();
-        factory = createFactory();
+        registry = createFactory();
     }
 
-    function createFactory() public useKnownActor(FACTORY_OWNER) returns (address) {
-        address factoryProxy;
-        factoryImp = new FarmFactory();
+    function createFactory() public useKnownActor(REGISTRY_OWNER) returns (address) {
+        address registryProxy;
+        registryImp = new FarmRegistry();
         upgradeUtil = new UpgradeUtil();
-        factoryProxy = upgradeUtil.deployErc1967Proxy(address(factoryImp));
-        return factoryProxy;
+        registryProxy = upgradeUtil.deployErc1967Proxy(address(registryImp));
+        return registryProxy;
     }
 }
 
-contract InitializeTest is FarmFactoryTest {
-    function test_Initialize_RevertWhen_receiverIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+contract InitializeTest is FarmRegistryTest {
+    function test_Initialize_RevertWhen_receiverIsZeroAddress() public useKnownActor(REGISTRY_OWNER) {
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
+        FarmRegistry(registry).initialize(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_Initialize_RevertWhen_tokenIsZeroAddress() public useKnownActor(FACTORY_OWNER) {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).initialize(FACTORY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+    function test_Initialize_RevertWhen_tokenIsZeroAddress() public useKnownActor(REGISTRY_OWNER) {
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
+        FarmRegistry(registry).initialize(REGISTRY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(FACTORY_OWNER) {
-        address feeReceiver = FACTORY_OWNER;
+    function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(REGISTRY_OWNER) {
+        address feeReceiver = REGISTRY_OWNER;
         address feeToken = USDS;
         feeAmt = bound(feeAmt, FEE_AMOUNT_LOWER_BOUND, FEE_AMOUNT_UPPER_BOUND);
         extensionFeePerDay =
@@ -72,191 +72,191 @@ contract InitializeTest is FarmFactoryTest {
         address _feeToken;
         uint256 _feeAmount;
         uint256 _extensionFeePerDay;
-        vm.expectEmit(address(factory));
+        vm.expectEmit(address(registry));
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
-        FarmFactory(factory).initialize(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        FarmRegistry(registry).initialize(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         (_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay) =
-            FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
+            FarmRegistry(registry).getFeeParams(makeAddr("RANDOM"));
         assertEq(_feeReceiver, feeReceiver);
         assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
         assertEq(_extensionFeePerDay, extensionFeePerDay);
-        assertEq(FarmFactory(factory).owner(), currentActor);
-        assertEq(FarmFactory(factory).feeReceiver(), feeReceiver);
-        assertEq(FarmFactory(factory).feeToken(), feeToken);
-        assertEq(FarmFactory(factory).feeAmount(), feeAmt);
-        assertEq(FarmFactory(factory).extensionFeePerDay(), extensionFeePerDay);
+        assertEq(FarmRegistry(registry).owner(), currentActor);
+        assertEq(FarmRegistry(registry).feeReceiver(), feeReceiver);
+        assertEq(FarmRegistry(registry).feeToken(), feeToken);
+        assertEq(FarmRegistry(registry).feeAmount(), feeAmt);
+        assertEq(FarmRegistry(registry).extensionFeePerDay(), extensionFeePerDay);
     }
 }
 
-contract RegisterFarmTest is FarmFactoryTest {
-    function test_RegisterFarm_RevertWhen_DeployerNotRegistered() public useKnownActor(FACTORY_OWNER) initialized {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.DeployerNotRegistered.selector));
-        FarmFactory(factory).registerFarm(actors[6], actors[4]);
+contract RegisterFarmTest is FarmRegistryTest {
+    function test_RegisterFarm_RevertWhen_DeployerNotRegistered() public useKnownActor(REGISTRY_OWNER) initialized {
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.DeployerNotRegistered.selector));
+        FarmRegistry(registry).registerFarm(actors[6], actors[4]);
     }
 
-    function test_registerFarm() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+    function test_registerFarm() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
         address farm = actors[6];
         address creator = actors[5];
 
         vm.startPrank(owner);
-        vm.expectEmit(address(factory));
+        vm.expectEmit(address(registry));
         emit FarmRegistered(farm, creator, owner);
-        FarmFactory(factory).registerFarm(farm, creator);
-        assertEq(FarmFactory(factory).getFarmList()[0], farm);
+        FarmRegistry(registry).registerFarm(farm, creator);
+        assertEq(FarmRegistry(registry).getFarmList()[0], farm);
     }
 }
 
-contract RegisterFarmDeployerTest is FarmFactoryTest {
+contract RegisterFarmDeployerTest is FarmRegistryTest {
     function test_RegisterFarmDeployer_RevertWhen_DeployerAddressIsZero()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
     {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).registerFarmDeployer(address(0));
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
+        FarmRegistry(registry).registerFarmDeployer(address(0));
     }
 
     function test_RegisterFarmDeployer_RevertWhen_DeployerIsAlreadyRegistered()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.DeployerAlreadyRegistered.selector));
-        FarmFactory(factory).registerFarmDeployer(owner);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.DeployerAlreadyRegistered.selector));
+        FarmRegistry(registry).registerFarmDeployer(owner);
     }
 
-    function test_registerFarmDeployer() public useKnownActor(FACTORY_OWNER) initialized {
+    function test_registerFarmDeployer() public useKnownActor(REGISTRY_OWNER) initialized {
         address deployer = actors[5];
-        vm.expectEmit(address(factory));
+        vm.expectEmit(address(registry));
         emit FarmDeployerUpdated(deployer, true);
-        FarmFactory(factory).registerFarmDeployer(deployer);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[0], deployer);
-        assertEq(FarmFactory(factory).deployerRegistered(deployer), true);
+        FarmRegistry(registry).registerFarmDeployer(deployer);
+        assertEq(FarmRegistry(registry).getFarmDeployerList()[0], deployer);
+        assertEq(FarmRegistry(registry).deployerRegistered(deployer), true);
     }
 }
 
-contract RemoveFarmDeployerTest is FarmFactoryTest {
+contract RemoveFarmDeployerTest is FarmRegistryTest {
     function test_RemoveFarmDeployer_RevertWhen_invalidDeployerId()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
-        uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length);
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidDeployerId.selector));
-        FarmFactory(factory).removeDeployer(deployerId);
+        uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidDeployerId.selector));
+        FarmRegistry(registry).removeDeployer(deployerId);
     }
 
-    function test_removeLastDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        FarmFactory(factory).registerFarmDeployer(actors[10]);
-        FarmFactory(factory).registerFarmDeployer(actors[11]);
-        uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 1);
-        uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
-        vm.expectEmit(address(factory));
+    function test_removeLastDeployer() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+        FarmRegistry(registry).registerFarmDeployer(actors[10]);
+        FarmRegistry(registry).registerFarmDeployer(actors[11]);
+        uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 1);
+        uint16 lengthBfr = uint16(FarmRegistry(registry).getFarmDeployerList().length);
+        vm.expectEmit(address(registry));
         emit FarmDeployerUpdated(actors[11], false);
-        FarmFactory(factory).removeDeployer(deployerId);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[10]);
-        assertEq(uint16(FarmFactory(factory).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
+        FarmRegistry(registry).removeDeployer(deployerId);
+        assertEq(FarmRegistry(registry).getFarmDeployerList()[0], owner);
+        assertEq(FarmRegistry(registry).getFarmDeployerList()[1], actors[10]);
+        assertEq(uint16(FarmRegistry(registry).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
     }
 
-    function test_removeMiddleDeployer() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        FarmFactory(factory).registerFarmDeployer(actors[10]);
-        FarmFactory(factory).registerFarmDeployer(actors[11]);
-        uint16 deployerId = uint16(FarmFactory(factory).getFarmDeployerList().length - 2);
-        uint16 lengthBfr = uint16(FarmFactory(factory).getFarmDeployerList().length);
-        vm.expectEmit(address(factory));
+    function test_removeMiddleDeployer() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+        FarmRegistry(registry).registerFarmDeployer(actors[10]);
+        FarmRegistry(registry).registerFarmDeployer(actors[11]);
+        uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 2);
+        uint16 lengthBfr = uint16(FarmRegistry(registry).getFarmDeployerList().length);
+        vm.expectEmit(address(registry));
         emit FarmDeployerUpdated(actors[10], false);
-        FarmFactory(factory).removeDeployer(deployerId);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[0], owner);
-        assertEq(FarmFactory(factory).getFarmDeployerList()[1], actors[11]);
-        assertEq(uint16(FarmFactory(factory).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
+        FarmRegistry(registry).removeDeployer(deployerId);
+        assertEq(FarmRegistry(registry).getFarmDeployerList()[0], owner);
+        assertEq(FarmRegistry(registry).getFarmDeployerList()[1], actors[11]);
+        assertEq(uint16(FarmRegistry(registry).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
     }
 }
 
-contract UpdatePrivilegeTest is FarmFactoryTest {
+contract UpdatePrivilegeTest is FarmRegistryTest {
     function test_UpdatePrivilege_RevertWhen_PrivilegeSameAsDesired()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.PrivilegeSameAsDesired.selector));
-        FarmFactory(factory).updatePrivilege(owner, false);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.PrivilegeSameAsDesired.selector));
+        FarmRegistry(registry).updatePrivilege(owner, false);
     }
 
     function test_UpdatePrivilege_RevertWhen_callerIsNotOwner()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
-        FarmFactory(factory).updatePrivilege(owner, false);
+        FarmRegistry(registry).updatePrivilege(owner, false);
     }
 
-    function test_updatePrivilege() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
-        vm.expectEmit(address(factory));
+    function test_updatePrivilege() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+        vm.expectEmit(address(registry));
         emit PrivilegeUpdated(owner, true);
-        FarmFactory(factory).updatePrivilege(owner, true);
-        assertEq(FarmFactory(factory).isPrivilegedDeployer(owner), true);
+        FarmRegistry(registry).updatePrivilege(owner, true);
+        assertEq(FarmRegistry(registry).isPrivilegedDeployer(owner), true);
 
         // Test getFeeParams
         (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =
-            FarmFactory(factory).getFeeParams(owner);
-        assertEq(_feeReceiver, FACTORY_OWNER);
+            FarmRegistry(registry).getFeeParams(owner);
+        assertEq(_feeReceiver, REGISTRY_OWNER);
         assertEq(_feeToken, USDS);
         assertEq(_feeAmount, 0);
         assertEq(_extensionFeePerDay, 0);
     }
 }
 
-contract UpdateFeeParamsTest is FarmFactoryTest {
+contract UpdateFeeParamsTest is FarmRegistryTest {
     function test_UpdateFeeParams_RevertWhen_callerIsNotOwner()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
         vm.startPrank(owner);
         vm.expectRevert("Ownable: caller is not the owner");
-        FarmFactory(factory).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        FarmRegistry(registry).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
     function test_UpdateFeeParams_RevertWhen_InvalidAddress()
         public
-        useKnownActor(FACTORY_OWNER)
+        useKnownActor(REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).updateFeeParams(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
-        vm.expectRevert(abi.encodeWithSelector(FarmFactory.InvalidAddress.selector));
-        FarmFactory(factory).updateFeeParams(owner, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
+        FarmRegistry(registry).updateFeeParams(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
+        FarmRegistry(registry).updateFeeParams(owner, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_updateFeeParams() public useKnownActor(FACTORY_OWNER) initialized deployerRegistered {
+    function test_updateFeeParams() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
         address feeReceiver = actors[5];
         address feeToken = actors[6];
         uint256 feeAmt = FEE_AMOUNT;
         uint256 extensionFeePerDay = EXTENSION_FEE_PER_DAY;
-        vm.expectEmit(address(factory));
+        vm.expectEmit(address(registry));
         emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
-        FarmFactory(factory).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        FarmRegistry(registry).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         // Test getFeeParams
         (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =
-            FarmFactory(factory).getFeeParams(makeAddr("RANDOM"));
+            FarmRegistry(registry).getFeeParams(makeAddr("RANDOM"));
         assertEq(_feeReceiver, feeReceiver);
         assertEq(_feeToken, feeToken);
         assertEq(_feeAmount, feeAmt);
         assertEq(_extensionFeePerDay, extensionFeePerDay);
-        assertEq(FarmFactory(factory).owner(), currentActor);
-        assertEq(FarmFactory(factory).feeReceiver(), feeReceiver);
-        assertEq(FarmFactory(factory).feeToken(), feeToken);
-        assertEq(FarmFactory(factory).feeAmount(), feeAmt);
-        assertEq(FarmFactory(factory).extensionFeePerDay(), extensionFeePerDay);
+        assertEq(FarmRegistry(registry).owner(), currentActor);
+        assertEq(FarmRegistry(registry).feeReceiver(), feeReceiver);
+        assertEq(FarmRegistry(registry).feeToken(), feeToken);
+        assertEq(FarmRegistry(registry).feeAmount(), feeAmt);
+        assertEq(FarmRegistry(registry).extensionFeePerDay(), extensionFeePerDay);
     }
 }

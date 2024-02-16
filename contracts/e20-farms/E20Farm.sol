@@ -39,21 +39,21 @@ contract E20Farm is ExpirableFarm, OperableDeposit {
     /// @param _farmStartTime - time of farm start
     /// @param _cooldownPeriod - cooldown period for locked deposits in days
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _factory - Address of the farm factory
+    /// @param _registry - Address of the farm registry
     /// @param _farmToken Address of the farm token
     /// @param _rwdTokenData - init data for reward tokens
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
-        address _factory,
+        address _registry,
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external initializer {
         // initialize farmToken related data
         farmToken = _farmToken;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _factory);
+        _setupFarmExpiry(_farmStartTime, _registry);
     }
 
     /// @notice Function is called when user transfers the NFT to the contract.

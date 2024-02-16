@@ -26,11 +26,11 @@ abstract contract UniV3ActiveLiquidityFarmTest is UniV3FarmTest {
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
-        FarmFactory factory = FarmFactory(DEMETER_FACTORY);
+        FarmRegistry registry = FarmRegistry(DEMETER_REGISTRY);
         uniV3ActiveLiqFarmDeployer = new Demeter_UniV3ActiveLiquidityDeployer(
-            DEMETER_FACTORY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
+            DEMETER_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
-        factory.registerFarmDeployer(address(uniV3ActiveLiqFarmDeployer));
+        registry.registerFarmDeployer(address(uniV3ActiveLiqFarmDeployer));
 
         // Configure rewardTokens
         rwdTokens.push(USDCe);

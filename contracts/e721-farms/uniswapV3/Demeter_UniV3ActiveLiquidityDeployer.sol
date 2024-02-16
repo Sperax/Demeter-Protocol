@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {FarmDeployer, IFarmFactory} from "../../FarmDeployer.sol";
+import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
 import {UniV3ActiveLiquidityFarm} from "./UniV3ActiveLiquidityFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
@@ -45,20 +45,20 @@ contract Demeter_UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
-    /// @param _factory Address of Farm Factory
+    /// @param _registry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _uniV3Factory Address of UniswapV3 factory
     /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
     /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
     /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
     constructor(
-        address _factory,
+        address _registry,
         string memory _farmId,
         address _uniV3Factory,
         address _nfpm,
         address _uniswapUtils,
         address _nfpmUtils
-    ) FarmDeployer(_factory, _farmId) {
+    ) FarmDeployer(_registry, _farmId) {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nfpm);
         _validateNonZeroAddr(_uniswapUtils);
@@ -81,7 +81,7 @@ contract Demeter_UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _factory: FACTORY,
+            _registry: REGISTRY,
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
@@ -94,7 +94,7 @@ contract Demeter_UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
+        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
         return farm;
     }
 }

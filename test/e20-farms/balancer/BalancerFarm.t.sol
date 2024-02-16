@@ -56,9 +56,9 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
 
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
-        FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_FACTORY, FARM_ID, BALANCER_VAULT);
-        factory.registerFarmDeployer(address(balancerFarmDeployer));
+        FarmRegistry registry = FarmRegistry(DEMETER_REGISTRY);
+        balancerFarmDeployer = new Demeter_BalancerFarm_Deployer(DEMETER_REGISTRY, FARM_ID, BALANCER_VAULT);
+        registry.registerFarmDeployer(address(balancerFarmDeployer));
 
         // Configure rewardTokens
         rwdTokens.push(USDCe);

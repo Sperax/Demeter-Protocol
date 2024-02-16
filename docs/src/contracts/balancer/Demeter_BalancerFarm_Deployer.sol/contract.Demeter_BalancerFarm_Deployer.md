@@ -10,7 +10,7 @@ Sperax Foundation
 
 This contract allows anyone to calculate fees and create farms
 
-*It consults Balancer's vault to validate the pool*
+_It consults Balancer's vault to validate the pool_
 
 ## State Variables
 
@@ -32,25 +32,25 @@ string public DEPLOYER_NAME;
 
 Constructor of the contract
 
-*Deploys one farm so that it can be cloned later*
+_Deploys one farm so that it can be cloned later_
 
 ```solidity
-constructor(address _factory, address _balancerVault, string memory _deployerName);
+constructor(address _registry, address _balancerVault, string memory _deployerName);
 ```
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_factory`|`address`|Address of Sperax Farm Factory|
-|`_balancerVault`|`address`|Address of Balancer's Vault|
-|`_deployerName`|`string`|String containing a name of the deployer|
+| Name             | Type      | Description                              |
+| ---------------- | --------- | ---------------------------------------- |
+| `_registry`      | `address` | Address of Sperax Farm Registry          |
+| `_balancerVault` | `address` | Address of Balancer's Vault              |
+| `_deployerName`  | `string`  | String containing a name of the deployer |
 
 ### createFarm
 
 Deploys a new Balancer farm.
 
-*The caller of this function should approve feeAmount (USDs) for this contract*
+_The caller of this function should approve feeAmount (USDs) for this contract_
 
 ```solidity
 function createFarm(FarmData memory _data) external nonReentrant returns (address);
@@ -58,15 +58,15 @@ function createFarm(FarmData memory _data) external nonReentrant returns (addres
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_data`|`FarmData`|data for deployment.|
+| Name    | Type       | Description          |
+| ------- | ---------- | -------------------- |
+| `_data` | `FarmData` | data for deployment. |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`address`|Address of the new farm|
+| Name     | Type      | Description             |
+| -------- | --------- | ----------------------- |
+| `<none>` | `address` | Address of the new farm |
 
 ### calculateFees
 
@@ -78,18 +78,18 @@ function calculateFees(IERC20[] memory _tokens) external view returns (address, 
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_tokens`|`IERC20[]`|Array of addresses of tokens|
+| Name      | Type       | Description                  |
+| --------- | ---------- | ---------------------------- |
+| `_tokens` | `IERC20[]` | Array of addresses of tokens |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`address`|feeReceiver's address, feeToken's address, feeAmount, boolean claimable|
-|`<none>`|`address`||
-|`<none>`|`uint256`||
-|`<none>`|`bool`||
+| Name     | Type      | Description                                                             |
+| -------- | --------- | ----------------------------------------------------------------------- |
+| `<none>` | `address` | feeReceiver's address, feeToken's address, feeAmount, boolean claimable |
+| `<none>` | `address` |                                                                         |
+| `<none>` | `uint256` |                                                                         |
+| `<none>` | `bool`    |                                                                         |
 
 ### validatePool
 
@@ -101,9 +101,9 @@ function validatePool(bytes32 _poolId) public returns (address pool);
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_poolId`|`bytes32`|bytes32 Id of the pool|
+| Name      | Type      | Description            |
+| --------- | --------- | ---------------------- |
+| `_poolId` | `bytes32` | bytes32 Id of the pool |
 
 ### \_calculateFees
 
@@ -115,18 +115,18 @@ function _calculateFees(IERC20[] memory _tokens) internal view returns (address,
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_tokens`|`IERC20[]`|Array of token addresses|
+| Name      | Type       | Description              |
+| --------- | ---------- | ------------------------ |
+| `_tokens` | `IERC20[]` | Array of token addresses |
 
 **Returns**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`address`|feeReceiver's address, feeToken's address, feeAmount, boolean claimable|
-|`<none>`|`address`||
-|`<none>`|`uint256`||
-|`<none>`|`bool`||
+| Name     | Type      | Description                                                             |
+| -------- | --------- | ----------------------------------------------------------------------- |
+| `<none>` | `address` | feeReceiver's address, feeToken's address, feeAmount, boolean claimable |
+| `<none>` | `address` |                                                                         |
+| `<none>` | `uint256` |                                                                         |
+| `<none>` | `bool`    |                                                                         |
 
 ### \_collectFee
 
@@ -138,9 +138,9 @@ function _collectFee(IERC20[] memory _tokens) private;
 
 **Parameters**
 
-|Name|Type|Description|
-|----|----|-----------|
-|`_tokens`|`IERC20[]`|Array of token addresses|
+| Name      | Type       | Description              |
+| --------- | ---------- | ------------------------ |
+| `_tokens` | `IERC20[]` | Array of token addresses |
 
 ## Structs
 

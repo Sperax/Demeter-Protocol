@@ -2,7 +2,7 @@
 pragma solidity 0.8.16;
 
 import {ExpirableFarm} from "../../contracts/features/ExpirableFarm.sol";
-import {FarmFactory} from "../../contracts/FarmFactory.sol";
+import {FarmRegistry} from "../../contracts/FarmRegistry.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../Farm.t.sol";
@@ -189,9 +189,9 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         vm.warp(farmStartTime + 1);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
 
-        uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
-        address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
-        address feeToken = FarmFactory(DEMETER_FACTORY).feeToken();
+        uint256 extensionFeePerDay = FarmRegistry(DEMETER_REGISTRY).extensionFeePerDay();
+        address feeReceiver = FarmRegistry(DEMETER_REGISTRY).feeReceiver();
+        address feeToken = FarmRegistry(DEMETER_REGISTRY).feeToken();
         uint256 extensionFeeAmount = extensionDays * extensionFeePerDay;
 
         uint256 feeReceiverTokenBalanceBeforeExtension = IERC20(feeToken).balanceOf(feeReceiver);

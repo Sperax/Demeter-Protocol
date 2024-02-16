@@ -15,7 +15,7 @@ import "../E721Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
-import {FarmFactory} from "../../../contracts/FarmFactory.sol";
+import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {E721Farm} from "../../../contracts/e721-farms/E721Farm.sol";
 
@@ -36,10 +36,10 @@ abstract contract Demeter_CamelotFarmTest is E721FarmTest {
         super.setUp();
 
         vm.startPrank(PROXY_OWNER);
-        FarmFactory factory = FarmFactory(DEMETER_FACTORY);
+        FarmRegistry registry = FarmRegistry(DEMETER_REGISTRY);
         demeter_camelotFarm_deployer =
-            new Demeter_CamelotFarm_Deployer(DEMETER_FACTORY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
-        factory.registerFarmDeployer(address(demeter_camelotFarm_deployer));
+            new Demeter_CamelotFarm_Deployer(DEMETER_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
+        registry.registerFarmDeployer(address(demeter_camelotFarm_deployer));
         vm.stopPrank();
 
         // Configure rewardTokens
@@ -170,7 +170,7 @@ abstract contract Demeter_CamelotFarmTest is E721FarmTest {
         }
         vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotFarm.InvalidCamelotPoolConfig.selector));
         Demeter_CamelotFarm(farm).initialize(
-            FARM_ID, block.timestamp, 0, address(factory), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
+            FARM_ID, block.timestamp, 0, address(registry), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
         );
     }
 }

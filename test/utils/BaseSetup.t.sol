@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {Test} from "forge-std/Test.sol";
 import {Farm} from "../../contracts/Farm.sol";
-import {FarmFactory} from "../../contracts/FarmFactory.sol";
+import {FarmRegistry} from "../../contracts/FarmRegistry.sol";
 import {FarmDeployer} from "../../contracts/FarmDeployer.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
@@ -15,15 +15,15 @@ abstract contract BaseSetup is Test {
 
     // Define Demeter constants here
     address internal PROXY_OWNER;
-    address internal FACTORY_OWNER;
+    address internal REGISTRY_OWNER;
     address internal PROXY_ADMIN;
-    address internal DEMETER_FACTORY;
+    address internal DEMETER_REGISTRY;
 
     // Define fork networks
     uint256 internal forkCheck;
 
     address public owner;
-    address public factory;
+    address public registry;
     address[] public actors;
     address internal currentActor;
 
@@ -53,6 +53,6 @@ abstract contract BaseSetup is Test {
             actors.push(act);
         }
         owner = actors[4];
-        FACTORY_OWNER = actors[5];
+        REGISTRY_OWNER = actors[5];
     }
 }

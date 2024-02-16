@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Farm} from "../Farm.sol";
-import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
+import {IFarmRegistry} from "../interfaces/IFarmRegistry.sol";
 
 abstract contract ExpirableFarm is Farm {
     using SafeERC20 for IERC20;
@@ -11,7 +11,7 @@ abstract contract ExpirableFarm is Farm {
     uint256 public constant MIN_EXTENSION = 100; // 100 days
     uint256 public constant MAX_EXTENSION = 300; // 300 days
     uint256 public farmEndTime;
-    address public farmFactory;
+    address public farmRegistry;
 
     event FarmEndTimeUpdated(uint256 newEndTime);
     event ExtensionFeeCollected(address token, uint256 extensionFee);
@@ -64,21 +64,21 @@ abstract contract ExpirableFarm is Farm {
     }
 
     /// @notice Setup the farm data for farm expiry.
-    function _setupFarmExpiry(uint256 _farmStartTime, address _farmFactory) internal {
-        _validateNonZeroAddr(_farmFactory);
+    function _setupFarmExpiry(uint256 _farmStartTime, address _farmRegistry) internal {
+        _validateNonZeroAddr(_farmRegistry);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
-        farmFactory = _farmFactory;
+        farmRegistry = _farmRegistry;
     }
 
     // --------------------- Private  Functions ---------------------
 
     /// @notice Collect farm extension fee and transfer it to feeReceiver.
-    /// @dev Function fetches all the fee params from farmFactory.
+    /// @dev Function fetches all the fee params from farmRegistry.
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function _collectExtensionFee(uint256 _extensionDays) private {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
         (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
-            IFarmFactory(farmFactory).getFeeParams(msg.sender);
+            IFarmRegistry(farmRegistry).getFeeParams(msg.sender);
         if (extensionFeePerDay != 0) {
             uint256 extensionFeeAmount = _extensionDays * extensionFeePerDay;
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, extensionFeeAmount);

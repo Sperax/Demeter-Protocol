@@ -16,7 +16,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {FarmDeployer, IFarmFactory} from "../../FarmDeployer.sol";
+import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -49,18 +49,18 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFT_POOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _factory Address of Farm Factory
+    /// @param _registry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of Camelot factory
     /// @param _router Address of Camelot router
     /// @param _nftPoolFactory Address of Camelot NFT pool factory
     constructor(
-        address _factory,
+        address _registry,
         string memory _farmId,
         address _protocolFactory,
         address _router,
         address _nftPoolFactory
-    ) FarmDeployer(_factory, _farmId) {
+    ) FarmDeployer(_registry, _farmId) {
         _validateNonZeroAddr(_protocolFactory);
         _validateNonZeroAddr(_nftPoolFactory);
 
@@ -82,7 +82,7 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _factory: FACTORY,
+            _registry: REGISTRY,
             _camelotPairPool: pairPool,
             _rwdTokenData: _data.rewardData,
             _router: ROUTER,
@@ -93,7 +93,7 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
+        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
         return farm;
     }
 

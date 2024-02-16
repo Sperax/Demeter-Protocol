@@ -17,7 +17,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {FarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../FarmDeployer.sol";
+import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
 import {IBalancerVault} from "./interfaces/IBalancerVault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -49,11 +49,11 @@ contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable BALANCER_VAULT;
 
     /// @notice Constructor of the contract
-    /// @param _factory Address of Sperax Farm Factory
+    /// @param _registry Address of Sperax Farm Registry
     /// @param _farmId Id of the farm
     /// @param _balancerVault Address of Balancer's Vault
     /// @dev Deploys one farm so that it can be cloned later
-    constructor(address _factory, string memory _farmId, address _balancerVault) FarmDeployer(_factory, _farmId) {
+    constructor(address _registry, string memory _farmId, address _balancerVault) FarmDeployer(_registry, _farmId) {
         _validateNonZeroAddr(_balancerVault);
 
         BALANCER_VAULT = _balancerVault;
@@ -77,13 +77,13 @@ contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _factory: FACTORY,
+            _registry: REGISTRY,
             _farmToken: pairPool,
             _rwdTokenData: _data.rewardData
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        IFarmFactory(FACTORY).registerFarm(farm, msg.sender);
+        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }

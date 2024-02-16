@@ -18,10 +18,10 @@ pragma solidity 0.8.16;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-/// @title Farm Factory contract of Demeter Protocol
+/// @title Farm Registry contract of Demeter Protocol
 /// @notice This contract tracks fee details, privileged deployers, deployed farms and farm deployers
 /// @author Sperax Foundation
-contract FarmFactory is OwnableUpgradeable {
+contract FarmRegistry is OwnableUpgradeable {
     address public feeReceiver;
     address public feeToken;
     uint256 public feeAmount;
@@ -88,7 +88,7 @@ contract FarmFactory is OwnableUpgradeable {
         emit FarmDeployerUpdated(_deployer, true);
     }
 
-    /// @notice Remove an existing deployer from factory
+    /// @notice Remove an existing deployer from registry
     /// @param _id of the deployer to be removed (0 index based)
     function removeDeployer(uint16 _id) external onlyOwner {
         uint256 numDeployer = deployerList.length;
@@ -138,7 +138,7 @@ contract FarmFactory is OwnableUpgradeable {
         return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);
     }
 
-    /// @notice Update the fee params for factory
+    /// @notice Update the fee params for registry
     /// @param _receiver feeReceiver address
     /// @param _feeToken token address for fee
     /// @param _amount amount of token to be collected
