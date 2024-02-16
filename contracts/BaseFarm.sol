@@ -114,14 +114,15 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in seconds).
+    /// @param _newCooldownPeriod The new cooldown period (in days).
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
-        _validateCooldownPeriod(_newCooldownPeriod);
-        cooldownPeriod = _newCooldownPeriod;
+        uint256 _cooldownPeriodDays = _newCooldownPeriod * 1 days;
+        _validateCooldownPeriod(_cooldownPeriodDays);
+        cooldownPeriod = _cooldownPeriodDays;
         emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
@@ -645,8 +646,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for the farm.
         uint8 numFunds = 1;
         if (_cooldownPeriod != 0) {
-            _validateCooldownPeriod(_cooldownPeriod);
-            cooldownPeriod = _cooldownPeriod;
+            uint256 _cooldownPeriodDays = _cooldownPeriod * 1 days;
+            _validateCooldownPeriod(_cooldownPeriodDays);
+            cooldownPeriod = _cooldownPeriodDays;
             numFunds = 2;
         }
 

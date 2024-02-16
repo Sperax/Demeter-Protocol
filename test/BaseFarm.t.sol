@@ -11,9 +11,9 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
-    uint256 public constant COOLDOWN_PERIOD = 21 days;
-    uint256 public constant MIN_COOLDOWN_PERIOD = 1 days;
-    uint256 public constant MAX_COOLDOWN_PERIOD = 30 days;
+    uint256 public constant COOLDOWN_PERIOD = 21; // in days
+    uint256 public constant MIN_COOLDOWN_PERIOD = 1; // in days
+    uint256 public constant MAX_COOLDOWN_PERIOD = 30; // in days
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
     uint256 public constant DEPOSIT_AMOUNT = 1e3;
@@ -278,7 +278,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         useKnownActor(user)
     {
         BaseFarm(lockupFarm).initiateCooldown(1);
-        skip(COOLDOWN_PERIOD - 100); //100 seconds before the end of CoolDown Period
+        skip(COOLDOWN_PERIOD * 1 days - 100); //100 seconds before the end of CoolDown Period
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         BaseFarm(lockupFarm).withdraw(1);
     }
@@ -335,7 +335,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
         vm.startPrank(user);
         uint256 time = 2 days;
-        uint256 cooldownTime = COOLDOWN_PERIOD + 100;
+        uint256 cooldownTime = COOLDOWN_PERIOD * 1 days + 100;
         uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -366,7 +366,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         assertEq(BaseFarm(nonLockupFarm).getDepositInfo(1).liquidity, liquidity);
 
         vm.startPrank(user);
-        uint256 time = COOLDOWN_PERIOD + 100;
+        uint256 time = COOLDOWN_PERIOD * 1 days + 100;
         skip(time);
         uint256[][] memory rewardsForEachSubs = new uint256[][](1);
         BaseFarm(nonLockupFarm).getDepositInfo(depositId);
@@ -437,7 +437,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
         vm.startPrank(actors[1]);
         uint256 time = 2 days;
-        uint256 cooldownTime = COOLDOWN_PERIOD + 100;
+        uint256 cooldownTime = COOLDOWN_PERIOD * 1 days + 100;
         BaseFarm(lockupFarm).initiateCooldown(1);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(rwdTokens[0]);
@@ -493,7 +493,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
         vm.startPrank(actors[5]);
         uint256 time = 2 days;
-        uint256 cooldownTime = COOLDOWN_PERIOD + 100;
+        uint256 cooldownTime = COOLDOWN_PERIOD * 1 days + 100;
         BaseFarm(lockupFarm).initiateCooldown(5);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(rwdTokens[0]);
@@ -549,7 +549,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
         vm.startPrank(actors[10]);
         uint256 time = 2 days;
-        uint256 cooldownTime = COOLDOWN_PERIOD + 100;
+        uint256 cooldownTime = COOLDOWN_PERIOD * 1 days + 100;
         BaseFarm(lockupFarm).initiateCooldown(10);
         skip(cooldownTime); //100 seconds after the end of CoolDown Period
         BaseFarm(lockupFarm).getRewardBalance(rwdTokens[0]);
@@ -602,7 +602,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         }
 
         vm.startPrank(actors[1]);
-        uint256 time = COOLDOWN_PERIOD + 100;
+        uint256 time = COOLDOWN_PERIOD * 1 days + 100;
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(1);
@@ -648,7 +648,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         }
 
         vm.startPrank(actors[5]);
-        uint256 time = COOLDOWN_PERIOD + 100;
+        uint256 time = COOLDOWN_PERIOD * 1 days + 100;
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(5);
@@ -694,7 +694,7 @@ abstract contract WithdrawTest is BaseFarmTest {
         }
 
         vm.startPrank(actors[10]);
-        uint256 time = COOLDOWN_PERIOD + 100;
+        uint256 time = COOLDOWN_PERIOD * 1 days + 100;
         skip(time);
         BaseFarm(nonLockupFarm).getRewardBalance(rwdTokens[0]);
         BaseFarm(nonLockupFarm).getDepositInfo(10);
@@ -781,7 +781,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(1, 1, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit CooldownInitiated(1, userDeposit.startTime + COOLDOWN_PERIOD + 86400 * 7);
+        emit CooldownInitiated(1, userDeposit.startTime + COOLDOWN_PERIOD * 1 days + 86400 * 7);
         BaseFarm(lockupFarm).initiateCooldown(1);
     }
 
@@ -1351,7 +1351,7 @@ abstract contract MulticallTest is BaseFarmTest {
 
         BaseFarm(lockupFarm).multicall(data);
 
-        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod);
+        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod * 1 days);
         assertEq(BaseFarm(lockupFarm).isFarmOpen(), false);
     }
 
