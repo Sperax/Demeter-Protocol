@@ -17,7 +17,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
     BaseFarmInheritTest,
     BaseE721FarmInheritTest,
     BaseUniV3FarmInheritTest,
-    BaseFarmWithExpiryInheritTest,
+    ExpirableFarmInheritTest,
     BaseUniV3ActiveLiquidityFarmInheritTest
 {
     // Define variables

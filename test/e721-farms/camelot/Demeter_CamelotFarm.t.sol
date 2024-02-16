@@ -5,7 +5,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../BaseFarm.t.sol";
-import "../../features/BaseFarmWithExpiry.t.sol";
+import "../../features/ExpirableFarm.t.sol";
 import {
     INFTPoolFactory, IPositionHelper, INFTPool
 } from "../../../contracts/e721-farms/camelot/interfaces/ICamelot.sol";
@@ -549,7 +549,7 @@ abstract contract CamelotDecreaseDepositTest is Demeter_CamelotFarmTest {
 contract DemeterCamelotFarmInheritTest is
     BaseFarmInheritTest,
     BaseE721FarmInheritTest,
-    BaseFarmWithExpiryInheritTest,
+    ExpirableFarmInheritTest,
     OnNFTHarvestTest,
     ClaimPoolRewardsTest,
     CamelotIncreaseDepositTest,

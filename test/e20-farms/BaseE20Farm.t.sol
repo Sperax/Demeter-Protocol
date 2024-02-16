@@ -7,7 +7,7 @@ import {BaseFarm} from "../../contracts/BaseFarm.sol";
 import {BaseE20Farm} from "../../contracts/e20-farms/BaseE20Farm.sol";
 import {OperableDeposit} from "../../contracts/features/OperableDeposit.sol";
 import "../BaseFarm.t.sol";
-import "../features/BaseFarmWithExpiry.t.sol";
+import "../features/ExpirableFarm.t.sol";
 
 abstract contract BaseE20FarmTest is BaseFarmTest {
     event Transfer(address indexed from, address indexed to, uint256 value);

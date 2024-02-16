@@ -16,7 +16,7 @@ contract Demeter_UniV3FarmTest is
     BaseFarmInheritTest,
     BaseE721FarmInheritTest,
     BaseUniV3FarmInheritTest,
-    BaseFarmWithExpiryInheritTest
+    ExpirableFarmInheritTest
 {
     // Define variables
     string public FARM_NAME = "Demeter_UniV3_v4";

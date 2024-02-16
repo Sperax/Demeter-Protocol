@@ -17,7 +17,7 @@ contract Demeter_SushiV3FarmTest is
     BaseFarmInheritTest,
     BaseE721FarmInheritTest,
     BaseUniV3FarmInheritTest,
-    BaseFarmWithExpiryInheritTest
+    ExpirableFarmInheritTest
 {
     // Define variables
     string public constant FARM_NAME = "Demeter_SushiV3_v1";

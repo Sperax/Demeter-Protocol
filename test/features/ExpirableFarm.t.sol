@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {BaseFarmWithExpiry} from "../../contracts/features/BaseFarmWithExpiry.sol";
+import {ExpirableFarm} from "../../contracts/features/ExpirableFarm.sol";
 import {FarmFactory} from "../../contracts/FarmFactory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../BaseFarm.t.sol";
 
-abstract contract BaseFarmWithExpiryTest is BaseFarmTest {
+abstract contract ExpirableFarmTest is BaseFarmTest {
     uint256 public constant MIN_EXTENSION = 100; // in days
     uint256 public constant MAX_EXTENSION = 300; // in days
 
@@ -15,7 +15,7 @@ abstract contract BaseFarmWithExpiryTest is BaseFarmTest {
     event ExtensionFeeCollected(address token, uint256 extensionFee);
 }
 
-abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
+abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
     function _assertHelper(
         uint256 farmStartTime,
         uint256 farmEndTimeBeforeUpdate,
@@ -40,17 +40,17 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
     }
 
     function test_updateFarmStartTime_RevertWhen_FarmHasExpired() public useKnownActor(owner) {
-        uint256 farmEndTime = BaseFarmWithExpiry(nonLockupFarm).farmEndTime();
+        uint256 farmEndTime = ExpirableFarm(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarmWithExpiry(nonLockupFarm).updateFarmStartTime(block.timestamp);
+        ExpirableFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
     function testFuzz_updateFarmStartTimeWithExpiry(bool lockup, uint256 farmStartTime, uint256 newStartTime) public {
         farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
         newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
         address farm = createFarm(farmStartTime, lockup);
-        uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -62,11 +62,11 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(newStartTime);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
+        ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
+        uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         _assertHelper(
             farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
@@ -81,7 +81,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
         address farm = createFarm(farmStartTime, lockup);
-        uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
         uint256 timeDelta;
 
         if (newStartTime > farmStartTime) {
@@ -94,11 +94,11 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(newStartTime);
 
-        BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
+        ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
+        uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         _assertHelper(
             farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
@@ -112,11 +112,11 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
         emit FarmStartTimeUpdated(farmStartTime);
-        BaseFarmWithExpiry(farm).updateFarmStartTime(farmStartTime);
+        ExpirableFarm(farm).updateFarmStartTime(farmStartTime);
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
+        uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - farmStartTime);
         assertEq(lastFundUpdateTime, farmStartTime);
@@ -131,54 +131,54 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is BaseFarmWithExpiryTest {
         for (uint256 i; i < 8; ++i) {
             vm.warp(block.timestamp + 1 days);
             newStartTime = block.timestamp + (i + 1) * 10 days;
-            BaseFarmWithExpiry(farm).updateFarmStartTime(newStartTime);
+            ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         }
         vm.stopPrank();
 
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
-        uint256 lastFundUpdateTime = BaseFarmWithExpiry(farm).lastFundUpdateTime();
+        uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
         assertEq(lastFundUpdateTime, newStartTime);
     }
 }
 
-abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
+abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
     function test_ExtendFarmDuration_RevertWhen_FarmNotYetStarted() public {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarmWithExpiry.FarmNotYetStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(ExpirableFarm.FarmNotYetStarted.selector));
         vm.startPrank(owner);
-        BaseFarmWithExpiry(farm).extendFarmDuration(extensionDays);
+        ExpirableFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
     function test_ExtendFarmDuration_RevertWhen_InvalidExtension() public useKnownActor(owner) {
         uint256 extensionDays = 99;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarmWithExpiry.InvalidExtension.selector));
-        BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(ExpirableFarm.InvalidExtension.selector));
+        ExpirableFarm(nonLockupFarm).extendFarmDuration(extensionDays);
         extensionDays = 301;
-        vm.expectRevert(abi.encodeWithSelector(BaseFarmWithExpiry.InvalidExtension.selector));
-        BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
+        vm.expectRevert(abi.encodeWithSelector(ExpirableFarm.InvalidExtension.selector));
+        ExpirableFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_ExtendFarmDuration_RevertWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
-        BaseFarmWithExpiry(nonLockupFarm).closeFarm();
+        ExpirableFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarmWithExpiry(nonLockupFarm).extendFarmDuration(extensionDays);
+        ExpirableFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
     function test_ExtendFarmDuration_RevertWhen_farmExpired() public {
         uint256 extensionDays = 200;
         uint256 farmStartTime = block.timestamp + 50 days;
         address farm = createFarm(farmStartTime, false);
-        uint256 farmEndTime = BaseFarmWithExpiry(farm).farmEndTime();
+        uint256 farmEndTime = ExpirableFarm(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
         vm.startPrank(owner);
-        BaseFarmWithExpiry(farm).extendFarmDuration(extensionDays);
+        ExpirableFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
     }
 
@@ -187,7 +187,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, lockup);
         vm.warp(farmStartTime + 1);
-        uint256 farmEndTimeBeforeUpdate = BaseFarmWithExpiry(farm).farmEndTime();
+        uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
 
         uint256 extensionFeePerDay = FarmFactory(DEMETER_FACTORY).extensionFeePerDay();
         address feeReceiver = FarmFactory(DEMETER_FACTORY).feeReceiver();
@@ -206,8 +206,8 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
         vm.expectEmit(address(farm));
         emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
-        BaseFarmWithExpiry(farm).extendFarmDuration(extensionDays);
-        uint256 farmEndTimeAfterUpdate = BaseFarmWithExpiry(farm).farmEndTime();
+        ExpirableFarm(farm).extendFarmDuration(extensionDays);
+        uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
         vm.stopPrank();
 
         uint256 feeReceiverTokenBalanceAfterExtension = IERC20(feeToken).balanceOf(feeReceiver);
@@ -218,7 +218,7 @@ abstract contract ExtendFarmDurationTest is BaseFarmWithExpiryTest {
     }
 }
 
-abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
+abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
     function _assertHelper(
         address depositor,
         uint256 liquidity,
@@ -239,14 +239,14 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
             bool lockup = i == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
-            BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+            ExpirableFarm(farm).getRewardBalance(rwdTokens[0]);
             uint256 currentTimestamp = block.timestamp;
-            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
+            vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
             emit DepositWithdrawn(depositId);
-            BaseFarmWithExpiry(farm).withdraw(depositId);
-            Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
+            ExpirableFarm(farm).withdraw(depositId);
+            Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
                 depositInfo.depositor,
                 depositInfo.liquidity,
@@ -264,17 +264,17 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
             bool lockup = i == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
-            BaseFarmWithExpiry(farm).getRewardBalance(rwdTokens[0]);
+            ExpirableFarm(farm).getRewardBalance(rwdTokens[0]);
             uint256 currentTimestamp = block.timestamp;
-            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() - 100);
+            vm.warp(ExpirableFarm(farm).farmEndTime() - 100);
             vm.startPrank(owner);
-            BaseFarmWithExpiry(farm).closeFarm(); // if farm is closed it is also paused
-            vm.warp(BaseFarmWithExpiry(farm).farmEndTime() + 1);
+            ExpirableFarm(farm).closeFarm(); // if farm is closed it is also paused
+            vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
             emit DepositWithdrawn(depositId);
-            BaseFarmWithExpiry(farm).withdraw(depositId);
-            Deposit memory depositInfo = BaseFarmWithExpiry(farm).getDepositInfo(depositId);
+            ExpirableFarm(farm).withdraw(depositId);
+            Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
                 depositInfo.depositor,
                 depositInfo.liquidity,
@@ -291,7 +291,7 @@ abstract contract WithdrawWithExpiryTest is BaseFarmWithExpiryTest {
 // The above test cases are enough to cover the expiry logic and catch any changes in the expiry logic.
 // We need to make sure we are not removing the farm active checks from the non-tested functions in the contracts.
 // Even if we remove farm active checks by mistake, the tests in BaseFarm.t.sol will catch them due to its transient nature.
-abstract contract BaseFarmWithExpiryInheritTest is
+abstract contract ExpirableFarmInheritTest is
     UpdateFarmStartTimeWithExpiryTest,
     ExtendFarmDurationTest,
     WithdrawWithExpiryTest

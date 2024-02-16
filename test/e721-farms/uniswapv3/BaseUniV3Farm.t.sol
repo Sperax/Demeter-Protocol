@@ -22,7 +22,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 // import tests
 import {BaseE721FarmTest, BaseE721FarmInheritTest} from "../BaseE721Farm.t.sol";
 import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
-import "../../features/BaseFarmWithExpiry.t.sol";
+import "../../features/ExpirableFarm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";

@@ -11,7 +11,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
 import "../../BaseFarm.t.sol";
-import "../../features/BaseFarmWithExpiry.t.sol";
+import "../../features/ExpirableFarm.t.sol";
 import "./BaseUniV3Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 

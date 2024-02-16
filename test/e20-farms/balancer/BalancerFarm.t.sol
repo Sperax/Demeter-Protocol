@@ -44,7 +44,7 @@ interface ICustomOracle {
 }
 
 // RecoverERC20Test is replaced by RecoverERC20E20FarmTest
-contract BalancerFarmTest is BaseFarmInheritTest, BaseFarmWithExpiryInheritTest, BaseE20FarmInheritTest {
+contract BalancerFarmTest is BaseFarmInheritTest, ExpirableFarmInheritTest, BaseE20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;
