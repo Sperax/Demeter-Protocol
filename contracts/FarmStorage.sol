@@ -3,7 +3,7 @@ pragma solidity 0.8.16;
 
 import {RewardFund, RewardData, Deposit, Subscription} from "./interfaces/DataTypes.sol";
 
-abstract contract BaseFarmStorage {
+abstract contract FarmStorage {
     // constants
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;

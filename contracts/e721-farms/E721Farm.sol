@@ -19,9 +19,9 @@ pragma solidity 0.8.16;
 
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {BaseFarm} from "../BaseFarm.sol";
+import {Farm} from "../Farm.sol";
 
-abstract contract BaseE721Farm is BaseFarm, IERC721Receiver {
+abstract contract E721Farm is Farm, IERC721Receiver {
     // Could be NFPM for Uniswap or nft pool for Camelot
     address public nftContract;
 

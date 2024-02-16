@@ -4,26 +4,26 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {BaseUniV3ActiveLiquidityFarm} from "../../../../contracts/e721-farms/uniswapV3/BaseUniV3ActiveLiquidityFarm.sol";
-import {Demeter_BaseUniV3ActiveLiquidityDeployer} from
-    "../../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3ActiveLiquidityDeployer.sol";
+import {UniV3ActiveLiquidityFarm} from "../../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityFarm.sol";
+import {Demeter_UniV3ActiveLiquidityDeployer} from
+    "../../../../contracts/e721-farms/uniswapV3/Demeter_UniV3ActiveLiquidityDeployer.sol";
 import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
-import "../BaseUniV3ActiveLiquidityFarm.t.sol";
+import "../UniV3ActiveLiquidityFarm.t.sol";
 import "../../../utils/UpgradeUtil.t.sol";
 
 contract Demeter_UniV3ActiveLiquidityFarmTest is
-    BaseFarmInheritTest,
-    BaseE721FarmInheritTest,
-    BaseUniV3FarmInheritTest,
+    FarmInheritTest,
+    E721FarmInheritTest,
+    UniV3FarmInheritTest,
     ExpirableFarmInheritTest,
-    BaseUniV3ActiveLiquidityFarmInheritTest
+    UniV3ActiveLiquidityFarmInheritTest
 {
     // Define variables
     string public FARM_NAME = "Demeter_UniV3_v4";
 
-    function setUp() public virtual override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest) {
+    function setUp() public virtual override(UniV3ActiveLiquidityFarmTest, UniV3FarmTest, FarmTest) {
         NFPM = UNISWAP_V3_NFPM;
         UNIV3_FACTORY = UNISWAP_V3_FACTORY;
         SWAP_ROUTER = UNISWAP_V3_SWAP_ROUTER;
@@ -36,7 +36,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
     function createFarm(uint256 startTime, bool lockup)
         public
         virtual
-        override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest)
+        override(UniV3ActiveLiquidityFarmTest, UniV3FarmTest, FarmTest)
         useKnownActor(owner)
         returns (address)
     {
@@ -49,8 +49,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_BaseUniV3ActiveLiquidityDeployer.FarmData memory _data = Demeter_BaseUniV3ActiveLiquidityDeployer
-            .FarmData({
+        Demeter_UniV3ActiveLiquidityDeployer.FarmData memory _data = Demeter_UniV3ActiveLiquidityDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
@@ -68,7 +67,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
     function deposit(address farm, bool locked, uint256 baseAmt)
         public
         virtual
-        override(BaseUniV3ActiveLiquidityFarmTest, BaseUniV3FarmTest, BaseFarmTest)
+        override(UniV3ActiveLiquidityFarmTest, UniV3FarmTest, FarmTest)
         returns (uint256)
     {
         currentActor = user;
@@ -77,15 +76,15 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
 
         if (!locked) {
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
         } else {
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(BaseFarm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
         }
         vm.expectEmit(address(farm));
-        emit Deposited(BaseFarm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
+        emit Deposited(Farm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
         IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
         vm.stopPrank();
         return liquidity;

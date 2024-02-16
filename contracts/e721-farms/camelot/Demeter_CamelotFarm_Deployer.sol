@@ -16,13 +16,13 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {FarmDeployer, IFarmFactory} from "../../FarmDeployer.sol";
 import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotFactory} from "./interfaces/ICamelot.sol";
 
-contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;
@@ -60,7 +60,7 @@ contract Demeter_CamelotFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         address _protocolFactory,
         address _router,
         address _nftPoolFactory
-    ) BaseFarmDeployer(_factory, _farmId) {
+    ) FarmDeployer(_factory, _farmId) {
         _validateNonZeroAddr(_protocolFactory);
         _validateNonZeroAddr(_nftPoolFactory);
 

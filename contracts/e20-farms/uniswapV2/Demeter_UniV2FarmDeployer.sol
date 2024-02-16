@@ -17,13 +17,13 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {FarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../FarmDeployer.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {BaseE20Farm, RewardTokenData} from "../BaseE20Farm.sol";
+import {E20Farm, RewardTokenData} from "../E20Farm.sol";
 
-contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // @dev the token Order is not important
@@ -53,19 +53,17 @@ contract Demeter_UniV2FarmDeployer is BaseFarmDeployer, ReentrancyGuard {
     /// @param _factory Address of Farm Factory
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of UniswapV2 factory
-    constructor(address _factory, string memory _farmId, address _protocolFactory)
-        BaseFarmDeployer(_factory, _farmId)
-    {
+    constructor(address _factory, string memory _farmId, address _protocolFactory) FarmDeployer(_factory, _farmId) {
         _validateNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
-        farmImplementation = address(new BaseE20Farm());
+        farmImplementation = address(new E20Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        BaseE20Farm farmInstance = BaseE20Farm(Clones.clone(farmImplementation));
+        E20Farm farmInstance = E20Farm(Clones.clone(farmImplementation));
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 

@@ -18,12 +18,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {RewardTokenData} from "../BaseFarm.sol";
+import {RewardTokenData} from "../Farm.sol";
 import {ExpirableFarm} from "../features/ExpirableFarm.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../features/OperableDeposit.sol";
 
-contract BaseE20Farm is ExpirableFarm, OperableDeposit {
+contract E20Farm is ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Token params

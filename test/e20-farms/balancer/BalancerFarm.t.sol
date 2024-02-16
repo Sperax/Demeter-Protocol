@@ -3,9 +3,9 @@ pragma solidity 0.8.16;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../BaseE20Farm.t.sol";
+import "../E20Farm.t.sol";
 
-import {BaseE20Farm} from "../../../contracts/e20-farms/BaseE20Farm.sol";
+import {E20Farm} from "../../../contracts/e20-farms/E20Farm.sol";
 import {Demeter_BalancerFarm_Deployer} from "../../../contracts/e20-farms/balancer/Demeter_BalancerFarm_Deployer.sol";
 
 struct JoinPoolRequest {
@@ -44,7 +44,7 @@ interface ICustomOracle {
 }
 
 // RecoverERC20Test is replaced by RecoverERC20E20FarmTest
-contract BalancerFarmTest is BaseFarmInheritTest, ExpirableFarmInheritTest, BaseE20FarmInheritTest {
+contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
     Demeter_BalancerFarm_Deployer public balancerFarmDeployer;
@@ -92,7 +92,7 @@ contract BalancerFarmTest is BaseFarmInheritTest, ExpirableFarmInheritTest, Base
         IERC20(FEE_TOKEN()).approve(address(balancerFarmDeployer), 1e22);
         address farm = balancerFarmDeployer.createFarm(_data);
 
-        assertEq(BaseE20Farm(farm).farmId(), FARM_ID);
+        assertEq(E20Farm(farm).farmId(), FARM_ID);
 
         return farm;
     }
@@ -109,7 +109,7 @@ contract BalancerFarmTest is BaseFarmInheritTest, ExpirableFarmInheritTest, Base
         uint256 amt = baseAmt * 10 ** ERC20(poolAddress).decimals();
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(farm), amt);
-        BaseE20Farm(farm).deposit(amt, locked);
+        E20Farm(farm).deposit(amt, locked);
         return amt;
     }
 
@@ -125,7 +125,7 @@ contract BalancerFarmTest is BaseFarmInheritTest, ExpirableFarmInheritTest, Base
         ERC20(poolAddress).approve(address(farm), amt);
 
         vm.expectRevert(revertMsg);
-        BaseE20Farm(farm).deposit(amt, locked);
+        E20Farm(farm).deposit(amt, locked);
     }
 
     function getPoolAddress() public view override returns (address) {

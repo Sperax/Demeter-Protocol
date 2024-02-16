@@ -20,13 +20,13 @@ pragma solidity 0.8.16;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelot.sol";
-import {RewardTokenData} from "../../BaseFarm.sol";
-import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
+import {RewardTokenData} from "../../Farm.sol";
+import {Farm, E721Farm} from "../E721Farm.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 
-contract Demeter_CamelotFarm is BaseE721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
+contract Demeter_CamelotFarm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Camelot router
@@ -257,7 +257,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, ExpirableFarm, INFTHandler, Operab
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(BaseFarm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
@@ -265,7 +265,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, ExpirableFarm, INFTHandler, Operab
     ///         Farm is open if it not closed.
     /// @return bool true if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
-    function isFarmOpen() public view override(BaseFarm, ExpirableFarm) returns (bool) {
+    function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
     }
 

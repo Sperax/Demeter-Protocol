@@ -17,8 +17,8 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {RewardTokenData} from "../../BaseFarm.sol";
-import {BaseFarm, BaseE721Farm} from "../BaseE721Farm.sol";
+import {RewardTokenData} from "../../Farm.sol";
+import {Farm, E721Farm} from "../E721Farm.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -42,7 +42,7 @@ struct UniswapPoolData {
     int24 tickUpperAllowed;
 }
 
-contract BaseUniV3Farm is BaseE721Farm, ExpirableFarm, OperableDeposit {
+contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params
@@ -264,7 +264,7 @@ contract BaseUniV3Farm is BaseE721Farm, ExpirableFarm, OperableDeposit {
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function
-    function updateFarmStartTime(uint256 _newStartTime) public override(BaseFarm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
@@ -272,7 +272,7 @@ contract BaseUniV3Farm is BaseE721Farm, ExpirableFarm, OperableDeposit {
     ///         Farm is open if it not closed.
     /// @return bool true if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
-    function isFarmOpen() public view override(BaseFarm, ExpirableFarm) returns (bool) {
+    function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
     }
 

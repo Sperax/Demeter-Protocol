@@ -22,10 +22,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
-import {BaseFarmStorage} from "./BaseFarmStorage.sol";
+import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
-abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
+abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
 
     event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);

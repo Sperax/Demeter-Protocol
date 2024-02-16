@@ -5,10 +5,10 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IFarmFactory} from "./interfaces/IFarmFactory.sol";
 
-/// @title BaseFarmDeployer contract of Demeter Protocol
+/// @title FarmDeployer contract of Demeter Protocol
 /// @notice Exposes base functionalities which will be useful in every deployer
 /// @author Sperax Foundation
-abstract contract BaseFarmDeployer is Ownable {
+abstract contract FarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
     address public immutable FACTORY;

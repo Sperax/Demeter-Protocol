@@ -2,10 +2,10 @@
 pragma solidity 0.8.16;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BaseFarm} from "../BaseFarm.sol";
+import {Farm} from "../Farm.sol";
 import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
 
-abstract contract ExpirableFarm is BaseFarm {
+abstract contract ExpirableFarm is Farm {
     using SafeERC20 for IERC20;
 
     uint256 public constant MIN_EXTENSION = 100; // 100 days

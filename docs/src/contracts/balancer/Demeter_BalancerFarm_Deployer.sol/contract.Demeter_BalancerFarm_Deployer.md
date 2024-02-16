@@ -3,7 +3,7 @@
 [Git Source](https://github.com/Sperax/Demeter-Protocol/blob/fe40a3b3400612e06e8894e40f27c05bc3ec9a73/contracts/balancer/Demeter_BalancerFarm_Deployer.sol)
 
 **Inherits:**
-[BaseFarmDeployer](/contracts/BaseFarmDeployer.sol/contract.BaseFarmDeployer.md), ReentrancyGuard
+[FarmDeployer](/contracts/FarmDeployer.sol/contract.FarmDeployer.md), ReentrancyGuard
 
 **Author:**
 Sperax Foundation

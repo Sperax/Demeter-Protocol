@@ -17,10 +17,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmStorage} from "../BaseFarmStorage.sol";
+import {FarmStorage} from "../FarmStorage.sol";
 import {Subscription, RewardFund} from "../interfaces/DataTypes.sol";
 
-abstract contract OperableDeposit is BaseFarmStorage {
+abstract contract OperableDeposit is FarmStorage {
     uint256 public constant PRECISION = 1e18;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);

@@ -5,9 +5,9 @@ import {ExpirableFarm} from "../../contracts/features/ExpirableFarm.sol";
 import {FarmFactory} from "../../contracts/FarmFactory.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../BaseFarm.t.sol";
+import "../Farm.t.sol";
 
-abstract contract ExpirableFarmTest is BaseFarmTest {
+abstract contract ExpirableFarmTest is FarmTest {
     uint256 public constant MIN_EXTENSION = 100; // in days
     uint256 public constant MAX_EXTENSION = 300; // in days
 
@@ -42,7 +42,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
     function test_updateFarmStartTime_RevertWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 farmEndTime = ExpirableFarm(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
         ExpirableFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
@@ -166,7 +166,7 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
     function test_ExtendFarmDuration_RevertWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
         ExpirableFarm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
         ExpirableFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
@@ -176,7 +176,7 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         address farm = createFarm(farmStartTime, false);
         uint256 farmEndTime = ExpirableFarm(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
         vm.startPrank(owner);
         ExpirableFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
@@ -290,7 +290,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
 // Not testing expiry for other functions like ClaimRewards, AddRewards, SetRewardRate, etc. as it will be redundant.
 // The above test cases are enough to cover the expiry logic and catch any changes in the expiry logic.
 // We need to make sure we are not removing the farm active checks from the non-tested functions in the contracts.
-// Even if we remove farm active checks by mistake, the tests in BaseFarm.t.sol will catch them due to its transient nature.
+// Even if we remove farm active checks by mistake, the tests in Farm.t.sol will catch them due to its transient nature.
 abstract contract ExpirableFarmInheritTest is
     UpdateFarmStartTimeWithExpiryTest,
     ExtendFarmDurationTest,

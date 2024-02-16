@@ -17,17 +17,17 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../BaseFarmDeployer.sol";
+import {FarmDeployer, SafeERC20, IERC20, IFarmFactory} from "../../FarmDeployer.sol";
 import {IBalancerVault} from "./interfaces/IBalancerVault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {BaseE20Farm, RewardTokenData} from "../BaseE20Farm.sol";
+import {E20Farm, RewardTokenData} from "../E20Farm.sol";
 
 /// @title Deployer for Balancer farm
 /// @author Sperax Foundation
 /// @notice This contract allows anyone to calculate fees and create farms
 /// @dev It consults Balancer's vault to validate the pool
-contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
@@ -53,11 +53,11 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
     /// @param _farmId Id of the farm
     /// @param _balancerVault Address of Balancer's Vault
     /// @dev Deploys one farm so that it can be cloned later
-    constructor(address _factory, string memory _farmId, address _balancerVault) BaseFarmDeployer(_factory, _farmId) {
+    constructor(address _factory, string memory _farmId, address _balancerVault) FarmDeployer(_factory, _farmId) {
         _validateNonZeroAddr(_balancerVault);
 
         BALANCER_VAULT = _balancerVault;
-        farmImplementation = address(new BaseE20Farm());
+        farmImplementation = address(new E20Farm());
     }
 
     /// @notice Deploys a new Balancer farm.
@@ -72,7 +72,7 @@ contract Demeter_BalancerFarm_Deployer is BaseFarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
 
-        BaseE20Farm farmInstance = BaseE20Farm(Clones.clone(farmImplementation));
+        E20Farm farmInstance = E20Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,

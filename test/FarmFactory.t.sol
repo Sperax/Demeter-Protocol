@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {BaseFarm, RewardTokenData} from "../contracts/BaseFarm.sol";
-import {BaseE20Farm} from "../contracts/e20-farms/BaseE20Farm.sol";
+import {Farm, RewardTokenData} from "../contracts/Farm.sol";
+import {E20Farm} from "../contracts/e20-farms/E20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {FarmFactory} from "../contracts/FarmFactory.sol";
-import {BaseFarmDeployer} from "../contracts/BaseFarmDeployer.sol";
+import {FarmDeployer} from "../contracts/FarmDeployer.sol";
 import {UpgradeUtil} from "../test/utils/UpgradeUtil.t.sol";
 
 abstract contract FarmFactoryTest is TestNetworkConfig {

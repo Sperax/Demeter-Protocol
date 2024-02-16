@@ -2,9 +2,9 @@
 pragma solidity 0.8.16;
 
 import {Test} from "forge-std/Test.sol";
-import {BaseFarm} from "../../contracts/BaseFarm.sol";
+import {Farm} from "../../contracts/Farm.sol";
 import {FarmFactory} from "../../contracts/FarmFactory.sol";
-import {BaseFarmDeployer} from "../../contracts/BaseFarmDeployer.sol";
+import {FarmDeployer} from "../../contracts/FarmDeployer.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 abstract contract BaseSetup is Test {

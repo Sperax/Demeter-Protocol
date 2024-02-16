@@ -5,14 +5,14 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {
-    BaseE721Farm,
-    BaseUniV3Farm,
+    E721Farm,
+    UniV3Farm,
     UniswapPoolData,
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
     INFPM,
     OperableDeposit
-} from "../../../contracts/e721-farms/uniswapV3/BaseUniV3Farm.sol";
+} from "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
 import {
     INFPMUtils,
     Position
@@ -20,14 +20,14 @@ import {
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
-import {BaseE721FarmTest, BaseE721FarmInheritTest} from "../BaseE721Farm.t.sol";
-import {Demeter_BaseUniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_BaseUniV3FarmDeployer.sol";
+import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
+import {Demeter_UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_UniV3FarmDeployer.sol";
 import "../../features/ExpirableFarm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
-abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
+abstract contract UniV3FarmTest is E721FarmTest {
     uint8 public FEE_TIER = 100;
     int24 public TICK_LOWER = -887270;
     int24 public TICK_UPPER = 887270;
@@ -37,7 +37,7 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
     string public FARM_ID;
 
     uint256 constant depositId = 1;
-    Demeter_BaseUniV3FarmDeployer public uniV3FarmDeployer;
+    Demeter_UniV3FarmDeployer public uniV3FarmDeployer;
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -52,13 +52,13 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
     function setUp() public virtual override {
         super.setUp();
         vm.startPrank(PROXY_OWNER);
-        address impl = address(new BaseUniV3Farm());
+        address impl = address(new UniV3Farm());
         UpgradeUtil upgradeUtil = new UpgradeUtil();
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
         FarmFactory factory = FarmFactory(DEMETER_FACTORY);
-        uniV3FarmDeployer = new Demeter_BaseUniV3FarmDeployer(
+        uniV3FarmDeployer = new Demeter_UniV3FarmDeployer(
             DEMETER_FACTORY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
         factory.registerFarmDeployer(address(uniV3FarmDeployer));
@@ -162,7 +162,7 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_BaseUniV3FarmDeployer.FarmData memory _data = Demeter_BaseUniV3FarmDeployer.FarmData({
+        Demeter_UniV3FarmDeployer.FarmData memory _data = Demeter_UniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
@@ -210,7 +210,7 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
         vm.expectRevert(revertMsg);
         changePrank(NFPM);
         // This will not actually deposit, but this is enough to check for the reverts
-        BaseE721Farm(farm).onERC721Received(address(0), currentActor, tokenId, abi.encode(locked));
+        E721Farm(farm).onERC721Received(address(0), currentActor, tokenId, abi.encode(locked));
     }
 
     function _mintPosition(uint256 _baseAmt, address _actor)
@@ -249,14 +249,14 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
     }
 }
 
-abstract contract InitializeTest is BaseUniV3FarmTest {
+abstract contract InitializeTest is UniV3FarmTest {
     function test_Initialize_RevertWhen_InvalidTickRange() public {
         address uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(DAI, USDCe, FEE_TIER);
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
 
         // Fails for _tickLower >= _tickUpper
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidTickRange.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidTickRange.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -276,8 +276,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         });
 
         // Fails for _tickLower < -887272
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidTickRange.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidTickRange.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -298,8 +298,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 
         if (spacing > 1) {
             // Fails for _tickLower % spacing != 0
-            vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidTickRange.selector));
-            BaseUniV3Farm(farmProxy).initialize({
+            vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidTickRange.selector));
+            UniV3Farm(farmProxy).initialize({
                 _farmId: FARM_ID,
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
@@ -319,8 +319,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             });
 
             // Fails for _tickUpper % spacing != 0
-            vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidTickRange.selector));
-            BaseUniV3Farm(farmProxy).initialize({
+            vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidTickRange.selector));
+            UniV3Farm(farmProxy).initialize({
                 _farmId: FARM_ID,
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
@@ -341,8 +341,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         }
 
         // Fails for _tickUpper > 887272
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidTickRange.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidTickRange.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -363,8 +363,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
     }
 
     function test_Initialize_RevertWhen_InvalidUniswapPoolConfig() public {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -383,8 +383,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -403,8 +403,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -423,8 +423,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -443,8 +443,8 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidUniswapPoolConfig.selector));
-        BaseUniV3Farm(farmProxy).initialize({
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
@@ -466,7 +466,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
 
     function test_initialize() public {
         address uniswapPool = IUniswapV3Factory(UNIV3_FACTORY).getPool(DAI, USDCe, FEE_TIER);
-        BaseUniV3Farm(farmProxy).initialize({
+        UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: COOLDOWN_PERIOD,
@@ -485,22 +485,22 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
-        assertEq(BaseUniV3Farm(farmProxy).farmId(), FARM_ID);
-        assertEq(BaseUniV3Farm(farmProxy).tickLowerAllowed(), TICK_LOWER);
-        assertEq(BaseUniV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
-        assertEq(BaseUniV3Farm(farmProxy).uniswapPool(), uniswapPool);
-        assertEq(BaseUniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
-        assertEq(BaseUniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
-        assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
-        assertEq(BaseUniV3Farm(farmProxy).farmId(), FARM_ID);
-        assertEq(BaseUniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
-        assertEq(BaseUniV3Farm(farmProxy).nftContract(), NFPM);
-        assertEq(BaseUniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
-        assertEq(BaseUniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
+        assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
+        assertEq(UniV3Farm(farmProxy).tickLowerAllowed(), TICK_LOWER);
+        assertEq(UniV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
+        assertEq(UniV3Farm(farmProxy).uniswapPool(), uniswapPool);
+        assertEq(UniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
+        assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
+        assertEq(UniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
+        assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
+        assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
+        assertEq(UniV3Farm(farmProxy).nftContract(), NFPM);
+        assertEq(UniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
+        assertEq(UniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
 
-abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
+abstract contract OnERC721ReceivedTest is UniV3FarmTest {
     function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
         uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
@@ -527,7 +527,7 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
             })
         );
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectPoolToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectPoolToken.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId, abi.encode(true));
     }
 
@@ -572,61 +572,61 @@ abstract contract OnERC721ReceivedTest is BaseUniV3FarmTest {
             })
         );
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectTickRange.selector));
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectTickRange.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId1, abi.encode(true));
 
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.IncorrectTickRange.selector));
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectTickRange.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId2, abi.encode(true));
     }
 }
 
-abstract contract ClaimUniswapFeeTest is BaseUniV3FarmTest {
+abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
     function test_ClaimUniswapFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
-        BaseFarm(lockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
+        Farm(lockupFarm).closeFarm();
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        UniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
     function test_ClaimUniswapFee_RevertWhen_DepositDoesNotExist_during_claimUniswapFee() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(0);
+        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        UniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
     function test_ClaimUniswapFee_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.NoFeeToClaim.selector));
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.NoFeeToClaim.selector));
+        UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
 
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();
-        uint256 _tokenId = BaseUniV3Farm(lockupFarm).depositToTokenId(depositId);
-        (uint256 amount0, uint256 amount1) = BaseUniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
+        uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
+        (uint256 amount0, uint256 amount1) = UniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
 
         vm.expectEmit(address(lockupFarm));
         emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
 
-        BaseUniV3Farm(lockupFarm).claimUniswapFee(depositId);
+        UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
 }
 
-abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
+abstract contract IncreaseDepositTest is UniV3FarmTest {
     event IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
 
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
-        BaseUniV3Farm(lockupFarm).farmPauseSwitch(true);
+        UniV3Farm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
     }
 
     function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
     }
 
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
@@ -634,8 +634,8 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        vm.expectRevert(abi.encodeWithSelector(BaseUniV3Farm.InvalidAmount.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [uint256(0), uint256(0)], [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidAmount.selector));
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, [uint256(0), uint256(0)], [uint256(0), uint256(0)]);
     }
 
     function test_IncreaseDeposit_RevertWhen_DepositIsInCooldown()
@@ -643,9 +643,9 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        BaseUniV3Farm(lockupFarm).initiateCooldown(depositId);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        UniV3Farm(lockupFarm).initiateCooldown(depositId);
+        vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
     }
 
     function testFuzz_IncreaseDeposit(bool lockup, uint256 _depositAmount) public {
@@ -658,7 +658,7 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
         vm.startPrank(user);
-        uint256 tokenId = BaseUniV3Farm(farm).depositToTokenId(depositId);
+        uint256 tokenId = UniV3Farm(farm).depositToTokenId(depositId);
         uint256 depositAmount0 = _depositAmount * 10 ** ERC20(DAI).decimals();
         uint256 depositAmount1 = _depositAmount * 10 ** ERC20(USDCe).decimals();
         uint256[2] memory amounts = [depositAmount0, depositAmount1];
@@ -669,10 +669,10 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         IERC20(DAI).approve(farm, depositAmount0);
         IERC20(USDCe).approve(farm, depositAmount1);
 
-        uint256 oldLiquidity = BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity;
+        uint256 oldLiquidity = UniV3Farm(farm).getDepositInfo(depositId).liquidity;
         uint256[2] memory oldTotalFundLiquidity = [
-            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
-            lockup ? BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity : 0
+            UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            lockup ? UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity : 0
         ];
 
         // TODO wanted to check for transfer events but solidity does not support two definitions for the same event
@@ -686,7 +686,7 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         emit DepositIncreased(depositId, 0);
 
         vm.recordLogs();
-        BaseUniV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
+        UniV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
         VmSafe.Log[] memory entries = vm.getRecordedLogs();
 
         uint128 loggedLiquidity;
@@ -711,21 +711,21 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         assertTrue(found, "DepositIncreased event not found");
         assertEq(IERC20(DAI).balanceOf(currentActor), depositAmount0 - loggedAmount0);
         assertEq(IERC20(USDCe).balanceOf(currentActor), depositAmount1 - loggedAmount1);
-        assertEq(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity + loggedLiquidity);
+        assertEq(UniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity + loggedLiquidity);
         assertEq(
-            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
             oldTotalFundLiquidity[0] + loggedLiquidity
         );
         lockup
             ? assertEq(
-                BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity,
+                UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity,
                 oldTotalFundLiquidity[0] + loggedLiquidity
             )
             : assert(true);
     }
 }
 
-abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
+abstract contract DecreaseDepositTest is UniV3FarmTest {
     uint128 constant dummyLiquidityToWithdraw = 1;
 
     event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
@@ -733,15 +733,15 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
 
     function test_DecreaseDeposit_RevertWhen_FarmIsClosed() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
-        BaseUniV3Farm(lockupFarm).closeFarm();
+        UniV3Farm(lockupFarm).closeFarm();
         vm.startPrank(user);
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
     function test_DecreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
     function test_DecreaseDeposit_RevertWhen_CannotWithdrawZeroAmount()
@@ -749,8 +749,8 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotWithdrawZeroAmount.selector));
-        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
+        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        UniV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
     }
 
     function test_DecreaseDeposit_RevertWhen_DecreaseDepositNotPermitted()
@@ -759,7 +759,7 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         useKnownActor(user)
     {
         vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
-        BaseUniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
+        UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
     // Decrease deposit test is always for non-lockup deposit.
@@ -768,16 +768,16 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
 
-        uint128 oldLiquidity = uint128(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 oldLiquidity = uint128(UniV3Farm(farm).getDepositInfo(depositId).liquidity);
         uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
         vm.startPrank(user);
-        uint256 tokenId = BaseUniV3Farm(farm).depositToTokenId(depositId);
+        uint256 tokenId = UniV3Farm(farm).depositToTokenId(depositId);
         uint256[2] memory minAmounts = [uint256(0), uint256(0)];
         uint256 oldCommonTotalLiquidity =
-            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
+            UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
         uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
         uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
 
@@ -787,7 +787,7 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         emit DepositDecreased(depositId, liquidityToWithdraw);
 
         vm.recordLogs();
-        BaseUniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);
+        UniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);
         VmSafe.Log[] memory entries = vm.getRecordedLogs();
 
         uint128 loggedLiquidity;
@@ -806,15 +806,15 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         assertEq(loggedLiquidity, liquidityToWithdraw);
         assertEq(IERC20(DAI).balanceOf(currentActor), oldUserToken0Balance + loggedAmount0);
         assertEq(IERC20(USDCe).balanceOf(currentActor), oldUserToken1Balance + loggedAmount1);
-        assertEq(BaseUniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
+        assertEq(UniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
         assertEq(
-            BaseUniV3Farm(farm).getRewardFundInfo(BaseUniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+            UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
             oldCommonTotalLiquidity - liquidityToWithdraw
         );
     }
 }
 
-abstract contract BaseUniV3FarmInheritTest is
+abstract contract UniV3FarmInheritTest is
     InitializeTest,
     OnERC721ReceivedTest,
     ClaimUniswapFeeTest,

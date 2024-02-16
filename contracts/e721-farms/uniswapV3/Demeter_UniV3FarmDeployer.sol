@@ -17,13 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmDeployer, IFarmFactory} from "../../BaseFarmDeployer.sol";
-import {RewardTokenData, UniswapPoolData} from "./BaseUniV3Farm.sol";
-import {BaseUniV3ActiveLiquidityFarm} from "./BaseUniV3ActiveLiquidityFarm.sol";
+import {FarmDeployer, IFarmFactory} from "../../FarmDeployer.sol";
+import {UniV3Farm, RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_BaseUniV3ActiveLiquidityDeployer is BaseFarmDeployer, ReentrancyGuard {
+contract Demeter_UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -58,7 +57,7 @@ contract Demeter_BaseUniV3ActiveLiquidityDeployer is BaseFarmDeployer, Reentranc
         address _nfpm,
         address _uniswapUtils,
         address _nfpmUtils
-    ) BaseFarmDeployer(_factory, _farmId) {
+    ) FarmDeployer(_factory, _farmId) {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nfpm);
         _validateNonZeroAddr(_uniswapUtils);
@@ -68,7 +67,7 @@ contract Demeter_BaseUniV3ActiveLiquidityDeployer is BaseFarmDeployer, Reentranc
         NFPM = _nfpm;
         UNISWAP_UTILS = _uniswapUtils;
         NFPM_UTILS = _nfpmUtils;
-        farmImplementation = address(new BaseUniV3ActiveLiquidityFarm());
+        farmImplementation = address(new UniV3Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
@@ -76,7 +75,7 @@ contract Demeter_BaseUniV3ActiveLiquidityDeployer is BaseFarmDeployer, Reentranc
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
-        BaseUniV3ActiveLiquidityFarm farmInstance = BaseUniV3ActiveLiquidityFarm(Clones.clone(farmImplementation));
+        UniV3Farm farmInstance = UniV3Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
