@@ -10,6 +10,7 @@ import {Deposit, Subscription, RewardData, RewardFund} from "../contracts/interf
 abstract contract BaseFarmTest is TestNetworkConfig {
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
+    uint8 public constant MAX_NUM_REWARDS = 4;
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
@@ -1032,12 +1033,22 @@ abstract contract _SetupFarmTest is BaseFarmTest {
     }
 
     function test_SetupFarm_RevertWhen_InvalidRewardData() public {
-        rwdTokens.push(USDCe);
-        rwdTokens.push(USDCe);
-        rwdTokens.push(USDCe);
-        rwdTokens.push(USDCe);
+        do {
+            rwdTokens.push(USDCe);
+        } while (rwdTokens.length <= MAX_NUM_REWARDS); // <= So that rwdTokens.length becomes MAX_NUM_REWARDS + 1
 
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidRewardData.selector));
+        (bool success,) =
+            address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
+        assertTrue(success);
+    }
+
+    function test_SetupFarm_MAX_NUM_REWARDS() public {
+        rwdTokens = new address[](4);
+        rwdTokens[0] = USDCe;
+        rwdTokens[1] = DAI;
+        rwdTokens[2] = SPA;
+        rwdTokens[3] = USDT;
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
         assertTrue(success);
