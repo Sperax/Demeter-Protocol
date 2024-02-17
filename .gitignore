@@ -10,10 +10,8 @@ coverage.json
 out
 cache
 
-# Brownie files
-build
-reports
+# Ape files
+.build
+contracts/.cache
 deployed/arbitrum-main-fork
-__pycache__
-lcov.info
 .DS_Store
