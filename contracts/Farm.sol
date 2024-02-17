@@ -656,7 +656,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
-        if (numRewards > MAX_NUM_REWARDS - 1) {
+        if (numRewards > MAX_NUM_REWARDS) {
             revert InvalidRewardData();
         }
 
