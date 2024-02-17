@@ -658,7 +658,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
         // Setup reward related information.
         uint256 numRewards = _rwdTokenData.length;
-        if (numRewards > MAX_NUM_REWARDS - 1) {
+        if (numRewards > MAX_NUM_REWARDS) {
             revert InvalidRewardData();
         }
 
