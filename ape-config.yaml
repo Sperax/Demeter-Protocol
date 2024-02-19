@@ -5,6 +5,8 @@ plugins:
   - name: solidity
   - name: etherscan
   - name: alchemy
+  - name: tenderly
+  - name: ganache
 
 dependencies:
   - name: OpenZeppelin
@@ -25,6 +27,7 @@ dependencies:
     
 solidity:
   version: 0.8.16
+  optimize: True
   import_remapping:
           - "@openzeppelin/contracts=OpenZeppelin/4.9.5"
           - "@openzeppelin/contracts-upgradeable=OpenZeppelin-Upgradable/4.9.5"
@@ -33,3 +36,15 @@ solidity:
 test:
   mnemonic: test test test test test test test test test test test junk
   number_of_accounts: 10
+  coverage:
+    reports:
+      terminal: True  # Disable the terminal table (True by default)
+      xml: True  # Enable XML report (.build/coverage.xml)
+      html: True  # Enable HTML report (.build/htmlcov)
+ganache:
+  fork:
+    arbitrum:
+      mainnet:
+        upstream_provider: alchemy
+  server:
+    port: 8555 # Fork Server: http://localhost:8555
