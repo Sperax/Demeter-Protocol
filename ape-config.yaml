@@ -21,7 +21,7 @@ dependencies:
     version: 1.4.4
     npm: "@Uniswap/v3-periphery"
 
-  - name: Uniswap-V3s
+  - name: Uniswap-V3
     version: 1.0.1
     npm: "@Uniswap/v3-core"
     
