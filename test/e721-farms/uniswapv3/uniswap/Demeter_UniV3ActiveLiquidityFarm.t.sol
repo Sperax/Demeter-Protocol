@@ -53,7 +53,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
             .FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             uniswapPoolData: poolData,
             rewardData: rwdTokenData
         });

@@ -14,9 +14,9 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
-    uint256 public constant COOLDOWN_PERIOD = 21; // in days
-    uint256 public constant MIN_COOLDOWN_PERIOD = 1; // in days
-    uint256 public constant MAX_COOLDOWN_PERIOD = 30; // in days
+    uint256 public constant COOLDOWN_PERIOD_DAYS = 21; // in days
+    uint256 public constant MIN_COOLDOWN_PERIOD_DAYS = 1; // in days
+    uint256 public constant MAX_COOLDOWN_PERIOD_DAYS = 30; // in days
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
     uint256 public constant DEPOSIT_AMOUNT = 1e3;
@@ -333,7 +333,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     {
         uint256 depositId = 1;
         BaseFarm(lockupFarm).initiateCooldown(depositId);
-        skip(COOLDOWN_PERIOD * 1 days - 100); //100 seconds before the end of CoolDown Period
+        skip(COOLDOWN_PERIOD_DAYS * 1 days - 100); //100 seconds before the end of CoolDown Period
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         BaseFarm(lockupFarm).withdraw(depositId);
     }
@@ -404,7 +404,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(user);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD_DAYS * 1 days) + 100;
             uint256[][] memory rewardsForEachSubs = new uint256[][](2);
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(depositId);
@@ -452,7 +452,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[1]);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD_DAYS * 1 days) + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -502,7 +502,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[5]);
             uint256 time = 2 days;
-            uint256 cooldownTime = COOLDOWN_PERIOD * 1 days + 100;
+            uint256 cooldownTime = COOLDOWN_PERIOD_DAYS * 1 days + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -552,7 +552,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[10]);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD_DAYS * 1 days) + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -633,7 +633,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit CooldownInitiated(depositId, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 1 days));
+        emit CooldownInitiated(depositId, userDeposit.startTime + ((COOLDOWN_PERIOD_DAYS + 7) * 1 days));
         BaseFarm(lockupFarm).initiateCooldown(depositId);
     }
 
@@ -965,36 +965,36 @@ abstract contract UpdateFarmStartTimeTest is BaseFarmTest {
 
 abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
     function test_UpdateCoolDownPeriod_noLockupFarm() public useKnownActor(owner) {
-        uint256 cooldownPeriod = 20;
+        uint256 cooldownPeriodInDays = 20;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmDoesNotSupportLockup.selector));
-        BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
+        BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
-        uint256 cooldownPeriod = 20;
+        uint256 cooldownPeriodInDays = 20;
         BaseFarm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
-        BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriod);
+        BaseFarm(nonLockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_InvalidCooldownPeriod() public useKnownActor(owner) {
-        uint256 cooldownPeriod = 31;
+        uint256 cooldownPeriodInDays = 31;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidCooldownPeriod.selector));
-        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
+        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_InvalidCooldownPeriod0() public useKnownActor(owner) {
-        uint256 cooldownPeriod = 0;
+        uint256 cooldownPeriodInDays = 0;
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.InvalidCooldownPeriod.selector));
-        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
+        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
-    function testFuzz_updateCoolDown_lockupFarm(uint256 cooldownPeriod) public useKnownActor(owner) {
-        vm.assume(cooldownPeriod >= MIN_COOLDOWN_PERIOD && cooldownPeriod <= MAX_COOLDOWN_PERIOD);
+    function testFuzz_updateCoolDown_lockupFarm(uint256 cooldownPeriodInDays) public useKnownActor(owner) {
+        vm.assume(cooldownPeriodInDays >= MIN_COOLDOWN_PERIOD_DAYS && cooldownPeriodInDays <= MAX_COOLDOWN_PERIOD_DAYS);
 
         vm.expectEmit(address(lockupFarm));
-        emit CooldownPeriodUpdated(cooldownPeriod);
-        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriod);
+        emit CooldownPeriodUpdated(cooldownPeriodInDays * 1 days);
+        BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 }
 
@@ -1067,20 +1067,23 @@ abstract contract _SetupFarmTest is BaseFarmTest {
 }
 
 abstract contract MulticallTest is BaseFarmTest {
-    function testFuzz_Multicall(uint256 cooldownPeriod) public useKnownActor(owner) {
-        cooldownPeriod = bound(cooldownPeriod, MIN_COOLDOWN_PERIOD, MAX_COOLDOWN_PERIOD);
+    function testFuzz_Multicall(uint256 cooldownPeriodInDays) public useKnownActor(owner) {
+        cooldownPeriodInDays = bound(cooldownPeriodInDays, MIN_COOLDOWN_PERIOD_DAYS, MAX_COOLDOWN_PERIOD_DAYS);
 
         bytes[] memory data = new bytes[](2);
-        data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+        data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
         data[1] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
 
         BaseFarm(lockupFarm).multicall(data);
 
-        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriod * 1 days);
+        assertEq(BaseFarm(lockupFarm).cooldownPeriod(), cooldownPeriodInDays * 1 days);
         assertEq(BaseFarm(lockupFarm).isFarmOpen(), false);
     }
 
-    function testFuzz_Multicall_RevertWhen_AnyIndividualTestFail(uint256 cooldownPeriod) public useKnownActor(owner) {
+    function testFuzz_Multicall_RevertWhen_AnyIndividualTestFail(uint256 cooldownPeriodInDays)
+        public
+        useKnownActor(owner)
+    {
         // when any multiple calls fail
         {
             bytes[] memory data = new bytes[](1);
@@ -1093,11 +1096,11 @@ abstract contract MulticallTest is BaseFarmTest {
 
         // when one of multiple calls fail
         {
-            cooldownPeriod = bound(cooldownPeriod, MIN_COOLDOWN_PERIOD, MAX_COOLDOWN_PERIOD);
+            cooldownPeriodInDays = bound(cooldownPeriodInDays, MIN_COOLDOWN_PERIOD_DAYS, MAX_COOLDOWN_PERIOD_DAYS);
 
             // When any single call fails the whole transaction should revert.
             bytes[] memory data = new bytes[](3);
-            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
             // This should revert as farm already started.
             data[1] = abi.encodeWithSelector(BaseFarm.updateFarmStartTime.selector, block.timestamp + 200);
             data[2] = abi.encodeWithSelector(BaseFarm.closeFarm.selector);
@@ -1109,11 +1112,11 @@ abstract contract MulticallTest is BaseFarmTest {
         // checking sender
         {
             changePrank(user);
-            cooldownPeriod = bound(cooldownPeriod, MIN_COOLDOWN_PERIOD, MAX_COOLDOWN_PERIOD);
+            cooldownPeriodInDays = bound(cooldownPeriodInDays, MIN_COOLDOWN_PERIOD_DAYS, MAX_COOLDOWN_PERIOD_DAYS);
 
             // When any single call fails the whole transaction should revert.
             bytes[] memory data = new bytes[](3);
-            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriod);
+            data[0] = abi.encodeWithSelector(BaseFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
 
             vm.expectRevert("Ownable: caller is not the owner");
             BaseFarm(lockupFarm).multicall(data);

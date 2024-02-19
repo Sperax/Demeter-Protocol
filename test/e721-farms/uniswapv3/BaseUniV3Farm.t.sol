@@ -165,7 +165,7 @@ abstract contract BaseUniV3FarmTest is BaseE721FarmTest {
         Demeter_BaseUniV3FarmDeployer.FarmData memory _data = Demeter_BaseUniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             uniswapPoolData: poolData,
             rewardData: rwdTokenData
         });
@@ -469,7 +469,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         BaseUniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
-            _cooldownPeriod: COOLDOWN_PERIOD,
+            _cooldownPeriod: COOLDOWN_PERIOD_DAYS,
             _factory: DEMETER_FACTORY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
@@ -491,7 +491,7 @@ abstract contract InitializeTest is BaseUniV3FarmTest {
         assertEq(BaseUniV3Farm(farmProxy).uniswapPool(), uniswapPool);
         assertEq(BaseUniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
         assertEq(BaseUniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
-        assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD * 1 days);
+        assertEq(BaseUniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(BaseUniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(BaseUniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
         assertEq(BaseUniV3Farm(farmProxy).nftContract(), NFPM);
