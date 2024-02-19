@@ -40,8 +40,8 @@ def createFarm(farmDeployer):
 def main():
     farmDeployer = project.Demeter_BalancerFarm_Deployer.deploy(
         factory,
-        balancerVault,
         'Demeter Balancer Deployer',
+        balancerVault,
         sender = OWNER
     )
     print('Demeter balancer farm deployer deployed', farmDeployer)
