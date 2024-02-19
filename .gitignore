@@ -12,6 +12,7 @@ cache
 
 # Ape files
 .build
+scripts/__pycache__
 contracts/.cache
 deployed/arbitrum-main-fork
 .DS_Store
