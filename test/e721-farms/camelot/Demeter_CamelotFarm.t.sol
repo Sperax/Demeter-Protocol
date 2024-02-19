@@ -36,9 +36,9 @@ abstract contract Demeter_CamelotFarmTest is E721FarmTest {
         super.setUp();
 
         vm.startPrank(PROXY_OWNER);
-        FarmRegistry registry = FarmRegistry(DEMETER_REGISTRY);
+        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
         demeter_camelotFarm_deployer =
-            new Demeter_CamelotFarm_Deployer(DEMETER_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
+            new Demeter_CamelotFarm_Deployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
         registry.registerFarmDeployer(address(demeter_camelotFarm_deployer));
         vm.stopPrank();
 

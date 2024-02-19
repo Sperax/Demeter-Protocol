@@ -50,10 +50,12 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable PROTOCOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _registry Address of Farm Registry
+    /// @param _farmRegistry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of UniswapV2 factory
-    constructor(address _registry, string memory _farmId, address _protocolFactory) FarmDeployer(_registry, _farmId) {
+    constructor(address _farmRegistry, string memory _farmId, address _protocolFactory)
+        FarmDeployer(_farmRegistry, _farmId)
+    {
         _validateNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
         farmImplementation = address(new E20Farm());
@@ -71,7 +73,7 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _registry: REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _farmToken: pairPool,
             _rwdTokenData: _data.rewardData
         });
@@ -79,7 +81,7 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         address farm = address(farmInstance);
         // Calculate and collect fee if required
         _collectFee();
-        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
+        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }

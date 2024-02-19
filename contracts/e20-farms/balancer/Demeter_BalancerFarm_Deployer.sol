@@ -49,11 +49,13 @@ contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable BALANCER_VAULT;
 
     /// @notice Constructor of the contract
-    /// @param _registry Address of Sperax Farm Registry
+    /// @param _farmRegistry Address of Sperax Farm Registry
     /// @param _farmId Id of the farm
     /// @param _balancerVault Address of Balancer's Vault
     /// @dev Deploys one farm so that it can be cloned later
-    constructor(address _registry, string memory _farmId, address _balancerVault) FarmDeployer(_registry, _farmId) {
+    constructor(address _farmRegistry, string memory _farmId, address _balancerVault)
+        FarmDeployer(_farmRegistry, _farmId)
+    {
         _validateNonZeroAddr(_balancerVault);
 
         BALANCER_VAULT = _balancerVault;
@@ -77,13 +79,13 @@ contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _registry: REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _farmToken: pairPool,
             _rwdTokenData: _data.rewardData
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
+        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         return farm;
     }

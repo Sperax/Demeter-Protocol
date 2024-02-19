@@ -189,9 +189,9 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         vm.warp(farmStartTime + 1);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
 
-        uint256 extensionFeePerDay = FarmRegistry(DEMETER_REGISTRY).extensionFeePerDay();
-        address feeReceiver = FarmRegistry(DEMETER_REGISTRY).feeReceiver();
-        address feeToken = FarmRegistry(DEMETER_REGISTRY).feeToken();
+        uint256 extensionFeePerDay = FarmRegistry(FARM_REGISTRY).extensionFeePerDay();
+        address feeReceiver = FarmRegistry(FARM_REGISTRY).feeReceiver();
+        address feeToken = FarmRegistry(FARM_REGISTRY).feeToken();
         uint256 extensionFeeAmount = extensionDays * extensionFeePerDay;
 
         uint256 feeReceiverTokenBalanceBeforeExtension = IERC20(feeToken).balanceOf(feeReceiver);

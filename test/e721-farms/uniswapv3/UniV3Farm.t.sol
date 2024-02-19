@@ -57,9 +57,9 @@ abstract contract UniV3FarmTest is E721FarmTest {
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
-        FarmRegistry registry = FarmRegistry(DEMETER_REGISTRY);
+        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
         uniV3FarmDeployer = new Demeter_UniV3FarmDeployer(
-            DEMETER_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
+            FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
         registry.registerFarmDeployer(address(uniV3FarmDeployer));
 
@@ -260,7 +260,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -281,7 +281,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -303,7 +303,7 @@ abstract contract InitializeTest is UniV3FarmTest {
                 _farmId: FARM_ID,
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
-                _registry: DEMETER_REGISTRY,
+                _farmRegistry: FARM_REGISTRY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: USDCe,
                     tokenB: USDT,
@@ -324,7 +324,7 @@ abstract contract InitializeTest is UniV3FarmTest {
                 _farmId: FARM_ID,
                 _farmStartTime: block.timestamp,
                 _cooldownPeriod: 0,
-                _registry: DEMETER_REGISTRY,
+                _farmRegistry: FARM_REGISTRY,
                 _uniswapPoolData: UniswapPoolData({
                     tokenA: DAI,
                     tokenB: USDCe,
@@ -346,7 +346,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
@@ -368,7 +368,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -388,7 +388,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -408,7 +408,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -428,7 +428,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -448,7 +448,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: 0,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
@@ -470,7 +470,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
             _cooldownPeriod: COOLDOWN_PERIOD,
-            _registry: DEMETER_REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,

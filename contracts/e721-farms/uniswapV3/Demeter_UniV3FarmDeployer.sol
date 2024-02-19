@@ -44,20 +44,20 @@ contract Demeter_UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
-    /// @param _registry Address of Farm Registry
+    /// @param _farmRegistry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _uniV3Factory Address of UniswapV3 factory
     /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
     /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
     /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
     constructor(
-        address _registry,
+        address _farmRegistry,
         string memory _farmId,
         address _uniV3Factory,
         address _nfpm,
         address _uniswapUtils,
         address _nfpmUtils
-    ) FarmDeployer(_registry, _farmId) {
+    ) FarmDeployer(_farmRegistry, _farmId) {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nfpm);
         _validateNonZeroAddr(_uniswapUtils);
@@ -80,7 +80,7 @@ contract Demeter_UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _registry: REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
@@ -93,7 +93,7 @@ contract Demeter_UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
+        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         return farm;
     }
 }

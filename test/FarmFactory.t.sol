@@ -25,7 +25,7 @@ abstract contract FarmRegistryTest is TestNetworkConfig {
     event PrivilegeUpdated(address deployer, bool privilege);
 
     modifier initialized() {
-        FarmRegistry(registry).initialize(REGISTRY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        FarmRegistry(registry).initialize(FARM_REGISTRY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
         _;
     }
 
@@ -41,7 +41,7 @@ abstract contract FarmRegistryTest is TestNetworkConfig {
         registry = createFactory();
     }
 
-    function createFactory() public useKnownActor(REGISTRY_OWNER) returns (address) {
+    function createFactory() public useKnownActor(FARM_REGISTRY_OWNER) returns (address) {
         address registryProxy;
         registryImp = new FarmRegistry();
         upgradeUtil = new UpgradeUtil();
@@ -51,18 +51,18 @@ abstract contract FarmRegistryTest is TestNetworkConfig {
 }
 
 contract InitializeTest is FarmRegistryTest {
-    function test_Initialize_RevertWhen_receiverIsZeroAddress() public useKnownActor(REGISTRY_OWNER) {
+    function test_Initialize_RevertWhen_receiverIsZeroAddress() public useKnownActor(FARM_REGISTRY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
         FarmRegistry(registry).initialize(address(0), USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_Initialize_RevertWhen_tokenIsZeroAddress() public useKnownActor(REGISTRY_OWNER) {
+    function test_Initialize_RevertWhen_tokenIsZeroAddress() public useKnownActor(FARM_REGISTRY_OWNER) {
         vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
-        FarmRegistry(registry).initialize(REGISTRY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
+        FarmRegistry(registry).initialize(FARM_REGISTRY_OWNER, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(REGISTRY_OWNER) {
-        address feeReceiver = REGISTRY_OWNER;
+    function test_init(uint256 feeAmt, uint256 extensionFeePerDay) public useKnownActor(FARM_REGISTRY_OWNER) {
+        address feeReceiver = FARM_REGISTRY_OWNER;
         address feeToken = USDS;
         feeAmt = bound(feeAmt, FEE_AMOUNT_LOWER_BOUND, FEE_AMOUNT_UPPER_BOUND);
         extensionFeePerDay =
@@ -90,12 +90,16 @@ contract InitializeTest is FarmRegistryTest {
 }
 
 contract RegisterFarmTest is FarmRegistryTest {
-    function test_RegisterFarm_RevertWhen_DeployerNotRegistered() public useKnownActor(REGISTRY_OWNER) initialized {
+    function test_RegisterFarm_RevertWhen_DeployerNotRegistered()
+        public
+        useKnownActor(FARM_REGISTRY_OWNER)
+        initialized
+    {
         vm.expectRevert(abi.encodeWithSelector(FarmRegistry.DeployerNotRegistered.selector));
         FarmRegistry(registry).registerFarm(actors[6], actors[4]);
     }
 
-    function test_registerFarm() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+    function test_registerFarm() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         address farm = actors[6];
         address creator = actors[5];
 
@@ -110,7 +114,7 @@ contract RegisterFarmTest is FarmRegistryTest {
 contract RegisterFarmDeployerTest is FarmRegistryTest {
     function test_RegisterFarmDeployer_RevertWhen_DeployerAddressIsZero()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
     {
         vm.expectRevert(abi.encodeWithSelector(FarmRegistry.InvalidAddress.selector));
@@ -119,7 +123,7 @@ contract RegisterFarmDeployerTest is FarmRegistryTest {
 
     function test_RegisterFarmDeployer_RevertWhen_DeployerIsAlreadyRegistered()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -127,7 +131,7 @@ contract RegisterFarmDeployerTest is FarmRegistryTest {
         FarmRegistry(registry).registerFarmDeployer(owner);
     }
 
-    function test_registerFarmDeployer() public useKnownActor(REGISTRY_OWNER) initialized {
+    function test_registerFarmDeployer() public useKnownActor(FARM_REGISTRY_OWNER) initialized {
         address deployer = actors[5];
         vm.expectEmit(address(registry));
         emit FarmDeployerUpdated(deployer, true);
@@ -140,7 +144,7 @@ contract RegisterFarmDeployerTest is FarmRegistryTest {
 contract RemoveFarmDeployerTest is FarmRegistryTest {
     function test_RemoveFarmDeployer_RevertWhen_invalidDeployerId()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -149,7 +153,7 @@ contract RemoveFarmDeployerTest is FarmRegistryTest {
         FarmRegistry(registry).removeDeployer(deployerId);
     }
 
-    function test_removeLastDeployer() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+    function test_removeLastDeployer() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         FarmRegistry(registry).registerFarmDeployer(actors[10]);
         FarmRegistry(registry).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 1);
@@ -162,7 +166,7 @@ contract RemoveFarmDeployerTest is FarmRegistryTest {
         assertEq(uint16(FarmRegistry(registry).getFarmDeployerList().length), lengthBfr - 1); //check length after poping a deployer
     }
 
-    function test_removeMiddleDeployer() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+    function test_removeMiddleDeployer() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         FarmRegistry(registry).registerFarmDeployer(actors[10]);
         FarmRegistry(registry).registerFarmDeployer(actors[11]);
         uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 2);
@@ -179,7 +183,7 @@ contract RemoveFarmDeployerTest is FarmRegistryTest {
 contract UpdatePrivilegeTest is FarmRegistryTest {
     function test_UpdatePrivilege_RevertWhen_PrivilegeSameAsDesired()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -189,7 +193,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
 
     function test_UpdatePrivilege_RevertWhen_callerIsNotOwner()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -198,7 +202,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
         FarmRegistry(registry).updatePrivilege(owner, false);
     }
 
-    function test_updatePrivilege() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+    function test_updatePrivilege() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         vm.expectEmit(address(registry));
         emit PrivilegeUpdated(owner, true);
         FarmRegistry(registry).updatePrivilege(owner, true);
@@ -207,7 +211,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
         // Test getFeeParams
         (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =
             FarmRegistry(registry).getFeeParams(owner);
-        assertEq(_feeReceiver, REGISTRY_OWNER);
+        assertEq(_feeReceiver, FARM_REGISTRY_OWNER);
         assertEq(_feeToken, USDS);
         assertEq(_feeAmount, 0);
         assertEq(_extensionFeePerDay, 0);
@@ -217,7 +221,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
 contract UpdateFeeParamsTest is FarmRegistryTest {
     function test_UpdateFeeParams_RevertWhen_callerIsNotOwner()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -228,7 +232,7 @@ contract UpdateFeeParamsTest is FarmRegistryTest {
 
     function test_UpdateFeeParams_RevertWhen_InvalidAddress()
         public
-        useKnownActor(REGISTRY_OWNER)
+        useKnownActor(FARM_REGISTRY_OWNER)
         initialized
         deployerRegistered
     {
@@ -238,7 +242,7 @@ contract UpdateFeeParamsTest is FarmRegistryTest {
         FarmRegistry(registry).updateFeeParams(owner, address(0), FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
-    function test_updateFeeParams() public useKnownActor(REGISTRY_OWNER) initialized deployerRegistered {
+    function test_updateFeeParams() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         address feeReceiver = actors[5];
         address feeToken = actors[6];
         uint256 feeAmt = FEE_AMOUNT;

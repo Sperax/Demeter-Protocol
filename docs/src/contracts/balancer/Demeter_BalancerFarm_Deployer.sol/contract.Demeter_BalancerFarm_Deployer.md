@@ -35,14 +35,14 @@ Constructor of the contract
 _Deploys one farm so that it can be cloned later_
 
 ```solidity
-constructor(address _registry, address _balancerVault, string memory _deployerName);
+constructor(address _farmRegistry, address _balancerVault, string memory _deployerName);
 ```
 
 **Parameters**
 
 | Name             | Type      | Description                              |
 | ---------------- | --------- | ---------------------------------------- |
-| `_registry`      | `address` | Address of Sperax Farm Registry          |
+| `_farmRegistry`  | `address` | Address of Sperax Farm Registry          |
 | `_balancerVault` | `address` | Address of Balancer's Vault              |
 | `_deployerName`  | `string`  | String containing a name of the deployer |
 

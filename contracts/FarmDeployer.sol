@@ -11,7 +11,7 @@ import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 abstract contract FarmDeployer is Ownable {
     using SafeERC20 for IERC20;
 
-    address public immutable REGISTRY;
+    address public immutable FARM_REGISTRY;
     // Stores the address of farmImplementation.
     address public farmImplementation;
 
@@ -25,9 +25,9 @@ abstract contract FarmDeployer is Ownable {
     // Custom Errors
     error InvalidAddress();
 
-    constructor(address _registry, string memory _farmId) {
-        _validateNonZeroAddr(_registry);
-        REGISTRY = _registry;
+    constructor(address _farmRegistry, string memory _farmId) {
+        _validateNonZeroAddr(_farmRegistry);
+        FARM_REGISTRY = _farmRegistry;
         farmId = _farmId;
     }
 
@@ -45,7 +45,8 @@ abstract contract FarmDeployer is Ownable {
     /// @dev Function fetches all the fee params from farmRegistry.
     function _collectFee() internal virtual {
         // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
-        (address feeReceiver, address feeToken, uint256 feeAmount,) = IFarmRegistry(REGISTRY).getFeeParams(msg.sender);
+        (address feeReceiver, address feeToken, uint256 feeAmount,) =
+            IFarmRegistry(FARM_REGISTRY).getFeeParams(msg.sender);
         if (feeAmount != 0) {
             IERC20(feeToken).safeTransferFrom(msg.sender, feeReceiver, feeAmount);
             emit FeeCollected(msg.sender, feeToken, feeAmount);

@@ -16,8 +16,8 @@ abstract contract TestNetworkConfig is Arbitrum {
         vm.startPrank(PROXY_OWNER);
         UpgradeUtil upgradeUtil = new UpgradeUtil();
         FarmRegistry farmRegistryImpl = new FarmRegistry();
-        DEMETER_REGISTRY = upgradeUtil.deployErc1967Proxy(address(farmRegistryImpl));
-        FarmRegistry(DEMETER_REGISTRY).initialize(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
+        FARM_REGISTRY = upgradeUtil.deployErc1967Proxy(address(farmRegistryImpl));
+        FarmRegistry(FARM_REGISTRY).initialize(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
         vm.stopPrank();
     }
 }

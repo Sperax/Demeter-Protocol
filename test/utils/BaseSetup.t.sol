@@ -15,9 +15,9 @@ abstract contract BaseSetup is Test {
 
     // Define Demeter constants here
     address internal PROXY_OWNER;
-    address internal REGISTRY_OWNER;
+    address internal FARM_REGISTRY_OWNER;
     address internal PROXY_ADMIN;
-    address internal DEMETER_REGISTRY;
+    address internal FARM_REGISTRY;
 
     // Define fork networks
     uint256 internal forkCheck;
@@ -53,6 +53,6 @@ abstract contract BaseSetup is Test {
             actors.push(act);
         }
         owner = actors[4];
-        REGISTRY_OWNER = actors[5];
+        FARM_REGISTRY_OWNER = actors[5];
     }
 }

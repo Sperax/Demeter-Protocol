@@ -49,18 +49,18 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFT_POOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _registry Address of Farm Registry
+    /// @param _farmRegistry Address of Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of Camelot factory
     /// @param _router Address of Camelot router
     /// @param _nftPoolFactory Address of Camelot NFT pool factory
     constructor(
-        address _registry,
+        address _farmRegistry,
         string memory _farmId,
         address _protocolFactory,
         address _router,
         address _nftPoolFactory
-    ) FarmDeployer(_registry, _farmId) {
+    ) FarmDeployer(_farmRegistry, _farmId) {
         _validateNonZeroAddr(_protocolFactory);
         _validateNonZeroAddr(_nftPoolFactory);
 
@@ -82,7 +82,7 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
-            _registry: REGISTRY,
+            _farmRegistry: FARM_REGISTRY,
             _camelotPairPool: pairPool,
             _rwdTokenData: _data.rewardData,
             _router: ROUTER,
@@ -93,7 +93,7 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
-        IFarmRegistry(REGISTRY).registerFarm(farm, msg.sender);
+        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         return farm;
     }
 

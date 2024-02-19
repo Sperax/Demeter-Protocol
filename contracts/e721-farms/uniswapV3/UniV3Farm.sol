@@ -68,7 +68,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _farmStartTime - time of farm start.
     /// @param _cooldownPeriod - cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _registry - Address of the farm registry.
+    /// @param _farmRegistry - Address of the farm registry.
     /// @param _uniswapPoolData - init data for UniswapV3 pool.
     /// @param _rwdTokenData - init data for reward tokens.
     /// @param _uniV3Factory - Factory contract of Uniswap V3.
@@ -79,7 +79,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
-        address _registry,
+        address _farmRegistry,
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData,
         address _uniV3Factory,
@@ -108,7 +108,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _registry);
+        _setupFarmExpiry(_farmStartTime, _farmRegistry);
     }
 
     /// @notice Allow user to increase liquidity for a deposit.
