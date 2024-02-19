@@ -17,10 +17,10 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {BaseFarmStorage} from "../BaseFarmStorage.sol";
+import {BaseFarmWithExpiry} from "./BaseFarmWithExpiry.sol";
 import {Subscription, RewardFund} from "../interfaces/DataTypes.sol";
 
-abstract contract OperableDeposit is BaseFarmStorage {
+abstract contract OperableDeposit is BaseFarmWithExpiry {
     uint256 public constant PRECISION = 1e18;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
@@ -74,5 +74,27 @@ abstract contract OperableDeposit is BaseFarmStorage {
                 ++iSub;
             }
         }
+    }
+
+    function _increaseDepositCommon(uint256 _depositId) internal {
+        // Validations
+        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
+        _validateDeposit(msg.sender, _depositId);
+        if (deposits[_depositId].expiryDate != 0) {
+            revert DepositIsInCooldown();
+        }
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+    }
+
+    function _decreaseDepositCommon(uint256 _depositId) internal {
+        //Validations
+        _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
+        _validateDeposit(msg.sender, _depositId);
+        if (deposits[_depositId].expiryDate != 0 || deposits[_depositId].cooldownPeriod != 0) {
+            revert DecreaseDepositNotPermitted();
+        }
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
     }
 }

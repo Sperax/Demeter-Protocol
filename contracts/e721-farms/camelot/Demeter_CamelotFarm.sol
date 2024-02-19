@@ -76,20 +76,13 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
-        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
-        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
+        Deposit storage userDeposit = deposits[_depositId];
 
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }
 
-        Deposit storage userDeposit = deposits[_depositId];
-        if (userDeposit.expiryDate != 0) {
-            revert DepositIsInCooldown();
-        }
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _increaseDepositCommon(_depositId);
 
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
@@ -134,21 +127,14 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
-        _validateFarmOpen(); // Withdraw instead of decrease deposit when a farm is closed.
-        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
-
         Deposit storage userDeposit = deposits[_depositId];
 
         if (_liquidityToWithdraw == 0) {
             revert CannotWithdrawZeroAmount();
         }
 
-        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
-            revert DecreaseDepositNotPermitted();
-        }
+        _decreaseDepositCommon(_depositId);
 
-        // Claim the pending rewards for the deposit and update farm reward data.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
         // Update deposit information.
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;
