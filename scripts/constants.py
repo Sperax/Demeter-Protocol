@@ -1,14 +1,14 @@
-from brownie import (
-    FarmFactory,
-    Demeter_UniV3FarmDeployer,
-    Demeter_UniV3Farm,
-    Demeter_CamelotFarm,
-    Demeter_CamelotFarm_Deployer,
-    Demeter_UniV2FarmDeployer,
-    Demeter_BalancerFarm_Deployer,
-    chain,
-)
-
+# from brownie import (
+#     FarmFactory,
+#     Demeter_UniV3FarmDeployer,
+#     Demeter_UniV3Farm,
+#     Demeter_CamelotFarm,
+#     Demeter_CamelotFarm_Deployer,
+#     Demeter_UniV2FarmDeployer,
+#     Demeter_BalancerFarm_Deployer,
+#     chain,
+# )
+from ape import project, chain
 
 class Step():
     def __init__(
@@ -92,7 +92,7 @@ class Create_Farm_data():
 
 deployment_config = {
     'FarmFactory_v1': Deployment_data(
-        contract=FarmFactory,
+        contract=project.FarmFactory,
         config=Deployment_config(
             upgradeable=True,
             deployment_params={
@@ -123,7 +123,7 @@ deployment_config = {
         )
     ),
     'UniV3FarmDeployer_v3': Deployment_data(
-        contract=Demeter_UniV3FarmDeployer,
+        contract=project.Demeter_UniV3FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -142,7 +142,7 @@ deployment_config = {
         )
     ),
     'CamelotFarmDeployer_v1': Deployment_data(
-        contract=Demeter_CamelotFarm_Deployer,
+        contract=project.Demeter_CamelotFarm_Deployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -164,7 +164,7 @@ deployment_config = {
     ),
 
     'SushiSwapFarmDeployer_v1': Deployment_data(
-        contract=Demeter_UniV2FarmDeployer,
+        contract=project.Demeter_UniV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -186,7 +186,7 @@ deployment_config = {
         )
     ),
     'TraderJoeFarmDeployer_v1': Deployment_data(
-        contract=Demeter_UniV2FarmDeployer,
+        contract=project.Demeter_UniV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -208,7 +208,7 @@ deployment_config = {
         )
     ),
     'Demeter_UniV3Farm_implementation': Deployment_data(
-        contract=Demeter_UniV3Farm,
+        contract=project.Demeter_UniV3Farm,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={},
@@ -222,7 +222,7 @@ deployment_config = {
         )
     ),
     'Demeter_BalancerFarmDeployer': Deployment_data(
-        contract=Demeter_BalancerFarm_Deployer,
+        contract=project.Demeter_BalancerFarm_Deployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -247,7 +247,7 @@ deployment_config = {
 
 upgrade_config = {
     'farm_factory_v2': Upgrade_data(
-        contract=FarmFactory,
+        contract=project.FarmFactory,
         config=Upgrade_config(
             proxy_address='0xC4fb09E0CD212367642974F6bA81D8e23780A659',
             proxy_admin='0x474b9be3998Ab278b2846dB7C667497f16F83e0C'
@@ -257,13 +257,13 @@ upgrade_config = {
 
 farm_config = {
     'l2dao_usds_v1': Create_Farm_data(
-        contract=Demeter_UniV3Farm,
-        deployer_contract=Demeter_UniV3FarmDeployer,
+        contract=project.Demeter_UniV3Farm,
+        deployer_contract=project.Demeter_UniV3FarmDeployer,
         deployer_address='0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0',
         config=Farm_config(
             deployment_params={
                 'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
-                'farm_start_time': chain.time() + 100,
+                'farm_start_time': chain.pending_timestamp + 100,
                 'cooldown_period': 0,
                 'pool_data': {
                     'token_A': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
@@ -284,13 +284,13 @@ farm_config = {
         )
     ),
     'usds_usdc_camelot_Farm': Create_Farm_data(
-        contract=Demeter_CamelotFarm,
-        deployer_contract=Demeter_CamelotFarm_Deployer,
+        contract=project.Demeter_CamelotFarm,
+        deployer_contract=project.Demeter_CamelotFarm_Deployer,
         deployer_address='0x1a85c90cfEE9eD499C598a11ea56A8E5a16c307f',
         config=Farm_config(
             deployment_params={
                 'farm_admin': '0x5b12d9846F8612E439730d18E1C12634753B1bF1',
-                'farm_start_time': chain.time() + 100,
+                'farm_start_time': chain.pending_timestamp + 100,
                 'cooldown_period': 0,
                 'pool_data': {
                     'token_A': '0x2CaB3abfC1670D1a452dF502e216a66883cDf079',
