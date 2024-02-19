@@ -38,10 +38,10 @@ abstract contract FarmRegistryTest is TestNetworkConfig {
         super.setUp();
         registryImp = new FarmRegistry();
         upgradeUtil = new UpgradeUtil();
-        registry = createFactory();
+        registry = createRegistry();
     }
 
-    function createFactory() public useKnownActor(FARM_REGISTRY_OWNER) returns (address) {
+    function createRegistry() public useKnownActor(FARM_REGISTRY_OWNER) returns (address) {
         address registryProxy;
         registryImp = new FarmRegistry();
         upgradeUtil = new UpgradeUtil();
