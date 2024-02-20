@@ -91,7 +91,7 @@ abstract contract IncreaseDepositTest is BaseE20FarmTest {
         address poolAddress = getPoolAddress();
         uint256 amt = 100 * 10 ** ERC20(poolAddress).decimals();
         BaseE20Farm(lockupFarm).initiateCooldown(DEPOSIT_ID);
-        skip(86400 * 2);
+        skip(1 days * 2);
         deal(poolAddress, currentActor, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
@@ -187,7 +187,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        skip(86400 * 7);
+        skip(1 days * 7);
         vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
         BaseE20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
@@ -197,7 +197,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(owner)
     {
-        skip(86400 * 7);
+        skip(1 days * 7);
         BaseE20Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
@@ -205,7 +205,7 @@ abstract contract DecreaseDepositTest is BaseE20FarmTest {
     }
 
     function test_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
-        skip(86400 * 7);
+        skip(1 days * 7);
         BaseE20Farm(nonLockupFarm).computeRewards(currentActor, 1);
         BaseE20Farm(nonLockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }

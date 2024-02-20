@@ -64,7 +64,7 @@ abstract contract WithdrawAdditionalTest is BaseE721FarmTest {
     function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         BaseFarm(lockupFarm).initiateCooldown(depositId);
-        skip((COOLDOWN_PERIOD * 86400) + 100); //100 seconds after the end of CoolDown Period
+        skip((COOLDOWN_PERIOD * 1 days) + 100); //100 seconds after the end of CoolDown Period
         vm.expectEmit(nfpm());
         emit Transfer(lockupFarm, currentActor, BaseE721Farm(lockupFarm).depositToTokenId(depositId));
         BaseE721Farm(lockupFarm).withdraw(depositId);

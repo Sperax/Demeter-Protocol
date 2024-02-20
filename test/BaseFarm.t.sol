@@ -145,12 +145,12 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
-        skip(86400 * 2);
+        skip(1 days * 2);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         vm.startPrank(owner);
-        skip(86400 * 2);
+        skip(1 days * 2);
         BaseFarm(lockupFarm).farmPauseSwitch(true);
-        skip(86400 * 2);
+        skip(1 days * 2);
         vm.startPrank(owner);
         BaseFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsClosed.selector));
@@ -164,13 +164,13 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
-        skip(86400 * 2);
+        skip(1 days * 2);
         BaseFarm(lockupFarm).initiateCooldown(depositId);
         vm.startPrank(owner);
-        skip(86400 * 2);
+        skip(1 days * 2);
         BaseFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
-        skip(86400 * 2);
+        skip(1 days * 2);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
         BaseFarm(lockupFarm).claimRewards(depositId + 1);
     }
@@ -182,7 +182,7 @@ abstract contract ClaimRewardsTest is BaseFarmTest {
             address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 rewardsForEachSubsLength = lockup ? 2 : 1;
             depositSetupFn(farm, lockup);
-            skip(86400 * 15);
+            skip(1 days * 15);
             vm.startPrank(user);
             address[] memory rewardTokens = getRewardTokens(farm);
             uint256[] memory balances = new uint256[](rewardTokens.length);
@@ -263,7 +263,6 @@ abstract contract WithdrawTest is BaseFarmTest {
     function _assertHelperOne(Deposit memory depositInfo) internal {
         assertEq(depositInfo.depositor, address(0));
         assertEq(depositInfo.liquidity, 0);
-        assertEq(depositInfo.startTime, 0);
         assertEq(depositInfo.expiryDate, 0);
         assertEq(depositInfo.cooldownPeriod, 0);
     }
@@ -283,7 +282,6 @@ abstract contract WithdrawTest is BaseFarmTest {
                 Deposit memory depositInfo = BaseFarm(farm).getDepositInfo(withdrawnDeposit);
                 assertEq(depositInfo.depositor, address(0));
                 assertEq(depositInfo.liquidity, 0);
-                assertEq(depositInfo.startTime, 0);
                 assertEq(depositInfo.expiryDate, 0);
                 assertEq(depositInfo.cooldownPeriod, 0);
 
@@ -331,7 +329,7 @@ abstract contract WithdrawTest is BaseFarmTest {
     {
         uint256 depositId = 1;
         BaseFarm(lockupFarm).initiateCooldown(depositId);
-        skip((COOLDOWN_PERIOD * 86400) - 100); //100 seconds before the end of CoolDown Period
+        skip((COOLDOWN_PERIOD * 1 days) - 100); //100 seconds before the end of CoolDown Period
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
         BaseFarm(lockupFarm).withdraw(depositId);
     }
@@ -402,7 +400,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(user);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
             uint256[][] memory rewardsForEachSubs = new uint256[][](2);
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(depositId);
@@ -450,7 +448,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[1]);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -500,7 +498,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[5]);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -550,7 +548,7 @@ abstract contract WithdrawTest is BaseFarmTest {
 
             vm.startPrank(actors[10]);
             uint256 time = 2 days;
-            uint256 cooldownTime = (COOLDOWN_PERIOD * 86400) + 100;
+            uint256 cooldownTime = (COOLDOWN_PERIOD * 1 days) + 100;
             if (lockup) {
                 BaseFarm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
@@ -622,8 +620,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
 
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        Deposit memory userDeposit = BaseFarm(lockupFarm).getDepositInfo(depositId);
-        skip(86400 * 7);
+        skip(1 days * 7);
         uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         rewardsForEachSubs = BaseFarm(lockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(lockupFarm));
@@ -631,7 +628,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit CooldownInitiated(depositId, userDeposit.startTime + ((COOLDOWN_PERIOD + 7) * 86400));
+        emit CooldownInitiated(depositId, block.timestamp + (COOLDOWN_PERIOD * 1 days));
         BaseFarm(lockupFarm).initiateCooldown(depositId);
     }
 
@@ -641,7 +638,7 @@ abstract contract InitiateCooldownTest is BaseFarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
-        skip(86400 * 7);
+        skip(1 days * 7);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.CannotInitiateCooldown.selector));
         BaseFarm(nonLockupFarm).initiateCooldown(1);
     }
