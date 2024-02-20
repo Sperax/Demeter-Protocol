@@ -4,7 +4,6 @@ plugins:
   - name: foundry
   - name: solidity
   - name: etherscan
-  - name: alchemy
   - name: tenderly
   - name: ganache
 
@@ -41,10 +40,14 @@ test:
       terminal: True  # Disable the terminal table (True by default)
       xml: True  # Enable XML report (.build/coverage.xml)
       html: True  # Enable HTML report (.build/htmlcov)
-ganache:
+
+
+foundry:
+  request_timeout: 20  # Defaults to 30
+  fork_request_timeout: 600  # Defaults to 300
+  base_fee: 0
+  priority_fee: 0
   fork:
     arbitrum:
       mainnet:
         upstream_provider: alchemy
-  server:
-    port: 8555 # Fork Server: http://localhost:8555
