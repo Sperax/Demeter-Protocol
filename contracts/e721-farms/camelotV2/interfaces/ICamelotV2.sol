@@ -77,7 +77,7 @@ interface INFTPool {
     function pendingRewards(uint256 tokenId) external view returns (uint256);
 }
 
-interface ICamelotFactory {
+interface ICamelotV2Factory {
     function getPair(address _tokenA, address _tokenB) external view returns (address);
 
     function allPairs(uint256 _id) external view returns (address);

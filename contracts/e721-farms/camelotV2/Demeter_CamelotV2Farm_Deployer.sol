@@ -17,12 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {Demeter_CamelotFarm, RewardTokenData} from "./Demeter_CamelotFarm.sol";
+import {Demeter_CamelotV2Farm, RewardTokenData} from "./Demeter_CamelotV2Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {ICamelotFactory} from "./interfaces/ICamelot.sol";
+import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
-contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
+contract Demeter_CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;
@@ -67,14 +67,14 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
         PROTOCOL_FACTORY = _protocolFactory;
         ROUTER = _router;
         NFT_POOL_FACTORY = _nftPoolFactory;
-        farmImplementation = address(new Demeter_CamelotFarm());
+        farmImplementation = address(new Demeter_CamelotV2Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        Demeter_CamelotFarm farmInstance = Demeter_CamelotFarm(Clones.clone(farmImplementation));
+        Demeter_CamelotV2Farm farmInstance = Demeter_CamelotV2Farm(Clones.clone(farmImplementation));
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 
@@ -98,7 +98,7 @@ contract Demeter_CamelotFarm_Deployer is FarmDeployer, ReentrancyGuard {
     }
 
     function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
-        pool = ICamelotFactory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
+        pool = ICamelotV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _validateNonZeroAddr(pool);
         return pool;
     }
