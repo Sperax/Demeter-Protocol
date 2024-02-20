@@ -409,7 +409,6 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         Deposit memory userDeposit = Deposit({
             depositor: _account,
             cooldownPeriod: 0,
-            startTime: block.timestamp,
             expiryDate: 0,
             totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: _liquidity

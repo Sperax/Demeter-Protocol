@@ -33,14 +33,12 @@ struct Subscription {
 // Deposit information:
 // depositor - address of the depositor.
 // liquidity - amount of liquidity in the deposit.
-// startTime - time of deposit.
 // expiryDate - expiry time (if deposit is locked).
 // cooldownPeriod - cooldown period (if deposit is locked).
 // totalRewardsClaimed - total rewards claimed for the deposit.
 struct Deposit {
     address depositor;
     uint256 liquidity;
-    uint256 startTime;
     uint256 expiryDate;
     uint256 cooldownPeriod;
     uint256[] totalRewardsClaimed;
