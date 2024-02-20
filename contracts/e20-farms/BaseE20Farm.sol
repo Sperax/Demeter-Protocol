@@ -72,8 +72,6 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
-        Deposit storage userDeposit = deposits[_depositId];
-
         if (_amount == 0) {
             revert InvalidAmount();
         }
@@ -82,7 +80,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
 
         // Update deposit Information
         _updateSubscriptionForIncrease(_depositId, _amount);
-        userDeposit.liquidity += _amount;
+        deposits[_depositId].liquidity += _amount;
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);

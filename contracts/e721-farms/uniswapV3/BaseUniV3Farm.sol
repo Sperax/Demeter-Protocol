@@ -119,8 +119,6 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         external
         nonReentrant
     {
-        Deposit storage userDeposit = deposits[_depositId];
-
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }
@@ -153,7 +151,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
 
         // Update deposit Information
         _updateSubscriptionForIncrease(_depositId, liquidity);
-        userDeposit.liquidity += liquidity;
+        deposits[_depositId].liquidity += liquidity;
 
         // Return the excess tokens to the user.
         if (amount0 < _amounts[0]) {
@@ -174,8 +172,6 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         external
         nonReentrant
     {
-        Deposit storage userDeposit = deposits[_depositId];
-
         if (_liquidityToWithdraw == 0) {
             revert CannotWithdrawZeroAmount();
         }
@@ -184,7 +180,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
 
         // Update deposit Information
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        userDeposit.liquidity -= _liquidityToWithdraw;
+        deposits[_depositId].liquidity -= _liquidityToWithdraw;
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];

@@ -76,8 +76,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
-        Deposit storage userDeposit = deposits[_depositId];
-
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }
@@ -110,7 +108,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         INFTPool(nftContract).addToPosition(depositToTokenId[_depositId], liquidity);
 
         _updateSubscriptionForIncrease(_depositId, liquidity);
-        userDeposit.liquidity += liquidity;
+        deposits[_depositId].liquidity += liquidity;
 
         // Return excess tokens back to the user.
         if (amountA < _amounts[0]) {
@@ -127,8 +125,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
-        Deposit storage userDeposit = deposits[_depositId];
-
         if (_liquidityToWithdraw == 0) {
             revert CannotWithdrawZeroAmount();
         }
@@ -137,7 +133,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
 
         // Update deposit information.
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        userDeposit.liquidity -= _liquidityToWithdraw;
+        deposits[_depositId].liquidity -= _liquidityToWithdraw;
 
         // Withdraw liquidity from nft pool
         INFTPool(nftContract).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
