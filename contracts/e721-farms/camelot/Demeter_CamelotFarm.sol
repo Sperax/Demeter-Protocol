@@ -89,7 +89,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         }
 
         // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
@@ -148,7 +148,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         }
 
         // Claim the pending rewards for the deposit and update farm reward data.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
         // Update deposit information.
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
         userDeposit.liquidity -= _liquidityToWithdraw;

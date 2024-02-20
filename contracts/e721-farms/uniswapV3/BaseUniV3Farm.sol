@@ -131,7 +131,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         }
 
         // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
@@ -194,7 +194,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         }
 
         // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         // Update deposit Information
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
