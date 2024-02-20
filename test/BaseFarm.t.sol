@@ -14,9 +14,9 @@ abstract contract BaseFarmTest is TestNetworkConfig {
     uint256 public constant MIN_BALANCE = 1000000000000000000;
     uint256 public constant NO_LOCKUP_REWARD_RATE = 1e18;
     uint256 public constant LOCKUP_REWARD_RATE = 2e18;
-    uint256 public constant COOLDOWN_PERIOD_DAYS = 21; // in days
-    uint256 public constant MIN_COOLDOWN_PERIOD_DAYS = 1; // in days
-    uint256 public constant MAX_COOLDOWN_PERIOD_DAYS = 30; // in days
+    uint256 public constant COOLDOWN_PERIOD_DAYS = 21;
+    uint256 public constant MIN_COOLDOWN_PERIOD_DAYS = 1;
+    uint256 public constant MAX_COOLDOWN_PERIOD_DAYS = 30;
     bytes32 public constant NO_LOCK_DATA = bytes32(uint256(0));
     bytes32 public constant LOCK_DATA = bytes32(uint256(1));
     uint256 public constant DEPOSIT_AMOUNT = 1e3;
@@ -993,7 +993,7 @@ abstract contract UpdateCoolDownPeriodTest is BaseFarmTest {
         vm.assume(cooldownPeriodInDays >= MIN_COOLDOWN_PERIOD_DAYS && cooldownPeriodInDays <= MAX_COOLDOWN_PERIOD_DAYS);
 
         vm.expectEmit(address(lockupFarm));
-        emit CooldownPeriodUpdated(cooldownPeriodInDays * 1 days);
+        emit CooldownPeriodUpdated(cooldownPeriodInDays);
         BaseFarm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 }

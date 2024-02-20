@@ -120,10 +120,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
-        uint256 _cooldownPeriod = _newCooldownPeriodInDays * 1 days;
-        _validateCooldownPeriod(_cooldownPeriod);
-        cooldownPeriod = _cooldownPeriod;
-        emit CooldownPeriodUpdated(_cooldownPeriod);
+        _validateCooldownPeriod(_newCooldownPeriodInDays);
+        cooldownPeriod = _newCooldownPeriodInDays * 1 days;
+        emit CooldownPeriodUpdated(_newCooldownPeriodInDays);
     }
 
     /// @notice Pause / UnPause the farm.
@@ -650,9 +649,8 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for the farm.
         uint8 numFunds = 1;
         if (_cooldownPeriodInDays != 0) {
-            uint256 _cooldownPeriod = _cooldownPeriodInDays * 1 days;
-            _validateCooldownPeriod(_cooldownPeriod);
-            cooldownPeriod = _cooldownPeriod;
+            _validateCooldownPeriod(_cooldownPeriodInDays);
+            cooldownPeriod = _cooldownPeriodInDays * 1 days;
             numFunds = 2;
         }
 
@@ -784,9 +782,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     }
 
     /// @notice An internal function to validate cooldown period.
-    /// @param _cooldownPeriod Period to be validated.
-    function _validateCooldownPeriod(uint256 _cooldownPeriod) internal pure {
-        if (_cooldownPeriod < MIN_COOLDOWN_PERIOD || _cooldownPeriod > MAX_COOLDOWN_PERIOD) {
+    /// @param _cooldownPeriodInDays Period to be validated.
+    function _validateCooldownPeriod(uint256 _cooldownPeriodInDays) internal pure {
+        if (_cooldownPeriodInDays < MIN_COOLDOWN_PERIOD_DAYS || _cooldownPeriodInDays > MAX_COOLDOWN_PERIOD_DAYS) {
             revert InvalidCooldownPeriod();
         }
     }
