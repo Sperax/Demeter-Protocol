@@ -9,29 +9,29 @@ plugins:
 
 dependencies:
   - name: OpenZeppelin
-    version: 4.9.5
+    version: 4.9.3
     github: OpenZeppelin/openzeppelin-contracts
 
   - name: OpenZeppelin-Upgradable
-    version: 4.9.5
+    version: 4.9.3
     github: OpenZeppelin/openzeppelin-contracts-upgradeable
 
   - name: Uniswap-V3-Periphery
-    version: 1.4.4
-    npm: "@Uniswap/v3-periphery"
+    ref: 1.3.0
+    github: "@Uniswap/v3-periphery"
 
   - name: Uniswap-V3
-    version: 1.0.1
-    npm: "@Uniswap/v3-core"
+    ref: 1.0.0
+    github: "@Uniswap/v3-core"
     
 solidity:
   version: 0.8.16
   optimize: True
   import_remapping:
-          - "@openzeppelin/contracts=OpenZeppelin/4.9.5"
-          - "@openzeppelin/contracts-upgradeable=OpenZeppelin-Upgradable/4.9.5"
-          - "@uniswap/v3-periphery/contracts=Uniswap-V3-Periphery/1.4.4"
-          - "@uniswap/v3-core/contracts=Uniswap-V3/1.0.1"
+          - "@openzeppelin/contracts=OpenZeppelin/4.9.3"
+          - "@openzeppelin/contracts-upgradeable=OpenZeppelin-Upgradable/4.9.3"
+          - "@uniswap/v3-periphery/contracts=Uniswap-V3-Periphery/1.3.0"
+          - "@uniswap/v3-core/contracts=Uniswap-V3/1.0.0"
 test:
   mnemonic: test test test test test test test test test test test junk
   number_of_accounts: 10
