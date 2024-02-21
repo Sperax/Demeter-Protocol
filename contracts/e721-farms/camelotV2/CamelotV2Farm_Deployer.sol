@@ -17,12 +17,12 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {Demeter_CamelotV2Farm, RewardTokenData} from "./Demeter_CamelotV2Farm.sol";
+import {CamelotV2Farm, RewardTokenData} from "./CamelotV2Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
-contract Demeter_CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
+contract CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;
@@ -67,14 +67,14 @@ contract Demeter_CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
         PROTOCOL_FACTORY = _protocolFactory;
         ROUTER = _router;
         NFT_POOL_FACTORY = _nftPoolFactory;
-        farmImplementation = address(new Demeter_CamelotV2Farm());
+        farmImplementation = address(new CamelotV2Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        Demeter_CamelotV2Farm farmInstance = Demeter_CamelotV2Farm(Clones.clone(farmImplementation));
+        CamelotV2Farm farmInstance = CamelotV2Farm(Clones.clone(farmImplementation));
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 

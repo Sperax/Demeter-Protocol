@@ -5,15 +5,14 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {UniV3ActiveLiquidityFarm} from "../../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityFarm.sol";
-import {Demeter_UniV3ActiveLiquidityDeployer} from
-    "../../../../contracts/e721-farms/uniswapV3/Demeter_UniV3ActiveLiquidityDeployer.sol";
+import {UniV3ActiveLiquidityDeployer} from "../../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityDeployer.sol";
 import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../UniV3ActiveLiquidityFarm.t.sol";
 import "../../../utils/UpgradeUtil.t.sol";
 
-contract Demeter_UniV3ActiveLiquidityFarmTest is
+contract UniswapV3ActiveLiquidityFarmTest is
     FarmInheritTest,
     E721FarmInheritTest,
     UniV3FarmInheritTest,
@@ -49,7 +48,7 @@ contract Demeter_UniV3ActiveLiquidityFarmTest is
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_UniV3ActiveLiquidityDeployer.FarmData memory _data = Demeter_UniV3ActiveLiquidityDeployer.FarmData({
+        UniV3ActiveLiquidityDeployer.FarmData memory _data = UniV3ActiveLiquidityDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,

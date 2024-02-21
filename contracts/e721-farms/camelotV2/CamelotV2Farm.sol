@@ -26,7 +26,7 @@ import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 
-contract Demeter_CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
+contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Camelot router

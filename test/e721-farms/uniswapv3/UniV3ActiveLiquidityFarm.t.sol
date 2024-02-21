@@ -5,7 +5,7 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityFarm.sol";
-import "../../../contracts/e721-farms/uniswapV3/Demeter_UniV3ActiveLiquidityDeployer.sol";
+import "../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityDeployer.sol";
 import "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
@@ -16,7 +16,7 @@ import "./UniV3Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 
 abstract contract UniV3ActiveLiquidityFarmTest is UniV3FarmTest {
-    Demeter_UniV3ActiveLiquidityDeployer public uniV3ActiveLiqFarmDeployer;
+    UniV3ActiveLiquidityDeployer public uniV3ActiveLiqFarmDeployer;
 
     function setUp() public virtual override {
         FarmTest.setUp();
@@ -27,7 +27,7 @@ abstract contract UniV3ActiveLiquidityFarmTest is UniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        uniV3ActiveLiqFarmDeployer = new Demeter_UniV3ActiveLiquidityDeployer(
+        uniV3ActiveLiqFarmDeployer = new UniV3ActiveLiquidityDeployer(
             FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
         registry.registerFarmDeployer(address(uniV3ActiveLiqFarmDeployer));

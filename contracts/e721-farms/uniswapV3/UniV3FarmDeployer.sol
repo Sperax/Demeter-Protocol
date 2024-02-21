@@ -17,78 +17,83 @@ pragma solidity 0.8.16;
 //@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
-import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
-import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
+import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
+import {UniV3Farm, RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {E20Farm, RewardTokenData} from "../E20Farm.sol";
 
-contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
-    // @dev the token Order is not important
-    struct PoolData {
-        address tokenA;
-        address tokenB;
-    }
-
+contract UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // lpTokenData - data for camelot pool.
-    //                  (tokenA, tokenB)
+    // uniswapPoolData - Init data for UniswapV3 pool.
+    //                  (tokenA, tokenB, feeTier, tickLower, tickUpper)
     // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
         uint256 cooldownPeriod;
-        PoolData camelotPoolData;
+        UniswapPoolData uniswapPoolData;
         RewardTokenData[] rewardData;
     }
 
-    address public immutable PROTOCOL_FACTORY;
+    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
+    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
+    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract
+    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
     /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
-    /// @param _protocolFactory Address of UniswapV2 factory
-    constructor(address _farmRegistry, string memory _farmId, address _protocolFactory)
-        FarmDeployer(_farmRegistry, _farmId)
-    {
-        _validateNonZeroAddr(_protocolFactory);
-        PROTOCOL_FACTORY = _protocolFactory;
-        farmImplementation = address(new E20Farm());
+    /// @param _uniV3Factory Address of UniswapV3 factory
+    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
+    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
+    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    constructor(
+        address _farmRegistry,
+        string memory _farmId,
+        address _uniV3Factory,
+        address _nfpm,
+        address _uniswapUtils,
+        address _nfpmUtils
+    ) FarmDeployer(_farmRegistry, _farmId) {
+        _validateNonZeroAddr(_uniV3Factory);
+        _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_uniswapUtils);
+        _validateNonZeroAddr(_nfpmUtils);
+
+        UNI_V3_FACTORY = _uniV3Factory;
+        NFPM = _nfpm;
+        UNISWAP_UTILS = _uniswapUtils;
+        NFPM_UTILS = _nfpmUtils;
+        farmImplementation = address(new UniV3Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        E20Farm farmInstance = E20Farm(Clones.clone(farmImplementation));
 
-        address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
-
+        UniV3Farm farmInstance = UniV3Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,
             _cooldownPeriod: _data.cooldownPeriod,
             _farmRegistry: FARM_REGISTRY,
-            _farmToken: pairPool,
-            _rwdTokenData: _data.rewardData
+            _uniswapPoolData: _data.uniswapPoolData,
+            _rwdTokenData: _data.rewardData,
+            _uniV3Factory: UNI_V3_FACTORY,
+            _nftContract: NFPM,
+            _uniswapUtils: UNISWAP_UTILS,
+            _nfpmUtils: NFPM_UTILS
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
         _collectFee();
-        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
+        IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         return farm;
-    }
-
-    function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
-        pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
-        _validateNonZeroAddr(pool);
-        return pool;
     }
 }

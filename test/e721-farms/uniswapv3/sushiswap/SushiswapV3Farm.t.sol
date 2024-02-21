@@ -5,19 +5,14 @@ pragma solidity 0.8.16;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {UniV3Farm} from "../../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
-import {Demeter_UniV3FarmDeployer} from "../../../../contracts/e721-farms/uniswapV3/Demeter_UniV3FarmDeployer.sol";
+import {UniV3FarmDeployer} from "../../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import {INFPM} from "../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 
 // import tests
 import "../UniV3Farm.t.sol";
 import "../../../utils/UpgradeUtil.t.sol";
 
-contract Demeter_SushiV3FarmTest is
-    FarmInheritTest,
-    E721FarmInheritTest,
-    UniV3FarmInheritTest,
-    ExpirableFarmInheritTest
-{
+contract SushiV3FarmTest is FarmInheritTest, E721FarmInheritTest, UniV3FarmInheritTest, ExpirableFarmInheritTest {
     // Define variables
     string public constant FARM_NAME = "Demeter_SushiV3_v1";
 

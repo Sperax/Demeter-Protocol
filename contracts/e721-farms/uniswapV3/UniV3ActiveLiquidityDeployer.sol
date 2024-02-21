@@ -23,7 +23,7 @@ import {UniV3ActiveLiquidityFarm} from "./UniV3ActiveLiquidityFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Demeter_UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
+contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)

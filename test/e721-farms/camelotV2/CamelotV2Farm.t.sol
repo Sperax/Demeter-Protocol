@@ -11,8 +11,8 @@ import {
     IPositionHelper,
     INFTPool
 } from "../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol";
-import "../../../contracts/e721-farms/camelotV2/Demeter_CamelotV2Farm_Deployer.sol";
-import "../../../contracts/e721-farms/camelotV2/Demeter_CamelotV2Farm.sol";
+import "../../../contracts/e721-farms/camelotV2/CamelotV2Farm_Deployer.sol";
+import "../../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
 import "../E721Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
@@ -21,15 +21,15 @@ import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {E721Farm} from "../../../contracts/e721-farms/E721Farm.sol";
 
-abstract contract Demeter_CamelotV2FarmTest is E721FarmTest {
+abstract contract CamelotV2FarmTest is E721FarmTest {
     using SafeERC20 for IERC20;
 
     string public FARM_ID = "Demeter_CamelotV2_v1";
 
     UpgradeUtil internal upgradeUtil;
-    Demeter_CamelotV2Farm public farmImpl;
+    CamelotV2Farm public farmImpl;
 
-    Demeter_CamelotV2Farm_Deployer internal demeter_camelotV2Farm_deployer;
+    CamelotV2Farm_Deployer internal camelotV2Farm_deployer;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
@@ -39,9 +39,9 @@ abstract contract Demeter_CamelotV2FarmTest is E721FarmTest {
 
         vm.startPrank(PROXY_OWNER);
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        demeter_camelotV2Farm_deployer =
-            new Demeter_CamelotV2Farm_Deployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
-        registry.registerFarmDeployer(address(demeter_camelotV2Farm_deployer));
+        camelotV2Farm_deployer =
+            new CamelotV2Farm_Deployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
+        registry.registerFarmDeployer(address(camelotV2Farm_deployer));
         vm.stopPrank();
 
         // Configure rewardTokens
@@ -61,20 +61,20 @@ abstract contract Demeter_CamelotV2FarmTest is E721FarmTest {
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
-        Demeter_CamelotV2Farm_Deployer.CamelotPoolData memory _poolData =
-            Demeter_CamelotV2Farm_Deployer.CamelotPoolData({tokenA: DAI, tokenB: USDCe});
+        CamelotV2Farm_Deployer.CamelotPoolData memory _poolData =
+            CamelotV2Farm_Deployer.CamelotPoolData({tokenA: DAI, tokenB: USDCe});
         /// Create Farm
-        Demeter_CamelotV2Farm_Deployer.FarmData memory _data = Demeter_CamelotV2Farm_Deployer.FarmData({
+        CamelotV2Farm_Deployer.FarmData memory _data = CamelotV2Farm_Deployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
             camelotPoolData: _poolData,
             rewardData: rwdTokenData
         });
-        IERC20(FEE_TOKEN()).approve(address(demeter_camelotV2Farm_deployer), 1e20);
-        address farm = demeter_camelotV2Farm_deployer.createFarm(_data);
+        IERC20(FEE_TOKEN()).approve(address(camelotV2Farm_deployer), 1e20);
+        address farm = camelotV2Farm_deployer.createFarm(_data);
 
-        assertEq(Demeter_CamelotV2Farm(farm).farmId(), FARM_ID);
+        assertEq(CamelotV2Farm(farm).farmId(), FARM_ID);
         return farm;
     }
 
@@ -157,7 +157,7 @@ abstract contract Demeter_CamelotV2FarmTest is E721FarmTest {
 
     function createFarmImplementation() public useKnownActor(owner) returns (address) {
         address camelotProxy;
-        farmImpl = new Demeter_CamelotV2Farm();
+        farmImpl = new CamelotV2Farm();
         upgradeUtil = new UpgradeUtil();
         camelotProxy = upgradeUtil.deployErc1967Proxy(address(farmImpl));
         return camelotProxy;
@@ -170,28 +170,28 @@ abstract contract Demeter_CamelotV2FarmTest is E721FarmTest {
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotV2Farm.InvalidCamelotPoolConfig.selector));
-        Demeter_CamelotV2Farm(farm).initialize(
+        vm.expectRevert(abi.encodeWithSelector(CamelotV2Farm.InvalidCamelotPoolConfig.selector));
+        CamelotV2Farm(farm).initialize(
             FARM_ID, block.timestamp, 0, address(registry), address(0), rwdTokenData, ROUTER, NFT_POOL_FACTORY
         );
     }
 }
 
-abstract contract OnNFTHarvestTest is Demeter_CamelotV2FarmTest {
+abstract contract OnNFTHarvestTest is CamelotV2FarmTest {
     function test_onNFTHarvest_RevertWhen_NotAllowed() public {
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotV2Farm.NotAllowed.selector));
-        Demeter_CamelotV2Farm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
+        vm.expectRevert(abi.encodeWithSelector(CamelotV2Farm.NotAllowed.selector));
+        CamelotV2Farm(lockupFarm).onNFTHarvest(address(0), address(0), 742, 1, 1);
     }
 
     function test_onNFTHarvest() public {
-        address nftPool = Demeter_CamelotV2Farm(lockupFarm).nftContract();
+        address nftPool = CamelotV2Farm(lockupFarm).nftContract();
         vm.startPrank(nftPool);
-        bool harvested = Demeter_CamelotV2Farm(lockupFarm).onNFTHarvest(address(0), user, 742, 1, 1);
+        bool harvested = CamelotV2Farm(lockupFarm).onNFTHarvest(address(0), user, 742, 1, 1);
         assertEq(harvested, true);
     }
 }
 
-abstract contract ClaimPoolRewardsTest is Demeter_CamelotV2FarmTest {
+abstract contract ClaimPoolRewardsTest is CamelotV2FarmTest {
     function test_claimPoolRewards_RevertWhen_FarmIsClosed()
         public
         depositSetup(nonLockupFarm, false)
@@ -201,9 +201,9 @@ abstract contract ClaimPoolRewardsTest is Demeter_CamelotV2FarmTest {
         vm.startPrank(Farm(nonLockupFarm).owner());
         Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
-        uint256 PoolRewards = Demeter_CamelotV2Farm(nonLockupFarm).computePoolRewards(0);
+        uint256 PoolRewards = CamelotV2Farm(nonLockupFarm).computePoolRewards(0);
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).claimPoolRewards(0);
+        CamelotV2Farm(nonLockupFarm).claimPoolRewards(0);
         assertEq(0, PoolRewards);
     }
 
@@ -214,17 +214,17 @@ abstract contract ClaimPoolRewardsTest is Demeter_CamelotV2FarmTest {
     {
         skip(7 days);
         vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).claimPoolRewards(2);
+        CamelotV2Farm(nonLockupFarm).claimPoolRewards(2);
     }
 
     function test_claimPoolRewards_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         skip(14 days);
 
-        Demeter_CamelotV2Farm(nonLockupFarm).claimPoolRewards(1);
+        CamelotV2Farm(nonLockupFarm).claimPoolRewards(1);
     }
 }
 
-abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
+abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
     using SafeERC20 for IERC20;
 
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive()
@@ -241,13 +241,13 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         vm.startPrank(Farm(nonLockupFarm).owner());
         Farm(nonLockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_InvalidDeposit()
@@ -259,15 +259,15 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
-        uint8 numDeposits = uint8(Demeter_CamelotV2Farm(nonLockupFarm).totalDeposits());
+        uint8 numDeposits = uint8(CamelotV2Farm(nonLockupFarm).totalDeposits());
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
@@ -281,8 +281,8 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 0;
         skip(7 days);
 
-        vm.expectRevert(abi.encodeWithSelector(Demeter_CamelotV2Farm.InvalidAmount.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).increaseDeposit(1, amounts, minAmounts);
+        vm.expectRevert(abi.encodeWithSelector(CamelotV2Farm.InvalidAmount.selector));
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(1, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_depositInCoolDown()
@@ -297,14 +297,14 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(lockupFarm, 1e22);
         IERC20(USDCe).forceApprove(lockupFarm, 1e22);
-        Demeter_CamelotV2Farm(lockupFarm).initiateCooldown(depositId);
+        CamelotV2Farm(lockupFarm).initiateCooldown(depositId);
         vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
-        Demeter_CamelotV2Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        CamelotV2Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_AmountA_noLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
@@ -316,33 +316,30 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e23);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
-        RewardFund memory _rwdFund = Demeter_CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
+        Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        RewardFund memory _rwdFund = CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
         uint256 totalFundLiqBefore = _rwdFund.totalLiquidity;
 
-        Subscription memory sub = Demeter_CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID()
-        );
+        Subscription memory sub =
+            CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID());
         uint256[] memory _rewardDebtBefore = sub.rewardDebt;
 
-        Demeter_CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
-        _rwdFund = Demeter_CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        _rwdFund = CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
         uint256 totalFundLiqAfter = _rwdFund.totalLiquidity;
 
-        sub = Demeter_CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID()
-        );
+        sub = CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID());
         uint256[] memory _rewardDebtAfter = sub.rewardDebt;
         for (uint8 i; i < _rewardDebtBefore.length; i++) {
             assertTrue(_rewardDebtAfter[i] > _rewardDebtBefore[i]);
         }
 
-        userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         rewardsClaimed = userDeposit.totalRewardsClaimed;
 
         assertTrue(totalFundLiqAfter > totalFundLiqBefore, "Failed to increase total liquidity");
@@ -359,14 +356,14 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
-        Demeter_CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
-        userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         rewardsClaimed = userDeposit.totalRewardsClaimed;
 
         assertEq(IERC20(DAI).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
@@ -383,37 +380,30 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(lockupFarm, 1e22);
         IERC20(USDCe).forceApprove(lockupFarm, 1e22);
-        RewardFund memory _rwdFund = Demeter_CamelotV2Farm(lockupFarm).getRewardFundInfo(0);
+        RewardFund memory _rwdFund = CamelotV2Farm(lockupFarm).getRewardFundInfo(0);
         totalFundLiquidity[0] = _rwdFund.totalLiquidity;
-        Subscription memory sub = Demeter_CamelotV2Farm(lockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(lockupFarm).COMMON_FUND_ID()
-        );
+        Subscription memory sub =
+            CamelotV2Farm(lockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(lockupFarm).COMMON_FUND_ID());
         uint256[] memory _commonRewardDebtBefore = sub.rewardDebt;
-        sub = Demeter_CamelotV2Farm(lockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(lockupFarm).LOCKUP_FUND_ID()
-        );
+        sub = CamelotV2Farm(lockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(lockupFarm).LOCKUP_FUND_ID());
         uint256[] memory _lockupRewardDebtBefore = sub.rewardDebt;
-        Demeter_CamelotV2Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
-        _rwdFund = Demeter_CamelotV2Farm(lockupFarm).getRewardFundInfo(0);
+        CamelotV2Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
+        _rwdFund = CamelotV2Farm(lockupFarm).getRewardFundInfo(0);
         totalFundLiquidity[1] = _rwdFund.totalLiquidity;
-        sub = Demeter_CamelotV2Farm(lockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(lockupFarm).COMMON_FUND_ID()
-        );
+        sub = CamelotV2Farm(lockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(lockupFarm).COMMON_FUND_ID());
         uint256[] memory _commonRewardDebtAfter = sub.rewardDebt;
-        sub = Demeter_CamelotV2Farm(lockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(lockupFarm).LOCKUP_FUND_ID()
-        );
+        sub = CamelotV2Farm(lockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(lockupFarm).LOCKUP_FUND_ID());
         uint256[] memory _lockupRewardDebtAfter = sub.rewardDebt;
         for (uint8 i; i < _commonRewardDebtBefore.length; i++) {
             assertTrue(_commonRewardDebtAfter[i] > _commonRewardDebtBefore[i]);
             assertTrue(_lockupRewardDebtAfter[i] > _lockupRewardDebtBefore[i]);
         }
-        Deposit memory userDepositAfter = Demeter_CamelotV2Farm(lockupFarm).getDepositInfo(depositId);
+        Deposit memory userDepositAfter = CamelotV2Farm(lockupFarm).getDepositInfo(depositId);
         rewardsClaimed = userDepositAfter.totalRewardsClaimed;
         assertTrue(totalFundLiquidity[0] < totalFundLiquidity[1]);
         assertEq(IERC20(DAI).balanceOf(user) + minAmounts[0], amounts[0] + rewardsClaimed[0]);
@@ -421,7 +411,7 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotV2FarmTest {
     }
 }
 
-abstract contract CamelotDecreaseDepositTest is Demeter_CamelotV2FarmTest {
+abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
     using SafeERC20 for IERC20;
 
     function test_DecreaseDeposit_RevertWhen_FarmIsClosed()
@@ -434,19 +424,19 @@ abstract contract CamelotDecreaseDepositTest is Demeter_CamelotV2FarmTest {
         uint256 depositId = 1;
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         uint256 liquidity = userDeposit.liquidity;
         skip(7 days);
         vm.startPrank(Farm(nonLockupFarm).owner());
         Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity, minAmounts);
+        CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity, minAmounts);
     }
 
     function test_DecreaseDeposit_RevertWhen_InvalidDeposit()
@@ -458,17 +448,17 @@ abstract contract CamelotDecreaseDepositTest is Demeter_CamelotV2FarmTest {
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
-        uint8 numDeposits = uint8(Demeter_CamelotV2Farm(nonLockupFarm).totalDeposits());
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(numDeposits);
+        uint8 numDeposits = uint8(CamelotV2Farm(nonLockupFarm).totalDeposits());
+        Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(numDeposits);
         uint256 liquidity = userDeposit.liquidity;
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).decreaseDeposit(numDeposits + 1, liquidity, minAmounts);
+        CamelotV2Farm(nonLockupFarm).decreaseDeposit(numDeposits + 1, liquidity, minAmounts);
     }
 
     function test_DecreaseDeposit_RevertWhen_ZeroAmount()
@@ -482,13 +472,13 @@ abstract contract CamelotDecreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
-        Demeter_CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, 0, minAmounts);
+        CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, 0, minAmounts);
     }
 
     function test_DecreaseDeposit_lockupFarm() public depositSetup(lockupFarm, true) useKnownActor(user) {
@@ -498,42 +488,39 @@ abstract contract CamelotDecreaseDepositTest is Demeter_CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        (minAmounts[0], minAmounts[1]) = Demeter_CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        (minAmounts[0], minAmounts[1]) = CamelotV2Farm(lockupFarm).getDepositAmounts(amounts[0], amounts[1]);
 
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(lockupFarm).getDepositInfo(1);
+        Deposit memory userDeposit = CamelotV2Farm(lockupFarm).getDepositInfo(1);
         uint256 liquidity = userDeposit.liquidity;
         vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
-        Demeter_CamelotV2Farm(lockupFarm).decreaseDeposit(1, liquidity - 1e4, minAmounts);
+        CamelotV2Farm(lockupFarm).decreaseDeposit(1, liquidity - 1e4, minAmounts);
     }
 
     function test_DecreaseDeposit_nonLockupFarm() public depositSetup(nonLockupFarm, false) useKnownActor(user) {
         uint256[2] memory minAmounts = [uint256(0), 0];
         uint256 depositId = 1;
-        Deposit memory userDeposit = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         uint256 liquidity = userDeposit.liquidity;
         uint256[] memory BalanceBefore = new uint256[](2);
 
         //skipping 7 days
         skip(7 days);
-        Demeter_CamelotV2Farm(nonLockupFarm).claimRewards(depositId);
+        CamelotV2Farm(nonLockupFarm).claimRewards(depositId);
         BalanceBefore[0] = IERC20(DAI).balanceOf(user);
         BalanceBefore[1] = IERC20(USDCe).balanceOf(user);
-        RewardFund memory _rwdFund = Demeter_CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
+        RewardFund memory _rwdFund = CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
         uint256 totalFundLiqBefore = _rwdFund.totalLiquidity;
-        Subscription memory sub = Demeter_CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID()
-        );
+        Subscription memory sub =
+            CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID());
         uint256[] memory _rewardDebtBefore = sub.rewardDebt;
         //We're not checking the data here
         vm.expectEmit(true, false, false, false);
         emit DepositDecreased(1, liquidity / 2);
-        Demeter_CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity / 2, minAmounts);
-        Deposit memory userDepositAfter = Demeter_CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
-        _rwdFund = Demeter_CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
+        CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity / 2, minAmounts);
+        Deposit memory userDepositAfter = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
+        _rwdFund = CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
         uint256 totalFundLiqAfter = _rwdFund.totalLiquidity;
-        sub = Demeter_CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(
-            depositId, Demeter_CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID()
-        );
+        sub = CamelotV2Farm(nonLockupFarm).getSubscriptionInfo(depositId, CamelotV2Farm(nonLockupFarm).COMMON_FUND_ID());
         uint256[] memory _rewardDebtAfter = sub.rewardDebt;
         for (uint8 i; i < _rewardDebtBefore.length; i++) {
             assertTrue(_rewardDebtAfter[i] < _rewardDebtBefore[i], "Reward debt failure");
@@ -555,7 +542,7 @@ contract DemeterCamelotFarmInheritTest is
     CamelotIncreaseDepositTest,
     CamelotDecreaseDepositTest
 {
-    function setUp() public override(Demeter_CamelotV2FarmTest, FarmTest) {
+    function setUp() public override(CamelotV2FarmTest, FarmTest) {
         super.setUp();
     }
 }

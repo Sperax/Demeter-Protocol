@@ -21,7 +21,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {Demeter_UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/Demeter_UniV3FarmDeployer.sol";
+import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import "../../features/ExpirableFarm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
 
@@ -37,7 +37,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
     string public FARM_ID;
 
     uint256 constant depositId = 1;
-    Demeter_UniV3FarmDeployer public uniV3FarmDeployer;
+    UniV3FarmDeployer public uniV3FarmDeployer;
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -58,7 +58,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        uniV3FarmDeployer = new Demeter_UniV3FarmDeployer(
+        uniV3FarmDeployer = new UniV3FarmDeployer(
             FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
         registry.registerFarmDeployer(address(uniV3FarmDeployer));
@@ -162,7 +162,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
             tickLowerAllowed: TICK_LOWER,
             tickUpperAllowed: TICK_UPPER
         });
-        Demeter_UniV3FarmDeployer.FarmData memory _data = Demeter_UniV3FarmDeployer.FarmData({
+        UniV3FarmDeployer.FarmData memory _data = UniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
