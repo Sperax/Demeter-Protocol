@@ -76,7 +76,7 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
         }
     }
 
-    function _preProcessIncreaseDeposit(uint256 _depositId) internal {
+    function _increaseDeposit(uint256 _depositId) internal {
         // Validations
         _validateFarmActive(); // Increase deposit is allowed only when farm is active.
         _validateDeposit(msg.sender, _depositId);
@@ -87,7 +87,7 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
         _updateAndClaimFarmRewards(msg.sender, _depositId);
     }
 
-    function _preProcessDecreaseDeposit(uint256 _depositId) internal {
+    function _decreaseDeposit(uint256 _depositId) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
         //Validations

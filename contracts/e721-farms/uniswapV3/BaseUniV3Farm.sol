@@ -123,7 +123,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
 
-        _preProcessIncreaseDeposit(_depositId);
+        _increaseDeposit(_depositId);
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
@@ -176,7 +176,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
             revert CannotWithdrawZeroAmount();
         }
 
-        _preProcessDecreaseDeposit(_depositId);
+        _decreaseDeposit(_depositId);
 
         // Update deposit Information
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);

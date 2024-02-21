@@ -80,7 +80,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             revert InvalidAmount();
         }
 
-        _preProcessIncreaseDeposit(_depositId);
+        _increaseDeposit(_depositId);
 
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
@@ -129,7 +129,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             revert CannotWithdrawZeroAmount();
         }
 
-        _preProcessDecreaseDeposit(_depositId);
+        _decreaseDeposit(_depositId);
 
         // Update deposit information.
         _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);

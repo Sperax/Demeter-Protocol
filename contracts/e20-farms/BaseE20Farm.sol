@@ -76,7 +76,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
 
-        _preProcessIncreaseDeposit(_depositId);
+        _increaseDeposit(_depositId);
 
         // Update deposit Information
         _updateSubscriptionForIncrease(_depositId, _amount);
@@ -97,7 +97,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
 
-        _preProcessDecreaseDeposit(_depositId);
+        _decreaseDeposit(_depositId);
 
         // Update deposit info
         _updateSubscriptionForDecrease(_depositId, _amount);
