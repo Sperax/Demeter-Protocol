@@ -784,7 +784,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice An internal function to validate cooldown period.
     /// @param _cooldownPeriodInDays Period to be validated.
     function _validateCooldownPeriod(uint256 _cooldownPeriodInDays) internal pure {
-        if (_cooldownPeriodInDays < MIN_COOLDOWN_PERIOD_DAYS || _cooldownPeriodInDays > MAX_COOLDOWN_PERIOD_DAYS) {
+        if (_cooldownPeriodInDays == 0 || _cooldownPeriodInDays > MAX_COOLDOWN_PERIOD_DAYS) {
             revert InvalidCooldownPeriod();
         }
     }
