@@ -25,6 +25,9 @@ abstract contract FarmDeployer is Ownable {
     // Custom Errors
     error InvalidAddress();
 
+    /// @notice Constructor.
+    /// @param _farmRegistry Address of the Demeter Farm Registry.
+    /// @param _farmId Id of the farm.
     constructor(address _farmRegistry, string memory _farmId) {
         _validateNonZeroAddr(_farmRegistry);
         FARM_REGISTRY = _farmRegistry;
