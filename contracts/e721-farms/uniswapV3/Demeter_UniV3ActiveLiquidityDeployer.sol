@@ -45,7 +45,7 @@ contract Demeter_UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of Farm Registry
+    /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _uniV3Factory Address of UniswapV3 factory
     /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract

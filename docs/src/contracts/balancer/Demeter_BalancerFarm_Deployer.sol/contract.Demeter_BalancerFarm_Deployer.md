@@ -42,7 +42,7 @@ constructor(address _farmRegistry, address _balancerVault, string memory _deploy
 
 | Name             | Type      | Description                              |
 | ---------------- | --------- | ---------------------------------------- |
-| `_farmRegistry`  | `address` | Address of Sperax Farm Registry          |
+| `_farmRegistry`  | `address` | Address of the Demeter Farm Registry     |
 | `_balancerVault` | `address` | Address of Balancer's Vault              |
 | `_deployerName`  | `string`  | String containing a name of the deployer |
 

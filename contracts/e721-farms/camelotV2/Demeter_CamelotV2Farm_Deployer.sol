@@ -49,7 +49,7 @@ contract Demeter_CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable NFT_POOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of Farm Registry
+    /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of Camelot factory
     /// @param _router Address of Camelot router

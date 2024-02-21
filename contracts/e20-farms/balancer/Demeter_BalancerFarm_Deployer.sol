@@ -49,7 +49,7 @@ contract Demeter_BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
     address public immutable BALANCER_VAULT;
 
     /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of Sperax Farm Registry
+    /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _balancerVault Address of Balancer's Vault
     /// @dev Deploys one farm so that it can be cloned later

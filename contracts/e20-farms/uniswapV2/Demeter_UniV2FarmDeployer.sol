@@ -50,7 +50,7 @@ contract Demeter_UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     address public immutable PROTOCOL_FACTORY;
 
     /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of Farm Registry
+    /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _protocolFactory Address of UniswapV2 factory
     constructor(address _farmRegistry, string memory _farmId, address _protocolFactory)
