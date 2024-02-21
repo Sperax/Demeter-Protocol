@@ -8,7 +8,7 @@ abstract contract BaseFarmStorage {
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
     uint256 public constant PREC = 1e18;
-    uint256 public constant MAX_COOLDOWN_PERIOD_DAYS = 30;
+    uint256 public constant MAX_COOLDOWN_PERIOD = 30; // in days.
     uint256 public constant MAX_NUM_REWARDS = 4;
 
     // Global Params

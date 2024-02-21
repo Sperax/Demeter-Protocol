@@ -114,15 +114,15 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriodInDays The new cooldown period (in days).
-    function updateCooldownPeriod(uint256 _newCooldownPeriodInDays) external onlyOwner {
+    /// @param _newCooldownPeriod The new cooldown period (in days). Egs: 7 means 7 days.
+    function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
-        _validateCooldownPeriod(_newCooldownPeriodInDays);
-        cooldownPeriod = _newCooldownPeriodInDays * 1 days;
-        emit CooldownPeriodUpdated(_newCooldownPeriodInDays);
+        _validateCooldownPeriod(_newCooldownPeriod);
+        cooldownPeriod = _newCooldownPeriod * 1 days;
+        emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
     /// @notice Pause / UnPause the farm.
@@ -629,12 +629,12 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
     /// @param _farmStartTime - Time of farm start.
-    /// @param _cooldownPeriodInDays - cooldown period in days for locked deposits.
+    /// @param _cooldownPeriod - cooldown period in days for locked deposits. Egs: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
         uint256 _farmStartTime,
-        uint256 _cooldownPeriodInDays,
+        uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData
     ) internal {
         if (_farmStartTime < block.timestamp) {
@@ -648,9 +648,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         // Check for lockup functionality.
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for the farm.
         uint8 numFunds = 1;
-        if (_cooldownPeriodInDays != 0) {
-            _validateCooldownPeriod(_cooldownPeriodInDays);
-            cooldownPeriod = _cooldownPeriodInDays * 1 days;
+        if (_cooldownPeriod != 0) {
+            _validateCooldownPeriod(_cooldownPeriod);
+            cooldownPeriod = _cooldownPeriod * 1 days;
             numFunds = 2;
         }
 
@@ -782,9 +782,9 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     }
 
     /// @notice An internal function to validate cooldown period.
-    /// @param _cooldownPeriodInDays Period to be validated.
-    function _validateCooldownPeriod(uint256 _cooldownPeriodInDays) internal pure {
-        if (_cooldownPeriodInDays == 0 || _cooldownPeriodInDays > MAX_COOLDOWN_PERIOD_DAYS) {
+    /// @param _cooldownPeriod Period to be validated.
+    function _validateCooldownPeriod(uint256 _cooldownPeriod) internal pure {
+        if (_cooldownPeriod == 0 || _cooldownPeriod > MAX_COOLDOWN_PERIOD) {
             revert InvalidCooldownPeriod();
         }
     }
