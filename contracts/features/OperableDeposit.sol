@@ -18,7 +18,7 @@ pragma solidity 0.8.16;
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
 
 import {BaseFarmWithExpiry} from "./BaseFarmWithExpiry.sol";
-import {Subscription, RewardFund} from "../interfaces/DataTypes.sol";
+import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 
 abstract contract OperableDeposit is BaseFarmWithExpiry {
     uint256 public constant PRECISION = 1e18;
@@ -88,10 +88,12 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
     }
 
     function _preProcessDecreaseDeposit(uint256 _depositId) internal {
+        Deposit storage userDeposit = deposits[_depositId];
+
         //Validations
         _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
         _validateDeposit(msg.sender, _depositId);
-        if (deposits[_depositId].expiryDate != 0 || deposits[_depositId].cooldownPeriod != 0) {
+        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
             revert DecreaseDepositNotPermitted();
         }
         // claim the pending rewards for the deposit
