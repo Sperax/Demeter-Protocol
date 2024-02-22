@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../E20Farm.t.sol";
 
 import {E20Farm} from "../../../contracts/e20-farms/E20Farm.sol";
-import {BalancerFarm_Deployer} from "../../../contracts/e20-farms/balancer/BalancerFarm_Deployer.sol";
+import {BalancerFarmDeployer} from "../../../contracts/e20-farms/balancer/BalancerFarmDeployer.sol";
 
 struct JoinPoolRequest {
     address[] assets;
@@ -47,7 +47,7 @@ interface ICustomOracle {
 contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
-    BalancerFarm_Deployer public balancerFarmDeployer;
+    BalancerFarmDeployer public balancerFarmDeployer;
 
     string public FARM_ID = "Demeter_BalancerV2_v1";
 
@@ -57,7 +57,7 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        balancerFarmDeployer = new BalancerFarm_Deployer(FARM_REGISTRY, FARM_ID, BALANCER_VAULT);
+        balancerFarmDeployer = new BalancerFarmDeployer(FARM_REGISTRY, FARM_ID, BALANCER_VAULT);
         registry.registerFarmDeployer(address(balancerFarmDeployer));
 
         // Configure rewardTokens
@@ -80,7 +80,7 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
         /// Create Farm
-        BalancerFarm_Deployer.FarmData memory _data = BalancerFarm_Deployer.FarmData({
+        BalancerFarmDeployer.FarmData memory _data = BalancerFarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,

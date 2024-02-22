@@ -30,7 +30,7 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
-contract CamelotV2Farm_Deployer is FarmDeployer, ReentrancyGuard {
+contract CamelotV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;

@@ -11,7 +11,7 @@ import {
     IPositionHelper,
     INFTPool
 } from "../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol";
-import "../../../contracts/e721-farms/camelotV2/CamelotV2Farm_Deployer.sol";
+import "../../../contracts/e721-farms/camelotV2/CamelotV2FarmDeployer.sol";
 import "../../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
 import "../E721Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
@@ -29,7 +29,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
     UpgradeUtil internal upgradeUtil;
     CamelotV2Farm public farmImpl;
 
-    CamelotV2Farm_Deployer internal camelotV2Farm_deployer;
+    CamelotV2FarmDeployer internal camelotV2FarmDeployer;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
@@ -39,9 +39,9 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
 
         vm.startPrank(PROXY_OWNER);
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        camelotV2Farm_deployer =
-            new CamelotV2Farm_Deployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
-        registry.registerFarmDeployer(address(camelotV2Farm_deployer));
+        camelotV2FarmDeployer =
+            new CamelotV2FarmDeployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
+        registry.registerFarmDeployer(address(camelotV2FarmDeployer));
         vm.stopPrank();
 
         // Configure rewardTokens
@@ -61,18 +61,18 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         for (uint8 i = 0; i < rewardToken.length; ++i) {
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
-        CamelotV2Farm_Deployer.CamelotPoolData memory _poolData =
-            CamelotV2Farm_Deployer.CamelotPoolData({tokenA: DAI, tokenB: USDCe});
+        CamelotV2FarmDeployer.CamelotPoolData memory _poolData =
+            CamelotV2FarmDeployer.CamelotPoolData({tokenA: DAI, tokenB: USDCe});
         /// Create Farm
-        CamelotV2Farm_Deployer.FarmData memory _data = CamelotV2Farm_Deployer.FarmData({
+        CamelotV2FarmDeployer.FarmData memory _data = CamelotV2FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
             camelotPoolData: _poolData,
             rewardData: rwdTokenData
         });
-        IERC20(FEE_TOKEN()).approve(address(camelotV2Farm_deployer), 1e20);
-        address farm = camelotV2Farm_deployer.createFarm(_data);
+        IERC20(FEE_TOKEN()).approve(address(camelotV2FarmDeployer), 1e20);
+        address farm = camelotV2FarmDeployer.createFarm(_data);
 
         assertEq(CamelotV2Farm(farm).farmId(), FARM_ID);
         return farm;

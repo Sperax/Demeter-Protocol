@@ -34,7 +34,7 @@ import {E20Farm, RewardTokenData} from "../E20Farm.sol";
 /// @author Sperax Foundation
 /// @notice This contract allows anyone to calculate fees and create farms
 /// @dev It consults Balancer's vault to validate the pool
-contract BalancerFarm_Deployer is FarmDeployer, ReentrancyGuard {
+contract BalancerFarmDeployer is FarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
