@@ -80,8 +80,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             revert InvalidAmount();
         }
 
-        _increaseDeposit(_depositId);
-
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
         address token0 = IPair(lpToken).token0();
@@ -107,8 +105,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         IERC20(lpToken).forceApprove(nftContract, liquidity);
         INFTPool(nftContract).addToPosition(depositToTokenId[_depositId], liquidity);
 
-        _updateSubscriptionForIncrease(_depositId, liquidity);
-        deposits[_depositId].liquidity += liquidity;
+        _increaseDeposit(_depositId, liquidity);
 
         // Return excess tokens back to the user.
         if (amountA < _amounts[0]) {
@@ -117,8 +114,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         if (amountB < _amounts[1]) {
             IERC20(token1).safeTransfer(msg.sender, _amounts[1] - amountB);
         }
-
-        emit DepositIncreased(_depositId, liquidity);
     }
 
     function decreaseDeposit(uint256 _depositId, uint256 _liquidityToWithdraw, uint256[2] calldata _minAmounts)

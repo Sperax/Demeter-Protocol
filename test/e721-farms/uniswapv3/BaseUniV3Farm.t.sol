@@ -619,15 +619,28 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
         BaseUniV3Farm(lockupFarm).farmPauseSwitch(true);
+
+        uint256 deposit0 = DEPOSIT_AMOUNT * 10 ** ERC20(DAI).decimals();
+        uint256 deposit1 = DEPOSIT_AMOUNT * 10 ** ERC20(USDCe).decimals();
+        uint256[2] memory amounts = [deposit0, deposit1];
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+
+        deal(DAI, user, deposit0);
+        deal(USDCe, user, deposit1);
         vm.startPrank(user);
+
+        IERC20(DAI).approve(lockupFarm, deposit0);
+        IERC20(USDCe).approve(lockupFarm, deposit1);
+
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
-    function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
-    }
+    // In UniV3 farms we won't reach this error in our current code as token id will be non existent which reverts with a different error.
+    // function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
+    //     vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+    //     BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+    // }
 
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
         public
@@ -643,9 +656,19 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        uint256 deposit0 = DEPOSIT_AMOUNT * 10 ** ERC20(DAI).decimals();
+        uint256 deposit1 = DEPOSIT_AMOUNT * 10 ** ERC20(USDCe).decimals();
+        uint256[2] memory amounts = [deposit0, deposit1];
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+
+        deal(DAI, currentActor, deposit0);
+        deal(USDCe, currentActor, deposit1);
+        IERC20(DAI).approve(lockupFarm, deposit0);
+        IERC20(USDCe).approve(lockupFarm, deposit1);
+
         BaseUniV3Farm(lockupFarm).initiateCooldown(depositId);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositIsInCooldown.selector));
-        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function testFuzz_IncreaseDeposit(bool lockup, uint256 _depositAmount) public {

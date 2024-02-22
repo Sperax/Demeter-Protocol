@@ -123,8 +123,6 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
 
-        _increaseDeposit(_depositId);
-
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
         Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
@@ -149,9 +147,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
             })
         );
 
-        // Update deposit Information
-        _updateSubscriptionForIncrease(_depositId, liquidity);
-        deposits[_depositId].liquidity += liquidity;
+        _increaseDeposit(_depositId, liquidity);
 
         // Return the excess tokens to the user.
         if (amount0 < _amounts[0]) {
@@ -160,8 +156,6 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         if (amount1 < _amounts[1]) {
             IERC20(positions.token1).safeTransfer(msg.sender, _amounts[1] - amount1);
         }
-
-        emit DepositIncreased(_depositId, liquidity);
     }
 
     /// @notice Withdraw liquidity partially from an existing deposit.

@@ -76,15 +76,23 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
         }
     }
 
-    function _increaseDeposit(uint256 _depositId) internal {
+    function _increaseDeposit(uint256 _depositId, uint256 _amount) internal {
+        Deposit storage userDeposit = deposits[_depositId];
+
         // Validations
         _validateFarmActive(); // Increase deposit is allowed only when farm is active.
         _validateDeposit(msg.sender, _depositId);
-        if (deposits[_depositId].expiryDate != 0) {
+        if (userDeposit.expiryDate != 0) {
             revert DepositIsInCooldown();
         }
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        // Update deposit Information
+        _updateSubscriptionForIncrease(_depositId, _amount);
+        userDeposit.liquidity += _amount;
+
+        emit DepositIncreased(_depositId, _amount);
     }
 
     function _decreaseDeposit(uint256 _depositId, uint256 _amount) internal {

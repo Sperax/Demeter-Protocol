@@ -76,16 +76,10 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
             revert InvalidAmount();
         }
 
-        _increaseDeposit(_depositId);
-
-        // Update deposit Information
-        _updateSubscriptionForIncrease(_depositId, _amount);
-        deposits[_depositId].liquidity += _amount;
+        _increaseDeposit(_depositId, _amount);
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
-
-        emit DepositIncreased(_depositId, _amount);
     }
 
     /// @notice Withdraw liquidity partially from an existing deposit.
