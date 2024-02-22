@@ -781,10 +781,10 @@ abstract contract DecreaseDepositTest is BaseUniV3FarmTest {
         uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
         uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
 
-        vm.expectEmit(true, false, false, false, NFPM);
-        emit DecreaseLiquidity(tokenId, 0, 0, 0);
         vm.expectEmit(farm);
         emit DepositDecreased(depositId, liquidityToWithdraw);
+        vm.expectEmit(true, false, false, false, NFPM);
+        emit DecreaseLiquidity(tokenId, 0, 0, 0);
 
         vm.recordLogs();
         BaseUniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);

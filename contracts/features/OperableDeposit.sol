@@ -87,16 +87,27 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
         _updateAndClaimFarmRewards(msg.sender, _depositId);
     }
 
-    function _decreaseDeposit(uint256 _depositId) internal {
+    function _decreaseDeposit(uint256 _depositId, uint256 _amount) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
         //Validations
         _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
         _validateDeposit(msg.sender, _depositId);
+
+        if (_amount == 0) {
+            revert CannotWithdrawZeroAmount();
+        }
+
         if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
             revert DecreaseDepositNotPermitted();
         }
         // claim the pending rewards for the deposit
         _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        // Update deposit info
+        _updateSubscriptionForDecrease(_depositId, _amount);
+        userDeposit.liquidity -= _amount;
+
+        emit DepositDecreased(_depositId, _amount);
     }
 }

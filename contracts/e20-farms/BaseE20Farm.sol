@@ -93,20 +93,10 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @param _amount Amount to be withdrawn.
     /// @dev Function is not available for locked deposits.
     function decreaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
-        if (_amount == 0) {
-            revert InvalidAmount();
-        }
-
-        _decreaseDeposit(_depositId);
-
-        // Update deposit info
-        _updateSubscriptionForDecrease(_depositId, _amount);
-        deposits[_depositId].liquidity -= _amount;
+        _decreaseDeposit(_depositId, _amount);
 
         // Transfer the lp tokens to the user
         IERC20(farmToken).safeTransfer(msg.sender, _amount);
-
-        emit DepositDecreased(_depositId, _amount);
     }
 
     /// @notice Function to withdraw a deposit from the farm.

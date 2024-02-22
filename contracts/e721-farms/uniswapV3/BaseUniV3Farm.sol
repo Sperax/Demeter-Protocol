@@ -172,15 +172,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         external
         nonReentrant
     {
-        if (_liquidityToWithdraw == 0) {
-            revert CannotWithdrawZeroAmount();
-        }
-
-        _decreaseDeposit(_depositId);
-
-        // Update deposit Information
-        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        deposits[_depositId].liquidity -= _liquidityToWithdraw;
+        _decreaseDeposit(_depositId, _liquidityToWithdraw);
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
@@ -204,8 +196,6 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
                 amount1Max: uint128(amount1)
             })
         );
-
-        emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.

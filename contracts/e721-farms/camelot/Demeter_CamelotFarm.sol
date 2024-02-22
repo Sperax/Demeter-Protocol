@@ -125,15 +125,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
-        if (_liquidityToWithdraw == 0) {
-            revert CannotWithdrawZeroAmount();
-        }
-
-        _decreaseDeposit(_depositId);
-
-        // Update deposit information.
-        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        deposits[_depositId].liquidity -= _liquidityToWithdraw;
+        _decreaseDeposit(_depositId, _liquidityToWithdraw);
 
         // Withdraw liquidity from nft pool
         INFTPool(nftContract).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
@@ -150,8 +142,6 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
             to: msg.sender,
             deadline: block.timestamp
         });
-
-        emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.
