@@ -114,14 +114,14 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days).
+    /// @param _newCooldownPeriod The new cooldown period (in days). Egs: 7 means 7 days.
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
             revert FarmDoesNotSupportLockup();
         }
         _validateCooldownPeriod(_newCooldownPeriod);
-        cooldownPeriod = _newCooldownPeriod;
+        cooldownPeriod = _newCooldownPeriod * 1 days;
         emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
@@ -447,7 +447,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         }
 
         // Update the deposit expiry time & lock status.
-        userDeposit.expiryDate = block.timestamp + (userDeposit.cooldownPeriod * 1 days);
+        userDeposit.expiryDate = block.timestamp + userDeposit.cooldownPeriod;
         userDeposit.cooldownPeriod = 0;
 
         // Claim the pending rewards for the user.
@@ -629,7 +629,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
     /// @param _farmStartTime - Time of farm start.
-    /// @param _cooldownPeriod - cooldown period for locked deposits.
+    /// @param _cooldownPeriod - cooldown period in days for locked deposits. Egs: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
@@ -650,7 +650,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
         uint8 numFunds = 1;
         if (_cooldownPeriod != 0) {
             _validateCooldownPeriod(_cooldownPeriod);
-            cooldownPeriod = _cooldownPeriod;
+            cooldownPeriod = _cooldownPeriod * 1 days;
             numFunds = 2;
         }
 
@@ -784,7 +784,7 @@ abstract contract BaseFarm is BaseFarmStorage, Ownable, ReentrancyGuard, Initial
     /// @notice An internal function to validate cooldown period.
     /// @param _cooldownPeriod Period to be validated.
     function _validateCooldownPeriod(uint256 _cooldownPeriod) internal pure {
-        if (_cooldownPeriod < MIN_COOLDOWN_PERIOD || _cooldownPeriod > MAX_COOLDOWN_PERIOD) {
+        if (_cooldownPeriod > MAX_COOLDOWN_PERIOD || _cooldownPeriod == 0) {
             revert InvalidCooldownPeriod();
         }
     }

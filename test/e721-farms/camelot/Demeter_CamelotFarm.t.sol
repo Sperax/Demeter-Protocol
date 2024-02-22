@@ -65,7 +65,7 @@ abstract contract Demeter_CamelotFarmTest is BaseE721FarmTest {
         Demeter_CamelotFarm_Deployer.FarmData memory _data = Demeter_CamelotFarm_Deployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             camelotPoolData: _poolData,
             rewardData: rwdTokenData
         });

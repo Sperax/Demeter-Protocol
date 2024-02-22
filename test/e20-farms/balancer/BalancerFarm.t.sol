@@ -83,7 +83,7 @@ contract BalancerFarmTest is BaseFarmInheritTest, BaseFarmWithExpiryInheritTest,
         Demeter_BalancerFarm_Deployer.FarmData memory _data = Demeter_BalancerFarm_Deployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             poolId: POOL_ID, //Balancer Stable 4pool (4POOL-BPT)
             rewardData: rwdTokenData
         });
