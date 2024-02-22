@@ -30,7 +30,7 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
-import {IUniswapUtils} from "./interfaces/IUniswapUtils.sol";
+import {IUniswapV3Utils} from "./interfaces/IUniswapV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
@@ -242,7 +242,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         uint256 tokenId = depositToTokenId[_depositId];
 
         address pm = nftContract;
-        (uint256 amt0, uint256 amt1) = IUniswapUtils(uniswapUtils).fees(pm, tokenId);
+        (uint256 amt0, uint256 amt1) = IUniswapV3Utils(uniswapUtils).fees(pm, tokenId);
         if (amt0 == 0 && amt1 == 0) {
             revert NoFeeToClaim();
         }
@@ -263,7 +263,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
         // Validate token.
         _getLiquidity(_tokenId);
-        return IUniswapUtils(uniswapUtils).fees(nftContract, _tokenId);
+        return IUniswapV3Utils(uniswapUtils).fees(nftContract, _tokenId);
     }
 
     // --------------------- Public and overriding Functions ---------------------

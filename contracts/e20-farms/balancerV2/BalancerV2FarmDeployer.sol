@@ -25,7 +25,7 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
-import {IBalancerVault} from "./interfaces/IBalancerVault.sol";
+import {IBalancerV2Vault} from "./interfaces/IBalancerV2Vault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {E20Farm, RewardTokenData} from "../E20Farm.sol";
@@ -34,7 +34,7 @@ import {E20Farm, RewardTokenData} from "../E20Farm.sol";
 /// @author Sperax Foundation
 /// @notice This contract allows anyone to calculate fees and create farms
 /// @dev It consults Balancer's vault to validate the pool
-contract BalancerFarmDeployer is FarmDeployer, ReentrancyGuard {
+contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
@@ -100,7 +100,7 @@ contract BalancerFarmDeployer is FarmDeployer, ReentrancyGuard {
     /// @notice A function to validate Balancer pool
     /// @param _poolId bytes32 Id of the pool
     function validatePool(bytes32 _poolId) public view returns (address pool) {
-        (pool,) = IBalancerVault(BALANCER_VAULT).getPool(_poolId);
+        (pool,) = IBalancerV2Vault(BALANCER_VAULT).getPool(_poolId);
         _validateNonZeroAddr(pool);
     }
 }

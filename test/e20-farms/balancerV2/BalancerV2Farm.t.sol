@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../E20Farm.t.sol";
 
 import {E20Farm} from "../../../contracts/e20-farms/E20Farm.sol";
-import {BalancerFarmDeployer} from "../../../contracts/e20-farms/balancer/BalancerFarmDeployer.sol";
+import {BalancerV2FarmDeployer} from "../../../contracts/e20-farms/balancerV2/BalancerV2FarmDeployer.sol";
 
 struct JoinPoolRequest {
     address[] assets;
@@ -19,7 +19,7 @@ interface IAsset {
 // solhint-disable-previous-line no-empty-blocks
 }
 
-interface IBalancerVault {
+interface IBalancerV2Vault {
     enum PoolSpecialization {
         GENERAL,
         MINIMAL_SWAP_INFO,
@@ -44,10 +44,10 @@ interface ICustomOracle {
 }
 
 // RecoverERC20Test is replaced by RecoverERC20E20FarmTest
-contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmInheritTest {
+contract BalancerV2FarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmInheritTest {
     // Define variables
     bytes32 internal POOL_ID = 0x423a1323c871abc9d89eb06855bf5347048fc4a5000000000000000000000496; //Balancer Stable 4pool (4POOL-BPT)
-    BalancerFarmDeployer public balancerFarmDeployer;
+    BalancerV2FarmDeployer public balancerV2FarmDeployer;
 
     string public FARM_ID = "Demeter_BalancerV2_v1";
 
@@ -57,8 +57,8 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        balancerFarmDeployer = new BalancerFarmDeployer(FARM_REGISTRY, FARM_ID, BALANCER_VAULT);
-        registry.registerFarmDeployer(address(balancerFarmDeployer));
+        balancerV2FarmDeployer = new BalancerV2FarmDeployer(FARM_REGISTRY, FARM_ID, BALANCER_VAULT);
+        registry.registerFarmDeployer(address(balancerV2FarmDeployer));
 
         // Configure rewardTokens
         rwdTokens.push(USDCe);
@@ -80,7 +80,7 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
             rwdTokenData[i] = RewardTokenData(rewardToken[i], currentActor);
         }
         /// Create Farm
-        BalancerFarmDeployer.FarmData memory _data = BalancerFarmDeployer.FarmData({
+        BalancerV2FarmDeployer.FarmData memory _data = BalancerV2FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
             cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
@@ -89,8 +89,8 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
         });
 
         // Approve Farm fee
-        IERC20(FEE_TOKEN()).approve(address(balancerFarmDeployer), 1e22);
-        address farm = balancerFarmDeployer.createFarm(_data);
+        IERC20(FEE_TOKEN()).approve(address(balancerV2FarmDeployer), 1e22);
+        address farm = balancerV2FarmDeployer.createFarm(_data);
 
         assertEq(E20Farm(farm).farmId(), FARM_ID);
 
@@ -130,7 +130,7 @@ contract BalancerFarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20FarmI
 
     function getPoolAddress() public view override returns (address) {
         address poolAddress;
-        (poolAddress,) = IBalancerVault(BALANCER_VAULT).getPool(POOL_ID);
+        (poolAddress,) = IBalancerV2Vault(BALANCER_VAULT).getPool(POOL_ID);
         return poolAddress;
     }
 }
