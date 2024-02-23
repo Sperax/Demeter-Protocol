@@ -81,7 +81,6 @@ abstract contract OperableDeposit is BaseFarmWithExpiry {
 
         // Validations
         _validateFarmActive(); // Increase deposit is allowed only when farm is active.
-        _validateDeposit(msg.sender, _depositId);
         if (userDeposit.expiryDate != 0) {
             revert DepositIsInCooldown();
         }

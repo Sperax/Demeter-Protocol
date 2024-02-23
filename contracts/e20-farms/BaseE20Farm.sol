@@ -72,6 +72,7 @@ contract BaseE20Farm is BaseFarmWithExpiry, OperableDeposit {
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
+        _validateDeposit(msg.sender, _depositId);
         if (_amount == 0) {
             revert InvalidAmount();
         }

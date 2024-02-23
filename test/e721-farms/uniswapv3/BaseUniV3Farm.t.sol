@@ -636,11 +636,10 @@ abstract contract IncreaseDepositTest is BaseUniV3FarmTest {
         BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
-    // In UniV3 farms we won't reach this error in our current code as token id will be non existent which reverts with a different error.
-    // function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-    //     vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-    //     BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
-    // }
+    function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        BaseUniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+    }
 
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
         public

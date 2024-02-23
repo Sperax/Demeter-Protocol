@@ -76,6 +76,7 @@ contract Demeter_CamelotFarm is BaseE721Farm, BaseFarmWithExpiry, INFTHandler, O
         external
         nonReentrant
     {
+        _validateDeposit(msg.sender, _depositId);
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }

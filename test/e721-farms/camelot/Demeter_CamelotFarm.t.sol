@@ -251,26 +251,25 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
-    // In Camelot V2 farms we won't reach this error in our current code as token id will be non existent which reverts with a different error.
-    // function test_IncreaseDeposit_RevertWhen_InvalidDeposit()
-    //     public
-    //     depositSetup(nonLockupFarm, false)
-    //     useKnownActor(user)
-    // {
-    //     uint256[2] memory amounts = [uint256(0), 0];
-    //     uint256[2] memory minAmounts = [uint256(0), 0];
-    //     amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
-    //     amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
-    //     uint8 numDeposits = uint8(Demeter_CamelotFarm(nonLockupFarm).totalDeposits());
-    //     skip(7 days);
-    //     (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
-    //     deal(DAI, user, amounts[0]);
-    //     deal(USDCe, user, amounts[1]);
-    //     IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
-    //     IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-    //     vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
-    //     Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
-    // }
+    function test_IncreaseDeposit_RevertWhen_InvalidDeposit()
+        public
+        depositSetup(nonLockupFarm, false)
+        useKnownActor(user)
+    {
+        uint256[2] memory amounts = [uint256(0), 0];
+        uint256[2] memory minAmounts = [uint256(0), 0];
+        amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
+        amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
+        uint8 numDeposits = uint8(Demeter_CamelotFarm(nonLockupFarm).totalDeposits());
+        skip(7 days);
+        (minAmounts[0], minAmounts[1]) = Demeter_CamelotFarm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
+        deal(DAI, user, amounts[0]);
+        deal(USDCe, user, amounts[1]);
+        IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
+        IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
+        vm.expectRevert(abi.encodeWithSelector(BaseFarm.DepositDoesNotExist.selector));
+        Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
+    }
 
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
         public

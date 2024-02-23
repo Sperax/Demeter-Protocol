@@ -119,6 +119,7 @@ contract BaseUniV3Farm is BaseE721Farm, BaseFarmWithExpiry, OperableDeposit {
         external
         nonReentrant
     {
+        _validateDeposit(msg.sender, _depositId);
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }
