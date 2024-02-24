@@ -12,4 +12,6 @@ interface IFarmFactory {
         returns (address feeFeceiver, address feeToken, uint256 feeAmount, uint256 extensionFeePerDay);
 
     function isPrivilegedDeployer(address _user) external view returns (bool);
+
+    function farmRegistered(address farm) external view returns (bool);
 }
