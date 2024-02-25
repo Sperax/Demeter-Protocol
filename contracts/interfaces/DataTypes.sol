@@ -57,7 +57,7 @@ struct RewardData {
 }
 
 // Configuration for fixed APR reward tokens.
-// apr - APR of the reward.
+// apr - APR of the reward stored in 8 precision.
 // maxRewardsPerSec - Maximum amount of tokens to be emitted per second.
 // baseTokens - Addresses of tokens to be considered for calculating the L value.
 // tokenManager - Account that manages the rewardToken.
