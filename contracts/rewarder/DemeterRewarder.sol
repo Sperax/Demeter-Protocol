@@ -19,21 +19,28 @@ pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FixedAPRRewardConfig, RewardData} from "../interfaces/DataTypes.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
 
 interface IFarm {
     function updateRewardData(address _rwdToken, address _newTknManager) external;
+    function setRewardRate(address _rwdToken, uint256[] memory _newRwdRates) external;
     function rewardData(address _token) external view returns (RewardData memory);
     function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
+    function cooldownPeriod() external view returns (uint256);
 }
 
 /// @title Rewarder contract of Demeter Protocol
 /// @notice This contract tracks farms, their APR, and rewards
 /// @author Sperax Foundation
 contract DemeterRewarder is Initializable, OwnableUpgradeable {
+    using SafeERC20 for IERC20;
+
     uint256 public constant MAX_PERCENTAGE = 10000;
+    uint256 public constant APR_PRECISION = 1e8;
     address public oracle;
     address public farmRegistry;
     // farm -> token -> FixedAPRRewardConfig
@@ -87,18 +94,50 @@ contract DemeterRewarder is Initializable, OwnableUpgradeable {
     }
 
     // @todo work on this function
-    // function calibrateRewards(address _farm, address _rewardToken) external returns (uint256 accRewards) {
-    // _validateFarm(_farm);
-    // uint256 apr = farmAPRs[msg.sender][_rewardToken]; // in 18 precision
-    // @todo fix this uint256 assetPrice = IOracle(oracle).getPrice(_assetToken);
-    // @todo handle precision
-    // uint256 assetValue = assetPrice * _assetAmount;
-    // uint256 rewardValuePerSec = ((apr * assetValue) / 100) / 365 days;
-    // uint256 rewardValue = accRewards * _time;
-    // uint256 rewardTokenPrice = IMasterPriceOracle(oracle).getPrice(_rewardToken);
-    // @todo handle precision
-    // accRewards = rewardValue / rewardTokenPrice;
-    // }
+    function calibrateRewards(address _farm, address _rewardToken) external returns (uint256 rewardsToSend) {
+        _validateFarm(_farm);
+        FixedAPRRewardConfig memory rewardToken = rewardTokens[_farm][_rewardToken];
+        if (rewardToken.apr != 0) {
+            (address[] memory _assets, uint256[] memory _amounts) = IFarm(_farm).getTokenAmounts();
+            uint256 _assetsLen = _assets.length;
+            if (_assetsLen == _amounts.length) {
+                uint256 totalValue;
+                uint256 baseTokensLen = rewardToken.baseTokens.length;
+                for (uint8 iFarmTokens; iFarmTokens < _assetsLen;) {
+                    for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
+                        if (_assets[iFarmTokens] == rewardToken.baseTokens[jBaseTokens]) {
+                            IOracle.PriceData memory _priceData = IOracle(oracle).getPrice(_assets[iFarmTokens]);
+                            uint256 _normalizedAmount = _normalizeAmount(_assets[iFarmTokens], _amounts[iFarmTokens]);
+                            totalValue += _priceData.price * _normalizedAmount / _priceData.precision;
+                            break;
+                        }
+                        unchecked {
+                            ++jBaseTokens;
+                        }
+                    }
+                    unchecked {
+                        ++iFarmTokens;
+                    }
+                }
+                uint256 rewardValuePerSecond = ((rewardToken.apr * totalValue) / (APR_PRECISION * 100)) / 365 days;
+                IOracle.PriceData memory _rwdPriceData = IOracle(oracle).getPrice(_rewardToken);
+                uint256 rewardsPerSecond = (rewardValuePerSecond * _rwdPriceData.precision) / _rwdPriceData.price;
+                if (rewardsPerSecond > rewardToken.maxRewardsPerSec) {
+                    rewardsPerSecond = rewardToken.maxRewardsPerSec;
+                }
+                _setRewardRate(_farm, _rewardToken, rewardsPerSecond, rewardToken.noLockupRewardPer);
+                // Sending rewards to the farm.
+                rewardsToSend = (rewardsPerSecond * 1 weeks) - IERC20(_rewardToken).balanceOf(_farm);
+                uint256 _rewarderBalance = IERC20(_rewardToken).balanceOf(_farm);
+                if (rewardsToSend > _rewarderBalance) {
+                    rewardsToSend = _rewarderBalance;
+                }
+                if (rewardsToSend != 0) {
+                    IERC20(_rewardToken).safeTransfer(_farm, rewardsToSend);
+                }
+            }
+        }
+    }
 
     /// @notice A function to update the token manager's address in the farm.
     /// @param _farm Farm's address in which the token manager is to be updated.
@@ -127,6 +166,22 @@ contract DemeterRewarder is Initializable, OwnableUpgradeable {
         emit FarmRegistryUpdated(_newFarmRegistry);
     }
 
+    function _setRewardRate(address _farm, address _rwdToken, uint256 _rwdPerSec, uint256 _noLockupRewardPer) private {
+        uint256[] memory _newRewardRates;
+        if (IFarm(_farm).cooldownPeriod() == 0) {
+            _newRewardRates = new uint256[](1);
+            _newRewardRates[0] = _rwdPerSec;
+            IFarm(_farm).setRewardRate(_rwdToken, _newRewardRates);
+        } else {
+            _newRewardRates = new uint256[](2);
+            uint256 commonFundShare = (_rwdPerSec * _noLockupRewardPer) / MAX_PERCENTAGE;
+            _newRewardRates[0] = commonFundShare;
+            uint256 lockupFundShare = _rwdPerSec - commonFundShare;
+            _newRewardRates[1] = lockupFundShare;
+            IFarm(_farm).setRewardRate(_rwdToken, _newRewardRates);
+        }
+    }
+
     /// @notice A function to validate token manager of the farm's reward token.
     ///         A valid token manager should be the token manager of the reward _token in the _farm
     ///         or it should be the token manager in this contracts rewardTokens.
@@ -139,6 +194,14 @@ contract DemeterRewarder is Initializable, OwnableUpgradeable {
         ) {
             revert NotTheTokenManager();
         }
+    }
+
+    function _normalizeAmount(address _token, uint256 _amount) private view returns (uint256) {
+        uint8 _decimals = ERC20(_token).decimals();
+        if (_decimals != 18) {
+            _amount *= 10 ** (18 - _decimals);
+        }
+        return _amount;
     }
 
     function _validateFarm(address _farm) private view {
