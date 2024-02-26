@@ -23,7 +23,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
-import {IFarmFactory} from "../interfaces/IFarmFactory.sol";
+import {IFarmRegistry} from "../interfaces/IFarmRegistry.sol";
 
 /// @title Rewarder contract of Demeter Protocol
 /// @notice This contract tracks farms, their APR, and rewards
@@ -259,7 +259,7 @@ contract DemeterRewarder is Initializable, OwnableUpgradeable {
     /// @param _farm Address of the farm to be validated.
     /// @dev It checks Demeter Farm registry for a valid, registered farm.
     function _validateFarm(address _farm) private view {
-        if (!IFarmFactory(farmRegistry).farmRegistered(_farm)) {
+        if (!IFarmRegistry(farmRegistry).farmRegistered(_farm)) {
             revert UnrecognizedFarm();
         }
     }
