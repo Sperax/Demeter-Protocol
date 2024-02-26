@@ -76,7 +76,7 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
         // Demeter addresses
         PROXY_OWNER = 0x6d5240f086637fb408c7F727010A10cf57D51B62;
         PROXY_ADMIN = 0x3E49925A79CbFb68BAa5bc9DFb4f7D955D1ddF25;
-        DEMETER_FACTORY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
+        FARM_REGISTRY = 0xC4fb09E0CD212367642974F6bA81D8e23780A659;
     }
 
     function FEE_TOKEN() public pure override returns (address) {

@@ -1,26 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
-//@@@@@@@@&....(@@@@@@@@@@@@@..../@@@@@@@@@//
-//@@@@@@........../@@@@@@@........../@@@@@@//
-//@@@@@............(@@@@@............(@@@@@//
-//@@@@@(............@@@@@(...........&@@@@@//
-//@@@@@@@...........&@@@@@@.........@@@@@@@//
-//@@@@@@@@@@@@@@%..../@@@@@@@@@@@@@@@@@@@@@//
-//@@@@@@@@@@@@@@@@@@@...@@@@@@@@@@@@@@@@@@@//
-//@@@@@@@@@@@@@@@@@@@@@......(&@@@@@@@@@@@@//
-//@@@@@@#.........@@@@@@#...........@@@@@@@//
-//@@@@@/...........%@@@@@............%@@@@@//
-//@@@@@............#@@@@@............%@@@@@//
-//@@@@@@..........#@@@@@@@/.........#@@@@@@//
-//@@@@@@@@@&/.(@@@@@@@@@@@@@@&/.(&@@@@@@@@@//
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@(****@@@@@@@@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@((******@@@@@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@(((*******@@@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@@((((********@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@@@(((((********@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@@@@(((((((********@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@@@@@@(((((((/*******@@@@@@@ //
+// @@@@@@@@@@&*****@@@@@@@@@@(((((((*******@@@@@ //
+// @@@@@@***************@@@@@@@(((((((/*****@@@@ //
+// @@@@********************@@@@@@@(((((((****@@@ //
+// @@@************************@@@@@@(/((((***@@@ //
+// @@@**************@@@@@@@@@***@@@@@@(((((**@@@ //
+// @@@**************@@@@@@@@*****@@@@@@*((((*@@@ //
+// @@@**************@@@@@@@@@@@@@@@@@@@**(((@@@@ //
+// @@@@***************@@@@@@@@@@@@@@@@@**((@@@@@ //
+// @@@@@****************@@@@@@@@@@@@@****(@@@@@@ //
+// @@@@@@@*****************************/@@@@@@@@ //
+// @@@@@@@@@@************************@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
-import {BaseFarmStorage} from "../BaseFarmStorage.sol";
-import {Subscription, RewardFund} from "../interfaces/DataTypes.sol";
+import {ExpirableFarm} from "./ExpirableFarm.sol";
+import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 
-abstract contract OperableDeposit is BaseFarmStorage {
+abstract contract OperableDeposit is ExpirableFarm {
     uint256 public constant PRECISION = 1e18;
 
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
@@ -74,5 +81,47 @@ abstract contract OperableDeposit is BaseFarmStorage {
                 ++iSub;
             }
         }
+    }
+
+    function _increaseDeposit(uint256 _depositId, uint256 _amount) internal {
+        Deposit storage userDeposit = deposits[_depositId];
+
+        // Validations
+        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
+        if (userDeposit.expiryDate != 0) {
+            revert DepositIsInCooldown();
+        }
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        // Update deposit Information
+        _updateSubscriptionForIncrease(_depositId, _amount);
+        userDeposit.liquidity += _amount;
+
+        emit DepositIncreased(_depositId, _amount);
+    }
+
+    function _decreaseDeposit(uint256 _depositId, uint256 _amount) internal {
+        Deposit storage userDeposit = deposits[_depositId];
+
+        //Validations
+        _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
+        _validateDeposit(msg.sender, _depositId);
+
+        if (_amount == 0) {
+            revert CannotWithdrawZeroAmount();
+        }
+
+        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
+            revert DecreaseDepositNotPermitted();
+        }
+        // claim the pending rewards for the deposit
+        _updateAndClaimFarmRewards(msg.sender, _depositId);
+
+        // Update deposit info
+        _updateSubscriptionForDecrease(_depositId, _amount);
+        userDeposit.liquidity -= _amount;
+
+        emit DepositDecreased(_depositId, _amount);
     }
 }
