@@ -232,6 +232,7 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
+        uint256 depositId = 1;
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
@@ -247,7 +248,7 @@ abstract contract CamelotIncreaseDepositTest is Demeter_CamelotFarmTest {
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(BaseFarm.FarmIsInactive.selector));
-        Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+        Demeter_CamelotFarm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_InvalidDeposit()
