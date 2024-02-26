@@ -51,7 +51,7 @@ contract UniswapV3ActiveLiquidityFarmTest is
         UniV3ActiveLiquidityDeployer.FarmData memory _data = UniV3ActiveLiquidityDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             uniswapPoolData: poolData,
             rewardData: rwdTokenData
         });

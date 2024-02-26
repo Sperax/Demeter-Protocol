@@ -79,28 +79,15 @@ contract E20Farm is ExpirableFarm, OperableDeposit {
     /// @param _amount Desired amount
     /// @dev User cannot increase liquidity for a deposit in cooldown
     function increaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
-        // Validations
-        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
         _validateDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[_depositId];
         if (_amount == 0) {
             revert InvalidAmount();
         }
-        if (userDeposit.expiryDate != 0) {
-            revert DepositIsInCooldown();
-        }
 
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
-
-        // Update deposit Information
-        _updateSubscriptionForIncrease(_depositId, _amount);
-        userDeposit.liquidity += _amount;
+        _increaseDeposit(_depositId, _amount);
 
         // Transfer the lp tokens to the farm
         IERC20(farmToken).safeTransferFrom(msg.sender, address(this), _amount);
-
-        emit DepositIncreased(_depositId, _amount);
     }
 
     /// @notice Withdraw liquidity partially from an existing deposit.
@@ -108,30 +95,10 @@ contract E20Farm is ExpirableFarm, OperableDeposit {
     /// @param _amount Amount to be withdrawn.
     /// @dev Function is not available for locked deposits.
     function decreaseDeposit(uint256 _depositId, uint256 _amount) external nonReentrant {
-        //Validations
-        _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
-        _validateDeposit(msg.sender, _depositId);
-        Deposit storage userDeposit = deposits[_depositId];
-
-        if (_amount == 0 || _amount >= userDeposit.liquidity) {
-            revert InvalidAmount();
-        }
-
-        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
-            revert DecreaseDepositNotPermitted();
-        }
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
-
-        // Update deposit info
-        _updateSubscriptionForDecrease(_depositId, _amount);
-        userDeposit.liquidity -= _amount;
+        _decreaseDeposit(_depositId, _amount);
 
         // Transfer the lp tokens to the user
         IERC20(farmToken).safeTransfer(msg.sender, _amount);
-
-        emit DepositDecreased(_depositId, _amount);
     }
 
     /// @notice Function to withdraw a deposit from the farm.

@@ -67,7 +67,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         CamelotV2FarmDeployer.FarmData memory _data = CamelotV2FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             camelotPoolData: _poolData,
             rewardData: rwdTokenData
         });
@@ -232,6 +232,7 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
+        uint256 depositId = 1;
         uint256[2] memory amounts = [uint256(0), 0];
         uint256[2] memory minAmounts = [uint256(0), 0];
         amounts[0] = 1e3 * 10 ** ERC20(DAI).decimals();
@@ -247,7 +248,7 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
-        CamelotV2Farm(nonLockupFarm).increaseDeposit(0, amounts, minAmounts);
+        CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_InvalidDeposit()

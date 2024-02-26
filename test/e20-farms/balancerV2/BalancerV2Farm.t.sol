@@ -83,7 +83,7 @@ contract BalancerV2FarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20Far
         BalancerV2FarmDeployer.FarmData memory _data = BalancerV2FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             poolId: POOL_ID, //Balancer Stable 4pool (4POOL-BPT)
             rewardData: rwdTokenData
         });

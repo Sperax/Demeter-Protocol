@@ -83,20 +83,10 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         external
         nonReentrant
     {
-        _validateFarmActive(); // Increase deposit is allowed only when farm is active.
-        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
-
+        _validateDeposit(msg.sender, _depositId);
         if (_amounts[0] + _amounts[1] == 0) {
             revert InvalidAmount();
         }
-
-        Deposit storage userDeposit = deposits[_depositId];
-        if (userDeposit.expiryDate != 0) {
-            revert DepositIsInCooldown();
-        }
-
-        // claim the pending rewards for the deposit
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
 
         (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
@@ -123,8 +113,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         IERC20(lpToken).forceApprove(nftContract, liquidity);
         INFTPool(nftContract).addToPosition(depositToTokenId[_depositId], liquidity);
 
-        _updateSubscriptionForIncrease(_depositId, liquidity);
-        userDeposit.liquidity += liquidity;
+        _increaseDeposit(_depositId, liquidity);
 
         // Return excess tokens back to the user.
         if (amountA < _amounts[0]) {
@@ -133,32 +122,13 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         if (amountB < _amounts[1]) {
             IERC20(token1).safeTransfer(msg.sender, _amounts[1] - amountB);
         }
-
-        emit DepositIncreased(_depositId, liquidity);
     }
 
     function decreaseDeposit(uint256 _depositId, uint256 _liquidityToWithdraw, uint256[2] calldata _minAmounts)
         external
         nonReentrant
     {
-        _validateFarmOpen(); // Withdraw instead of decrease deposit when a farm is closed.
-        _validateDeposit(msg.sender, _depositId); // Validate the deposit.
-
-        Deposit storage userDeposit = deposits[_depositId];
-
-        if (_liquidityToWithdraw == 0) {
-            revert CannotWithdrawZeroAmount();
-        }
-
-        if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
-            revert DecreaseDepositNotPermitted();
-        }
-
-        // Claim the pending rewards for the deposit and update farm reward data.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
-        // Update deposit information.
-        _updateSubscriptionForDecrease(_depositId, _liquidityToWithdraw);
-        userDeposit.liquidity -= _liquidityToWithdraw;
+        _decreaseDeposit(_depositId, _liquidityToWithdraw);
 
         // Withdraw liquidity from nft pool
         INFTPool(nftContract).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
@@ -175,8 +145,6 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
             to: msg.sender,
             deadline: block.timestamp
         });
-
-        emit DepositDecreased(_depositId, _liquidityToWithdraw);
     }
 
     /// @notice Claim uniswap pool fee for a deposit.

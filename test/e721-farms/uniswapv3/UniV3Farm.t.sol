@@ -165,7 +165,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
         UniV3FarmDeployer.FarmData memory _data = UniV3FarmDeployer.FarmData({
             farmAdmin: owner,
             farmStartTime: startTime,
-            cooldownPeriod: lockup ? COOLDOWN_PERIOD : 0,
+            cooldownPeriod: lockup ? COOLDOWN_PERIOD_DAYS : 0,
             uniswapPoolData: poolData,
             rewardData: rwdTokenData
         });
@@ -469,7 +469,7 @@ abstract contract InitializeTest is UniV3FarmTest {
         UniV3Farm(farmProxy).initialize({
             _farmId: FARM_ID,
             _farmStartTime: block.timestamp,
-            _cooldownPeriod: COOLDOWN_PERIOD,
+            _cooldownPeriod: COOLDOWN_PERIOD_DAYS,
             _farmRegistry: FARM_REGISTRY,
             _uniswapPoolData: UniswapPoolData({
                 tokenA: DAI,
@@ -491,7 +491,7 @@ abstract contract InitializeTest is UniV3FarmTest {
         assertEq(UniV3Farm(farmProxy).uniswapPool(), uniswapPool);
         assertEq(UniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
         assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
-        assertEq(UniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD);
+        assertEq(UniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
         assertEq(UniV3Farm(farmProxy).nftContract(), NFPM);
@@ -619,9 +619,21 @@ abstract contract IncreaseDepositTest is UniV3FarmTest {
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
         UniV3Farm(lockupFarm).farmPauseSwitch(true);
+
+        uint256 deposit0 = DEPOSIT_AMOUNT * 10 ** ERC20(DAI).decimals();
+        uint256 deposit1 = DEPOSIT_AMOUNT * 10 ** ERC20(USDCe).decimals();
+        uint256[2] memory amounts = [deposit0, deposit1];
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+
+        deal(DAI, user, deposit0);
+        deal(USDCe, user, deposit1);
         vm.startPrank(user);
+
+        IERC20(DAI).approve(lockupFarm, deposit0);
+        IERC20(USDCe).approve(lockupFarm, deposit1);
+
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
-        UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
@@ -643,9 +655,19 @@ abstract contract IncreaseDepositTest is UniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        uint256 deposit0 = DEPOSIT_AMOUNT * 10 ** ERC20(DAI).decimals();
+        uint256 deposit1 = DEPOSIT_AMOUNT * 10 ** ERC20(USDCe).decimals();
+        uint256[2] memory amounts = [deposit0, deposit1];
+        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+
+        deal(DAI, currentActor, deposit0);
+        deal(USDCe, currentActor, deposit1);
+        IERC20(DAI).approve(lockupFarm, deposit0);
+        IERC20(USDCe).approve(lockupFarm, deposit1);
+
         UniV3Farm(lockupFarm).initiateCooldown(depositId);
         vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
-        UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
+        UniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function testFuzz_IncreaseDeposit(bool lockup, uint256 _depositAmount) public {
@@ -781,10 +803,10 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
         uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
 
-        vm.expectEmit(true, false, false, false, NFPM);
-        emit DecreaseLiquidity(tokenId, 0, 0, 0);
         vm.expectEmit(farm);
         emit DepositDecreased(depositId, liquidityToWithdraw);
+        vm.expectEmit(true, false, false, false, NFPM);
+        emit DecreaseLiquidity(tokenId, 0, 0, 0);
 
         vm.recordLogs();
         UniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);

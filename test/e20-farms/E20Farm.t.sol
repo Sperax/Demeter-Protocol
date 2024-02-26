@@ -79,6 +79,7 @@ abstract contract IncreaseDepositTest is E20FarmTest {
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         vm.startPrank(owner);
         E20Farm(lockupFarm).farmPauseSwitch(true);
+        vm.startPrank(user);
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
         E20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
     }
@@ -178,7 +179,7 @@ abstract contract DecreaseDepositTest is E20FarmTest {
 
     function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 amount;
-        vm.expectRevert(abi.encodeWithSelector(E20Farm.InvalidAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
         E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amount);
     }
 
