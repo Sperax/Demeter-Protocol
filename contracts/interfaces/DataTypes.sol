@@ -55,17 +55,3 @@ struct RewardData {
     uint8 id;
     uint256 accRewardBal;
 }
-
-// Configuration for fixed APR reward tokens.
-// apr - APR of the reward stored in 8 precision.
-// maxRewardsPerSec - Maximum amount of tokens to be emitted per second.
-// baseTokens - Addresses of tokens to be considered for calculating the L value.
-// tokenManager - Account that manages the rewardToken.
-// nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
-struct FixedAPRRewardConfig {
-    uint256 apr;
-    uint256 maxRewardsPerSec;
-    address[] baseTokens;
-    address tokenManager;
-    uint256 noLockupRewardPer; // 5000 = 50%
-}
