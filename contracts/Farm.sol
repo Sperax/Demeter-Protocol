@@ -79,6 +79,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidAddress();
     error ZeroAmount();
     error InvalidCooldownPeriod();
+    error NotImplemented();
 
     // Disallow initialization of a implementation contract.
     constructor() {
@@ -298,6 +299,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         }
         return rewardFunds[_fundId];
     }
+
+    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    function getTokenAmounts() external pure virtual returns (address[] memory, uint256[] memory);
 
     /// @notice Claim rewards for the user.
     /// @param _account The user's address.

@@ -233,6 +233,11 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         return IUniswapV3Utils(uniswapUtils).fees(nftContract, _tokenId);
     }
 
+    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    function getTokenAmounts() external pure override returns (address[] memory, uint256[] memory) {
+        revert NotImplemented();
+    }
+
     // --------------------- Public and overriding Functions ---------------------
 
     /// @notice Update the farm start time.

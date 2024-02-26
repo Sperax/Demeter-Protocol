@@ -10,9 +10,9 @@ interface IFarm {
 
     function rewardData(address _token) external view returns (RewardData memory);
 
-    function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
-
     function cooldownPeriod() external view returns (uint256);
 
     function isFarmActive() external view returns (bool);
+
+    function getTokenAmounts() external pure returns (address[] memory, uint256[] memory);
 }
