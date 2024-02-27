@@ -301,7 +301,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    function getTokenAmounts() external pure virtual returns (address[] memory, uint256[] memory);
+    function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
     /// @notice Claim rewards for the user.
     /// @param _account The user's address.

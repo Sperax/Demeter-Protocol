@@ -228,8 +228,17 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     }
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    function getTokenAmounts() external pure override returns (address[] memory, uint256[] memory) {
-        revert NotImplemented();
+    function getTokenAmounts() external view override returns (address[] memory tokens, uint256[] memory amounts) {
+        tokens = new address[](2);
+        amounts = new uint256[](2);
+        (address pair,,,,,,,) = INFTPool(nftContract).getPoolInfo();
+        tokens[0] = IPair(pair).token0();
+        tokens[1] = IPair(pair).token1();
+        (uint112 reserveA, uint112 reserveB,,) = IPair(pair).getReserves();
+        uint256 _totalSupply = IPair(pair).totalSupply();
+        uint256 _farmLiquidity = rewardFunds[COMMON_FUND_ID].totalLiquidity;
+        amounts[0] = (_farmLiquidity * reserveA) / _totalSupply;
+        amounts[1] = (_farmLiquidity * reserveB) / _totalSupply;
     }
 
     // --------------------- Public and overriding Functions ---------------------
