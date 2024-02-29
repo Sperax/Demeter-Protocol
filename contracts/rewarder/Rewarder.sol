@@ -74,6 +74,7 @@ contract Rewarder is Ownable, Initializable {
         rewarderFactory = msg.sender;
         _validatePriceFeed(_rwdToken, _oracle);
         rewardToken = _rwdToken;
+        _transferOwnership(msg.sender);
     }
 
     /// @notice A function to update the rewardToken configuration.
@@ -225,7 +226,7 @@ contract Rewarder is Ownable, Initializable {
     /// @notice A function to validate farm.
     /// @param _farm Address of the farm to be validated.
     /// @dev It checks Demeter Farm registry for a valid, registered farm.
-    function _validateFarm(address _farm) private view {
+    function _validateFarm(address _farm) private pure {
         IFarm(_farm).getTokenAmounts();
     }
 
