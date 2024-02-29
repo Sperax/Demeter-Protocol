@@ -206,10 +206,16 @@ contract Rewarder is Ownable, Initializable {
         return _amount;
     }
 
+    /// @notice A function to fetch and get the price of a token.
+    /// @param _token Token for which the the price is to be fetched.
+    /// @param _oracle Address of the oracle contract.
     function _getPrice(address _token, address _oracle) private view returns (IOracle.PriceData memory _priceData) {
         _priceData = IOracle(_oracle).getPrice(_token);
     }
 
+    /// @notice A function to validate price feed.
+    /// @param _token Token to be validated.
+    /// @param _oracle Address of the oracle.
     function _validatePriceFeed(address _token, address _oracle) private view {
         if (!IOracle(_oracle).priceFeedExists(_token)) {
             revert PriceFeedDoesNotExist(_token);
