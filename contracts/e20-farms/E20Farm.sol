@@ -120,7 +120,7 @@ contract E20Farm is ExpirableFarm, OperableDeposit {
     }
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    function getTokenAmounts() external pure override returns (address[] memory, uint256[] memory) {
+    function getTokenAmounts() external view virtual override returns (address[] memory, uint256[] memory) {
         revert NotImplemented();
     }
 }
