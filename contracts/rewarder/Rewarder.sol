@@ -168,6 +168,16 @@ contract Rewarder is Ownable, Initializable {
         IFarm(_farm).updateRewardData(rewardToken, _newManager);
     }
 
+    /// @notice A function to calculate the time till which rewards are there for an LP.
+    /// @param _farm Address of the farm for which the end time is to be calculated.
+    /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
+    function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
+        uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
+        uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
+        uint256 rewardsEndingOn = block.timestamp
+            + ((farmBalance / farmRewardConfigs[_farm].rewardsPerSec) + (rewarderBalance / totalRewardsPerSec));
+    }
+
     /// @notice A function to set reward rate in the farm.
     /// @param _farm Address of the farm.
     /// @param _rwdPerSec Reward per second to be emitted.
