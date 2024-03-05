@@ -145,7 +145,7 @@ contract CamelotV3FarmTest is E721FarmInheritTest {
     }
 
     function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
-        Position memory positions = INFPMUtils(NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
+        Position memory positions = INFPMUtils(CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
         return uint256(positions.liquidity);
     }
 
