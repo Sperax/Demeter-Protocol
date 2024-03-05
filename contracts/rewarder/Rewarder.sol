@@ -88,11 +88,11 @@ contract Rewarder is Ownable, Initializable {
         if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
-        address _oracle = IRewarderFactory(rewarderFactory).oracle();
+        address oracle = IRewarderFactory(rewarderFactory).oracle();
         // validating new reward config
         uint256 baseTokensLen = _rewardConfig.baseTokens.length;
         for (uint256 i; i < baseTokensLen;) {
-            _validatePriceFeed(_rewardConfig.baseTokens[i], _oracle);
+            _validatePriceFeed(_rewardConfig.baseTokens[i], oracle);
             unchecked {
                 ++i;
             }
@@ -116,11 +116,11 @@ contract Rewarder is Ownable, Initializable {
             uint256 totalValue;
             uint256 baseTokensLen = farmRewardConfig.baseTokens.length;
             IOracle.PriceData memory _priceData;
-            address _oracle = IRewarderFactory(rewarderFactory).oracle();
+            address oracle = IRewarderFactory(rewarderFactory).oracle();
             for (uint8 iFarmTokens; iFarmTokens < assetsLen;) {
                 for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
                     if (assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
-                        _priceData = _getPrice(assets[iFarmTokens], _oracle);
+                        _priceData = _getPrice(assets[iFarmTokens], oracle);
                         totalValue += (_priceData.price * _normalizeAmount(assets[iFarmTokens], amounts[iFarmTokens]))
                             / _priceData.precision;
                         break;
@@ -134,7 +134,7 @@ contract Rewarder is Ownable, Initializable {
                 }
             }
             // Getting reward token price to calculate rewards emission.
-            _priceData = _getPrice(rewardToken, _oracle);
+            _priceData = _getPrice(rewardToken, oracle);
             uint256 rewardRate = (
                 (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
             ) / _priceData.price;
@@ -284,14 +284,14 @@ contract Rewarder is Ownable, Initializable {
                     ++j;
                 }
             }
-            if (hasBaseTokens == false) {
-                break;
+            if (!hasBaseTokens) {
+                return false;
             }
             unchecked {
                 ++i;
             }
         }
-        return hasBaseTokens;
+        return true;
     }
 
     /// @notice A function to validate the no lockup fund's reward percentage.
