@@ -70,11 +70,12 @@ contract Rewarder is Ownable, Initializable {
     /// @notice Initializer function of this contract.
     /// @param _rwdToken Address of the reward token.
     /// @param _oracle Address of the USDs Master Price Oracle.
-    function initialize(address _rwdToken, address _oracle) external initializer {
-        rewarderFactory = msg.sender;
+    /// @param _admin Admin/ deployer of this contract.
+    function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
         _validatePriceFeed(_rwdToken, _oracle);
+        rewarderFactory = msg.sender;
         rewardToken = _rwdToken;
-        _transferOwnership(msg.sender);
+        _transferOwnership(_admin);
     }
 
     /// @notice A function to update the rewardToken configuration.

@@ -52,8 +52,7 @@ contract RewarderFactory is Ownable {
     /// @return rewarder Rewarder's address
     function deployRewarder(address _rwdToken) external returns (address rewarder) {
         Rewarder rewarderInstance = Rewarder(Clones.clone(rewarderImplementation));
-        rewarderInstance.initialize(_rwdToken, oracle);
-        rewarderInstance.transferOwnership(msg.sender);
+        rewarderInstance.initialize(_rwdToken, oracle, msg.sender);
         rewarder = address(rewarderInstance);
         emit RewarderDeployed(_rwdToken, msg.sender, rewarder);
     }
