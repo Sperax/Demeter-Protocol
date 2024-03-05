@@ -148,7 +148,6 @@ contract Rewarder is Ownable, Initializable {
                 rewardsToSend -= _farmRwdBalance;
                 if (rewardsToSend > _rewarderRwdBalance) {
                     rewardsToSend = _rewarderRwdBalance;
-                    rewardsPerSecond = (_farmRwdBalance + _rewarderRwdBalance) / 1 weeks;
                 }
                 IERC20(rewardToken).safeTransfer(_farm, rewardsToSend);
             } else {
