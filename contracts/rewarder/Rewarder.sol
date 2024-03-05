@@ -59,6 +59,7 @@ contract Rewarder is Ownable, Initializable {
     address public rewardToken;
     // farm -> FixedAPRRewardConfig
     mapping(address => FixedAPRRewardConfig) public farmRewardConfigs;
+    mapping(address => uint8) private _decimals;
 
     event RewardConfigUpdated(address indexed farm, FixedAPRRewardConfig rewardConfig);
     event RewardTokenCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardsPerSecond);
@@ -210,10 +211,12 @@ contract Rewarder is Ownable, Initializable {
     /// @param _token Address of the asset token.
     /// @param _amount Amount of the token.
     /// @return Normalized amount of the token in 1e18.
-    function _normalizeAmount(address _token, uint256 _amount) private view returns (uint256) {
-        uint8 _decimals = ERC20(_token).decimals();
-        if (_decimals != 18) {
-            _amount *= 10 ** (18 - _decimals);
+    function _normalizeAmount(address _token, uint256 _amount) private returns (uint256) {
+        if (_decimals[_token] == 0) {
+            _decimals[_token] = ERC20(_token).decimals();
+        }
+        if (_decimals[_token] != 18) {
+            _amount *= 10 ** (18 - _decimals[_token]);
         }
         return _amount;
     }
