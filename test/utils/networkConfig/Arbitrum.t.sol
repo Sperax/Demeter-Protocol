@@ -55,7 +55,7 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     address public constant CAMELOT_V3_NFPM = 0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15;
     address public constant CAMELOT_V3_SWAP_ROUTER = 0x1F721E2E82F6676FCE4eA07A5958cF098D339e18;
     address public constant CAMELOT_V3_UTILS = address(1); // need to update
-    address constant CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS = address(1); // need to update
+    address public constant CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS = 0xaB39C3d042BA31978087a4b946baBc8C80d868a4;
 
     function fundFeeToken() public useKnownActor(owner) {
         uint256 amt = 1e22;
