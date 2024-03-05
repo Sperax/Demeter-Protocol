@@ -65,6 +65,7 @@ contract Rewarder is Ownable, Initializable {
     event RewardTokenCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardsPerSecond);
 
     error InvalidAddress();
+    error InvalidFarm();
     error PriceFeedDoesNotExist(address token);
     error InvalidRewardPercentage(uint256 percentage);
 
@@ -83,7 +84,9 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
     function updateRewardConfig(address _farm, FixedAPRRewardConfig memory _rewardConfig) external onlyOwner {
-        _validateFarm(_farm);
+        if (!_isValidFarm(_farm)) {
+            revert InvalidFarm();
+        }
         address _oracle = IRewarderFactory(rewarderFactory).oracle();
         // validating new reward config
         uint256 baseTokensLen = _rewardConfig.baseTokens.length;
@@ -104,62 +107,58 @@ contract Rewarder is Ownable, Initializable {
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
     function calibrateRewards(address _farm) external returns (uint256 rewardsToSend) {
-        _validateFarm(_farm);
         FixedAPRRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0 && IFarm(_farm).isFarmActive()) {
             (address[] memory _assets, uint256[] memory _amounts) = IFarm(_farm).getTokenAmounts();
             uint256 _assetsLen = _assets.length;
-            if (_assetsLen == _amounts.length) {
-                // Calculating total USD value for all the assets.
-                uint256 totalValue;
-                uint256 baseTokensLen = farmRewardConfig.baseTokens.length;
-                IOracle.PriceData memory _priceData;
-                address _oracle = IRewarderFactory(rewarderFactory).oracle();
-                for (uint8 iFarmTokens; iFarmTokens < _assetsLen;) {
-                    for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
-                        if (_assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
-                            _priceData = _getPrice(_assets[iFarmTokens], _oracle);
-                            totalValue += (
-                                _priceData.price * _normalizeAmount(_assets[iFarmTokens], _amounts[iFarmTokens])
-                            ) / _priceData.precision;
-                            break;
-                        }
-                        unchecked {
-                            ++jBaseTokens;
-                        }
+            // Calculating total USD value for all the assets.
+            uint256 totalValue;
+            uint256 baseTokensLen = farmRewardConfig.baseTokens.length;
+            IOracle.PriceData memory _priceData;
+            address _oracle = IRewarderFactory(rewarderFactory).oracle();
+            for (uint8 iFarmTokens; iFarmTokens < _assetsLen;) {
+                for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
+                    if (_assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
+                        _priceData = _getPrice(_assets[iFarmTokens], _oracle);
+                        totalValue += (_priceData.price * _normalizeAmount(_assets[iFarmTokens], _amounts[iFarmTokens]))
+                            / _priceData.precision;
+                        break;
                     }
                     unchecked {
-                        ++iFarmTokens;
+                        ++jBaseTokens;
                     }
                 }
-                // Getting reward token price to calculate rewards emission.
-                _priceData = _getPrice(rewardToken, _oracle);
-                uint256 rewardsPerSecond = (
-                    (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
-                ) / _priceData.price;
-                if (rewardsPerSecond > farmRewardConfig.maxRewardsPerSec) {
-                    rewardsPerSecond = farmRewardConfig.maxRewardsPerSec;
+                unchecked {
+                    ++iFarmTokens;
                 }
-                // Calculating the deficit rewards in farm and sending them.
-                uint256 _farmRwdBalance = IERC20(rewardToken).balanceOf(_farm);
-                uint256 _rewarderRwdBalance = IERC20(rewardToken).balanceOf(address(this));
-                rewardsToSend = (rewardsPerSecond * 1 weeks);
-                if (rewardsToSend > _farmRwdBalance) {
-                    rewardsToSend -= _farmRwdBalance;
-                    if (rewardsToSend > _rewarderRwdBalance) {
-                        rewardsToSend = _rewarderRwdBalance;
-                        rewardsPerSecond = (_farmRwdBalance + _rewarderRwdBalance) / 1 weeks;
-                    }
-                    IERC20(rewardToken).safeTransfer(_farm, rewardsToSend);
-                } else {
-                    rewardsToSend = 0;
-                }
-                // Updating reward rate in farm and adjusting global reward rate of this rewarder.
-                _setRewardRate(_farm, rewardsPerSecond, farmRewardConfig.noLockupRewardPer);
-                _adjustGlobalRewardsPerSec(farmRewardConfig.rewardsPerSec, rewardsPerSecond);
-                farmRewardConfigs[_farm].rewardsPerSec = rewardsPerSecond;
-                emit RewardTokenCalibrated(_farm, rewardsToSend, rewardsPerSecond);
             }
+            // Getting reward token price to calculate rewards emission.
+            _priceData = _getPrice(rewardToken, _oracle);
+            uint256 rewardsPerSecond = (
+                (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
+            ) / _priceData.price;
+            if (rewardsPerSecond > farmRewardConfig.maxRewardsPerSec) {
+                rewardsPerSecond = farmRewardConfig.maxRewardsPerSec;
+            }
+            // Calculating the deficit rewards in farm and sending them.
+            uint256 _farmRwdBalance = IERC20(rewardToken).balanceOf(_farm);
+            uint256 _rewarderRwdBalance = IERC20(rewardToken).balanceOf(address(this));
+            rewardsToSend = (rewardsPerSecond * 1 weeks);
+            if (rewardsToSend > _farmRwdBalance) {
+                rewardsToSend -= _farmRwdBalance;
+                if (rewardsToSend > _rewarderRwdBalance) {
+                    rewardsToSend = _rewarderRwdBalance;
+                    rewardsPerSecond = (_farmRwdBalance + _rewarderRwdBalance) / 1 weeks;
+                }
+                IERC20(rewardToken).safeTransfer(_farm, rewardsToSend);
+            } else {
+                rewardsToSend = 0;
+            }
+            // Updating reward rate in farm and adjusting global reward rate of this rewarder.
+            _setRewardRate(_farm, rewardsPerSecond, farmRewardConfig.noLockupRewardPer);
+            _adjustGlobalRewardsPerSec(farmRewardConfig.rewardsPerSec, rewardsPerSecond);
+            farmRewardConfigs[_farm].rewardsPerSec = rewardsPerSecond;
+            emit RewardTokenCalibrated(_farm, rewardsToSend, rewardsPerSecond);
         }
     }
 
@@ -239,9 +238,21 @@ contract Rewarder is Ownable, Initializable {
 
     /// @notice A function to validate farm.
     /// @param _farm Address of the farm to be validated.
-    /// @dev It checks Demeter Farm registry for a valid, registered farm.
-    function _validateFarm(address _farm) private pure {
+    /// @dev It checks that the farm should implement getTokenAmounts and have rewardToken
+    /// as one of the reward tokens.
+    function _isValidFarm(address _farm) private view returns (bool) {
         IFarm(_farm).getTokenAmounts();
+        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
+        uint256 rwdTokensLen = rwdTokens.length;
+        for (uint8 i; i < rwdTokensLen;) {
+            if (rwdTokens[i] == rewardToken) {
+                return true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return false;
     }
 
     /// @notice A function to validate the no lockup fund's reward percentage.

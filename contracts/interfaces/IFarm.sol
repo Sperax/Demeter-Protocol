@@ -14,5 +14,7 @@ interface IFarm {
 
     function isFarmActive() external view returns (bool);
 
+    function getRewardTokens() external view returns (address[] memory);
+
     function getTokenAmounts() external pure returns (address[] memory, uint256[] memory);
 }

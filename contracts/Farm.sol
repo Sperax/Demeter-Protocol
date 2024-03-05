@@ -300,6 +300,11 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewardFunds[_fundId];
     }
 
+    /// @notice A function to get the reward tokens added in the farm
+    function getRewardTokens() external view returns (address[] memory) {
+        return rewardTokens;
+    }
+
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
