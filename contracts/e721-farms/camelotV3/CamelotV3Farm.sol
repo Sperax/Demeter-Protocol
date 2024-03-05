@@ -24,6 +24,8 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
+// TODO Need to work on camelot v3 position fee accrual calculation utils contract. (CamelotUtils contract).
+
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
