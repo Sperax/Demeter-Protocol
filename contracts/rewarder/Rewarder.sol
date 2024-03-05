@@ -85,7 +85,7 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
     function updateRewardConfig(address _farm, FixedAPRRewardConfig memory _rewardConfig) external onlyOwner {
-        if (!_isValidFarm(_farm)) {
+        if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
         address _oracle = IRewarderFactory(rewarderFactory).oracle();
@@ -240,8 +240,15 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm to be validated.
     /// @dev It checks that the farm should implement getTokenAmounts and have rewardToken
     /// as one of the reward tokens.
-    function _isValidFarm(address _farm) private view returns (bool) {
-        IFarm(_farm).getTokenAmounts();
+    function _isValidFarm(address _farm, address[] memory _baseTokens) private view returns (bool) {
+        (address[] memory assets,) = IFarm(_farm).getTokenAmounts();
+        return _hasRewardToken(_farm) && _hasBaseTokens(assets, _baseTokens);
+    }
+
+    /// @notice A function to check the reward token of this is a farm's reward token.
+    /// @param _farm Address of the farm.
+    /// @return If farm has one of the reward token as reward token of this.
+    function _hasRewardToken(address _farm) private view returns (bool) {
         address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
         uint256 rwdTokensLen = rwdTokens.length;
         for (uint8 i; i < rwdTokensLen;) {
@@ -253,6 +260,38 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         return false;
+    }
+
+    /// @notice A function to check whether the base tokens are a subset of farm's assets.
+    /// @param _assets Array of farm's asset addresses.
+    /// @param _baseTokens Array of base token addresses to be considered for value calculation.
+    /// @dev It handles repeated base tokens as well.
+    /// @return hasBaseTokens True if baseTokens are non redundant and are a subset of assets.
+    function _hasBaseTokens(address[] memory _assets, address[] memory _baseTokens) private pure returns (bool) {
+        uint256 _assetsLen = _assets.length;
+        uint256 _baseTokensLen = _baseTokens.length;
+        bool hasBaseTokens;
+        for (uint8 i; i < _baseTokensLen;) {
+            hasBaseTokens = false;
+            for (uint8 j; j < _assetsLen;) {
+                if (_baseTokens[i] == _assets[j]) {
+                    hasBaseTokens = true;
+                    // Deleting will make _assets[j] -> 0x0 so if _baseTokens have repeated address, this function will return false.
+                    delete _assets[j];
+                    break;
+                }
+                unchecked {
+                    ++j;
+                }
+            }
+            if (hasBaseTokens == false) {
+                break;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return hasBaseTokens;
     }
 
     /// @notice A function to validate the no lockup fund's reward percentage.
