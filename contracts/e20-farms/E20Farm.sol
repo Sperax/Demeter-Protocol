@@ -30,7 +30,7 @@ import {ExpirableFarm} from "../features/ExpirableFarm.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../features/OperableDeposit.sol";
 
-contract E20Farm is ExpirableFarm, OperableDeposit {
+abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Token params
@@ -117,10 +117,5 @@ contract E20Farm is ExpirableFarm, OperableDeposit {
     function recoverERC20(address _token) external override onlyOwner nonReentrant {
         if (_token == farmToken) revert CannotWithdrawFarmToken();
         _recoverE20(_token);
-    }
-
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    function getTokenAmounts() external view virtual override returns (address[] memory, uint256[] memory) {
-        revert NotImplemented();
     }
 }
