@@ -40,21 +40,22 @@ contract Rewarder is Ownable, Initializable {
 
     // Configuration for fixed APR reward tokens.
     // apr - APR of the reward stored in 8 precision.
-    // rewardsPerSec - Amount of tokens emitted per second.
-    // maxRewardsPerSec - Maximum amount of tokens to be emitted per second.
+    // rewardRate - Amount of tokens emitted per second.
+    // maxRewardRate - Maximum amount of tokens to be emitted per second.
     // baseTokens - Addresses of tokens to be considered for calculating the L value.
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
     struct FixedAPRRewardConfig {
         uint256 apr;
-        uint256 rewardsPerSec;
-        uint256 maxRewardsPerSec;
+        uint256 rewardRate;
+        uint256 maxRewardRate;
         address[] baseTokens;
         uint256 noLockupRewardPer; // 5000 = 50%
     }
 
     uint256 public constant MAX_PERCENTAGE = 10000;
     uint256 public constant APR_PRECISION = 1e8;
-    uint256 public totalRewardsPerSec;
+    uint256 public constant REWARD_PERIOD = 1 weeks;
+    uint256 public totalRewardRate;
     address public rewarderFactory;
     address public rewardToken;
     // farm -> FixedAPRRewardConfig
@@ -62,7 +63,7 @@ contract Rewarder is Ownable, Initializable {
     mapping(address => uint8) private _decimals;
 
     event RewardConfigUpdated(address indexed farm, FixedAPRRewardConfig rewardConfig);
-    event RewardTokenCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardsPerSecond);
+    event RewardTokenCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error InvalidAddress();
     error InvalidFarm();
@@ -97,7 +98,7 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        _rewardConfig.rewardsPerSec = 0;
+        _rewardConfig.rewardRate = 0;
         farmRewardConfigs[_farm] = _rewardConfig;
         emit RewardConfigUpdated(_farm, _rewardConfig);
     }
@@ -109,18 +110,18 @@ contract Rewarder is Ownable, Initializable {
     function calibrateRewards(address _farm) external returns (uint256 rewardsToSend) {
         FixedAPRRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0 && IFarm(_farm).isFarmActive()) {
-            (address[] memory _assets, uint256[] memory _amounts) = IFarm(_farm).getTokenAmounts();
-            uint256 _assetsLen = _assets.length;
+            (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
+            uint256 assetsLen = assets.length;
             // Calculating total USD value for all the assets.
             uint256 totalValue;
             uint256 baseTokensLen = farmRewardConfig.baseTokens.length;
             IOracle.PriceData memory _priceData;
             address _oracle = IRewarderFactory(rewarderFactory).oracle();
-            for (uint8 iFarmTokens; iFarmTokens < _assetsLen;) {
+            for (uint8 iFarmTokens; iFarmTokens < assetsLen;) {
                 for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
-                    if (_assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
-                        _priceData = _getPrice(_assets[iFarmTokens], _oracle);
-                        totalValue += (_priceData.price * _normalizeAmount(_assets[iFarmTokens], _amounts[iFarmTokens]))
+                    if (assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
+                        _priceData = _getPrice(assets[iFarmTokens], _oracle);
+                        totalValue += (_priceData.price * _normalizeAmount(assets[iFarmTokens], amounts[iFarmTokens]))
                             / _priceData.precision;
                         break;
                     }
@@ -134,16 +135,16 @@ contract Rewarder is Ownable, Initializable {
             }
             // Getting reward token price to calculate rewards emission.
             _priceData = _getPrice(rewardToken, _oracle);
-            uint256 rewardsPerSecond = (
+            uint256 rewardRate = (
                 (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
             ) / _priceData.price;
-            if (rewardsPerSecond > farmRewardConfig.maxRewardsPerSec) {
-                rewardsPerSecond = farmRewardConfig.maxRewardsPerSec;
+            if (rewardRate > farmRewardConfig.maxRewardRate) {
+                rewardRate = farmRewardConfig.maxRewardRate;
             }
             // Calculating the deficit rewards in farm and sending them.
             uint256 _farmRwdBalance = IERC20(rewardToken).balanceOf(_farm);
             uint256 _rewarderRwdBalance = IERC20(rewardToken).balanceOf(address(this));
-            rewardsToSend = (rewardsPerSecond * 1 weeks);
+            rewardsToSend = (rewardRate * REWARD_PERIOD);
             if (rewardsToSend > _farmRwdBalance) {
                 rewardsToSend -= _farmRwdBalance;
                 if (rewardsToSend > _rewarderRwdBalance) {
@@ -154,10 +155,10 @@ contract Rewarder is Ownable, Initializable {
                 rewardsToSend = 0;
             }
             // Updating reward rate in farm and adjusting global reward rate of this rewarder.
-            _setRewardRate(_farm, rewardsPerSecond, farmRewardConfig.noLockupRewardPer);
-            _adjustGlobalRewardsPerSec(farmRewardConfig.rewardsPerSec, rewardsPerSecond);
-            farmRewardConfigs[_farm].rewardsPerSec = rewardsPerSecond;
-            emit RewardTokenCalibrated(_farm, rewardsToSend, rewardsPerSecond);
+            _setRewardRate(_farm, rewardRate, farmRewardConfig.noLockupRewardPer);
+            _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
+            farmRewardConfigs[_farm].rewardRate = rewardRate;
+            emit RewardTokenCalibrated(_farm, rewardsToSend, rewardRate);
         }
     }
 
@@ -175,34 +176,34 @@ contract Rewarder is Ownable, Initializable {
         uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
         uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
         rewardsEndingOn = block.timestamp
-            + ((farmBalance / farmRewardConfigs[_farm].rewardsPerSec) + (rewarderBalance / totalRewardsPerSec));
+            + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
     /// @notice A function to set reward rate in the farm.
     /// @param _farm Address of the farm.
-    /// @param _rwdPerSec Reward per second to be emitted.
+    /// @param _rwdRate Reward per second to be emitted.
     /// @param _noLockupRewardPer Reward percentage to be allocated to no lockup fund
-    function _setRewardRate(address _farm, uint256 _rwdPerSec, uint256 _noLockupRewardPer) private {
+    function _setRewardRate(address _farm, uint256 _rwdRate, uint256 _noLockupRewardPer) private {
         uint256[] memory _newRewardRates;
         if (IFarm(_farm).cooldownPeriod() == 0) {
             _newRewardRates = new uint256[](1);
-            _newRewardRates[0] = _rwdPerSec;
+            _newRewardRates[0] = _rwdRate;
             IFarm(_farm).setRewardRate(rewardToken, _newRewardRates);
         } else {
             _newRewardRates = new uint256[](2);
-            uint256 commonFundShare = (_rwdPerSec * _noLockupRewardPer) / MAX_PERCENTAGE;
+            uint256 commonFundShare = (_rwdRate * _noLockupRewardPer) / MAX_PERCENTAGE;
             _newRewardRates[0] = commonFundShare;
-            _newRewardRates[1] = _rwdPerSec - commonFundShare;
+            _newRewardRates[1] = _rwdRate - commonFundShare;
             IFarm(_farm).setRewardRate(rewardToken, _newRewardRates);
         }
     }
 
     /// @notice A function to adjust global rewards per second emitted for a reward token.
-    /// @param _oldRewardsPerSec Old emission rate.
-    /// @param _newRewardsPerSecond New emission rate.
-    function _adjustGlobalRewardsPerSec(uint256 _oldRewardsPerSec, uint256 _newRewardsPerSecond) private {
-        totalRewardsPerSec -= _oldRewardsPerSec;
-        totalRewardsPerSec += _newRewardsPerSecond;
+    /// @param _oldRewardRate Old emission rate.
+    /// @param _newRewardRate New emission rate.
+    function _adjustGlobalRewardRate(uint256 _oldRewardRate, uint256 _newRewardRate) private {
+        totalRewardRate -= _oldRewardRate;
+        totalRewardRate += _newRewardRate;
     }
 
     /// @notice A function to normalize asset amounts to be of precision 1e18.

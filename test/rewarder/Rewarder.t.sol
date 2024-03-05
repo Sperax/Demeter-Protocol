@@ -24,8 +24,8 @@ contract RewarderTest is CamelotV2FarmTest {
         _baseTokens[0] = DAI;
         Rewarder.FixedAPRRewardConfig memory _rewardConfig = Rewarder.FixedAPRRewardConfig({
             apr: 1e9,
-            rewardsPerSec: 0,
-            maxRewardsPerSec: type(uint256).max,
+            rewardRate: 0,
+            maxRewardRate: type(uint256).max,
             baseTokens: _baseTokens,
             noLockupRewardPer: 5000
         });
@@ -38,11 +38,11 @@ contract RewarderTest is CamelotV2FarmTest {
     }
 
     function test_Init() public {
-        (uint256 apr, uint256 rewardsPerSec, uint256 maxRewardsPerSec,) = rewarder.farmRewardConfigs(lockupFarm);
-        uint256 globalRewardsPerSec = rewarder.totalRewardsPerSec();
+        (uint256 apr, uint256 rewardsPerSec, uint256 maxRewardRate,) = rewarder.farmRewardConfigs(lockupFarm);
+        uint256 globalRewardsPerSec = rewarder.totalRewardRate();
         emit log_named_uint("APR", apr);
         emit log_named_uint("RPS (Rewards per sec)", rewardsPerSec);
-        emit log_named_uint("Max RPS", maxRewardsPerSec);
+        emit log_named_uint("Max RPS", maxRewardRate);
         emit log_named_uint("Global RPS", globalRewardsPerSec);
         assertTrue(rewardsPerSec > 0);
         assertTrue(globalRewardsPerSec > 0);
