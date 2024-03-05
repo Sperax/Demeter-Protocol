@@ -174,7 +174,7 @@ contract Rewarder is Ownable, Initializable {
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
         uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
         uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
-        uint256 rewardsEndingOn = block.timestamp
+        rewardsEndingOn = block.timestamp
             + ((farmBalance / farmRewardConfigs[_farm].rewardsPerSec) + (rewarderBalance / totalRewardsPerSec));
     }
 
