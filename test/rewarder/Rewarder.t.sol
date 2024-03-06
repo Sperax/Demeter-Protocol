@@ -22,7 +22,7 @@ contract RewarderTest is CamelotV2FarmTest {
         rewarder = Rewarder(rewarderFactory.deployRewarder(USDCe));
         address[] memory _baseTokens = new address[](1);
         _baseTokens[0] = DAI;
-        Rewarder.FixedAPRRewardConfig memory _rewardConfig = Rewarder.FixedAPRRewardConfig({
+        Rewarder.FarmRewardConfig memory _rewardConfig = Rewarder.FarmRewardConfig({
             apr: 1e9,
             rewardRate: 0,
             maxRewardRate: type(uint256).max,

@@ -44,7 +44,7 @@ contract Rewarder is Ownable, Initializable {
     // maxRewardRate - Maximum amount of tokens to be emitted per second.
     // baseTokens - Addresses of tokens to be considered for calculating the L value.
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
-    struct FixedAPRRewardConfig {
+    struct FarmRewardConfig {
         uint256 apr;
         uint256 rewardRate;
         uint256 maxRewardRate;
@@ -58,12 +58,12 @@ contract Rewarder is Ownable, Initializable {
     uint256 public totalRewardRate;
     address public rewarderFactory;
     address public rewardToken;
-    // farm -> FixedAPRRewardConfig
-    mapping(address => FixedAPRRewardConfig) public farmRewardConfigs;
+    // farm -> FarmRewardConfig
+    mapping(address => FarmRewardConfig) public farmRewardConfigs;
     mapping(address => uint8) private _decimals;
 
-    event RewardConfigUpdated(address indexed farm, FixedAPRRewardConfig rewardConfig);
-    event RewardTokenCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
+    event RewardConfigUpdated(address indexed farm, FarmRewardConfig rewardConfig);
+    event RewardsCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error InvalidAddress();
     error InvalidFarm();
@@ -84,7 +84,7 @@ contract Rewarder is Ownable, Initializable {
     /// @notice A function to update the rewardToken configuration.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FixedAPRRewardConfig memory _rewardConfig) external onlyOwner {
+    function updateRewardConfig(address _farm, FarmRewardConfig memory _rewardConfig) external onlyOwner {
         if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
@@ -108,7 +108,7 @@ contract Rewarder is Ownable, Initializable {
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
     function calibrateRewards(address _farm) external returns (uint256 rewardsToSend) {
-        FixedAPRRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
+        FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0 && IFarm(_farm).isFarmActive()) {
             (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
             uint256 assetsLen = assets.length;
@@ -158,7 +158,7 @@ contract Rewarder is Ownable, Initializable {
             _setRewardRate(_farm, rewardRate, farmRewardConfig.noLockupRewardPer);
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
             farmRewardConfigs[_farm].rewardRate = rewardRate;
-            emit RewardTokenCalibrated(_farm, rewardsToSend, rewardRate);
+            emit RewardsCalibrated(_farm, rewardsToSend, rewardRate);
         }
     }
 
