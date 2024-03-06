@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.16;
 
-import {RewardData} from "./DataTypes.sol";
+import {RewardData, RewardFund} from "./DataTypes.sol";
 
 interface IFarm {
     function updateRewardData(address _rwdToken, address _newTknManager) external;
@@ -16,5 +16,7 @@ interface IFarm {
 
     function getRewardTokens() external view returns (address[] memory);
 
-    function getTokenAmounts() external pure returns (address[] memory, uint256[] memory);
+    function getRewardFundInfo(uint8 _fundId) external view returns (RewardFund memory);
+
+    function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
 }
