@@ -48,7 +48,6 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
 
     address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
     address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
-    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract
     address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
@@ -56,24 +55,16 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     /// @param _farmId Id of the farm
     /// @param _uniV3Factory Address of UniswapV3 factory
     /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
-    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
     /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
-    constructor(
-        address _farmRegistry,
-        string memory _farmId,
-        address _uniV3Factory,
-        address _nfpm,
-        address _uniswapUtils,
-        address _nfpmUtils
-    ) FarmDeployer(_farmRegistry, _farmId) {
+    constructor(address _farmRegistry, string memory _farmId, address _uniV3Factory, address _nfpm, address _nfpmUtils)
+        FarmDeployer(_farmRegistry, _farmId)
+    {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nfpm);
-        _validateNonZeroAddr(_uniswapUtils);
         _validateNonZeroAddr(_nfpmUtils);
 
         UNI_V3_FACTORY = _uniV3Factory;
         NFPM = _nfpm;
-        UNISWAP_UTILS = _uniswapUtils;
         NFPM_UTILS = _nfpmUtils;
         farmImplementation = address(new UniV3ActiveLiquidityFarm());
     }
@@ -93,7 +84,6 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NFPM_UTILS
         });
         farmInstance.transferOwnership(_data.farmAdmin);

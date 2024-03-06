@@ -30,7 +30,6 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
-import {IUniswapV3Utils} from "./interfaces/IUniswapV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
@@ -57,7 +56,6 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     int24 public tickUpperAllowed;
     address public uniswapPool;
     address public uniV3Factory;
-    address public uniswapUtils; // UniswapUtils (Uniswap helper) contract
     address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
@@ -80,7 +78,6 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _rwdTokenData - init data for reward tokens.
     /// @param _uniV3Factory - Factory contract of Uniswap V3.
     /// @param _nftContract - NFT contract's address (NFPM).
-    /// @param _uniswapUtils - address of our custom uniswap utils contract.
     /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract.
     function initialize(
         string calldata _farmId,
@@ -91,12 +88,10 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         RewardTokenData[] memory _rwdTokenData,
         address _uniV3Factory,
         address _nftContract,
-        address _uniswapUtils,
         address _nfpmUtils
     ) external initializer {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nftContract);
-        _validateNonZeroAddr(_uniswapUtils);
         _validateNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
@@ -112,7 +107,6 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniV3Factory = _uniV3Factory;
         nftContract = _nftContract;
-        uniswapUtils = _uniswapUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
@@ -208,29 +202,20 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        address pm = nftContract;
-        (uint256 amt0, uint256 amt1) = IUniswapV3Utils(uniswapUtils).fees(pm, tokenId);
-        if (amt0 == 0 && amt1 == 0) {
-            revert NoFeeToClaim();
-        }
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
+        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nftContract).collect(
             INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
-                amount0Max: uint128(amt0),
-                amount1Max: uint128(amt1)
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
             })
         );
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
-    }
 
-    /// @notice Get the accrued uniswap fee for a deposit.
-    /// @return amount0 The amount of token0
-    /// @return amount1 The amount of token1
-    function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
-        // Validate token.
-        _getLiquidity(_tokenId);
-        return IUniswapV3Utils(uniswapUtils).fees(nftContract, _tokenId);
+        if (amt0Recv == 0 && amt1Recv == 0) {
+            revert NoFeeToClaim();
+        }
+
+        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
     // --------------------- Public and overriding Functions ---------------------

@@ -58,9 +58,8 @@ abstract contract UniV3FarmTest is E721FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        uniV3FarmDeployer = new UniV3FarmDeployer(
-            FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
-        );
+        uniV3FarmDeployer =
+            new UniV3FarmDeployer(FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, NONFUNGIBLE_POSITION_MANAGER_UTILS);
         registry.registerFarmDeployer(address(uniV3FarmDeployer));
 
         // Configure rewardTokens
@@ -271,7 +270,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -292,7 +290,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -314,7 +311,6 @@ abstract contract InitializeTest is UniV3FarmTest {
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
                 _nftContract: NFPM,
-                _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
 
@@ -335,7 +331,6 @@ abstract contract InitializeTest is UniV3FarmTest {
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
                 _nftContract: NFPM,
-                _uniswapUtils: UNISWAP_UTILS,
                 _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
         }
@@ -357,7 +352,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
@@ -379,7 +373,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -399,7 +392,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -419,7 +411,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -439,7 +430,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -459,7 +449,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
@@ -481,7 +470,6 @@ abstract contract InitializeTest is UniV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
             _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
             _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -495,7 +483,6 @@ abstract contract InitializeTest is UniV3FarmTest {
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
         assertEq(UniV3Farm(farmProxy).nftContract(), NFPM);
-        assertEq(UniV3Farm(farmProxy).uniswapUtils(), UNISWAP_UTILS);
         assertEq(UniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
@@ -598,14 +585,16 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
 
+    // TODO -> Need to check how to test the received accrued fee amounts.
     function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
-        (uint256 amount0, uint256 amount1) = UniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
 
-        vm.expectEmit(address(lockupFarm));
-        emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
+        // amount0, amount1 (fee accrued by a position)
+
+        vm.expectEmit(true, false, false, false, address(lockupFarm));
+        emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
