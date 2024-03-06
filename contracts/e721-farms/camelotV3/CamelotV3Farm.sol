@@ -24,15 +24,12 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
-// TODO Need to work on camelot v3 position fee accrual calculation utils contract. (CamelotUtils contract).
-
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, ICamelotV3Factory, ICamelotV3TickSpacing} from "./interfaces/ICamelotV3.sol";
-import {ICamelotV3Utils} from "./interfaces/ICamelotV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
@@ -57,7 +54,6 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     int24 public tickUpperAllowed;
     address public camelotPool;
     address public camelotV3Factory;
-    address public camelotUtils; // CamelotUtils (Camelot helper) contract
     address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
@@ -80,7 +76,6 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _rwdTokenData - init data for reward tokens.
     /// @param _camelotV3Factory - Factory contract of Camelot V3.
     /// @param _nftContract - NFT contract's address (NFPM).
-    /// @param _camelotUtils - address of our custom camelot utils contract.
     /// @param _nfpmUtils - address of our custom camelot nonfungible position manager utils contract.
     function initialize(
         string calldata _farmId,
@@ -91,12 +86,10 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         RewardTokenData[] memory _rwdTokenData,
         address _camelotV3Factory,
         address _nftContract,
-        address _camelotUtils,
         address _nfpmUtils
     ) external initializer {
         _validateNonZeroAddr(_camelotV3Factory);
         _validateNonZeroAddr(_nftContract);
-        _validateNonZeroAddr(_camelotUtils);
         _validateNonZeroAddr(_nfpmUtils);
 
         // initialize camelot related data
@@ -110,7 +103,6 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         tickUpperAllowed = _camelotPoolData.tickUpperAllowed;
         camelotV3Factory = _camelotV3Factory;
         nftContract = _nftContract;
-        camelotUtils = _camelotUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
@@ -206,29 +198,20 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        address pm = nftContract;
-        (uint256 amt0, uint256 amt1) = ICamelotV3Utils(camelotUtils).fees(pm, tokenId);
-        if (amt0 == 0 && amt1 == 0) {
-            revert NoFeeToClaim();
-        }
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
+        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nftContract).collect(
             INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
-                amount0Max: uint128(amt0),
-                amount1Max: uint128(amt1)
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
             })
         );
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
-    }
 
-    /// @notice Get the accrued camelot fee for a deposit.
-    /// @return amount0 The amount of token0
-    /// @return amount1 The amount of token1
-    function computeCamelotFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
-        // Validate token.
-        _getLiquidity(_tokenId);
-        return ICamelotV3Utils(camelotUtils).fees(nftContract, _tokenId);
+        if (amt0Recv == 0 && amt1Recv == 0) {
+            revert NoFeeToClaim();
+        }
+
+        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
     // --------------------- Public and overriding Functions ---------------------
