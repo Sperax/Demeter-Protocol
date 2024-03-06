@@ -98,7 +98,7 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        _rewardConfig.rewardRate = 0;
+        _rewardConfig.rewardRate = farmRewardConfigs[_farm].rewardRate;
         farmRewardConfigs[_farm] = _rewardConfig;
         emit RewardConfigUpdated(_farm, _rewardConfig);
     }
