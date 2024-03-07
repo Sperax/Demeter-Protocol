@@ -101,13 +101,31 @@ contract Rewarder is Ownable, Initializable {
         _rewardConfig.rewardRate = farmRewardConfigs[_farm].rewardRate;
         farmRewardConfigs[_farm] = _rewardConfig;
         emit RewardConfigUpdated(_farm, _rewardConfig);
+        calibrateRewards(_farm);
+    }
+
+    /// @notice A function to update the token manager's address in the farm.
+    /// @param _farm Farm's address in which the token manager is to be updated.
+    /// @param _newManager Address of the new token manager.
+    function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
+        IFarm(_farm).updateRewardData(rewardToken, _newManager);
+    }
+
+    /// @notice A function to calculate the time till which rewards are there for an LP.
+    /// @param _farm Address of the farm for which the end time is to be calculated.
+    /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
+    function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
+        uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
+        uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
+        rewardsEndingOn = block.timestamp
+            + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
     /// @notice A function to calibrate rewards for a reward token for a farm.
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
-    function calibrateRewards(address _farm) external returns (uint256 rewardsToSend) {
+    function calibrateRewards(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0 && IFarm(_farm).isFarmActive()) {
             (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
@@ -160,23 +178,10 @@ contract Rewarder is Ownable, Initializable {
             farmRewardConfigs[_farm].rewardRate = rewardRate;
             emit RewardsCalibrated(_farm, rewardsToSend, rewardRate);
         }
-    }
-
-    /// @notice A function to update the token manager's address in the farm.
-    /// @param _farm Farm's address in which the token manager is to be updated.
-    /// @param _newManager Address of the new token manager.
-    function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
-        IFarm(_farm).updateRewardData(rewardToken, _newManager);
-    }
-
-    /// @notice A function to calculate the time till which rewards are there for an LP.
-    /// @param _farm Address of the farm for which the end time is to be calculated.
-    /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
-    function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
-        uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
-        uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
-        rewardsEndingOn = block.timestamp
-            + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
+        if (farmRewardConfig.apr == 0 && IFarm(_farm).isFarmActive()) {
+            _setRewardRate(_farm, 0, farmRewardConfig.noLockupRewardPer);
+            emit RewardsCalibrated(_farm, 0, 0);
+        }
     }
 
     /// @notice A function to set reward rate in the farm.
