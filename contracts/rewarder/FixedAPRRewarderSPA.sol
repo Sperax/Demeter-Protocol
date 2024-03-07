@@ -34,8 +34,13 @@ import {TokenUtils} from "../utils/TokenUtils.sol";
 
 interface ICamelotFarm {
     function nftPool() external view returns (address);
-
     function FARM_ID() external view returns (string memory);
+}
+
+interface IUniswapV3Farm {
+    function uniswapPool() external view returns (address);
+    function tickLowerAllowed() external view returns (int24);
+    function tickUpperAllowed() external view returns (int24);
 }
 
 /// @title FixedAPRRewarderSPA contract of Demeter Protocol
@@ -56,6 +61,7 @@ contract FixedAPRRewarderSPA is Ownable {
         uint256 maxRewardRate;
         address[] baseTokens;
         uint256 noLockupRewardPer; // 5000 = 50%
+        bool isUniV3Farm;
     }
 
     uint8 public constant COMMON_FUND_ID = 0;
@@ -63,6 +69,7 @@ contract FixedAPRRewarderSPA is Ownable {
     uint256 public constant APR_PRECISION = 1e8;
     uint256 public constant REWARD_PERIOD = 1 weeks;
     address public constant REWARD_TOKEN = 0x5575552988A3A80504bBaeB1311674fCFd40aD4B;
+    address public constant UNISWAP_UTILS = 0xd2Aa19D3B7f8cdb1ea5B782c5647542055af415e;
     string public constant CAMELOT_FARM_ID = "Demeter_Camelot_v1";
     address public oracle;
     uint256 public totalRewardRate;
@@ -192,13 +199,20 @@ contract FixedAPRRewarderSPA is Ownable {
         emit OracleUpdated(_newOracle);
     }
 
+    /// @notice A function to get token amounts.
+    /// @param _farm Address of the farm.
     function getTokenAmounts(address _farm) public view returns (address[] memory assets, uint256[] memory amounts) {
-        uint8 farmType = _getFarmType(_farm);
         uint256 totalLiquidity = IFarm(_farm).getRewardFundInfo(COMMON_FUND_ID).totalLiquidity;
-        if (farmType == 1) {
-            return TokenUtils.getUniV2TokenAmounts(ICamelotFarm(_farm).nftPool(), totalLiquidity);
+        if (farmRewardConfigs[_farm].isUniV3Farm) {
+            return TokenUtils.getUniV3TokenAmounts(
+                IUniswapV3Farm(_farm).uniswapPool(),
+                UNISWAP_UTILS,
+                IUniswapV3Farm(_farm).tickLowerAllowed(),
+                IUniswapV3Farm(_farm).tickUpperAllowed(),
+                totalLiquidity
+            );
         } else {
-            revert FarmNotSupported();
+            return TokenUtils.getUniV2TokenAmounts(ICamelotFarm(_farm).nftPool(), totalLiquidity);
         }
     }
 
@@ -241,14 +255,6 @@ contract FixedAPRRewarderSPA is Ownable {
             _amount *= 10 ** (18 - _decimals[_token]);
         }
         return _amount;
-    }
-
-    function _getFarmType(address _farm) private view returns (uint8) {
-        string memory farmId = ICamelotFarm(_farm).FARM_ID();
-        if (keccak256(abi.encodePacked(farmId)) == keccak256(abi.encodePacked(CAMELOT_FARM_ID))) {
-            return 1;
-        }
-        return 0;
     }
 
     /// @notice A function to fetch and get the price of a token.
