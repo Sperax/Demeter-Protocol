@@ -279,7 +279,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _camelotPoolData: CamelotPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
-                tickLowerAllowed: TICK_LOWER - spacing,
+                tickLowerAllowed: -887272 - 1,
                 tickUpperAllowed: TICK_UPPER
             }),
             _rwdTokenData: generateRewardTokenData(),
