@@ -43,6 +43,11 @@ interface IUniswapV3Farm {
     function tickUpperAllowed() external view returns (int24);
 }
 
+interface ILegacyFarm {
+    function isPaused() external view returns (bool);
+    function isClosed() external view returns (bool);
+}
+
 /// @title FixedAPRRewarderSPA contract of Demeter Protocol
 /// @notice This contract tracks farms, their APR, and rewards
 /// @author Sperax Foundation
@@ -55,6 +60,7 @@ contract FixedAPRRewarderSPA is Ownable {
     // maxRewardRate - Maximum amount of tokens to be emitted per second.
     // baseTokens - Addresses of tokens to be considered for calculating the L value.
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
+    // isUniV3Farm - True if the farm is Uniswap V3 type, false if CamelotV1 or UniswapV2
     struct FarmRewardConfig {
         uint256 apr;
         uint256 rewardRate;
@@ -111,17 +117,36 @@ contract FixedAPRRewarderSPA is Ownable {
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
         _rewardConfig.rewardRate = farmRewardConfigs[_farm].rewardRate;
+
         farmRewardConfigs[_farm] = _rewardConfig;
         emit RewardConfigUpdated(_farm, _rewardConfig);
+        calibrateRewards(_farm);
+    }
+
+    /// @notice A function to update the token manager's address in the farm.
+    /// @param _farm Farm's address in which the token manager is to be updated.
+    /// @param _newManager Address of the new token manager.
+    function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
+        IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
+    }
+
+    /// @notice A function to calculate the time till which rewards are there for an LP.
+    /// @param _farm Address of the farm for which the end time is to be calculated.
+    /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
+    function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
+        uint256 farmBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+        uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
+        rewardsEndingOn = block.timestamp
+            + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
     /// @notice A function to calibrate rewards for a reward token for a farm.
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
-    function calibrateRewards(address _farm) external returns (uint256 rewardsToSend) {
+    function calibrateRewards(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
-        if (farmRewardConfig.apr != 0 && IFarm(_farm).isFarmActive()) {
+        if (farmRewardConfig.apr != 0 && !ILegacyFarm(_farm).isPaused()) {
             (address[] memory assets, uint256[] memory amounts) = getTokenAmounts(_farm);
             uint256 assetsLen = assets.length;
             // Calculating total USD value for all the assets.
@@ -171,23 +196,12 @@ contract FixedAPRRewarderSPA is Ownable {
             farmRewardConfigs[_farm].rewardRate = rewardRate;
             emit RewardsCalibrated(_farm, rewardsToSend, rewardRate);
         }
-    }
-
-    /// @notice A function to update the token manager's address in the farm.
-    /// @param _farm Farm's address in which the token manager is to be updated.
-    /// @param _newManager Address of the new token manager.
-    function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
-        IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
-    }
-
-    /// @notice A function to calculate the time till which rewards are there for an LP.
-    /// @param _farm Address of the farm for which the end time is to be calculated.
-    /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
-    function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
-        uint256 farmBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
-        uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
-        rewardsEndingOn = block.timestamp
-            + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
+        if (farmRewardConfig.apr == 0 && !ILegacyFarm(_farm).isPaused()) {
+            _setRewardRate(_farm, 0, farmRewardConfig.noLockupRewardPer);
+            _adjustGlobalRewardRate(farmRewardConfig.rewardRate, 0);
+            farmRewardConfigs[_farm].rewardRate = 0;
+            emit RewardsCalibrated(_farm, 0, 0);
+        }
     }
 
     /// @notice A function to update Oracle.
