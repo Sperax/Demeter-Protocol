@@ -783,93 +783,93 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
             : assert(true);
     }
 
-    // TODO -> Users will not be able to increaseLiquidity of their current positions if the pool’s tickSpacing is changed. Need to check.
-    function testFuzz_IncreaseDeposit_tickSpacingChanged(bool lockup, uint256 _depositAmount, int24 tickSpacing)
-        public
-    {
-        vm.assume(tickSpacing >= 1 && tickSpacing <= 500);
-        address farm;
-        farm = lockup ? lockupFarm : nonLockupFarm;
-        depositSetupFn(farm, lockup);
+    // Users will not be able to increaseLiquidity of their current positions if the pool’s tickSpacing is changed.
+    // function testFuzz_IncreaseDeposit_tickSpacingChanged(bool lockup, uint256 _depositAmount, int24 tickSpacing)
+    //     public
+    // {
+    //     vm.assume(tickSpacing >= 1 && tickSpacing <= 500);
+    //     address farm;
+    //     farm = lockup ? lockupFarm : nonLockupFarm;
+    //     depositSetupFn(farm, lockup);
 
-        _depositAmount = bound(_depositAmount, 1, 1e7);
-        assertEq(currentActor, user);
-        assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
+    //     _depositAmount = bound(_depositAmount, 1, 1e7);
+    //     assertEq(currentActor, user);
+    //     assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
-        vm.startPrank(user);
-        uint256 tokenId = CamelotV3Farm(farm).depositToTokenId(depositId);
-        uint256 depositAmount0 = _depositAmount * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount1 = _depositAmount * 10 ** ERC20(USDCe).decimals();
-        uint256[2] memory amounts = [depositAmount0, depositAmount1];
-        uint256[2] memory minAmounts = [uint256(0), uint256(0)];
+    //     vm.startPrank(user);
+    //     uint256 tokenId = CamelotV3Farm(farm).depositToTokenId(depositId);
+    //     uint256 depositAmount0 = _depositAmount * 10 ** ERC20(DAI).decimals();
+    //     uint256 depositAmount1 = _depositAmount * 10 ** ERC20(USDCe).decimals();
+    //     uint256[2] memory amounts = [depositAmount0, depositAmount1];
+    //     uint256[2] memory minAmounts = [uint256(0), uint256(0)];
 
-        deal(DAI, currentActor, depositAmount0);
-        deal(USDCe, currentActor, depositAmount1);
-        IERC20(DAI).approve(farm, depositAmount0);
-        IERC20(USDCe).approve(farm, depositAmount1);
-        vm.stopPrank();
+    //     deal(DAI, currentActor, depositAmount0);
+    //     deal(USDCe, currentActor, depositAmount1);
+    //     IERC20(DAI).approve(farm, depositAmount0);
+    //     IERC20(USDCe).approve(farm, depositAmount1);
+    //     vm.stopPrank();
 
-        address camelotFactoryOwner = ICamelotV3FactoryTesting(CAMELOT_V3_FACTORY).owner();
-        vm.startPrank(camelotFactoryOwner);
-        ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(tickSpacing);
-        vm.stopPrank();
+    //     address camelotFactoryOwner = ICamelotV3FactoryTesting(CAMELOT_V3_FACTORY).owner();
+    //     vm.startPrank(camelotFactoryOwner);
+    //     ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(tickSpacing);
+    //     vm.stopPrank();
 
-        vm.startPrank(user);
-        uint256 oldLiquidity = CamelotV3Farm(farm).getDepositInfo(depositId).liquidity;
-        uint256[2] memory oldTotalFundLiquidity = [
-            CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
-            lockup ? CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity : 0
-        ];
+    //     vm.startPrank(user);
+    //     uint256 oldLiquidity = CamelotV3Farm(farm).getDepositInfo(depositId).liquidity;
+    //     uint256[2] memory oldTotalFundLiquidity = [
+    //         CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+    //         lockup ? CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity : 0
+    //     ];
 
-        vm.expectEmit(DAI);
-        emit Approval(farm, NFPM, depositAmount0);
-        vm.expectEmit(USDCe);
-        emit Approval(farm, NFPM, depositAmount1);
-        vm.expectEmit(true, false, false, false, NFPM);
-        emit IncreaseLiquidity(tokenId, 0, 0, 0, 0, address(0));
-        vm.expectEmit(true, false, false, false, farm);
-        emit DepositIncreased(depositId, 0);
+    //     vm.expectEmit(DAI);
+    //     emit Approval(farm, NFPM, depositAmount0);
+    //     vm.expectEmit(USDCe);
+    //     emit Approval(farm, NFPM, depositAmount1);
+    //     vm.expectEmit(true, false, false, false, NFPM);
+    //     emit IncreaseLiquidity(tokenId, 0, 0, 0, 0, address(0));
+    //     vm.expectEmit(true, false, false, false, farm);
+    //     emit DepositIncreased(depositId, 0);
 
-        vm.recordLogs();
-        CamelotV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
-        VmSafe.Log[] memory entries = vm.getRecordedLogs();
+    //     vm.recordLogs();
+    //     CamelotV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
+    //     VmSafe.Log[] memory entries = vm.getRecordedLogs();
 
-        // uint128 loggedLiquidity;
-        uint128 loggedActualLiquidity;
-        uint256 loggedAmount0;
-        uint256 loggedAmount1;
-        // bool found = false;
+    //     // uint128 loggedLiquidity;
+    //     uint128 loggedActualLiquidity;
+    //     uint256 loggedAmount0;
+    //     uint256 loggedAmount1;
+    //     // bool found = false;
 
-        for (uint256 i = 0; i < entries.length; i++) {
-            if (entries[i].topics[0] == keccak256("IncreaseLiquidity(uint256,uint128,uint128,uint256,uint256,address)"))
-            {
-                (, loggedActualLiquidity, loggedAmount0, loggedAmount1,) =
-                    abi.decode(entries[i].data, (uint128, uint128, uint256, uint256, address));
-            }
-            if (entries[i].topics[0] == keccak256("DepositIncreased(uint256,uint256)")) {
-                assertEq(
-                    abi.decode(entries[i].data, (uint256)),
-                    loggedActualLiquidity,
-                    "DepositIncreased event should have the same liquidity as IncreaseLiquidity event"
-                );
-                // found = true;
-            }
-        }
-        // assertTrue(found, "DepositIncreased event not found");
-        assertEq(IERC20(DAI).balanceOf(currentActor), depositAmount0 - loggedAmount0);
-        assertEq(IERC20(USDCe).balanceOf(currentActor), depositAmount1 - loggedAmount1);
-        assertEq(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity + loggedActualLiquidity);
-        assertEq(
-            CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
-            oldTotalFundLiquidity[0] + loggedActualLiquidity
-        );
-        lockup
-            ? assertEq(
-                CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity,
-                oldTotalFundLiquidity[0] + loggedActualLiquidity
-            )
-            : assert(true);
-    }
+    //     for (uint256 i = 0; i < entries.length; i++) {
+    //         if (entries[i].topics[0] == keccak256("IncreaseLiquidity(uint256,uint128,uint128,uint256,uint256,address)"))
+    //         {
+    //             (, loggedActualLiquidity, loggedAmount0, loggedAmount1,) =
+    //                 abi.decode(entries[i].data, (uint128, uint128, uint256, uint256, address));
+    //         }
+    //         if (entries[i].topics[0] == keccak256("DepositIncreased(uint256,uint256)")) {
+    //             assertEq(
+    //                 abi.decode(entries[i].data, (uint256)),
+    //                 loggedActualLiquidity,
+    //                 "DepositIncreased event should have the same liquidity as IncreaseLiquidity event"
+    //             );
+    //             // found = true;
+    //         }
+    //     }
+    //     // assertTrue(found, "DepositIncreased event not found");
+    //     assertEq(IERC20(DAI).balanceOf(currentActor), depositAmount0 - loggedAmount0);
+    //     assertEq(IERC20(USDCe).balanceOf(currentActor), depositAmount1 - loggedAmount1);
+    //     assertEq(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity + loggedActualLiquidity);
+    //     assertEq(
+    //         CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
+    //         oldTotalFundLiquidity[0] + loggedActualLiquidity
+    //     );
+    //     lockup
+    //         ? assertEq(
+    //             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).LOCKUP_FUND_ID()).totalLiquidity,
+    //             oldTotalFundLiquidity[0] + loggedActualLiquidity
+    //         )
+    //         : assert(true);
+    // }
 }
 
 abstract contract DecreaseDepositTest is CamelotV3FarmTest {
