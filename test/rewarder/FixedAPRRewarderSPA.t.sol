@@ -61,7 +61,7 @@ contract FixedAPRRewarderSPATest is Arbitrum {
             (uint256 apr, uint256 rewardRate,,,) = rewarder.farmRewardConfigs(farms[i]);
             (address[] memory assets, uint256[] memory amounts) = rewarder.getTokenAmounts(farms[i]);
             uint256[] memory rwdRates = ILegacyFarm(farms[i]).getRewardRates(SPA);
-            console.log("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-");
+            console.log("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
             console.log("* Farm %s           : %s", i + 1, farms[i]);
             console.log("* APR              : %s", apr / 1e8, "%");
             console.log("* RewardRate(rwdr) : %s (in wei)", rewardRate);
@@ -80,13 +80,15 @@ contract FixedAPRRewarderSPATest is Arbitrum {
             console.log("* Weekly rewards   : %s.0 SPA (Precision adjusted)", (rewardRate * 1 weeks) / 1e18);
             console.log("* Reward Balance   : %s.0 SPA (Precision adjusted)", ERC20(SPA).balanceOf(farms[i]) / 1e18);
             console.log("* Annual rewards   : %s.0 SPA (Precision adjusted)", (rewardRate * 365 days) / 1e18);
+            console.log("* Total rwdRate    : %s", rewarder.totalRewardRate());
             console.log("* Amounts are %s and %s", amounts[0], amounts[1]);
-            console.log("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-");
+            console.log("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
             console.log();
             unchecked {
                 ++i;
             }
         }
+        console.log("* Total rwdRate    : %s", rewarder.totalRewardRate());
     }
 
     function _addFarms() private {
