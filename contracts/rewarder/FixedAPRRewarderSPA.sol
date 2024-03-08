@@ -91,6 +91,7 @@ contract FixedAPRRewarderSPA is Ownable {
     error FarmNotSupported();
     error InvalidAddress();
     error InvalidFarm();
+    error ZeroAmount();
     error PriceFeedDoesNotExist(address token);
     error InvalidRewardPercentage(uint256 percentage);
 
@@ -130,6 +131,16 @@ contract FixedAPRRewarderSPA is Ownable {
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
+    /// @notice A function to recover ERC20 tokens from this contract.
+    /// @param _token Address of the token.
+    /// @param _amount Amount of the tokens.
+    function recoverERC20(address _token, uint256 _amount) external onlyOwner {
+        if (IERC20(_token).balanceOf(address(this)) == 0) {
+            revert ZeroAmount();
+        }
+        IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
+
     /// @notice A function to calculate the time till which rewards are there for an LP.
     /// @param _farm Address of the farm for which the end time is to be calculated.
     /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
@@ -146,7 +157,7 @@ contract FixedAPRRewarderSPA is Ownable {
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
     function calibrateRewards(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
-        if (farmRewardConfig.apr != 0 && !ILegacyFarm(_farm).isPaused()) {
+        if (farmRewardConfig.apr != 0) {
             (address[] memory assets, uint256[] memory amounts) = getTokenAmounts(_farm);
             uint256 assetsLen = assets.length;
             // Calculating total USD value for all the assets.
@@ -195,8 +206,7 @@ contract FixedAPRRewarderSPA is Ownable {
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
             farmRewardConfigs[_farm].rewardRate = rewardRate;
             emit RewardsCalibrated(_farm, rewardsToSend, rewardRate);
-        }
-        if (farmRewardConfig.apr == 0 && !ILegacyFarm(_farm).isPaused()) {
+        } else {
             _setRewardRate(_farm, 0, farmRewardConfig.noLockupRewardPer);
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, 0);
             farmRewardConfigs[_farm].rewardRate = 0;
