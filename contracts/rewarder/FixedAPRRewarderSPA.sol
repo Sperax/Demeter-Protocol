@@ -70,6 +70,19 @@ contract FixedAPRRewarderSPA is Ownable {
         bool isUniV3Farm;
     }
 
+    // Configuration for fixed APR reward tokens.
+    // apr - APR of the reward stored in 8 precision.
+    // maxRewardRate - Maximum amount of tokens to be emitted per second.
+    // baseTokens - Addresses of tokens to be considered for calculating the L value.
+    // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
+    struct FarmRewardConfigParams {
+        uint256 apr;
+        uint256 maxRewardRate;
+        address[] baseTokens;
+        uint256 noLockupRewardPer; // 5000 = 50%
+        bool isUniV3Farm;
+    }
+
     uint8 public constant COMMON_FUND_ID = 0;
     uint256 public constant MAX_PERCENTAGE = 10000;
     uint256 public constant APR_PRECISION = 1e8;
@@ -85,7 +98,7 @@ contract FixedAPRRewarderSPA is Ownable {
     mapping(address => uint8) private _decimals;
 
     event OracleUpdated(address newOracle);
-    event RewardConfigUpdated(address indexed farm, FarmRewardConfig rewardConfig);
+    event RewardConfigUpdated(address indexed farm, FarmRewardConfigParams rewardConfig);
     event RewardsCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error FarmNotSupported();
@@ -107,7 +120,7 @@ contract FixedAPRRewarderSPA is Ownable {
     /// @notice A function to update the rewardToken configuration.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FarmRewardConfig memory _rewardConfig) external onlyOwner {
+    function updateRewardConfig(address _farm, FarmRewardConfigParams memory _rewardConfig) external onlyOwner {
         // validating new reward config
         uint256 baseTokensLen = _rewardConfig.baseTokens.length;
         for (uint256 i; i < baseTokensLen;) {
@@ -117,9 +130,14 @@ contract FixedAPRRewarderSPA is Ownable {
             }
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        _rewardConfig.rewardRate = farmRewardConfigs[_farm].rewardRate;
-
-        farmRewardConfigs[_farm] = _rewardConfig;
+        farmRewardConfigs[_farm] = FarmRewardConfig({
+            apr: _rewardConfig.apr,
+            rewardRate: farmRewardConfigs[_farm].rewardRate,
+            maxRewardRate: _rewardConfig.maxRewardRate,
+            baseTokens: _rewardConfig.baseTokens,
+            noLockupRewardPer: _rewardConfig.noLockupRewardPer,
+            isUniV3Farm: _rewardConfig.isUniV3Farm
+        });
         emit RewardConfigUpdated(_farm, _rewardConfig);
         calibrateRewards(_farm);
     }
@@ -275,9 +293,7 @@ contract FixedAPRRewarderSPA is Ownable {
         if (_decimals[_token] == 0) {
             _decimals[_token] = ERC20(_token).decimals();
         }
-        if (_decimals[_token] != 18) {
-            _amount *= 10 ** (18 - _decimals[_token]);
-        }
+        _amount *= 10 ** (18 - _decimals[_token]);
         return _amount;
     }
 

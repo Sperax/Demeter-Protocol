@@ -19,7 +19,7 @@ contract FixedAPRRewarderSPATest is Arbitrum {
     address public constant ORACLE = 0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50;
     address public rewardManager;
     address[] private farms;
-    mapping(address => FixedAPRRewarderSPA.FarmRewardConfig) private farmRewardConfigs;
+    mapping(address => FixedAPRRewarderSPA.FarmRewardConfigParams) private farmRewardConfigs;
 
     function setUp() public override {
         super.setUp();
@@ -32,9 +32,8 @@ contract FixedAPRRewarderSPATest is Arbitrum {
         uint256 farmsLen = farms.length;
         deal(SPA, address(rewarder), 1e30);
         for (uint8 i; i < farmsLen;) {
-            farmRewardConfigs[farms[i]] = FixedAPRRewarderSPA.FarmRewardConfig({
+            farmRewardConfigs[farms[i]] = FixedAPRRewarderSPA.FarmRewardConfigParams({
                 apr: i * 1e9,
-                rewardRate: 30423903299021,
                 maxRewardRate: type(uint256).max,
                 baseTokens: _baseTokens,
                 noLockupRewardPer: 5000,

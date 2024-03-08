@@ -32,9 +32,9 @@ import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
 import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 
-/// @title Rewarder contract of Demeter Protocol
-/// @notice This contract tracks farms, their APR, and rewards
-/// @author Sperax Foundation
+/// @title Rewarder contract of Demeter Protocol.
+/// @notice This contract tracks farms, their APR and other data for a specific reward token.
+/// @author Sperax Foundation.
 contract Rewarder is Ownable, Initializable {
     using SafeERC20 for IERC20;
 
@@ -52,18 +52,30 @@ contract Rewarder is Ownable, Initializable {
         uint256 noLockupRewardPer; // 5000 = 50%
     }
 
+    // Configuration for fixed APR reward tokens.
+    // apr - APR of the reward stored in 8 precision.
+    // maxRewardRate - Maximum amount of tokens to be emitted per second.
+    // baseTokens - Addresses of tokens to be considered for calculating the L value.
+    // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
+    struct FarmRewardConfigParams {
+        uint256 apr;
+        uint256 maxRewardRate;
+        address[] baseTokens;
+        uint256 noLockupRewardPer; // 5000 = 50%
+    }
+
     uint256 public constant MAX_PERCENTAGE = 10000;
-    uint256 public constant APR_PRECISION = 1e8;
+    uint256 public constant APR_PRECISION = 1e8; // 1%
     uint256 public constant REWARD_PERIOD = 1 weeks;
-    uint256 public totalRewardRate;
+    address public REWARD_TOKEN;
+    uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
-    address public rewardToken;
     // farm -> FarmRewardConfig
     mapping(address => FarmRewardConfig) public farmRewardConfigs;
     mapping(address => uint8) private _decimals;
 
-    event RewardConfigUpdated(address indexed farm, FarmRewardConfig rewardConfig);
-    event RewardsCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
+    event RewardConfigUpdated(address indexed farm, FarmRewardConfigParams rewardConfig);
+    event RewardCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error InvalidAddress();
     error InvalidFarm();
@@ -78,14 +90,15 @@ contract Rewarder is Ownable, Initializable {
     function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
         _validatePriceFeed(_rwdToken, _oracle);
         rewarderFactory = msg.sender;
-        rewardToken = _rwdToken;
+        REWARD_TOKEN = _rwdToken;
         _transferOwnership(_admin);
     }
 
-    /// @notice A function to update the rewardToken configuration.
+    /// @notice A function to update the REWARD_TOKEN configuration.
+    ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FarmRewardConfig memory _rewardConfig) external onlyOwner {
+    function updateRewardConfig(address _farm, FarmRewardConfigParams memory _rewardConfig) external onlyOwner {
         if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
@@ -99,17 +112,22 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        _rewardConfig.rewardRate = farmRewardConfigs[_farm].rewardRate;
-        farmRewardConfigs[_farm] = _rewardConfig;
+        farmRewardConfigs[_farm] = FarmRewardConfig({
+            apr: _rewardConfig.apr,
+            rewardRate: farmRewardConfigs[_farm].rewardRate,
+            maxRewardRate: _rewardConfig.maxRewardRate,
+            baseTokens: _rewardConfig.baseTokens,
+            noLockupRewardPer: _rewardConfig.noLockupRewardPer
+        });
         emit RewardConfigUpdated(_farm, _rewardConfig);
-        calibrateRewards(_farm);
+        calibrateReward(_farm);
     }
 
     /// @notice A function to update the token manager's address in the farm.
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
-        IFarm(_farm).updateRewardData(rewardToken, _newManager);
+        IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
     /// @notice A function to recover ERC20 tokens from this contract.
@@ -126,8 +144,8 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm for which the end time is to be calculated.
     /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
-        uint256 farmBalance = IERC20(rewardToken).balanceOf(_farm);
-        uint256 rewarderBalance = IERC20(rewardToken).balanceOf(address(this));
+        uint256 farmBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+        uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
         rewardsEndingOn = block.timestamp
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
@@ -136,7 +154,7 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
-    function calibrateRewards(address _farm) public returns (uint256 rewardsToSend) {
+    function calibrateReward(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0) {
             (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
@@ -163,7 +181,7 @@ contract Rewarder is Ownable, Initializable {
                 }
             }
             // Getting reward token price to calculate rewards emission.
-            _priceData = _getPrice(rewardToken, oracle);
+            _priceData = _getPrice(REWARD_TOKEN, oracle);
             uint256 rewardRate = (
                 (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
             ) / _priceData.price;
@@ -171,15 +189,15 @@ contract Rewarder is Ownable, Initializable {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
             // Calculating the deficit rewards in farm and sending them.
-            uint256 _farmRwdBalance = IERC20(rewardToken).balanceOf(_farm);
-            uint256 _rewarderRwdBalance = IERC20(rewardToken).balanceOf(address(this));
+            uint256 _farmRwdBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+            uint256 _rewarderRwdBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
             rewardsToSend = (rewardRate * REWARD_PERIOD);
             if (rewardsToSend > _farmRwdBalance) {
                 rewardsToSend -= _farmRwdBalance;
                 if (rewardsToSend > _rewarderRwdBalance) {
                     rewardsToSend = _rewarderRwdBalance;
                 }
-                IERC20(rewardToken).safeTransfer(_farm, rewardsToSend);
+                IERC20(REWARD_TOKEN).safeTransfer(_farm, rewardsToSend);
             } else {
                 rewardsToSend = 0;
             }
@@ -187,12 +205,12 @@ contract Rewarder is Ownable, Initializable {
             _setRewardRate(_farm, rewardRate, farmRewardConfig.noLockupRewardPer);
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
             farmRewardConfigs[_farm].rewardRate = rewardRate;
-            emit RewardsCalibrated(_farm, rewardsToSend, rewardRate);
+            emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
         } else {
             _setRewardRate(_farm, 0, farmRewardConfig.noLockupRewardPer);
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, 0);
             farmRewardConfigs[_farm].rewardRate = 0;
-            emit RewardsCalibrated(_farm, 0, 0);
+            emit RewardCalibrated(_farm, 0, 0);
         }
     }
 
@@ -205,13 +223,13 @@ contract Rewarder is Ownable, Initializable {
         if (IFarm(_farm).cooldownPeriod() == 0) {
             _newRewardRates = new uint256[](1);
             _newRewardRates[0] = _rwdRate;
-            IFarm(_farm).setRewardRate(rewardToken, _newRewardRates);
+            IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
         } else {
             _newRewardRates = new uint256[](2);
             uint256 commonFundShare = (_rwdRate * _noLockupRewardPer) / MAX_PERCENTAGE;
             _newRewardRates[0] = commonFundShare;
             _newRewardRates[1] = _rwdRate - commonFundShare;
-            IFarm(_farm).setRewardRate(rewardToken, _newRewardRates);
+            IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
         }
     }
 
@@ -231,9 +249,7 @@ contract Rewarder is Ownable, Initializable {
         if (_decimals[_token] == 0) {
             _decimals[_token] = ERC20(_token).decimals();
         }
-        if (_decimals[_token] != 18) {
-            _amount *= 10 ** (18 - _decimals[_token]);
-        }
+        _amount *= 10 ** (18 - _decimals[_token]);
         return _amount;
     }
 
@@ -255,7 +271,7 @@ contract Rewarder is Ownable, Initializable {
 
     /// @notice A function to validate farm.
     /// @param _farm Address of the farm to be validated.
-    /// @dev It checks that the farm should implement getTokenAmounts and have rewardToken
+    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN
     /// as one of the reward tokens.
     function _isValidFarm(address _farm, address[] memory _baseTokens) private view returns (bool) {
         (address[] memory assets,) = IFarm(_farm).getTokenAmounts();
@@ -269,7 +285,7 @@ contract Rewarder is Ownable, Initializable {
         address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
         uint256 rwdTokensLen = rwdTokens.length;
         for (uint8 i; i < rwdTokensLen;) {
-            if (rwdTokens[i] == rewardToken) {
+            if (rwdTokens[i] == REWARD_TOKEN) {
                 return true;
             }
             unchecked {

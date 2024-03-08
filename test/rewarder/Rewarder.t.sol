@@ -22,9 +22,8 @@ contract RewarderTest is CamelotV2FarmTest {
         rewarder = Rewarder(rewarderFactory.deployRewarder(USDCe));
         address[] memory _baseTokens = new address[](1);
         _baseTokens[0] = DAI;
-        Rewarder.FarmRewardConfig memory _rewardConfig = Rewarder.FarmRewardConfig({
+        Rewarder.FarmRewardConfigParams memory _rewardConfig = Rewarder.FarmRewardConfigParams({
             apr: 1e9,
-            rewardRate: 0,
             maxRewardRate: type(uint256).max,
             baseTokens: _baseTokens,
             noLockupRewardPer: 5000
@@ -34,7 +33,7 @@ contract RewarderTest is CamelotV2FarmTest {
         deal(USDCe, address(rewarder), 1e26);
         changePrank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
-        rewarder.calibrateRewards(lockupFarm);
+        rewarder.calibrateReward(lockupFarm);
     }
 
     function test_Init() public {
