@@ -27,10 +27,9 @@ import "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
-// TODO -> need to add miscellaneous tests for the farm.
 // Need to add tests were tickspacing is changed, etc.
 // Note -> If tickspacing is changed in between the farm, users might not be able to mint new positions that adhere to our tickLower and tickUpper.
-//         Users will also not be able to increase liquidity of their positions that are created before this change.
+//         Users might also not be able to increase liquidity of their positions that are created before this change.
 
 interface ICamelotV3FactoryTesting {
     function owner() external view returns (address);
