@@ -27,9 +27,11 @@ import "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
-// Need to add tests were tickspacing is changed, etc.
-// Note -> If tickspacing is changed in between the farm, users might not be able to mint new positions that adhere to our tickLower and tickUpper.
-//         Users might also not be able to increase liquidity of their positions that are created before this change.
+// Note -> Important considerations.
+// The tickspacing of pools is not immutable.
+// If tickspacing is changed in a way that either our of tickUpper and tickLower are not divisible by this new tickspacing, users will not be able to mint new positions adhering to our farm ticks and they will also not be able to increase liquidity of their current positions.
+// We can reduce risk by choosing tickLower and tickUpper as (highly divisible numbers and there should be more common divisors/factors between the two numbers) in our farm tick requirement. And ofcourse both the numbers should be divisible by the tickspacing of the pool at the time of farm launch.
+// Camelot V3 pools can set tickspacing upto 500.
 
 interface ICamelotV3FactoryTesting {
     function owner() external view returns (address);
