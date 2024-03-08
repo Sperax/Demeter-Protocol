@@ -28,11 +28,12 @@ contract RewarderTest is CamelotV2FarmTest {
             baseTokens: _baseTokens,
             noLockupRewardPer: 5000
         });
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        changePrank(rewardManager);
         rewarder.updateRewardConfig(lockupFarm, _rewardConfig);
         deposit(lockupFarm, false, 1000);
         deal(USDCe, address(rewarder), 1e26);
-        changePrank(owner);
-        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
         rewarder.calibrateReward(lockupFarm);
     }
 
