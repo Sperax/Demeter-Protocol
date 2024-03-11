@@ -42,13 +42,13 @@ contract Rewarder is Ownable, Initializable {
     // apr - APR of the reward stored in 8 precision.
     // rewardRate - Amount of tokens emitted per second.
     // maxRewardRate - Maximum amount of tokens to be emitted per second.
-    // baseTokens - Addresses of tokens to be considered for calculating the L value.
+    // baseAssetIndexes - Addresses of tokens to be considered for calculating the L value.
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
     struct FarmRewardConfig {
         uint256 apr;
         uint256 rewardRate;
         uint256 maxRewardRate;
-        address[] baseTokens;
+        uint256[] baseAssetIndexes;
         uint256 noLockupRewardPer; // 5000 = 50%
     }
 
@@ -94,6 +94,7 @@ contract Rewarder is Ownable, Initializable {
         _transferOwnership(_admin);
     }
 
+    // @todo add updateApr function
     /// @notice A function to update the REWARD_TOKEN configuration.
     ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
@@ -112,15 +113,10 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        farmRewardConfigs[_farm] = FarmRewardConfig({
-            apr: _rewardConfig.apr,
-            rewardRate: farmRewardConfigs[_farm].rewardRate,
-            maxRewardRate: _rewardConfig.maxRewardRate,
-            baseTokens: _rewardConfig.baseTokens,
-            noLockupRewardPer: _rewardConfig.noLockupRewardPer
-        });
+        farmRewardConfigs[_farm].apr = _rewardConfig.apr;
+        farmRewardConfigs[_farm].maxRewardRate = _rewardConfig.maxRewardRate;
+        farmRewardConfigs[_farm].noLockupRewardPer = _rewardConfig.noLockupRewardPer;
         emit RewardConfigUpdated(_farm, _rewardConfig);
-        calibrateReward(_farm);
     }
 
     /// @notice A function to update the token manager's address in the farm.
@@ -138,6 +134,13 @@ contract Rewarder is Ownable, Initializable {
             revert ZeroAmount();
         }
         IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
+
+    /// @notice A function to get reward config for a farm.
+    /// @param _farm Address of the farm.
+    function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
+        // @todo Add a validation to check farm is configured.
+        return farmRewardConfigs[_farm];
     }
 
     /// @notice A function to calculate the time till which rewards are there for an LP.
@@ -158,26 +161,21 @@ contract Rewarder is Ownable, Initializable {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0) {
             (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
-            uint256 assetsLen = assets.length;
             // Calculating total USD value for all the assets.
             uint256 totalValue;
-            uint256 baseTokensLen = farmRewardConfig.baseTokens.length;
+            uint256 baseTokensLen = farmRewardConfig.baseAssetIndexes.length;
             IOracle.PriceData memory _priceData;
             address oracle = IRewarderFactory(rewarderFactory).oracle();
-            for (uint8 iFarmTokens; iFarmTokens < assetsLen;) {
-                for (uint8 jBaseTokens; jBaseTokens < baseTokensLen;) {
-                    if (assets[iFarmTokens] == farmRewardConfig.baseTokens[jBaseTokens]) {
-                        _priceData = _getPrice(assets[iFarmTokens], oracle);
-                        totalValue += (_priceData.price * _normalizeAmount(assets[iFarmTokens], amounts[iFarmTokens]))
-                            / _priceData.precision;
-                        break;
-                    }
-                    unchecked {
-                        ++jBaseTokens;
-                    }
-                }
+            for (uint8 i; i < baseTokensLen;) {
+                _priceData = _getPrice(assets[farmRewardConfig.baseAssetIndexes[i]], oracle);
+                totalValue += (
+                    _priceData.price
+                        * _normalizeAmount(
+                            assets[farmRewardConfig.baseAssetIndexes[i]], amounts[farmRewardConfig.baseAssetIndexes[i]]
+                        )
+                ) / _priceData.precision;
                 unchecked {
-                    ++iFarmTokens;
+                    ++i;
                 }
             }
             // Getting reward token price to calculate rewards emission.
@@ -253,6 +251,48 @@ contract Rewarder is Ownable, Initializable {
         return _amount;
     }
 
+    /// @notice A function to validate farm.
+    /// @param _farm Address of the farm to be validated.
+    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN
+    /// as one of the reward tokens.
+    function _isValidFarm(address _farm, address[] memory _baseTokens) private returns (bool) {
+        return _hasRewardToken(_farm) && _hasBaseTokens(_farm, _baseTokens);
+    }
+
+    /// @notice A function to check whether the base tokens are a subset of farm's assets.
+    /// @param _farm Address of the farm.
+    /// @param _baseTokens Array of base token addresses to be considered for value calculation.
+    /// @dev It handles repeated base tokens as well and pushes indexed in farmRewardConfigs.
+    /// @return hasBaseTokens True if baseTokens are non redundant and are a subset of assets.
+    function _hasBaseTokens(address _farm, address[] memory _baseTokens) private returns (bool) {
+        (address[] memory _assets,) = IFarm(_farm).getTokenAmounts();
+        uint256 _assetsLen = _assets.length;
+        uint256 _baseTokensLen = _baseTokens.length;
+        bool hasBaseTokens;
+        for (uint8 i; i < _baseTokensLen;) {
+            hasBaseTokens = false;
+            for (uint8 j; j < _assetsLen;) {
+                if (_baseTokens[i] == _assets[j]) {
+                    hasBaseTokens = true;
+                    farmRewardConfigs[_farm].baseAssetIndexes.push(j);
+                    // Deleting will make _assets[j] -> 0x0 so if _baseTokens have repeated address, this function will return false.
+                    delete _assets[j];
+                    break;
+                }
+                unchecked {
+                    ++j;
+                }
+            }
+            if (!hasBaseTokens) {
+                return false;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return true;
+    }
+
     /// @notice A function to fetch and get the price of a token.
     /// @param _token Token for which the the price is to be fetched.
     /// @param _oracle Address of the oracle contract.
@@ -267,15 +307,6 @@ contract Rewarder is Ownable, Initializable {
         if (!IOracle(_oracle).priceFeedExists(_token)) {
             revert PriceFeedDoesNotExist(_token);
         }
-    }
-
-    /// @notice A function to validate farm.
-    /// @param _farm Address of the farm to be validated.
-    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN
-    /// as one of the reward tokens.
-    function _isValidFarm(address _farm, address[] memory _baseTokens) private view returns (bool) {
-        (address[] memory assets,) = IFarm(_farm).getTokenAmounts();
-        return _hasRewardToken(_farm) && _hasBaseTokens(assets, _baseTokens);
     }
 
     /// @notice A function to check the reward token of this is a farm's reward token.
@@ -293,38 +324,6 @@ contract Rewarder is Ownable, Initializable {
             }
         }
         return false;
-    }
-
-    /// @notice A function to check whether the base tokens are a subset of farm's assets.
-    /// @param _assets Array of farm's asset addresses.
-    /// @param _baseTokens Array of base token addresses to be considered for value calculation.
-    /// @dev It handles repeated base tokens as well.
-    /// @return hasBaseTokens True if baseTokens are non redundant and are a subset of assets.
-    function _hasBaseTokens(address[] memory _assets, address[] memory _baseTokens) private pure returns (bool) {
-        uint256 _assetsLen = _assets.length;
-        uint256 _baseTokensLen = _baseTokens.length;
-        bool hasBaseTokens;
-        for (uint8 i; i < _baseTokensLen;) {
-            hasBaseTokens = false;
-            for (uint8 j; j < _assetsLen;) {
-                if (_baseTokens[i] == _assets[j]) {
-                    hasBaseTokens = true;
-                    // Deleting will make _assets[j] -> 0x0 so if _baseTokens have repeated address, this function will return false.
-                    delete _assets[j];
-                    break;
-                }
-                unchecked {
-                    ++j;
-                }
-            }
-            if (!hasBaseTokens) {
-                return false;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return true;
     }
 
     /// @notice A function to validate the no lockup fund's reward percentage.
