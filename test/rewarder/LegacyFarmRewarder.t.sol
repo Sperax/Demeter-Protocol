@@ -37,7 +37,7 @@ contract LegacyFarmRewarderTest is RewarderTest {
                 apr: i * 1e9,
                 maxRewardRate: type(uint256).max,
                 baseTokens: _baseTokens,
-                noLockupRewardPer: 5000
+                nonLockupRewardPer: 5000
             });
             if (i > 1) {
                 vm.prank(PROXY_OWNER);

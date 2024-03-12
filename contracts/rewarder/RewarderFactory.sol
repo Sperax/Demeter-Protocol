@@ -40,7 +40,7 @@ contract RewarderFactory is Ownable {
 
     error InvalidAddress();
 
-    /// @notice Contructor of this contract.
+    /// @notice Constructor of this contract.
     /// @param _oracle Address of the master price oracle of USDs.
     constructor(address _oracle) Ownable() {
         updateOracle(_oracle);

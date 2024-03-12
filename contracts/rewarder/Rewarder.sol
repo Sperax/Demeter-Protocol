@@ -49,7 +49,7 @@ contract Rewarder is Ownable, Initializable {
         uint256 rewardRate;
         uint256 maxRewardRate;
         uint256[] baseAssetIndexes;
-        uint256 noLockupRewardPer; // 5000 = 50%
+        uint256 nonLockupRewardPer; // 5000 = 50%
     }
 
     // Configuration for fixed APR reward tokens.
@@ -61,12 +61,14 @@ contract Rewarder is Ownable, Initializable {
         uint256 apr;
         uint256 maxRewardRate;
         address[] baseTokens;
-        uint256 noLockupRewardPer; // 5000 = 50%
+        uint256 nonLockupRewardPer; // 5000 = 50%
     }
 
     uint256 public constant MAX_PERCENTAGE = 10000;
     uint256 public constant APR_PRECISION = 1e8; // 1%
     uint256 public constant REWARD_PERIOD = 1 weeks;
+    uint256 public constant DENOMINATOR = 100;
+    uint256 public constant ONE_YEAR = 365 days;
     address public REWARD_TOKEN;
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
@@ -160,10 +162,10 @@ contract Rewarder is Ownable, Initializable {
                 ++i;
             }
         }
-        _validateRewardPer(_rewardConfig.noLockupRewardPer);
+        _validateRewardPer(_rewardConfig.nonLockupRewardPer);
         farmRewardConfigs[_farm].apr = _rewardConfig.apr;
         farmRewardConfigs[_farm].maxRewardRate = _rewardConfig.maxRewardRate;
-        farmRewardConfigs[_farm].noLockupRewardPer = _rewardConfig.noLockupRewardPer;
+        farmRewardConfigs[_farm].nonLockupRewardPer = _rewardConfig.nonLockupRewardPer;
         emit RewardConfigUpdated(_farm, _rewardConfig);
     }
 
@@ -173,37 +175,38 @@ contract Rewarder is Ownable, Initializable {
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
     function calibrateReward(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
+        uint256 rewardRate;
         if (farmRewardConfig.apr != 0) {
             (address[] memory assets, uint256[] memory amounts) = _getTokenAmounts(_farm);
             // Calculating total USD value for all the assets.
             uint256 totalValue;
             uint256 baseTokensLen = farmRewardConfig.baseAssetIndexes.length;
-            IOracle.PriceData memory _priceData;
+            IOracle.PriceData memory priceData;
             address oracle = IRewarderFactory(rewarderFactory).oracle();
             for (uint8 i; i < baseTokensLen;) {
-                _priceData = _getPrice(assets[farmRewardConfig.baseAssetIndexes[i]], oracle);
+                priceData = _getPrice(assets[farmRewardConfig.baseAssetIndexes[i]], oracle);
                 totalValue += (
-                    _priceData.price
+                    priceData.price
                         * _normalizeAmount(
                             assets[farmRewardConfig.baseAssetIndexes[i]], amounts[farmRewardConfig.baseAssetIndexes[i]]
                         )
-                ) / _priceData.precision;
+                ) / priceData.precision;
                 unchecked {
                     ++i;
                 }
             }
             // Getting reward token price to calculate rewards emission.
-            _priceData = _getPrice(REWARD_TOKEN, oracle);
-            uint256 rewardRate = (
-                (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * 100)) / 365 days) * _priceData.precision
-            ) / _priceData.price;
+            priceData = _getPrice(REWARD_TOKEN, oracle);
+            rewardRate = (
+                (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * DENOMINATOR)) / ONE_YEAR) * priceData.precision
+            ) / priceData.price;
             if (rewardRate > farmRewardConfig.maxRewardRate) {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
             // Calculating the deficit rewards in farm and sending them.
             uint256 _farmRwdBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
             uint256 _rewarderRwdBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
-            rewardsToSend = (rewardRate * REWARD_PERIOD);
+            rewardsToSend = rewardRate * REWARD_PERIOD;
             if (rewardsToSend > _farmRwdBalance) {
                 rewardsToSend -= _farmRwdBalance;
                 if (rewardsToSend > _rewarderRwdBalance) {
@@ -213,17 +216,16 @@ contract Rewarder is Ownable, Initializable {
             } else {
                 rewardsToSend = 0;
             }
-            // Updating reward rate in farm and adjusting global reward rate of this rewarder.
-            _setRewardRate(_farm, rewardRate, farmRewardConfig.noLockupRewardPer);
-            _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
-            farmRewardConfigs[_farm].rewardRate = rewardRate;
-            emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
         } else {
-            _setRewardRate(_farm, 0, farmRewardConfig.noLockupRewardPer);
-            _adjustGlobalRewardRate(farmRewardConfig.rewardRate, 0);
+            rewardRate = 0;
             farmRewardConfigs[_farm].rewardRate = 0;
-            emit RewardCalibrated(_farm, 0, 0);
+            rewardsToSend = 0;
         }
+        // Updating reward rate in farm and adjusting global reward rate of this rewarder.
+        _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
+        _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
+        farmRewardConfigs[_farm].rewardRate = rewardRate;
+        emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
     }
 
     /// @notice Internal initialize function.
@@ -281,8 +283,8 @@ contract Rewarder is Ownable, Initializable {
     /// @notice A function to set reward rate in the farm.
     /// @param _farm Address of the farm.
     /// @param _rwdRate Reward per second to be emitted.
-    /// @param _noLockupRewardPer Reward percentage to be allocated to no lockup fund
-    function _setRewardRate(address _farm, uint256 _rwdRate, uint256 _noLockupRewardPer) private {
+    /// @param _nonLockupRewardPer Reward percentage to be allocated to no lockup fund
+    function _setRewardRate(address _farm, uint256 _rwdRate, uint256 _nonLockupRewardPer) private {
         uint256[] memory _newRewardRates;
         if (IFarm(_farm).cooldownPeriod() == 0) {
             _newRewardRates = new uint256[](1);
@@ -290,7 +292,7 @@ contract Rewarder is Ownable, Initializable {
             IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
         } else {
             _newRewardRates = new uint256[](2);
-            uint256 commonFundShare = (_rwdRate * _noLockupRewardPer) / MAX_PERCENTAGE;
+            uint256 commonFundShare = (_rwdRate * _nonLockupRewardPer) / MAX_PERCENTAGE;
             _newRewardRates[0] = commonFundShare;
             _newRewardRates[1] = _rwdRate - commonFundShare;
             IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
@@ -301,8 +303,7 @@ contract Rewarder is Ownable, Initializable {
     /// @param _oldRewardRate Old emission rate.
     /// @param _newRewardRate New emission rate.
     function _adjustGlobalRewardRate(uint256 _oldRewardRate, uint256 _newRewardRate) private {
-        totalRewardRate -= _oldRewardRate;
-        totalRewardRate += _newRewardRate;
+        totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
     /// @notice A function to normalize asset amounts to be of precision 1e18.
@@ -362,8 +363,8 @@ contract Rewarder is Ownable, Initializable {
     /// @notice A function to fetch and get the price of a token.
     /// @param _token Token for which the the price is to be fetched.
     /// @param _oracle Address of the oracle contract.
-    function _getPrice(address _token, address _oracle) private view returns (IOracle.PriceData memory _priceData) {
-        _priceData = IOracle(_oracle).getPrice(_token);
+    function _getPrice(address _token, address _oracle) private view returns (IOracle.PriceData memory priceData) {
+        priceData = IOracle(_oracle).getPrice(_token);
     }
 
     /// @notice A function to validate price feed.

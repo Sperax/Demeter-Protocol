@@ -28,7 +28,7 @@ contract RewarderTest is CamelotV2FarmTest {
             apr: 1e9,
             maxRewardRate: type(uint256).max,
             baseTokens: _baseTokens,
-            noLockupRewardPer: 5000
+            nonLockupRewardPer: 5000
         });
         changePrank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
