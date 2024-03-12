@@ -11,8 +11,3 @@ interface IUniswapV3Farm {
     function tickLowerAllowed() external view returns (int24);
     function tickUpperAllowed() external view returns (int24);
 }
-
-interface ILegacyFarm {
-    function isPaused() external view returns (bool);
-    function isClosed() external view returns (bool);
-}

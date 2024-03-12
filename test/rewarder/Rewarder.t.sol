@@ -14,7 +14,7 @@ contract RewarderTest is CamelotV2FarmTest {
     address public rewardManager;
     address public farmAdmin;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
         rewardManager = makeAddr("Reward manager");
         vm.prank(PROXY_OWNER);
@@ -36,7 +36,6 @@ contract RewarderTest is CamelotV2FarmTest {
         rewarder.updateRewardConfig(lockupFarm, _rewardConfig);
         deposit(lockupFarm, false, 1000);
         deal(USDCe, address(rewarder), 1e26);
-
         rewarder.calibrateReward(lockupFarm);
     }
 
@@ -54,8 +53,8 @@ contract RewarderTest is CamelotV2FarmTest {
 
     function _printStats() private view {
         Rewarder.FarmRewardConfig memory _rwdConfig = rewarder.getFarmRewardConfig(lockupFarm);
-        (address[] memory assets, uint256[] memory amounts) = CamelotV2Farm(lockupFarm).getTokenAmounts();
-        uint256[] memory rwdRates = CamelotV2Farm(lockupFarm).getRewardRates(SPA);
+        (address[] memory assets,) = CamelotV2Farm(lockupFarm).getTokenAmounts();
+        // uint256[] memory rwdRates = CamelotV2Farm(lockupFarm).getRewardRates(SPA);
         console.log("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
         console.log("* Farm             : %s", lockupFarm);
         console.log("* Assets 0         : %s", assets[0]);

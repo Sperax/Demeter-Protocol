@@ -4,7 +4,6 @@ pragma solidity 0.8.16;
 import {INFTPool, IPair} from "../e721-farms/camelotV2/interfaces/ICamelotV2.sol";
 import {IUniswapV3PoolState} from "../e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 import {IUniswapV3Utils} from "../e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
-import {INFPMUtils, Position} from "../e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 
 library TokenUtils {
     function getUniV2TokenAmounts(address _nftContract, uint256 _farmLiquidity)

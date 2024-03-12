@@ -88,35 +88,7 @@ contract Rewarder is Ownable, Initializable {
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.
     function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
-        _validatePriceFeed(_rwdToken, _oracle);
-        rewarderFactory = msg.sender;
-        REWARD_TOKEN = _rwdToken;
-        _transferOwnership(_admin);
-    }
-
-    // @todo add updateApr function
-    /// @notice A function to update the REWARD_TOKEN configuration.
-    ///         This function calibrates reward so token manager must be updated to address of this in the farm.
-    /// @param _farm Address of the farm for which the config is to be updated.
-    /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig) external onlyOwner {
-        if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
-            revert InvalidFarm();
-        }
-        address oracle = IRewarderFactory(rewarderFactory).oracle();
-        // validating new reward config
-        uint256 baseTokensLen = _rewardConfig.baseTokens.length;
-        for (uint256 i; i < baseTokensLen;) {
-            _validatePriceFeed(_rewardConfig.baseTokens[i], oracle);
-            unchecked {
-                ++i;
-            }
-        }
-        _validateRewardPer(_rewardConfig.noLockupRewardPer);
-        farmRewardConfigs[_farm].apr = _rewardConfig.apr;
-        farmRewardConfigs[_farm].maxRewardRate = _rewardConfig.maxRewardRate;
-        farmRewardConfigs[_farm].noLockupRewardPer = _rewardConfig.noLockupRewardPer;
-        emit RewardConfigUpdated(_farm, _rewardConfig);
+        _initialize(_rwdToken, _oracle, _admin, msg.sender);
     }
 
     /// @notice A function to update the token manager's address in the farm.
@@ -153,6 +125,31 @@ contract Rewarder is Ownable, Initializable {
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
+    // @todo add updateApr function
+    /// @notice A function to update the REWARD_TOKEN configuration.
+    ///         This function calibrates reward so token manager must be updated to address of this in the farm.
+    /// @param _farm Address of the farm for which the config is to be updated.
+    /// @param _rewardConfig The config which is to be set.
+    function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig) public onlyOwner {
+        if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
+            revert InvalidFarm();
+        }
+        address oracle = IRewarderFactory(rewarderFactory).oracle();
+        // validating new reward config
+        uint256 baseTokensLen = _rewardConfig.baseTokens.length;
+        for (uint256 i; i < baseTokensLen;) {
+            _validatePriceFeed(_rewardConfig.baseTokens[i], oracle);
+            unchecked {
+                ++i;
+            }
+        }
+        _validateRewardPer(_rewardConfig.noLockupRewardPer);
+        farmRewardConfigs[_farm].apr = _rewardConfig.apr;
+        farmRewardConfigs[_farm].maxRewardRate = _rewardConfig.maxRewardRate;
+        farmRewardConfigs[_farm].noLockupRewardPer = _rewardConfig.noLockupRewardPer;
+        emit RewardConfigUpdated(_farm, _rewardConfig);
+    }
+
     /// @notice A function to calibrate rewards for a reward token for a farm.
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
@@ -160,7 +157,7 @@ contract Rewarder is Ownable, Initializable {
     function calibrateReward(address _farm) public returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         if (farmRewardConfig.apr != 0) {
-            (address[] memory assets, uint256[] memory amounts) = IFarm(_farm).getTokenAmounts();
+            (address[] memory assets, uint256[] memory amounts) = _getTokenAmounts(_farm);
             // Calculating total USD value for all the assets.
             uint256 totalValue;
             uint256 baseTokensLen = farmRewardConfig.baseAssetIndexes.length;
@@ -209,6 +206,50 @@ contract Rewarder is Ownable, Initializable {
             _adjustGlobalRewardRate(farmRewardConfig.rewardRate, 0);
             farmRewardConfigs[_farm].rewardRate = 0;
             emit RewardCalibrated(_farm, 0, 0);
+        }
+    }
+
+    /// @notice Internal initialize function.
+    /// @param _rwdToken Address of the reward token.
+    /// @param _oracle Address of the USDs Master Price Oracle.
+    /// @param _admin Admin/ deployer of this contract.
+    /// @param _rewarderFactory Address of Rewarder factory contract.
+    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory) internal {
+        _validatePriceFeed(_rwdToken, _oracle);
+        rewarderFactory = _rewarderFactory;
+        REWARD_TOKEN = _rwdToken;
+        _validateNonZeroAddr(_admin);
+        _transferOwnership(_admin);
+    }
+
+    /// @notice An internal function to get token amounts for the farm.
+    /// @param _farm Address of the farm.
+    function _getTokenAmounts(address _farm) internal view virtual returns (address[] memory, uint256[] memory) {
+        return IFarm(_farm).getTokenAmounts();
+    }
+
+    /// @notice A function to check the reward token of this is a farm's reward token.
+    /// @param _farm Address of the farm.
+    /// @return If farm has one of the reward token as reward token of this.
+    function _hasRewardToken(address _farm) internal view virtual returns (bool) {
+        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
+        uint256 rwdTokensLen = rwdTokens.length;
+        for (uint8 i; i < rwdTokensLen;) {
+            if (rwdTokens[i] == REWARD_TOKEN) {
+                return true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return false;
+    }
+
+    /// @notice Validate address.
+    /// @param _addr Address to be validated.
+    function _validateNonZeroAddr(address _addr) internal pure {
+        if (_addr == address(0)) {
+            revert InvalidAddress();
         }
     }
 
@@ -265,7 +306,7 @@ contract Rewarder is Ownable, Initializable {
     /// @dev It handles repeated base tokens as well and pushes indexed in farmRewardConfigs.
     /// @return hasBaseTokens True if baseTokens are non redundant and are a subset of assets.
     function _hasBaseTokens(address _farm, address[] memory _baseTokens) private returns (bool) {
-        (address[] memory _assets,) = IFarm(_farm).getTokenAmounts();
+        (address[] memory _assets,) = _getTokenAmounts(_farm);
         uint256 _assetsLen = _assets.length;
         uint256 _baseTokensLen = _baseTokens.length;
         bool hasBaseTokens;
@@ -309,36 +350,11 @@ contract Rewarder is Ownable, Initializable {
         }
     }
 
-    /// @notice A function to check the reward token of this is a farm's reward token.
-    /// @param _farm Address of the farm.
-    /// @return If farm has one of the reward token as reward token of this.
-    function _hasRewardToken(address _farm) private view returns (bool) {
-        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
-        uint256 rwdTokensLen = rwdTokens.length;
-        for (uint8 i; i < rwdTokensLen;) {
-            if (rwdTokens[i] == REWARD_TOKEN) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
-    }
-
     /// @notice A function to validate the no lockup fund's reward percentage.
     /// @param _percentage No lockup fund's reward percentage to be validated.
     function _validateRewardPer(uint256 _percentage) private pure {
         if (_percentage == 0 || _percentage > MAX_PERCENTAGE) {
             revert InvalidRewardPercentage(_percentage);
-        }
-    }
-
-    /// @notice Validate address.
-    /// @param _addr Address to be validated.
-    function _validateNonZeroAddr(address _addr) private pure {
-        if (_addr == address(0)) {
-            revert InvalidAddress();
         }
     }
 }
