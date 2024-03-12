@@ -24,7 +24,7 @@ contract RewarderTest is CamelotV2FarmTest {
         address[] memory _baseTokens = new address[](2);
         _baseTokens[0] = DAI;
         _baseTokens[1] = USDCe;
-        Rewarder.FarmRewardConfigParams memory _rewardConfig = Rewarder.FarmRewardConfigParams({
+        Rewarder.FarmRewardConfigInput memory _rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 1e9,
             maxRewardRate: type(uint256).max,
             baseTokens: _baseTokens,

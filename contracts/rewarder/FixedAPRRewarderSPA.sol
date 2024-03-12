@@ -31,22 +31,7 @@ import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
 import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 import {TokenUtils} from "../utils/TokenUtils.sol";
-
-interface ICamelotFarm {
-    function nftPool() external view returns (address);
-    function FARM_ID() external view returns (string memory);
-}
-
-interface IUniswapV3Farm {
-    function uniswapPool() external view returns (address);
-    function tickLowerAllowed() external view returns (int24);
-    function tickUpperAllowed() external view returns (int24);
-}
-
-interface ILegacyFarm {
-    function isPaused() external view returns (bool);
-    function isClosed() external view returns (bool);
-}
+import {ICamelotFarm, IUniswapV3Farm, ILegacyFarm} from "./interfaces/ILegacyRewarderHelpers.sol";
 
 /// @title FixedAPRRewarderSPA contract of Demeter Protocol
 /// @notice This contract tracks farms, their APR, and rewards

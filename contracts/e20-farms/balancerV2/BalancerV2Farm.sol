@@ -27,6 +27,8 @@ pragma solidity 0.8.16;
 import {E20Farm} from "../E20Farm.sol";
 
 contract BalancerV2Farm is E20Farm {
+    error NotImplemented();
+
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view virtual override returns (address[] memory, uint256[] memory) {
         revert NotImplemented();

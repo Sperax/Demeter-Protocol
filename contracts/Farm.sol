@@ -79,7 +79,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidAddress();
     error ZeroAmount();
     error InvalidCooldownPeriod();
-    error NotImplemented();
 
     // Disallow initialization of a implementation contract.
     constructor() {

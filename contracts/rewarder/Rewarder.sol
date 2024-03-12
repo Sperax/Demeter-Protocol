@@ -57,7 +57,7 @@ contract Rewarder is Ownable, Initializable {
     // maxRewardRate - Maximum amount of tokens to be emitted per second.
     // baseTokens - Addresses of tokens to be considered for calculating the L value.
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
-    struct FarmRewardConfigParams {
+    struct FarmRewardConfigInput {
         uint256 apr;
         uint256 maxRewardRate;
         address[] baseTokens;
@@ -74,7 +74,7 @@ contract Rewarder is Ownable, Initializable {
     mapping(address => FarmRewardConfig) public farmRewardConfigs;
     mapping(address => uint8) private _decimals;
 
-    event RewardConfigUpdated(address indexed farm, FarmRewardConfigParams rewardConfig);
+    event RewardConfigUpdated(address indexed farm, FarmRewardConfigInput rewardConfig);
     event RewardCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error InvalidAddress();
@@ -99,7 +99,7 @@ contract Rewarder is Ownable, Initializable {
     ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FarmRewardConfigParams memory _rewardConfig) external onlyOwner {
+    function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig) external onlyOwner {
         if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
