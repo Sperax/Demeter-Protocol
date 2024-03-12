@@ -96,7 +96,7 @@ contract Rewarder is Ownable, Initializable {
     /// @notice A function to update the token manager's address in the farm.
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
-    function updateTokenManagerInFarm(address _farm, address _newManager) external onlyOwner {
+    function updateTokenManagerOfFarm(address _farm, address _newManager) external onlyOwner {
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
