@@ -48,7 +48,7 @@ contract RewarderFactory is Ownable {
     }
 
     /// @notice A function to deploy new rewarder.
-    /// @param _rwdToken Address of the reward token for which the rewarder is to be dpeloyed.
+    /// @param _rwdToken Address of the reward token for which the rewarder is to be deployed.
     /// @return rewarder Rewarder's address
     function deployRewarder(address _rwdToken) external returns (address rewarder) {
         Rewarder rewarderInstance = Rewarder(Clones.clone(rewarderImplementation));
