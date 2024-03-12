@@ -9,11 +9,11 @@ plugins:
 
 dependencies:
   - name: OpenZeppelin
-    version: 4.9.3
+    version: 4.9.5
     github: OpenZeppelin/openzeppelin-contracts
 
   - name: OpenZeppelin-Upgradable
-    version: 4.9.3
+    version: 4.9.5
     github: OpenZeppelin/openzeppelin-contracts-upgradeable
 
   - name: Uniswap-V3-Periphery
@@ -23,13 +23,14 @@ dependencies:
   - name: Uniswap-V3
     ref: 1.0.0
     github: "@Uniswap/v3-core"
-    
+
 solidity:
   version: 0.8.16
   optimize: True
+
   import_remapping:
-          - "@openzeppelin/contracts=OpenZeppelin/4.9.3"
-          - "@openzeppelin/contracts-upgradeable=OpenZeppelin-Upgradable/4.9.3"
+          - "@openzeppelin/contracts=OpenZeppelin/4.9.5"
+          - "@openzeppelin/contracts-upgradeable=OpenZeppelin-Upgradable/4.9.5"
           - "@uniswap/v3-periphery/contracts=Uniswap-V3-Periphery/1.3.0"
           - "@uniswap/v3-core/contracts=Uniswap-V3/1.0.0"
 test:
@@ -51,3 +52,6 @@ foundry:
     arbitrum:
       mainnet:
         upstream_provider: alchemy
+polygon:
+  mumbai:
+    gas_limit: max
