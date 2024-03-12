@@ -34,7 +34,6 @@ import {ICamelotFarm, IUniswapV3Farm} from "./interfaces/ILegacyRewarderHelpers.
 contract LegacyFarmRewarder is Rewarder {
     uint8 public constant COMMON_FUND_ID = 0;
     address public immutable UNISWAP_UTILS;
-    address public oracle;
 
     mapping(address => bool) public isUniV3Farm;
 
@@ -67,10 +66,6 @@ contract LegacyFarmRewarder is Rewarder {
     {
         isUniV3Farm[_farm] = _isUniV3Farm;
         super.updateRewardConfig(_farm, _rewardConfig);
-    }
-
-    function getTokenAmounts(address _farm) external view returns (address[] memory, uint256[] memory) {
-        return _getTokenAmounts(_farm);
     }
 
     /// @notice A function to get token amounts.

@@ -75,10 +75,12 @@ contract Rewarder is Ownable, Initializable {
     mapping(address => uint8) private _decimals;
 
     event RewardConfigUpdated(address indexed farm, FarmRewardConfigInput rewardConfig);
+    event APRUpdated(address indexed farm, uint256 apr);
     event RewardCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
 
     error InvalidAddress();
     error InvalidFarm();
+    error FarmNotConfigured(address farm);
     error ZeroAmount();
     error PriceFeedDoesNotExist(address token);
     error InvalidRewardPercentage(uint256 percentage);
@@ -98,6 +100,16 @@ contract Rewarder is Ownable, Initializable {
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
+    /// @notice A function to update APR.
+    /// @param _farm Address of the farm.
+    /// @param _apr APR in 1e8 precision.
+    function updateAPR(address _farm, uint256 _apr) external onlyOwner {
+        _isConfigured(_farm);
+        farmRewardConfigs[_farm].apr = _apr;
+        emit APRUpdated(_farm, _apr);
+        calibrateReward(_farm);
+    }
+
     /// @notice A function to recover ERC20 tokens from this contract.
     /// @param _token Address of the token.
     /// @param _amount Amount of the tokens.
@@ -108,10 +120,16 @@ contract Rewarder is Ownable, Initializable {
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
+    /// @notice A function to get token amounts value of underlying pool of the farm.
+    /// @param _farm Address of the farm.
+    function getTokenAmounts(address _farm) external view returns (address[] memory, uint256[] memory) {
+        return _getTokenAmounts(_farm);
+    }
+
     /// @notice A function to get reward config for a farm.
     /// @param _farm Address of the farm.
     function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
-        // @todo Add a validation to check farm is configured.
+        _isConfigured(_farm);
         return farmRewardConfigs[_farm];
     }
 
@@ -125,7 +143,6 @@ contract Rewarder is Ownable, Initializable {
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
-    // @todo add updateApr function
     /// @notice A function to update the REWARD_TOKEN configuration.
     ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
@@ -220,6 +237,14 @@ contract Rewarder is Ownable, Initializable {
         REWARD_TOKEN = _rwdToken;
         _validateNonZeroAddr(_admin);
         _transferOwnership(_admin);
+    }
+
+    /// @notice A function to check if the farm's reward is configured.
+    /// @param _farm Address of the farm.
+    function _isConfigured(address _farm) internal view {
+        if (farmRewardConfigs[_farm].baseAssetIndexes.length == 0) {
+            revert FarmNotConfigured(_farm);
+        }
     }
 
     /// @notice An internal function to get token amounts for the farm.
