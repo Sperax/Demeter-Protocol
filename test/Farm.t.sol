@@ -588,6 +588,20 @@ abstract contract GetRewardFundInfoTest is FarmTest {
     }
 }
 
+abstract contract GetRewardTokensTest is FarmTest {
+    function test_GetRewardTokensTest() public setup useKnownActor(user) {
+        address[] memory _rwdTokens = Farm(lockupFarm).getRewardTokens();
+        uint256 _rwdTokensLen = _rwdTokens.length;
+        assertEq(rwdTokens.length, _rwdTokensLen);
+        for (uint8 i; i < _rwdTokensLen;) {
+            assertEq(_rwdTokens[i], rwdTokens[i]);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+}
+
 abstract contract RecoverERC20Test is FarmTest {
     function test_RecoverERC20_RevertWhen_CannotWithdrawRewardToken() public useKnownActor(owner) {
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawRewardToken.selector));
@@ -1144,6 +1158,7 @@ abstract contract FarmInheritTest is
     GetRewardBalanceTest,
     GetDepositTest,
     GetNumSubscriptionsTest,
+    GetRewardTokensTest,
     SubscriptionInfoTest,
     UpdateRewardTokenDataTest,
     RecoverRewardFundsTest,
