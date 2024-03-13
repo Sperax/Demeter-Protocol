@@ -6,6 +6,8 @@ import {IUniswapV3PoolState} from "../e721-farms/uniswapV3/interfaces/IUniswapV3
 import {IUniswapV3Utils} from "../e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
 
 library TokenUtils {
+    uint32 private constant MA_PERIOD = 10 minutes;
+
     function getUniV2TokenAmounts(address _nftContract, uint256 _farmLiquidity)
         public
         view
@@ -33,7 +35,11 @@ library TokenUtils {
         amounts = new uint256[](2);
         tokens[0] = IUniswapV3PoolState(_uniPool).token0();
         tokens[1] = IUniswapV3PoolState(_uniPool).token1();
-        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3PoolState(_uniPool).slot0();
+
+        uint32 oldestObservationSecondsAgo = IUniswapV3Utils(_uniUtils).getOldestObservationSecondsAgo(_uniPool);
+        oldestObservationSecondsAgo = oldestObservationSecondsAgo < MA_PERIOD ? MA_PERIOD : oldestObservationSecondsAgo;
+        (int24 timeWeightedAverageTick,) = IUniswapV3Utils(_uniUtils).consult(_uniPool, oldestObservationSecondsAgo);
+        uint160 sqrtPriceX96 = IUniswapV3Utils(_uniUtils).getSqrtRatioAtTick(timeWeightedAverageTick);
         (amounts[0], amounts[1]) =
             IUniswapV3Utils(_uniUtils).getAmountsForLiquidity(sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity));
     }
