@@ -45,7 +45,7 @@ abstract contract FarmStorage {
 
     // Reward info
     RewardFund[] public rewardFunds;
-    address[] public rewardTokens;
+    address[] internal rewardTokens;
     mapping(address => RewardData) public rewardData;
     mapping(uint256 => Deposit) internal deposits;
     mapping(uint256 => Subscription[]) internal subscriptions;

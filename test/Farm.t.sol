@@ -101,11 +101,7 @@ abstract contract FarmTest is TestNetworkConfig {
     function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
 
     function getRewardTokens(address farm) public view returns (address[] memory) {
-        address[] memory farmRewardTokens = new address[](rwdTokens.length);
-        for (uint8 i = 0; i < rwdTokens.length; ++i) {
-            farmRewardTokens[i] = Farm(farm).rewardTokens(i);
-        }
-        return farmRewardTokens;
+        return Farm(farm).getRewardTokens();
     }
 }
 

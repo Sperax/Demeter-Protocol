@@ -27,6 +27,7 @@ pragma solidity 0.8.16;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
@@ -35,7 +36,7 @@ import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 /// @title Rewarder contract of Demeter Protocol.
 /// @notice This contract tracks farms, their APR and other data for a specific reward token.
 /// @author Sperax Foundation.
-contract Rewarder is Ownable, Initializable {
+contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // Configuration for fixed APR reward tokens.
@@ -149,7 +150,11 @@ contract Rewarder is Ownable, Initializable {
     ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
-    function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig) public onlyOwner {
+    function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig)
+        public
+        onlyOwner
+        nonReentrant
+    {
         if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
             revert InvalidFarm();
         }
@@ -173,7 +178,7 @@ contract Rewarder is Ownable, Initializable {
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
-    function calibrateReward(address _farm) public returns (uint256 rewardsToSend) {
+    function calibrateReward(address _farm) public nonReentrant returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         uint256 rewardRate;
         if (farmRewardConfig.apr != 0) {
@@ -222,10 +227,10 @@ contract Rewarder is Ownable, Initializable {
             rewardsToSend = 0;
         }
         // Updating reward rate in farm and adjusting global reward rate of this rewarder.
-        _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
         _adjustGlobalRewardRate(farmRewardConfig.rewardRate, rewardRate);
         farmRewardConfigs[_farm].rewardRate = rewardRate;
         emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
+        _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
     }
 
     /// @notice Internal initialize function.
