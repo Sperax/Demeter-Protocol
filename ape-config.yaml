@@ -5,7 +5,7 @@ plugins:
   - name: solidity
   - name: etherscan
   - name: tenderly
-  - name: ganache
+  - name: polygon
 
 dependencies:
   - name: OpenZeppelin
@@ -24,9 +24,11 @@ dependencies:
     ref: 1.0.0
     github: "@Uniswap/v3-core"
 
+compile:
+   cache_folder: .cache
 solidity:
   version: 0.8.16
-  optimize: True
+  optimize: False
 
   import_remapping:
           - "@openzeppelin/contracts=OpenZeppelin/4.9.5"
@@ -54,4 +56,4 @@ foundry:
         upstream_provider: alchemy
 polygon:
   mumbai:
-    gas_limit: max
+    gas_limit: auto
