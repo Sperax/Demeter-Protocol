@@ -36,6 +36,8 @@ import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 /// @title Rewarder contract of Demeter Protocol.
 /// @notice This contract tracks farms, their APR and other data for a specific reward token.
 /// @author Sperax Foundation.
+/// @dev Farms for UniV3 pools using Rewarder contract must have a minimum observationCardinality of 20.
+///      It can be updated by calling increaseObservationCardinalityNext function on the pool.
 contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
