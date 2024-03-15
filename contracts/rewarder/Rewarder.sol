@@ -179,6 +179,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
     function calibrateReward(address _farm) public nonReentrant returns (uint256 rewardsToSend) {
+        _isConfigured(_farm);
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         uint256 rewardRate;
         if (farmRewardConfig.apr != 0) {
