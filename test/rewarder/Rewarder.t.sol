@@ -6,6 +6,7 @@ import {CamelotV2FarmTest} from "../e721-farms/camelotV2/CamelotV2Farm.t.sol";
 import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
 import {Rewarder} from "../../contracts/rewarder/Rewarder.sol";
+import {IOracle} from "../../contracts/interfaces/IOracle.sol";
 
 contract RewarderTest is CamelotV2FarmTest {
     RewarderFactory public rewarderFactory;
@@ -23,6 +24,7 @@ contract RewarderTest is CamelotV2FarmTest {
         rewarderFactory = new RewarderFactory(ORACLE);
         vm.prank(rewardManager);
         rewarder = Rewarder(rewarderFactory.deployRewarder(rewardToken));
+        deal(USDCe, address(rewarder), 1e26);
     }
 }
 
@@ -65,7 +67,32 @@ contract TestUpdateAPR is RewarderTest {
         vm.expectRevert(abi.encodeWithSelector(Rewarder.FarmNotConfigured.selector, lockupFarm));
         rewarder.updateAPR(lockupFarm, APR);
     }
-    // @todo add update apr functionality test
+
+    function test_UpdateAPR() public useKnownActor(rewardManager) {
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = USDCe;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 5e9,
+            maxRewardRate: UINT256_MAX,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        deposit(lockupFarm, false, 1000);
+        rewarder.calibrateReward(lockupFarm);
+        changePrank(rewardManager);
+        rewarder.updateAPR(lockupFarm, 12e8);
+        (uint256 apr, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(apr, 12e8);
+        assertTrue(rewardRate > 0);
+        rewarder.updateAPR(lockupFarm, 0);
+        (apr, rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(apr, 0);
+        assertEq(rewardRate, 0);
+    }
 }
 
 contract TestUpdateRewardConfig is RewarderTest {
@@ -82,6 +109,79 @@ contract TestUpdateRewardConfig is RewarderTest {
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
+    }
+
+    function test_RevertWhen_FarmDoesntHaveRewardToken() public useKnownActor(rewardManager) {
+        Rewarder newRewarder = Rewarder(rewarderFactory.deployRewarder(SPA));
+        vm.expectRevert(Rewarder.InvalidFarm.selector);
+        newRewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_BaseTokenDoesNotExistInPoolToken() public useKnownActor(rewardManager) {
+        baseAssets[0] = SPA;
+        rewardConfig.baseTokens = baseAssets;
+        vm.expectRevert(Rewarder.InvalidFarm.selector);
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_BaseTokenIsRepeated() public useKnownActor(rewardManager) {
+        baseAssets = new address[](2);
+        baseAssets[0] = DAI;
+        baseAssets[1] = DAI;
+        rewardConfig.baseTokens = baseAssets;
+        vm.expectRevert(Rewarder.InvalidFarm.selector);
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_BaseTokensAreMoreThanAssets() public useKnownActor(rewardManager) {
+        baseAssets = new address[](3);
+        baseAssets[0] = DAI;
+        baseAssets[1] = USDCe;
+        baseAssets[2] = DAI;
+        rewardConfig.baseTokens = baseAssets;
+        vm.expectRevert(Rewarder.InvalidFarm.selector);
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_BaseAssetPriceFeedDoesntExist() public useKnownActor(rewardManager) {
+        vm.mockCall(ORACLE, abi.encodeWithSelector(IOracle.priceFeedExists.selector, USDCe), abi.encode(false));
+        vm.expectRevert(abi.encodeWithSelector(Rewarder.PriceFeedDoesNotExist.selector, USDCe));
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_NonLockupRewardPer0() public useKnownActor(rewardManager) {
+        rewardConfig.nonLockupRewardPer = 0;
+        vm.expectRevert(abi.encodeWithSelector(Rewarder.InvalidRewardPercentage.selector, 0));
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_RevertWhen_NonLockupRewardPerMoreThanMax() public useKnownActor(rewardManager) {
+        rewardConfig.nonLockupRewardPer = 10001;
+        vm.expectRevert(abi.encodeWithSelector(Rewarder.InvalidRewardPercentage.selector, 10001));
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+    }
+
+    function test_UpdateRewardToken_BaseTokensHaveBothPoolAssets() public useKnownActor(rewardManager) {
+        baseAssets = new address[](2);
+        baseAssets[0] = DAI;
+        baseAssets[1] = USDCe;
+        rewardConfig.baseTokens = baseAssets;
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        _assertRewardConfig(rewardConfig);
+    }
+
+    function test_UpdateRewardToken() public useKnownActor(rewardManager) {
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        _assertRewardConfig(rewardConfig);
+    }
+
+    function _assertRewardConfig(Rewarder.FarmRewardConfigInput memory intendedRwdConfig) public {
+        (uint256 apr, uint256 rewardRate, uint256 maxRewardRate, uint256 nonLockupRewardPer) =
+            rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(apr, intendedRwdConfig.apr);
+        assertEq(rewardRate, 0);
+        assertEq(maxRewardRate, intendedRwdConfig.maxRewardRate);
+        assertEq(nonLockupRewardPer, intendedRwdConfig.nonLockupRewardPer);
     }
 }
 
@@ -101,7 +201,6 @@ contract TestFlow is RewarderTest {
         changePrank(rewardManager);
         rewarder.updateRewardConfig(lockupFarm, _rewardConfig);
         deposit(lockupFarm, false, 1000);
-        deal(USDCe, address(rewarder), 1e26);
         rewarder.calibrateReward(lockupFarm);
 
         (uint256 apr, uint256 rewardsPerSec, uint256 maxRewardRate,) = rewarder.farmRewardConfigs(lockupFarm);
