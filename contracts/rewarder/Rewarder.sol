@@ -75,11 +75,13 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     address public rewarderFactory;
     // farm -> FarmRewardConfig
     mapping(address => FarmRewardConfig) public farmRewardConfigs;
+    mapping(address => bool) public calibrationRestricted;
     mapping(address => uint8) private _decimals;
 
     event RewardConfigUpdated(address indexed farm, FarmRewardConfigInput rewardConfig);
     event APRUpdated(address indexed farm, uint256 apr);
     event RewardCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
+    event CalibrationRestrictionToggled(address indexed farm);
 
     error InvalidAddress();
     error InvalidFarm();
@@ -87,6 +89,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     error ZeroAmount();
     error PriceFeedDoesNotExist(address token);
     error InvalidRewardPercentage(uint256 percentage);
+    error CalibrationRestricted(address farm);
 
     /// @notice Initializer function of this contract.
     /// @param _rwdToken Address of the reward token.
@@ -94,6 +97,18 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _admin Admin/ deployer of this contract.
     function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
         _initialize(_rwdToken, _oracle, _admin, msg.sender);
+    }
+
+    /// @notice A function to calibrate rewards for a reward token for a farm.
+    /// @param _farm Address of the farm for which the rewards are to be calibrated.
+    /// @return rewardsToSend Rewards which are sent to the farm.
+    /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
+    function calibrateReward(address _farm) external nonReentrant returns (uint256 rewardsToSend) {
+        _isConfigured(_farm);
+        if (calibrationRestricted[_farm] && msg.sender != owner()) {
+            revert CalibrationRestricted(_farm);
+        }
+        return _calibrateReward(_farm);
     }
 
     /// @notice A function to update the token manager's address in the farm.
@@ -106,11 +121,18 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @notice A function to update APR.
     /// @param _farm Address of the farm.
     /// @param _apr APR in 1e8 precision.
-    function updateAPR(address _farm, uint256 _apr) external onlyOwner {
+    function updateAPR(address _farm, uint256 _apr) external onlyOwner nonReentrant {
         _isConfigured(_farm);
         farmRewardConfigs[_farm].apr = _apr;
         emit APRUpdated(_farm, _apr);
-        calibrateReward(_farm);
+        _calibrateReward(_farm);
+    }
+
+    /// @notice A function to toggle calibration restriction.
+    /// @param _farm Address of farm for which calibration restriction is to be toggled.
+    function toggleCalibrationRestriction(address _farm) external onlyOwner {
+        calibrationRestricted[_farm] = !calibrationRestricted[_farm];
+        emit CalibrationRestrictionToggled(_farm);
     }
 
     /// @notice A function to recover ERC20 tokens from this contract.
@@ -174,12 +196,59 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         emit RewardConfigUpdated(_farm, _rewardConfig);
     }
 
-    /// @notice A function to calibrate rewards for a reward token for a farm.
-    /// @param _farm Address of the farm for which the rewards are to be calibrated.
-    /// @return rewardsToSend Rewards which are sent to the farm.
-    /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
-    function calibrateReward(address _farm) public nonReentrant returns (uint256 rewardsToSend) {
-        _isConfigured(_farm);
+    /// @notice Internal initialize function.
+    /// @param _rwdToken Address of the reward token.
+    /// @param _oracle Address of the USDs Master Price Oracle.
+    /// @param _admin Admin/ deployer of this contract.
+    /// @param _rewarderFactory Address of Rewarder factory contract.
+    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory) internal {
+        _validatePriceFeed(_rwdToken, _oracle);
+        rewarderFactory = _rewarderFactory;
+        REWARD_TOKEN = _rwdToken;
+        _validateNonZeroAddr(_admin);
+        _transferOwnership(_admin);
+    }
+
+    /// @notice A function to check if the farm's reward is configured.
+    /// @param _farm Address of the farm.
+    function _isConfigured(address _farm) internal view {
+        if (farmRewardConfigs[_farm].baseAssetIndexes.length == 0) {
+            revert FarmNotConfigured(_farm);
+        }
+    }
+
+    /// @notice An internal function to get token amounts for the farm.
+    /// @param _farm Address of the farm.
+    function _getTokenAmounts(address _farm) internal view virtual returns (address[] memory, uint256[] memory) {
+        return IFarm(_farm).getTokenAmounts();
+    }
+
+    /// @notice A function to check the reward token of this is a farm's reward token.
+    /// @param _farm Address of the farm.
+    /// @return If farm has one of the reward token as reward token of this.
+    function _hasRewardToken(address _farm) internal view virtual returns (bool) {
+        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
+        uint256 rwdTokensLen = rwdTokens.length;
+        for (uint8 i; i < rwdTokensLen;) {
+            if (rwdTokens[i] == REWARD_TOKEN) {
+                return true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return false;
+    }
+
+    /// @notice Validate address.
+    /// @param _addr Address to be validated.
+    function _validateNonZeroAddr(address _addr) internal pure {
+        if (_addr == address(0)) {
+            revert InvalidAddress();
+        }
+    }
+
+    function _calibrateReward(address _farm) private returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
         uint256 rewardRate;
         if (farmRewardConfig.apr != 0) {
@@ -232,58 +301,6 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         farmRewardConfigs[_farm].rewardRate = rewardRate;
         emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
         _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
-    }
-
-    /// @notice Internal initialize function.
-    /// @param _rwdToken Address of the reward token.
-    /// @param _oracle Address of the USDs Master Price Oracle.
-    /// @param _admin Admin/ deployer of this contract.
-    /// @param _rewarderFactory Address of Rewarder factory contract.
-    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory) internal {
-        _validatePriceFeed(_rwdToken, _oracle);
-        rewarderFactory = _rewarderFactory;
-        REWARD_TOKEN = _rwdToken;
-        _validateNonZeroAddr(_admin);
-        _transferOwnership(_admin);
-    }
-
-    /// @notice A function to check if the farm's reward is configured.
-    /// @param _farm Address of the farm.
-    function _isConfigured(address _farm) internal view {
-        if (farmRewardConfigs[_farm].baseAssetIndexes.length == 0) {
-            revert FarmNotConfigured(_farm);
-        }
-    }
-
-    /// @notice An internal function to get token amounts for the farm.
-    /// @param _farm Address of the farm.
-    function _getTokenAmounts(address _farm) internal view virtual returns (address[] memory, uint256[] memory) {
-        return IFarm(_farm).getTokenAmounts();
-    }
-
-    /// @notice A function to check the reward token of this is a farm's reward token.
-    /// @param _farm Address of the farm.
-    /// @return If farm has one of the reward token as reward token of this.
-    function _hasRewardToken(address _farm) internal view virtual returns (bool) {
-        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
-        uint256 rwdTokensLen = rwdTokens.length;
-        for (uint8 i; i < rwdTokensLen;) {
-            if (rwdTokens[i] == REWARD_TOKEN) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
-    }
-
-    /// @notice Validate address.
-    /// @param _addr Address to be validated.
-    function _validateNonZeroAddr(address _addr) internal pure {
-        if (_addr == address(0)) {
-            revert InvalidAddress();
-        }
     }
 
     /// @notice A function to set reward rate in the farm.
