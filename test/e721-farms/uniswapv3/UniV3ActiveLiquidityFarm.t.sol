@@ -27,9 +27,7 @@ abstract contract UniV3ActiveLiquidityFarmTest is UniV3FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        uniV3ActiveLiqFarmDeployer = new UniV3ActiveLiquidityDeployer(
-            FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, NONFUNGIBLE_POSITION_MANAGER_UTILS
-        );
+        uniV3ActiveLiqFarmDeployer = new UniV3ActiveLiquidityDeployer(FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM);
         registry.registerFarmDeployer(address(uniV3ActiveLiqFarmDeployer));
 
         // Configure rewardTokens

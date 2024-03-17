@@ -13,10 +13,6 @@ import {
     INFPM,
     OperableDeposit
 } from "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
-import {
-    INFPMUtils,
-    Position
-} from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
@@ -58,8 +54,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        uniV3FarmDeployer =
-            new UniV3FarmDeployer(FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, NONFUNGIBLE_POSITION_MANAGER_UTILS);
+        uniV3FarmDeployer = new UniV3FarmDeployer(FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM);
         registry.registerFarmDeployer(address(uniV3FarmDeployer));
 
         // Configure rewardTokens
@@ -140,9 +135,9 @@ abstract contract UniV3FarmTest is E721FarmTest {
         return (_tokenId, nfpm());
     }
 
-    function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
-        Position memory positions = INFPMUtils(NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
-        return uint256(positions.liquidity);
+    function getLiquidity(uint256 tokenId) public view override returns (uint256) {
+        (,,,,,,, uint128 liquidity,,,,) = INFPM(NFPM).positions(tokenId);
+        return uint256(liquidity);
     }
 
     function createFarm(uint256 startTime, bool lockup)
@@ -269,8 +264,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         // Fails for _tickLower < -887272
@@ -289,8 +283,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         if (spacing > 1) {
@@ -310,8 +303,7 @@ abstract contract InitializeTest is UniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nftContract: NFPM,
-                _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                _nftContract: NFPM
             });
 
             // Fails for _tickUpper % spacing != 0
@@ -330,8 +322,7 @@ abstract contract InitializeTest is UniV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _uniV3Factory: UNIV3_FACTORY,
-                _nftContract: NFPM,
-                _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+                _nftContract: NFPM
             });
         }
 
@@ -351,8 +342,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
     }
 
@@ -372,8 +362,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -391,8 +380,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -410,8 +398,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -429,8 +416,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.InvalidUniswapPoolConfig.selector));
@@ -448,8 +434,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
     }
 
@@ -469,8 +454,7 @@ abstract contract InitializeTest is UniV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _uniV3Factory: UNIV3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: NONFUNGIBLE_POSITION_MANAGER_UTILS
+            _nftContract: NFPM
         });
 
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
@@ -483,7 +467,6 @@ abstract contract InitializeTest is UniV3FarmTest {
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
         assertEq(UniV3Farm(farmProxy).nftContract(), NFPM);
-        assertEq(UniV3Farm(farmProxy).nfpmUtils(), NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
 
@@ -568,6 +551,29 @@ abstract contract OnERC721ReceivedTest is UniV3FarmTest {
 }
 
 abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
+    // function _simulateStaticCall(address targetContract, bytes /*calldata*/ memory calldataPayload)
+    //     public
+    //     returns (bytes memory response)
+    // {
+    //     targetContract;
+    //     calldataPayload;
+
+    //     assembly {
+    //         let internalCalldata := mload(0x40)
+    //         mstore(internalCalldata, "\xb4\xfa\xba\x09")
+    //         calldatacopy(add(internalCalldata, 0x04), 0x04, sub(calldatasize(), 0x04))
+
+    //         pop(call(gas(), address(), 0, internalCalldata, calldatasize(), 0x00, 0x20))
+
+    //         let responseSize := sub(returndatasize(), 0x20)
+    //         response := mload(0x40)
+    //         mstore(0x40, add(response, responseSize))
+    //         returndatacopy(response, 0x20, responseSize)
+
+    //         if iszero(mload(0x00)) { revert(add(response, 0x20), mload(response)) }
+    //     }
+    // }
+
     function test_ClaimUniswapFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
@@ -591,7 +597,19 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
 
-        // amount0, amount1 (fee accrued by a position)
+        // INFPM.CollectParams memory collectParams = INFPM.CollectParams({
+        //     tokenId: _tokenId,
+        //     recipient: currentActor,
+        //     amount0Max: type(uint128).max,
+        //     amount1Max: type(uint128).max
+        // });
+
+        // bytes memory response = _simulateStaticCall(NFPM, abi.encodeWithSelector(INFPM.collect.selector, collectParams));
+
+        // (uint256 amount0, uint256 amount1) = abi.decode(response, (uint256, uint256));
+
+        // emit log_named_uint("amount0", amount0);
+        // emit log_named_uint("amount1", amount1);
 
         vm.expectEmit(true, false, false, false, address(lockupFarm));
         emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
