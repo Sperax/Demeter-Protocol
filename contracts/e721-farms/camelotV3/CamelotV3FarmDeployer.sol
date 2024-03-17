@@ -47,28 +47,20 @@ contract CamelotV3FarmDeployer is FarmDeployer, ReentrancyGuard {
 
     address public immutable CAMELOT_V3_FACTORY; // Camelot V3 factory
     address public immutable NFPM; // Camelot NonfungiblePositionManager contract
-    address public immutable CAMELOT_NFPM_UTILS; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
     /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _camelotV3Factory Address of CamelotV3 factory
     /// @param _nfpm Address of Camelot NonfungiblePositionManager contract
-    /// @param _nfpmUtils Address of Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
-    constructor(
-        address _farmRegistry,
-        string memory _farmId,
-        address _camelotV3Factory,
-        address _nfpm,
-        address _nfpmUtils
-    ) FarmDeployer(_farmRegistry, _farmId) {
+    constructor(address _farmRegistry, string memory _farmId, address _camelotV3Factory, address _nfpm)
+        FarmDeployer(_farmRegistry, _farmId)
+    {
         _validateNonZeroAddr(_camelotV3Factory);
         _validateNonZeroAddr(_nfpm);
-        _validateNonZeroAddr(_nfpmUtils);
 
         CAMELOT_V3_FACTORY = _camelotV3Factory;
         NFPM = _nfpm;
-        CAMELOT_NFPM_UTILS = _nfpmUtils;
         farmImplementation = address(new CamelotV3Farm());
     }
 
@@ -86,8 +78,7 @@ contract CamelotV3FarmDeployer is FarmDeployer, ReentrancyGuard {
             _camelotPoolData: _data.camelotPoolData,
             _rwdTokenData: _data.rewardData,
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _nfpmUtils: CAMELOT_NFPM_UTILS
+            _nftContract: NFPM
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
