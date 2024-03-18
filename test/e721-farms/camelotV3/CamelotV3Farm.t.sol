@@ -29,6 +29,7 @@ import {VmSafe} from "forge-std/Vm.sol";
 
 // Note -> Important considerations.
 // The tickspacing of pools is not immutable.
+
 // If tickspacing is changed in a way that either our of tickUpper and tickLower are not divisible by this new tickspacing, users will not be able to mint new positions adhering to our farm ticks and they will also not be able to increase liquidity of their current positions.
 // We can reduce risk by choosing tickLower and tickUpper as (highly divisible numbers and there should be more common divisors/factors between the two numbers) in our farm tick requirement. And ofcourse both the numbers should be divisible by the tickspacing of the pool at the time of farm launch.
 // Camelot V3 pools can set tickspacing upto 500.
@@ -76,7 +77,12 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
         camelotV3FarmDeployer = new CamelotV3FarmDeployer(
-            FARM_REGISTRY, FARM_ID, CAMELOT_V3_FACTORY, NFPM, CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
+            FARM_REGISTRY,
+            FARM_ID,
+            CAMELOT_V3_FACTORY,
+            NFPM,
+            CAMELOT_V3_UTILS,
+            CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
         registry.registerFarmDeployer(address(camelotV3FarmDeployer));
 
@@ -185,9 +191,12 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
 
     /// @notice Farm specific deposit logic
     function deposit(address farm, bool locked, uint256 baseAmt) public virtual override returns (uint256) {
+        emit log_named_address("farm", farm);
         (uint256 tokenId, uint256 liquidity) = _mintPosition(baseAmt, user);
+        emit log_named_uint("tokenId", tokenId);
         vm.startPrank(user);
         IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
+        emit log_named_uint("check", 1);
         vm.stopPrank();
         return liquidity;
     }
@@ -276,6 +285,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -295,6 +305,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -315,6 +326,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
                 _rwdTokenData: generateRewardTokenData(),
                 _camelotV3Factory: CAMELOT_V3_FACTORY,
                 _nftContract: NFPM,
+                _camelotUtils: CAMELOT_V3_UTILS,
                 _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
 
@@ -334,6 +346,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
                 _rwdTokenData: generateRewardTokenData(),
                 _camelotV3Factory: CAMELOT_V3_FACTORY,
                 _nftContract: NFPM,
+                _camelotUtils: CAMELOT_V3_UTILS,
                 _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
         }
@@ -354,6 +367,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
@@ -374,6 +388,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -392,6 +407,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -410,6 +426,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -428,6 +445,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -446,6 +464,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
@@ -466,6 +485,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
             _nftContract: NFPM,
+            _camelotUtils: CAMELOT_V3_UTILS,
             _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
@@ -479,6 +499,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(CamelotV3Farm(farmProxy).camelotV3Factory(), CAMELOT_V3_FACTORY);
         assertEq(CamelotV3Farm(farmProxy).nftContract(), NFPM);
+        assertEq(CamelotV3Farm(farmProxy).camelotUtils(), CAMELOT_V3_UTILS);
         assertEq(CamelotV3Farm(farmProxy).nfpmUtils(), CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
@@ -602,7 +623,6 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
     }
 
-    // TODO -> Need to check how to test the received accrued fee amounts.
     function test_claimCamelotFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();

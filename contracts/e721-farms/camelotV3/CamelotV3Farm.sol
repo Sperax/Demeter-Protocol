@@ -30,6 +30,7 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, ICamelotV3Factory, ICamelotV3TickSpacing} from "./interfaces/ICamelotV3.sol";
+import {ICamelotV3Utils} from "./interfaces/ICamelotV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
@@ -54,6 +55,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     int24 public tickUpperAllowed;
     address public camelotPool;
     address public camelotV3Factory;
+    address public camelotUtils; // CamelotUtils (Camelot helper) contract
     address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
@@ -76,6 +78,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _rwdTokenData - init data for reward tokens.
     /// @param _camelotV3Factory - Factory contract of Camelot V3.
     /// @param _nftContract - NFT contract's address (NFPM).
+    /// @param _camelotUtils - address of our custom camelot utils contract.
     /// @param _nfpmUtils - address of our custom camelot nonfungible position manager utils contract.
     function initialize(
         string calldata _farmId,
@@ -86,10 +89,12 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         RewardTokenData[] memory _rwdTokenData,
         address _camelotV3Factory,
         address _nftContract,
+        address _camelotUtils,
         address _nfpmUtils
     ) external initializer {
         _validateNonZeroAddr(_camelotV3Factory);
         _validateNonZeroAddr(_nftContract);
+        _validateNonZeroAddr(_camelotUtils);
         _validateNonZeroAddr(_nfpmUtils);
 
         // initialize camelot related data
@@ -103,6 +108,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         tickUpperAllowed = _camelotPoolData.tickUpperAllowed;
         camelotV3Factory = _camelotV3Factory;
         nftContract = _nftContract;
+        camelotUtils = _camelotUtils;
         nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
@@ -212,6 +218,11 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         }
 
         emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
+    }
+
+    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
+        // TODO -> Need to work on this.
     }
 
     // --------------------- Public and overriding Functions ---------------------
