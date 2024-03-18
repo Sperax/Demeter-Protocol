@@ -224,7 +224,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
         // TODO -> Need to deploy Camelot V3 utils contract.
-        return TokenUtils.getUniV3TokenAmounts(
+        return TokenUtils.getCamelotV3TokenAmounts(
             camelotPool, camelotUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
         );
     }
