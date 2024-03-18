@@ -13,6 +13,10 @@ import {
     INFPM,
     OperableDeposit
 } from "../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol";
+import {
+    INFPMUtils,
+    Position
+} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import "@cryptoalgebra/v1.9-periphery/contracts/interfaces/ISwapRouter.sol";
 
 // import tests
@@ -71,7 +75,9 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
 
         // Deploy and register farm deployer
         FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
-        camelotV3FarmDeployer = new CamelotV3FarmDeployer(FARM_REGISTRY, FARM_ID, CAMELOT_V3_FACTORY, NFPM);
+        camelotV3FarmDeployer = new CamelotV3FarmDeployer(
+            FARM_REGISTRY, FARM_ID, CAMELOT_V3_FACTORY, NFPM, CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
+        );
         registry.registerFarmDeployer(address(camelotV3FarmDeployer));
 
         // Configure rewardTokens
@@ -147,9 +153,9 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
         return (_tokenId, nfpm());
     }
 
-    function getLiquidity(uint256 tokenId) public view override returns (uint256) {
-        (,,,,,, uint128 liquidity,,,,) = INFPM(NFPM).positions(tokenId);
-        return uint256(liquidity);
+    function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
+        Position memory positions = INFPMUtils(CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
+        return uint256(positions.liquidity);
     }
 
     function createFarm(uint256 startTime, bool lockup)
@@ -269,7 +275,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         // Fails for _tickLower < -887272
@@ -287,7 +294,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         if (spacing > 1) {
@@ -306,7 +314,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _camelotV3Factory: CAMELOT_V3_FACTORY,
-                _nftContract: NFPM
+                _nftContract: NFPM,
+                _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
 
             // Fails for _tickUpper % spacing != 0
@@ -324,7 +333,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
                 }),
                 _rwdTokenData: generateRewardTokenData(),
                 _camelotV3Factory: CAMELOT_V3_FACTORY,
-                _nftContract: NFPM
+                _nftContract: NFPM,
+                _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
             });
         }
 
@@ -343,7 +353,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
 
@@ -362,7 +373,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidCamelotPoolConfig.selector));
@@ -379,7 +391,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidCamelotPoolConfig.selector));
@@ -396,7 +409,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidCamelotPoolConfig.selector));
@@ -413,7 +427,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidCamelotPoolConfig.selector));
@@ -430,7 +445,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
     }
 
@@ -449,7 +465,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
             }),
             _rwdTokenData: generateRewardTokenData(),
             _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
 
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
@@ -462,6 +479,7 @@ abstract contract InitializeTest is CamelotV3FarmTest {
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(CamelotV3Farm(farmProxy).camelotV3Factory(), CAMELOT_V3_FACTORY);
         assertEq(CamelotV3Farm(farmProxy).nftContract(), NFPM);
+        assertEq(CamelotV3Farm(farmProxy).nfpmUtils(), CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS);
     }
 }
 
