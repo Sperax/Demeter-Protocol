@@ -34,6 +34,7 @@ import {ICamelotV3Utils} from "./interfaces/ICamelotV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
+import {TokenUtils} from "../../utils/TokenUtils.sol";
 
 // Defines the Camelot pool init data for constructor.
 // tokenA - Address of tokenA
@@ -222,7 +223,10 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        // TODO -> Need to work on this.
+        // TODO -> Need to deploy Camelot V3 utils contract.
+        return TokenUtils.getUniV3TokenAmounts(
+            camelotPool, camelotUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
+        );
     }
 
     // --------------------- Public and overriding Functions ---------------------
