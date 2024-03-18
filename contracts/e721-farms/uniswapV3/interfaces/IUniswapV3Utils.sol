@@ -20,4 +20,6 @@ interface IUniswapV3Utils {
         external
         pure
         returns (uint256 amount0, uint256 amount1);
+
+    function getSqrtRatioAtTick(int24 tick) external pure returns (uint160 sqrtRatioX96);
 }

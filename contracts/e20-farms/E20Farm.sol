@@ -30,7 +30,7 @@ import {ExpirableFarm} from "../features/ExpirableFarm.sol";
 import {Deposit} from "../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../features/OperableDeposit.sol";
 
-contract E20Farm is ExpirableFarm, OperableDeposit {
+abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Token params

@@ -208,4 +208,8 @@ interface IUniswapV3PoolState {
             uint8 feeProtocol,
             bool unlocked
         );
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
 }
