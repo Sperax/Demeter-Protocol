@@ -32,7 +32,7 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     // Balancer
     address public constant BALANCER_VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     // UniswapUtils
-    address public constant UNISWAP_UTILS = 0xd2Aa19D3B7f8cdb1ea5B782c5647542055af415e;
+    address public constant UNISWAP_UTILS = 0x84af120D1a5baC17487B2849Bb3921932EeC289c;
     // NonfungiblePositionManagerUtils
     address constant NONFUNGIBLE_POSITION_MANAGER_UTILS = 0x7A7526d127CEF9c3b315B466685AFA6aF74275fb;
 
