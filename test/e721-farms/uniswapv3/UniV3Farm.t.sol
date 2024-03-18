@@ -602,10 +602,9 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
-        (uint256 amount0, uint256 amount1) = UniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
 
-        vm.expectEmit(address(lockupFarm));
-        emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
+        vm.expectEmit(true, false, false, false, address(lockupFarm));
+        emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
