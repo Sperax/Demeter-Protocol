@@ -47,20 +47,24 @@ contract UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
 
     address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
     address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
+    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     /// @notice Constructor of the contract
     /// @param _farmRegistry Address of the Demeter Farm Registry
     /// @param _farmId Id of the farm
     /// @param _uniV3Factory Address of UniswapV3 factory
     /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
-    constructor(address _farmRegistry, string memory _farmId, address _uniV3Factory, address _nfpm)
+    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    constructor(address _farmRegistry, string memory _farmId, address _uniV3Factory, address _nfpm, address _nfpmUtils)
         FarmDeployer(_farmRegistry, _farmId)
     {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_nfpmUtils);
 
         UNI_V3_FACTORY = _uniV3Factory;
         NFPM = _nfpm;
+        NFPM_UTILS = _nfpmUtils;
         farmImplementation = address(new UniV3Farm());
     }
 
@@ -78,7 +82,8 @@ contract UniV3FarmDeployer is FarmDeployer, ReentrancyGuard {
             _uniswapPoolData: _data.uniswapPoolData,
             _rwdTokenData: _data.rewardData,
             _uniV3Factory: UNI_V3_FACTORY,
-            _nftContract: NFPM
+            _nftContract: NFPM,
+            _nfpmUtils: NFPM_UTILS
         });
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);

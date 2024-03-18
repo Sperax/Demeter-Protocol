@@ -30,6 +30,7 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
+import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 
@@ -55,6 +56,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     int24 public tickUpperAllowed;
     address public uniswapPool;
     address public uniV3Factory;
+    address public nfpmUtils; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -76,6 +78,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _rwdTokenData - init data for reward tokens.
     /// @param _uniV3Factory - Factory contract of Uniswap V3.
     /// @param _nftContract - NFT contract's address (NFPM).
+    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
@@ -84,10 +87,12 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         UniswapPoolData memory _uniswapPoolData,
         RewardTokenData[] memory _rwdTokenData,
         address _uniV3Factory,
-        address _nftContract
+        address _nftContract,
+        address _nfpmUtils
     ) external initializer {
         _validateNonZeroAddr(_uniV3Factory);
         _validateNonZeroAddr(_nftContract);
+        _validateNonZeroAddr(_nfpmUtils);
 
         // initialize uniswap related data
         uniswapPool = IUniswapV3Factory(_uniV3Factory).getPool(
@@ -102,6 +107,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
         uniV3Factory = _uniV3Factory;
         nftContract = _nftContract;
+        nfpmUtils = _nfpmUtils;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
     }
@@ -121,15 +127,15 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
-        (,, address token0, address token1,,,,,,,,) = INFPM(pm).positions(tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
 
         // Transfer tokens from user to the contract.
-        IERC20(token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
-        IERC20(token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
+        IERC20(positions.token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
+        IERC20(positions.token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
 
         // Approve token to the NFPM contract.
-        IERC20(token0).forceApprove(pm, _amounts[0]);
-        IERC20(token1).forceApprove(pm, _amounts[1]);
+        IERC20(positions.token0).forceApprove(pm, _amounts[0]);
+        IERC20(positions.token1).forceApprove(pm, _amounts[1]);
 
         // Increases liquidity in the current range
         (uint128 liquidity, uint256 amount0, uint256 amount1) = INFPM(pm).increaseLiquidity(
@@ -147,10 +153,10 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
         // Return the excess tokens to the user.
         if (amount0 < _amounts[0]) {
-            IERC20(token0).safeTransfer(msg.sender, _amounts[0] - amount0);
+            IERC20(positions.token0).safeTransfer(msg.sender, _amounts[0] - amount0);
         }
         if (amount1 < _amounts[1]) {
-            IERC20(token1).safeTransfer(msg.sender, _amounts[1] - amount1);
+            IERC20(positions.token1).safeTransfer(msg.sender, _amounts[1] - amount1);
         }
     }
 
@@ -235,22 +241,20 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
-
-        (,, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity,,,,) =
-            INFPM(nftContract).positions(_tokenId);
+        Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
         /// @dev Check if the token belongs to correct pool
 
-        if (uniswapPool != IUniswapV3Factory(uniV3Factory).getPool(token0, token1, fee)) {
+        if (uniswapPool != IUniswapV3Factory(uniV3Factory).getPool(positions.token0, positions.token1, positions.fee)) {
             revert IncorrectPoolToken();
         }
 
         /// @dev Check if the token adheres to the tick range
-        if (tickLower != tickLowerAllowed || tickUpper != tickUpperAllowed) {
+        if (positions.tickLower != tickLowerAllowed || positions.tickUpper != tickUpperAllowed) {
             revert IncorrectTickRange();
         }
 
-        return uint256(liquidity);
+        return uint256(positions.liquidity);
     }
 
     function _validateTickRange(int24 _tickLower, int24 _tickUpper) private view {
