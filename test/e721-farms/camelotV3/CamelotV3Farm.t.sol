@@ -17,8 +17,7 @@ import {
     INFPMUtils,
     Position
 } from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
-import "@cryptoalgebra/v1.9-periphery/contracts/interfaces/ISwapRouter.sol";
-
+import "@cryptoalgebra/v1.9-directional-fee-periphery/contracts/interfaces/ISwapRouter.sol";
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
