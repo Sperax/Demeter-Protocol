@@ -190,12 +190,9 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
 
     /// @notice Farm specific deposit logic
     function deposit(address farm, bool locked, uint256 baseAmt) public virtual override returns (uint256) {
-        emit log_named_address("farm", farm);
         (uint256 tokenId, uint256 liquidity) = _mintPosition(baseAmt, user);
-        emit log_named_uint("tokenId", tokenId);
         vm.startPrank(user);
         IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
-        emit log_named_uint("check", 1);
         vm.stopPrank();
         return liquidity;
     }
@@ -953,6 +950,17 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
             oldCommonTotalLiquidity - liquidityToWithdraw
         );
+    }
+
+    function test_getTokenAmounts() public depositSetup(lockupFarm, true) {
+        // Manual testing
+        address[] memory tokens;
+        uint256[] memory amount;
+        (tokens, amount) = CamelotV3Farm(lockupFarm).getTokenAmounts();
+        emit log_named_uint("amount0", amount[0]);
+        emit log_named_uint("amount1", amount[1]);
+        emit log_named_address("token0", tokens[0]);
+        emit log_named_address("token1", tokens[1]);
     }
 }
 
