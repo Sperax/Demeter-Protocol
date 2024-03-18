@@ -28,7 +28,8 @@ import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {E20Farm, RewardTokenData} from "../E20Farm.sol";
+import {RewardTokenData} from "../E20Farm.sol";
+import {UniV2Farm} from "./UniV2Farm.sol";
 
 contract UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -65,14 +66,14 @@ contract UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     {
         _validateNonZeroAddr(_protocolFactory);
         PROTOCOL_FACTORY = _protocolFactory;
-        farmImplementation = address(new E20Farm());
+        farmImplementation = address(new UniV2Farm());
     }
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        E20Farm farmInstance = E20Farm(Clones.clone(farmImplementation));
+        UniV2Farm farmInstance = UniV2Farm(Clones.clone(farmImplementation));
 
         address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
 

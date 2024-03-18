@@ -33,6 +33,7 @@ import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUni
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
+import {TokenUtils} from "../../utils/TokenUtils.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA
@@ -216,6 +217,13 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         }
 
         emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
+    }
+
+    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
+        return TokenUtils.getUniV3TokenAmounts(
+            uniswapPool, uniswapUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
+        );
     }
 
     // --------------------- Public and overriding Functions ---------------------

@@ -28,7 +28,8 @@ import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer
 import {IBalancerV2Vault} from "./interfaces/IBalancerV2Vault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {E20Farm, RewardTokenData} from "../E20Farm.sol";
+import {RewardTokenData} from "../E20Farm.sol";
+import {BalancerV2Farm} from "./BalancerV2Farm.sol";
 
 /// @title Deployer for Balancer farm
 /// @author Sperax Foundation
@@ -66,7 +67,7 @@ contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         _validateNonZeroAddr(_balancerVault);
 
         BALANCER_VAULT = _balancerVault;
-        farmImplementation = address(new E20Farm());
+        farmImplementation = address(new BalancerV2Farm());
     }
 
     /// @notice Deploys a new Balancer farm.
@@ -81,7 +82,7 @@ contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         // Calculate and collect fee if required
         _collectFee();
 
-        E20Farm farmInstance = E20Farm(Clones.clone(farmImplementation));
+        BalancerV2Farm farmInstance = BalancerV2Farm(Clones.clone(farmImplementation));
         farmInstance.initialize({
             _farmId: farmId,
             _farmStartTime: _data.farmStartTime,

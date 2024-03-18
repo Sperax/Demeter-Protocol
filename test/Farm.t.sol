@@ -101,11 +101,7 @@ abstract contract FarmTest is TestNetworkConfig {
     function deposit(address farm, bool locked, uint256 amt, bytes memory revertMsg) public virtual;
 
     function getRewardTokens(address farm) public view returns (address[] memory) {
-        address[] memory farmRewardTokens = new address[](rwdTokens.length);
-        for (uint8 i = 0; i < rwdTokens.length; ++i) {
-            farmRewardTokens[i] = Farm(farm).rewardTokens(i);
-        }
-        return farmRewardTokens;
+        return Farm(farm).getRewardTokens();
     }
 }
 
@@ -585,6 +581,20 @@ abstract contract GetRewardFundInfoTest is FarmTest {
 
     function test_getRewardFundInfo_LockupFarm() public setup useKnownActor(user) {
         Farm(lockupFarm).getRewardFundInfo(0);
+    }
+}
+
+abstract contract GetRewardTokensTest is FarmTest {
+    function test_GetRewardTokensTest() public setup useKnownActor(user) {
+        address[] memory _rwdTokens = Farm(lockupFarm).getRewardTokens();
+        uint256 _rwdTokensLen = _rwdTokens.length;
+        assertEq(rwdTokens.length, _rwdTokensLen);
+        for (uint8 i; i < _rwdTokensLen;) {
+            assertEq(_rwdTokens[i], rwdTokens[i]);
+            unchecked {
+                ++i;
+            }
+        }
     }
 }
 
@@ -1144,6 +1154,7 @@ abstract contract FarmInheritTest is
     GetRewardBalanceTest,
     GetDepositTest,
     GetNumSubscriptionsTest,
+    GetRewardTokensTest,
     SubscriptionInfoTest,
     UpdateRewardTokenDataTest,
     RecoverRewardFundsTest,
