@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@cryptoalgebra/v1.9-directional-fee-periphery": "^1.0.1",
-    "@cryptoalgebra/v1.9-periphery": "^1.0.1",
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
     "@uniswap/v3-core": "^1.0.0",
