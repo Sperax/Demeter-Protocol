@@ -24,6 +24,7 @@ import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
 import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import "../../features/ExpirableFarm.t.sol";
 import "../../utils/UpgradeUtil.t.sol";
+import "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
@@ -603,8 +604,10 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
 
-        vm.expectEmit(true, false, false, false, address(lockupFarm));
-        emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
+        (uint256 amt0, uint256 amt1) = IUniswapV3Utils(UNISWAP_UTILS).fees(NFPM, _tokenId);
+
+        vm.expectEmit(address(lockupFarm));
+        emit PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
 
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
     }
