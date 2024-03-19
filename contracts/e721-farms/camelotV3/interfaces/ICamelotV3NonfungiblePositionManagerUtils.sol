@@ -15,6 +15,6 @@ struct Position {
     uint128 tokensOwed1;
 }
 
-interface INFPMUtils {
+interface ICamelotV3NFPMUtils {
     function positions(address positionManager, uint256 tokenId) external view returns (Position memory position);
 }

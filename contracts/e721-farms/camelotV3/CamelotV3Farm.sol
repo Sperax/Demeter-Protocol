@@ -31,7 +31,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, ICamelotV3Factory, ICamelotV3TickSpacing} from "./interfaces/ICamelotV3.sol";
 import {ICamelotV3Utils} from "./interfaces/ICamelotV3Utils.sol";
-import {INFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
+import {ICamelotV3NFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
@@ -130,7 +130,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
         address pm = nftContract;
         uint256 tokenId = depositToTokenId[_depositId];
-        Position memory positions = INFPMUtils(nfpmUtils).positions(pm, tokenId);
+        Position memory positions = ICamelotV3NFPMUtils(nfpmUtils).positions(pm, tokenId);
 
         // Transfer tokens from user to the contract.
         IERC20(positions.token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
@@ -251,7 +251,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
-        Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
+        Position memory positions = ICamelotV3NFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
         /// @dev Check if the token belongs to correct pool
 

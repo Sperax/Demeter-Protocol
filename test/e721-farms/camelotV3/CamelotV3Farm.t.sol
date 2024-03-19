@@ -14,7 +14,7 @@ import {
     OperableDeposit
 } from "../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol";
 import {
-    INFPMUtils,
+    ICamelotV3NFPMUtils,
     Position
 } from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import "@cryptoalgebra/v1.9-directional-fee-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -159,7 +159,8 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
     }
 
     function getLiquidity(uint256 tokenId) public view override returns (uint256 liquidity) {
-        Position memory positions = INFPMUtils(CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
+        Position memory positions =
+            ICamelotV3NFPMUtils(CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS).positions(nfpm(), tokenId);
         return uint256(positions.liquidity);
     }
 
