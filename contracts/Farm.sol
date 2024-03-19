@@ -81,7 +81,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidCooldownPeriod();
 
     // Disallow initialization of a implementation contract.
-    constructor() {
+    constructor() Ownable(msg.sender) {
         _disableInitializers();
     }
 
@@ -656,7 +656,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert InvalidFarmStartTime();
         }
         farmId = _farmId;
-        _transferOwnership(msg.sender);
         // Initialize farm global params.
         lastFundUpdateTime = _farmStartTime;
 

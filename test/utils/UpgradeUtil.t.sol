@@ -8,7 +8,7 @@ contract UpgradeUtil {
     ProxyAdmin public proxyAdmin;
 
     constructor() {
-        proxyAdmin = new ProxyAdmin();
+        proxyAdmin = new ProxyAdmin(msg.sender);
     }
 
     function deployErc1967Proxy(address impl) public returns (address) {

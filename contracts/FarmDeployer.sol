@@ -52,7 +52,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     /// @notice Constructor.
     /// @param _farmRegistry Address of the Demeter Farm Registry.
     /// @param _farmId Id of the farm.
-    constructor(address _farmRegistry, string memory _farmId) {
+    constructor(address _farmRegistry, string memory _farmId) Ownable(msg.sender) {
         _validateNonZeroAddr(_farmRegistry);
         FARM_REGISTRY = _farmRegistry;
         farmId = _farmId;
