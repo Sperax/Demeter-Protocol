@@ -965,7 +965,9 @@ abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
 
         (uint160 sqrtRatioX96,,,,,,,) = ICamelotV3PoolState(CamelotV3Farm(lockupFarm).camelotPool()).globalState();
 
-        (uint256 expectedAmount0, uint256 expectedAmount1) = ICamelotV3Utils(CAMELOT_V3_UTILS).getAmountsForLiquidity(
+        uint256[] memory expectedAmounts = new uint256[](2);
+
+        (expectedAmounts[0], expectedAmounts[1]) = ICamelotV3Utils(CAMELOT_V3_UTILS).getAmountsForLiquidity(
             sqrtRatioX96,
             CamelotV3Farm(lockupFarm).tickLowerAllowed(),
             CamelotV3Farm(lockupFarm).tickUpperAllowed(),
@@ -976,13 +978,15 @@ abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
 
         address camelotPool = CamelotV3Farm(lockupFarm).camelotPool();
 
-        address expectedToken0 = ICamelotV3PoolState(camelotPool).token0();
-        address expectedToken1 = ICamelotV3PoolState(camelotPool).token1();
+        address[] memory expectedTokens = new address[](2);
 
-        assertEq(tokens[0], expectedToken0);
-        assertEq(tokens[1], expectedToken1);
-        assertEq(amounts[0], expectedAmount0);
-        assertEq(amounts[1], expectedAmount1);
+        expectedTokens[0] = ICamelotV3PoolState(camelotPool).token0();
+        expectedTokens[1] = ICamelotV3PoolState(camelotPool).token1();
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            assertEq(tokens[i], expectedTokens[i]);
+            assertEq(amounts[i], expectedAmounts[i]);
+        }
     }
 }
 
