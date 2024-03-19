@@ -18,6 +18,8 @@ import {
     ICamelotV3NFPMUtils,
     Position
 } from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
+import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol";
+import {ICamelotV3Utils} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
@@ -958,12 +960,29 @@ abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
     function test_getTokenAmounts() public depositSetup(lockupFarm, true) {
         // Manual testing
         address[] memory tokens;
-        uint256[] memory amount;
-        (tokens, amount) = CamelotV3Farm(lockupFarm).getTokenAmounts();
-        emit log_named_uint("amount0", amount[0]);
-        emit log_named_uint("amount1", amount[1]);
-        emit log_named_address("token0", tokens[0]);
-        emit log_named_address("token1", tokens[1]);
+        uint256[] memory amounts;
+        (tokens, amounts) = CamelotV3Farm(lockupFarm).getTokenAmounts();
+
+        (uint160 sqrtRatioX96,,,,,,,) = ICamelotV3PoolState(CamelotV3Farm(lockupFarm).camelotPool()).globalState();
+
+        (uint256 expectedAmount0, uint256 expectedAmount1) = ICamelotV3Utils(CAMELOT_V3_UTILS).getAmountsForLiquidity(
+            sqrtRatioX96,
+            CamelotV3Farm(lockupFarm).tickLowerAllowed(),
+            CamelotV3Farm(lockupFarm).tickUpperAllowed(),
+            uint128(
+                CamelotV3Farm(lockupFarm).getRewardFundInfo(CamelotV3Farm(lockupFarm).COMMON_FUND_ID()).totalLiquidity
+            )
+        );
+
+        address camelotPool = CamelotV3Farm(lockupFarm).camelotPool();
+
+        address expectedToken0 = ICamelotV3PoolState(camelotPool).token0();
+        address expectedToken1 = ICamelotV3PoolState(camelotPool).token1();
+
+        assertEq(tokens[0], expectedToken0);
+        assertEq(tokens[1], expectedToken1);
+        assertEq(amounts[0], expectedAmount0);
+        assertEq(amounts[1], expectedAmount1);
     }
 }
 
@@ -975,7 +994,8 @@ contract CamelotV3FarmInheritTest is
     DecreaseDepositTest,
     FarmInheritTest,
     ExpirableFarmInheritTest,
-    E721FarmInheritTest
+    E721FarmInheritTest,
+    GetTokenAmountsTest
 {
     function setUp() public override(CamelotV3FarmTest, FarmTest) {
         super.setUp();
