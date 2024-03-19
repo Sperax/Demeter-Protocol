@@ -609,7 +609,13 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
 
+        uint256 amt0Before = IERC20(DAI).balanceOf(currentActor);
+        uint256 amt1Before = IERC20(USDCe).balanceOf(currentActor);
+
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
+
+        assertEq(amt0Before + amt0, IERC20(DAI).balanceOf(currentActor));
+        assertEq(amt1Before + amt1, IERC20(USDCe).balanceOf(currentActor));
     }
 }
 
