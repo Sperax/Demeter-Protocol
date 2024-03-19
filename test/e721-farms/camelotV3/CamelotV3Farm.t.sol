@@ -952,7 +952,9 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
             oldCommonTotalLiquidity - liquidityToWithdraw
         );
     }
+}
 
+abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
     function test_getTokenAmounts() public depositSetup(lockupFarm, true) {
         // Manual testing
         address[] memory tokens;
