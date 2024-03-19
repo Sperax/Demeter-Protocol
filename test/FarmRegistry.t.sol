@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {E20Farm} from "../contracts/e20-farms/E20Farm.sol";

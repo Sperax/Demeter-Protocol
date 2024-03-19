@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,10 +27,9 @@ pragma solidity 0.8.16;
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {CamelotV2Farm, RewardTokenData} from "./CamelotV2Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
-contract CamelotV2FarmDeployer is FarmDeployer, ReentrancyGuard {
+contract CamelotV2FarmDeployer is FarmDeployer {
     // @dev the token Order is not important
     struct CamelotPoolData {
         address tokenA;
