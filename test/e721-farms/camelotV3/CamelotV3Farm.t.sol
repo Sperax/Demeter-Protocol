@@ -627,12 +627,35 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         _simulateSwap();
         uint256 _tokenId = CamelotV3Farm(lockupFarm).depositToTokenId(depositId);
 
-        // amount0, amount1 (accrued fees)
-
         vm.expectEmit(true, false, false, false, address(lockupFarm)); // for now ignoring amount0 and amount1
         emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
+        vm.recordLogs();
+
+        uint256 balance0Before = IERC20(DAI).balanceOf(user);
+        uint256 balance1Before = IERC20(USDCe).balanceOf(user);
+
         CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
+
+        uint256 balance0After = IERC20(DAI).balanceOf(user);
+        uint256 balance1After = IERC20(USDCe).balanceOf(user);
+
+        VmSafe.Log[] memory entries = vm.getRecordedLogs();
+
+        uint256 amt0;
+        uint256 amt1;
+
+        for (uint256 i = 0; i < entries.length; i++) {
+            if (entries[i].topics[0] == bytes32(keccak256("PoolFeeCollected(address,uint256,uint256,uint256)"))) {
+                (, uint256 _amt0, uint256 _amt1) = abi.decode(entries[i].data, (uint256, uint256, uint256));
+                amt0 = _amt0;
+                amt1 = _amt1;
+                break;
+            }
+        }
+
+        assertEq(balance0After, amt0 + balance0Before);
+        assertEq(balance1After, amt1 + balance1Before);
     }
 
     function testFuzz_claimCamelotFee_tickSpacingChanged(int24 tickSpacing)
