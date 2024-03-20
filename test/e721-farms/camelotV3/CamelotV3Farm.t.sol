@@ -428,22 +428,25 @@ abstract contract InitializeTest is CamelotV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
-    function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
+    function _mintHelper(address token0, address token1, int24 tickLower, int24 tickUpper)
+        internal
+        returns (uint256 tokenId)
+    {
+        uint256 depositAmount1 = 1e3 * 10 ** ERC20(token0).decimals();
+        uint256 depositAmount2 = 1e3 * 10 ** ERC20(token1).decimals();
 
-        deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(NFPM, depositAmount1);
+        deal(token0, currentActor, depositAmount1);
+        IERC20(token0).approve(NFPM, depositAmount1);
 
-        deal(USDT, currentActor, depositAmount2);
-        IERC20(USDT).approve(NFPM, depositAmount2);
+        deal(token1, currentActor, depositAmount2);
+        IERC20(token1).approve(NFPM, depositAmount2);
 
-        (uint256 tokenId,,,) = INFPM(NFPM).mint(
+        (tokenId,,,) = INFPM(NFPM).mint(
             INFPM.MintParams({
-                token0: DAI,
-                token1: USDT, // incorrect token
-                tickLower: TICK_LOWER,
-                tickUpper: TICK_UPPER,
+                token0: token0,
+                token1: token1,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
                 amount0Desired: depositAmount1,
                 amount1Desired: depositAmount2,
                 amount0Min: 0,
@@ -452,70 +455,27 @@ abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
                 deadline: block.timestamp
             })
         );
+    }
+
+    function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
+        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
+        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
+
+        uint256 tokenId = _mintHelper(DAI, USDT, TICK_LOWER, TICK_UPPER);
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.IncorrectPoolToken.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId, abi.encode(true));
     }
 
     function test_OnERC721Received_RevertWhen_IncorrectTickRange() public useKnownActor(user) {
-        // Note -> tickspacing of a pool can be changed by the factory owner.
-        // If they change a pool’s tickspacing, users’ might not be able to mint new positions adhering to our tickLower and tickUpper in our farm. (see pool’s mint code to understand).
-
         int24 spacing =
             ICamelotV3TickSpacing(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).tickSpacing();
 
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+        uint256 tokenId1 = _mintHelper(DAI, USDCe, TICK_LOWER + spacing, TICK_UPPER);
 
-        deal(DAI, currentActor, depositAmount1 * 3);
-        IERC20(DAI).approve(NFPM, depositAmount1 * 3);
+        uint256 tokenId2 = _mintHelper(DAI, USDCe, TICK_LOWER, TICK_UPPER - spacing);
 
-        deal(USDCe, currentActor, depositAmount2 * 3);
-        IERC20(USDCe).approve(NFPM, depositAmount2 * 3);
-
-        (uint256 tokenId1,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                tickLower: TICK_LOWER + spacing,
-                tickUpper: TICK_UPPER,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
-        (uint256 tokenId2,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                tickLower: TICK_LOWER,
-                tickUpper: TICK_UPPER - spacing,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
-
-        (uint256 tokenId3,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                tickLower: TICK_LOWER + spacing,
-                tickUpper: TICK_UPPER - spacing,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
+        uint256 tokenId3 = _mintHelper(DAI, USDCe, TICK_LOWER + spacing, TICK_UPPER - spacing);
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.IncorrectTickRange.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId1, abi.encode(true));
