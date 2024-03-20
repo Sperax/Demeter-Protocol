@@ -50,17 +50,17 @@ struct UniswapPoolData {
 }
 
 // Defines a struct for inputs used for initializing this farm.
-// _farmId - String ID of the farm.
-// _farmStartTime - time of farm start.
-// _cooldownPeriod - cooldown period for locked deposits in days.
-// _cooldownPeriod = 0 Disables lockup functionality for the farm.
-// _farmRegistry - Address of the Demeter Farm Registry.
-// _uniswapPoolData - init data for UniswapV3 pool.
-// _rwdTokenData - init data for reward tokens.
-// _uniV3Factory - Factory contract of Uniswap V3.
-// _nftContract - NFT contract's address (NFPM).
-// _uniswapUtils - address of our custom uniswap utils contract.
-// _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
+// farmId - String ID of the farm.
+// farmStartTime - time of farm start.
+// cooldownPeriod - cooldown period for locked deposits in days.
+// cooldownPeriod = 0 Disables lockup functionality for the farm.
+// farmRegistry - Address of the Demeter Farm Registry.
+// uniswapPoolData - init data for UniswapV3 pool.
+// rwdTokenData - init data for reward tokens.
+// uniV3Factory - Factory contract of Uniswap V3.
+// nftContract - NFT contract's address (NFPM).
+// uniswapUtils - address of our custom uniswap utils contract.
+// nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
 struct InitializeInput {
     string farmId;
     uint256 farmStartTime;
