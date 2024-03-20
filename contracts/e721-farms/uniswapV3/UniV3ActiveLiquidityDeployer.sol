@@ -81,20 +81,21 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer {
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        InitializeInput memory input = InitializeInput({
-            farmId: farmId,
-            farmStartTime: _data.farmStartTime,
-            cooldownPeriod: _data.cooldownPeriod,
-            farmRegistry: FARM_REGISTRY,
-            uniswapPoolData: _data.uniswapPoolData,
-            rwdTokenData: _data.rewardData,
-            uniV3Factory: UNI_V3_FACTORY,
-            nftContract: NFPM,
-            uniswapUtils: UNISWAP_UTILS,
-            nfpmUtils: NFPM_UTILS
-        });
         UniV3ActiveLiquidityFarm farmInstance = UniV3ActiveLiquidityFarm(Clones.clone(farmImplementation));
-        farmInstance.initialize({_input: input});
+        farmInstance.initialize(
+            InitializeInput({
+                farmId: farmId,
+                farmStartTime: _data.farmStartTime,
+                cooldownPeriod: _data.cooldownPeriod,
+                farmRegistry: FARM_REGISTRY,
+                uniswapPoolData: _data.uniswapPoolData,
+                rwdTokenData: _data.rewardData,
+                uniV3Factory: UNI_V3_FACTORY,
+                nftContract: NFPM,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NFPM_UTILS
+            })
+        );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required

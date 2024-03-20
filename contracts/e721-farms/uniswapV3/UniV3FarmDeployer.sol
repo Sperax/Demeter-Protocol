@@ -82,19 +82,20 @@ contract UniV3FarmDeployer is FarmDeployer {
         _validateNonZeroAddr(_data.farmAdmin);
 
         UniV3Farm farmInstance = UniV3Farm(Clones.clone(farmImplementation));
-        InitializeInput memory input = InitializeInput({
-            farmId: farmId,
-            farmStartTime: _data.farmStartTime,
-            cooldownPeriod: _data.cooldownPeriod,
-            farmRegistry: FARM_REGISTRY,
-            uniswapPoolData: _data.uniswapPoolData,
-            rwdTokenData: _data.rewardData,
-            uniV3Factory: UNI_V3_FACTORY,
-            nftContract: NFPM,
-            uniswapUtils: UNISWAP_UTILS,
-            nfpmUtils: NFPM_UTILS
-        });
-        farmInstance.initialize({_input: input});
+        farmInstance.initialize(
+            InitializeInput({
+                farmId: farmId,
+                farmStartTime: _data.farmStartTime,
+                cooldownPeriod: _data.cooldownPeriod,
+                farmRegistry: FARM_REGISTRY,
+                uniswapPoolData: _data.uniswapPoolData,
+                rwdTokenData: _data.rewardData,
+                uniV3Factory: UNI_V3_FACTORY,
+                nftContract: NFPM,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NFPM_UTILS
+            })
+        );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required

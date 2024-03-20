@@ -30,9 +30,7 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, ICamelotV3Factory, ICamelotV3TickSpacing} from "./interfaces/ICamelotV3.sol";
-import {ICamelotV3Utils} from "./interfaces/ICamelotV3Utils.sol";
 import {ICamelotV3NFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
-import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
@@ -229,9 +227,13 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getCamelotV3TokenAmounts(
-            camelotPool, camelotUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
-        );
+        return TokenUtils.getCamelotV3TokenAmounts({
+            _camelotPool: camelotPool,
+            _camelotUtils: camelotUtils,
+            _tickLower: tickLowerAllowed,
+            _tickUpper: tickUpperAllowed,
+            _liquidity: rewardFunds[COMMON_FUND_ID].totalLiquidity
+        });
     }
 
     // --------------------- Public and overriding Functions ---------------------

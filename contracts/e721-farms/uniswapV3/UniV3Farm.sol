@@ -30,7 +30,6 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
-import {IUniswapV3Utils} from "./interfaces/IUniswapV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";

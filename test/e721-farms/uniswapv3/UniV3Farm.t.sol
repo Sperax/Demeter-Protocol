@@ -14,11 +14,11 @@ import {
     RewardTokenData,
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
-    IUniswapV3Utils,
     INFPM,
     OperableDeposit,
     InitializeInput
 } from "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
+import {IUniswapV3Utils} from "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
 import {
     INFPMUtils,
     Position
