@@ -32,7 +32,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
 import {IUniswapV3Utils} from "./interfaces/IUniswapV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
@@ -240,9 +239,13 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getUniV3TokenAmounts(
-            uniswapPool, uniswapUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
-        );
+        return TokenUtils.getUniV3TokenAmounts({
+            _uniPool: uniswapPool,
+            _uniUtils: uniswapUtils,
+            _tickLower: tickLowerAllowed,
+            _tickUpper: tickUpperAllowed,
+            _liquidity: rewardFunds[COMMON_FUND_ID].totalLiquidity
+        });
     }
 
     // --------------------- Public and overriding Functions ---------------------

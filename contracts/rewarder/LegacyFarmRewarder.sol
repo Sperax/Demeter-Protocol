@@ -73,13 +73,13 @@ contract LegacyFarmRewarder is Rewarder {
     function _getTokenAmounts(address _farm) internal view override returns (address[] memory, uint256[] memory) {
         uint256 totalLiquidity = IFarm(_farm).getRewardFundInfo(COMMON_FUND_ID).totalLiquidity;
         if (isUniV3Farm[_farm]) {
-            return TokenUtils.getUniV3TokenAmounts(
-                IUniswapV3Farm(_farm).uniswapPool(),
-                UNISWAP_UTILS,
-                IUniswapV3Farm(_farm).tickLowerAllowed(),
-                IUniswapV3Farm(_farm).tickUpperAllowed(),
-                totalLiquidity
-            );
+            return TokenUtils.getUniV3TokenAmounts({
+                _uniPool: IUniswapV3Farm(_farm).uniswapPool(),
+                _uniUtils: UNISWAP_UTILS,
+                _tickLower: IUniswapV3Farm(_farm).tickLowerAllowed(),
+                _tickUpper: IUniswapV3Farm(_farm).tickUpperAllowed(),
+                _liquidity: totalLiquidity
+            });
         } else {
             return TokenUtils.getUniV2TokenAmounts(ICamelotFarm(_farm).nftPool(), totalLiquidity);
         }

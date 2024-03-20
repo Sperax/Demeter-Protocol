@@ -2,6 +2,7 @@
 pragma solidity 0.8.24;
 
 import "forge-std/console.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CamelotV2FarmTest} from "../e721-farms/camelotV2/CamelotV2Farm.t.sol";
 import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
@@ -38,8 +39,8 @@ contract TestInitialization is RewarderTest {
 }
 
 contract TestUpdateTokenManagerOfFarm is RewarderTest {
-    function test_RevertsWhen_CallerIsNotTheOwner() public {
-        vm.expectRevert("Ownable: caller is not the owner");
+    function test_RevertWhen_CallerIsNotTheOwner() public useKnownActor(actors[5]) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
         rewarder.updateTokenManagerOfFarm(lockupFarm, actors[1]);
     }
 
@@ -58,8 +59,8 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
 contract TestUpdateAPR is RewarderTest {
     uint256 private constant APR = 1e9;
 
-    function test_RevertWhen_updateAPR_CallerIsNotTheOwner() public {
-        vm.expectRevert("Ownable: caller is not the owner");
+    function test_RevertWhen_updateAPR_CallerIsNotTheOwner() public useKnownActor(actors[5]) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
         rewarder.updateAPR(lockupFarm, APR);
     }
 

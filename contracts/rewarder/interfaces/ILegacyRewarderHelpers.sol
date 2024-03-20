@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 interface ICamelotFarm {
     function nftPool() external view returns (address);
-    function FARM_ID() external view returns (string memory);
+    function FARM_ID() external view returns (string memory); // solhint-disable-line func-name-mixedcase
 }
 
 interface IUniswapV3Farm {

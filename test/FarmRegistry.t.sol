@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {E20Farm} from "../contracts/e20-farms/E20Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -198,7 +199,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
         deployerRegistered
     {
         vm.startPrank(owner);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
         FarmRegistry(registry).updatePrivilege(owner, false);
     }
 
@@ -226,7 +227,7 @@ contract UpdateFeeParamsTest is FarmRegistryTest {
         deployerRegistered
     {
         vm.startPrank(owner);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
         FarmRegistry(registry).updateFeeParams(owner, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
     }
 
