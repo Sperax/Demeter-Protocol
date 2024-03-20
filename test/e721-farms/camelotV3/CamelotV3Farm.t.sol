@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -13,11 +13,11 @@ import {
     RewardTokenData,
     ICamelotV3Factory,
     ICamelotV3TickSpacing,
-    ICamelotV3Utils,
     INFPM,
     OperableDeposit,
     InitializeInput
 } from "../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol";
+import {ICamelotV3Utils} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
 import {
     ICamelotV3NFPMUtils,
     Position

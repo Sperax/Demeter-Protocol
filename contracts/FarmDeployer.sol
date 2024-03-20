@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -26,12 +26,13 @@ pragma solidity 0.8.16;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 
 /// @title FarmDeployer contract of Demeter Protocol
 /// @notice Exposes base functionalities which will be useful in every deployer
 /// @author Sperax Foundation
-abstract contract FarmDeployer is Ownable {
+abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public immutable FARM_REGISTRY;
@@ -51,7 +52,7 @@ abstract contract FarmDeployer is Ownable {
     /// @notice Constructor.
     /// @param _farmRegistry Address of the Demeter Farm Registry.
     /// @param _farmId Id of the farm.
-    constructor(address _farmRegistry, string memory _farmId) {
+    constructor(address _farmRegistry, string memory _farmId) Ownable(msg.sender) {
         _validateNonZeroAddr(_farmRegistry);
         FARM_REGISTRY = _farmRegistry;
         farmId = _farmId;

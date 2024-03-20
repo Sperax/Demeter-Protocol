@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,9 +27,8 @@ pragma solidity 0.8.16;
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {CamelotV3Farm, RewardTokenData, CamelotPoolData, InitializeInput} from "./CamelotV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract CamelotV3FarmDeployer is FarmDeployer, ReentrancyGuard {
+contract CamelotV3FarmDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)

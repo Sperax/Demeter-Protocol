@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -1128,7 +1130,7 @@ abstract contract MulticallTest is FarmTest {
             bytes[] memory data = new bytes[](3);
             data[0] = abi.encodeWithSelector(Farm.updateCooldownPeriod.selector, cooldownPeriodInDays);
 
-            vm.expectRevert("Ownable: caller is not the owner");
+            vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
             Farm(lockupFarm).multicall(data);
         }
     }
@@ -1137,7 +1139,7 @@ abstract contract MulticallTest is FarmTest {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
 
-        vm.expectRevert("Address: low-level delegate call failed");
+        vm.expectRevert(Address.FailedInnerCall.selector);
         Farm(lockupFarm).multicall(data);
     }
 }

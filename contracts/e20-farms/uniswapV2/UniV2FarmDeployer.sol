@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,11 +27,10 @@ pragma solidity 0.8.16;
 import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
 import {IUniswapV2Factory} from "./interfaces/IUniswapV2Factory.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {RewardTokenData} from "../E20Farm.sol";
 import {UniV2Farm} from "./UniV2Farm.sol";
 
-contract UniV2FarmDeployer is FarmDeployer, ReentrancyGuard {
+contract UniV2FarmDeployer is FarmDeployer {
     using SafeERC20 for IERC20;
 
     // @dev the token Order is not important

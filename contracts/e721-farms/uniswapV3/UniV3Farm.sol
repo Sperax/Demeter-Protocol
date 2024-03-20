@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -30,9 +30,7 @@ import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUniswapV3.sol";
-import {IUniswapV3Utils} from "./interfaces/IUniswapV3Utils.sol";
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
-import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
@@ -48,6 +46,31 @@ struct UniswapPoolData {
     uint24 feeTier;
     int24 tickLowerAllowed;
     int24 tickUpperAllowed;
+}
+
+// Defines a struct for inputs used for initializing this farm.
+// farmId - String ID of the farm.
+// farmStartTime - time of farm start.
+// cooldownPeriod - cooldown period for locked deposits in days.
+// cooldownPeriod = 0 Disables lockup functionality for the farm.
+// farmRegistry - Address of the Demeter Farm Registry.
+// uniswapPoolData - init data for UniswapV3 pool.
+// rwdTokenData - init data for reward tokens.
+// uniV3Factory - Factory contract of Uniswap V3.
+// nftContract - NFT contract's address (NFPM).
+// uniswapUtils - address of our custom uniswap utils contract.
+// nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
+struct InitializeInput {
+    string farmId;
+    uint256 farmStartTime;
+    uint256 cooldownPeriod;
+    address farmRegistry;
+    UniswapPoolData uniswapPoolData;
+    RewardTokenData[] rwdTokenData;
+    address uniV3Factory;
+    address nftContract;
+    address uniswapUtils;
+    address nfpmUtils;
 }
 
 contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
@@ -71,52 +94,31 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     error InvalidTickRange();
     error InvalidAmount();
 
-    /// @notice constructor
-    /// @param _farmId - String ID of the farm.
-    /// @param _farmStartTime - time of farm start.
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days.
-    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _farmRegistry - Address of the Demeter Farm Registry.
-    /// @param _uniswapPoolData - init data for UniswapV3 pool.
-    /// @param _rwdTokenData - init data for reward tokens.
-    /// @param _uniV3Factory - Factory contract of Uniswap V3.
-    /// @param _nftContract - NFT contract's address (NFPM).
-    /// @param _uniswapUtils - address of our custom uniswap utils contract.
-    /// @param _nfpmUtils - address of our custom uniswap nonfungible position manager utils contract.
-    function initialize(
-        string calldata _farmId,
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        address _farmRegistry,
-        UniswapPoolData memory _uniswapPoolData,
-        RewardTokenData[] memory _rwdTokenData,
-        address _uniV3Factory,
-        address _nftContract,
-        address _uniswapUtils,
-        address _nfpmUtils
-    ) external initializer {
-        _validateNonZeroAddr(_uniV3Factory);
-        _validateNonZeroAddr(_nftContract);
-        _validateNonZeroAddr(_uniswapUtils);
-        _validateNonZeroAddr(_nfpmUtils);
+    /// @notice Initializer function of this farm
+    /// @param _input A struct having all the input params.
+    function initialize(InitializeInput calldata _input) external initializer {
+        _validateNonZeroAddr(_input.uniV3Factory);
+        _validateNonZeroAddr(_input.nftContract);
+        _validateNonZeroAddr(_input.uniswapUtils);
+        _validateNonZeroAddr(_input.nfpmUtils);
 
         // initialize uniswap related data
-        uniswapPool = IUniswapV3Factory(_uniV3Factory).getPool(
-            _uniswapPoolData.tokenA, _uniswapPoolData.tokenB, _uniswapPoolData.feeTier
+        uniswapPool = IUniswapV3Factory(_input.uniV3Factory).getPool(
+            _input.uniswapPoolData.tokenA, _input.uniswapPoolData.tokenB, _input.uniswapPoolData.feeTier
         );
         if (uniswapPool == address(0)) {
             revert InvalidUniswapPoolConfig();
         }
-        _validateTickRange(_uniswapPoolData.tickLowerAllowed, _uniswapPoolData.tickUpperAllowed);
+        _validateTickRange(_input.uniswapPoolData.tickLowerAllowed, _input.uniswapPoolData.tickUpperAllowed);
 
-        tickLowerAllowed = _uniswapPoolData.tickLowerAllowed;
-        tickUpperAllowed = _uniswapPoolData.tickUpperAllowed;
-        uniV3Factory = _uniV3Factory;
-        nftContract = _nftContract;
-        uniswapUtils = _uniswapUtils;
-        nfpmUtils = _nfpmUtils;
-        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _farmRegistry);
+        tickLowerAllowed = _input.uniswapPoolData.tickLowerAllowed;
+        tickUpperAllowed = _input.uniswapPoolData.tickUpperAllowed;
+        uniV3Factory = _input.uniV3Factory;
+        nftContract = _input.nftContract;
+        uniswapUtils = _input.uniswapUtils;
+        nfpmUtils = _input.nfpmUtils;
+        _setupFarm(_input.farmId, _input.farmStartTime, _input.cooldownPeriod, _input.rwdTokenData);
+        _setupFarmExpiry(_input.farmStartTime, _input.farmRegistry);
     }
 
     /// @notice Allow user to increase liquidity for a deposit.
@@ -227,9 +229,13 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getUniV3TokenAmounts(
-            uniswapPool, uniswapUtils, tickLowerAllowed, tickUpperAllowed, rewardFunds[COMMON_FUND_ID].totalLiquidity
-        );
+        return TokenUtils.getUniV3TokenAmounts({
+            _uniPool: uniswapPool,
+            _uniUtils: uniswapUtils,
+            _tickLower: tickLowerAllowed,
+            _tickUpper: tickUpperAllowed,
+            _liquidity: rewardFunds[COMMON_FUND_ID].totalLiquidity
+        });
     }
 
     // --------------------- Public and overriding Functions ---------------------

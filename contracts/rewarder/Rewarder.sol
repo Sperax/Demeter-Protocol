@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,7 +27,7 @@ pragma solidity 0.8.16;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
@@ -72,7 +72,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     uint256 public constant REWARD_PERIOD = 1 weeks;
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
-    address public REWARD_TOKEN;
+    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
     // farm -> FarmRewardConfig
@@ -92,6 +92,8 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     error PriceFeedDoesNotExist(address token);
     error InvalidRewardPercentage(uint256 percentage);
     error CalibrationRestricted(address farm);
+
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Initializer function of this contract.
     /// @param _rwdToken Address of the reward token.

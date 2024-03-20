@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,7 +27,6 @@ pragma solidity 0.8.16;
 import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
 import {IBalancerV2Vault} from "./interfaces/IBalancerV2Vault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {RewardTokenData} from "../E20Farm.sol";
 import {BalancerV2Farm} from "./BalancerV2Farm.sol";
 
@@ -35,7 +34,7 @@ import {BalancerV2Farm} from "./BalancerV2Farm.sol";
 /// @author Sperax Foundation
 /// @notice This contract allows anyone to calculate fees and create farms
 /// @dev It consults Balancer's vault to validate the pool
-contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
+contract BalancerV2FarmDeployer is FarmDeployer {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
