@@ -32,6 +32,7 @@ import {Farm, E721Farm} from "../E721Farm.sol";
 import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
+import {TokenUtils} from "../../utils/TokenUtils.sol";
 
 contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
@@ -225,6 +226,11 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
+    }
+
+    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    function getTokenAmounts() external view override returns (address[] memory tokens, uint256[] memory amounts) {
+        return TokenUtils.getUniV2TokenAmounts(nftContract, rewardFunds[COMMON_FUND_ID].totalLiquidity);
     }
 
     // --------------------- Public and overriding Functions ---------------------
