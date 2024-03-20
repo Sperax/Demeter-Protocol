@@ -6,11 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@cryptoalgebra/v1.9-directional-fee-periphery/contracts/interfaces/ISwapRouter.sol";
 import {
+    Farm,
     E721Farm,
     CamelotV3Farm,
     CamelotPoolData,
+    RewardTokenData,
     ICamelotV3Factory,
     ICamelotV3TickSpacing,
+    ICamelotV3Utils,
     INFPM,
     OperableDeposit,
     InitializeInput
@@ -20,12 +23,14 @@ import {
     Position
 } from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol";
-import {ICamelotV3Utils} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
+import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
+import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
-import "../../features/ExpirableFarm.t.sol";
-import "../../utils/UpgradeUtil.t.sol";
+import {FarmTest, FarmInheritTest} from "../../Farm.t.sol";
+import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
+import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
