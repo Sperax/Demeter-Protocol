@@ -273,6 +273,10 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         return uint256(positions.liquidity);
     }
 
+    /// @notice Validate the ticks (upper and lower).
+    /// @param _tickLower The lower tick of the range.
+    /// @param _tickUpper The upper tick of the range.
+    /// @dev The ticks must be within the max range and must be multiple of tickSpacing.
     function _validateTickRange(int24 _tickLower, int24 _tickUpper) private view {
         int24 spacing = ICamelotV3TickSpacing(camelotPool).tickSpacing();
         if (
