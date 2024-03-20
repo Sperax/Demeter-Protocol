@@ -458,9 +458,6 @@ abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
     }
 
     function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
-
         uint256 tokenId = _mintHelper(DAI, USDT, TICK_LOWER, TICK_UPPER);
 
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.IncorrectPoolToken.selector));
