@@ -500,7 +500,11 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        vm.assume(tickSpacing >= 1 && tickSpacing <= 500);
+        int24 currentTickSpacing =
+            ICamelotV3TickSpacing(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).tickSpacing();
+
+        vm.assume(tickSpacing >= 1 && tickSpacing <= 500 && tickSpacing != currentTickSpacing);
+
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = CamelotV3Farm(lockupFarm).depositToTokenId(depositId);
