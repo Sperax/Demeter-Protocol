@@ -25,7 +25,7 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {UniV3Farm, RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
+import {UniV3Farm, RewardTokenData, UniswapPoolData, InitializeInput} from "./UniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract UniV3FarmDeployer is FarmDeployer {
@@ -82,18 +82,19 @@ contract UniV3FarmDeployer is FarmDeployer {
         _validateNonZeroAddr(_data.farmAdmin);
 
         UniV3Farm farmInstance = UniV3Farm(Clones.clone(farmImplementation));
-        farmInstance.initialize({
-            _farmId: farmId,
-            _farmStartTime: _data.farmStartTime,
-            _cooldownPeriod: _data.cooldownPeriod,
-            _farmRegistry: FARM_REGISTRY,
-            _uniswapPoolData: _data.uniswapPoolData,
-            _rwdTokenData: _data.rewardData,
-            _uniV3Factory: UNI_V3_FACTORY,
-            _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
-            _nfpmUtils: NFPM_UTILS
+        InitializeInput memory input = InitializeInput({
+            farmId: farmId,
+            farmStartTime: _data.farmStartTime,
+            cooldownPeriod: _data.cooldownPeriod,
+            farmRegistry: FARM_REGISTRY,
+            uniswapPoolData: _data.uniswapPoolData,
+            rwdTokenData: _data.rewardData,
+            uniV3Factory: UNI_V3_FACTORY,
+            nftContract: NFPM,
+            uniswapUtils: UNISWAP_UTILS,
+            nfpmUtils: NFPM_UTILS
         });
+        farmInstance.initialize({_input: input});
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
