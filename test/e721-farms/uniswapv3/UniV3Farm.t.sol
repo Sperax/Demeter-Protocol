@@ -4,12 +4,17 @@ pragma solidity 0.8.16;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+
 import {
+    Farm,
     E721Farm,
     UniV3Farm,
     UniswapPoolData,
+    RewardTokenData,
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
+    IUniswapV3Utils,
     INFPM,
     OperableDeposit
 } from "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
@@ -17,14 +22,14 @@ import {
     INFPMUtils,
     Position
 } from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
+import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
-import "../../features/ExpirableFarm.t.sol";
-import "../../utils/UpgradeUtil.t.sol";
-import "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
+import {FarmTest, FarmInheritTest} from "../../Farm.t.sol";
+import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
+import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
