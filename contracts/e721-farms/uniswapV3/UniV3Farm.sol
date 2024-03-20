@@ -209,29 +209,20 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         _validateDeposit(msg.sender, _depositId);
         uint256 tokenId = depositToTokenId[_depositId];
 
-        address pm = nftContract;
-        (uint256 amt0, uint256 amt1) = IUniswapV3Utils(uniswapUtils).fees(pm, tokenId);
-        if (amt0 == 0 && amt1 == 0) {
-            revert NoFeeToClaim();
-        }
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(pm).collect(
+        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nftContract).collect(
             INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
-                amount0Max: uint128(amt0),
-                amount1Max: uint128(amt1)
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
             })
         );
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
-    }
 
-    /// @notice Get the accrued uniswap fee for a deposit.
-    /// @return amount0 The amount of token0
-    /// @return amount1 The amount of token1
-    function computeUniswapFee(uint256 _tokenId) external view returns (uint256 amount0, uint256 amount1) {
-        // Validate token.
-        _getLiquidity(_tokenId);
-        return IUniswapV3Utils(uniswapUtils).fees(nftContract, _tokenId);
+        if (amt0Recv == 0 && amt1Recv == 0) {
+            revert NoFeeToClaim();
+        }
+
+        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
