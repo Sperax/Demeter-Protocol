@@ -56,7 +56,7 @@ struct CamelotPoolData {
 // farmRegistry - Address of the Demeter Farm Registry.
 // camelotPoolData - init data for CamelotV3 pool.
 // rwdTokenData - init data for reward tokens.
-// uniV3Factory - Factory contract of Camelot V3.
+// camelotV3Factory - Factory contract of Camelot V3.
 // nftContract - NFT contract's address (NFPM).
 // camelotUtils - address of our custom camelot utils contract.
 // nfpmUtils - address of our custom camelot nonfungible position manager utils contract
