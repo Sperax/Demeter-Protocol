@@ -12,7 +12,8 @@ import {
     ICamelotV3Factory,
     ICamelotV3TickSpacing,
     INFPM,
-    OperableDeposit
+    OperableDeposit,
+    InitializeInput
 } from "../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol";
 import {
     ICamelotV3NFPMUtils,
@@ -265,152 +266,102 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
 
 abstract contract InitializeTest is CamelotV3FarmTest {
     function test_Initialize_RevertWhen_InvalidTickRange() public {
+        InitializeInput memory input = InitializeInput({
+            farmId: FARM_ID,
+            farmStartTime: block.timestamp,
+            cooldownPeriod: 0,
+            farmRegistry: FARM_REGISTRY,
+            camelotPoolData: CamelotPoolData({
+                tokenA: DAI,
+                tokenB: USDCe,
+                tickLowerAllowed: TICK_LOWER,
+                tickUpperAllowed: TICK_UPPER
+            }),
+            rwdTokenData: generateRewardTokenData(),
+            camelotV3Factory: CAMELOT_V3_FACTORY,
+            nftContract: NFPM,
+            camelotUtils: CAMELOT_V3_UTILS,
+            nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
+        });
+
         address camelotPool = ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe);
         int24 spacing = ICamelotV3TickSpacing(camelotPool).tickSpacing();
 
         // Fails for _tickLower >= _tickUpper
+        input.camelotPoolData.tickUpperAllowed = TICK_LOWER;
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidTickRange.selector));
-        CamelotV3Farm(farmProxy).initialize({
-            _farmId: FARM_ID,
-            _farmStartTime: block.timestamp,
-            _cooldownPeriod: 0,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: CamelotPoolData({
-                tokenA: DAI,
-                tokenB: USDCe,
-                tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: TICK_LOWER
-            }),
-            _rwdTokenData: generateRewardTokenData(),
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_V3_UTILS,
-            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
-        });
+        CamelotV3Farm(farmProxy).initialize({_input: input});
+        input.camelotPoolData.tickUpperAllowed = TICK_UPPER; // reset
 
         // Fails for _tickLower < -887272
+        input.camelotPoolData.tickLowerAllowed = -887272 - 1;
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidTickRange.selector));
-        CamelotV3Farm(farmProxy).initialize({
-            _farmId: FARM_ID,
-            _farmStartTime: block.timestamp,
-            _cooldownPeriod: 0,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: CamelotPoolData({
-                tokenA: DAI,
-                tokenB: USDCe,
-                tickLowerAllowed: -887272 - 1,
-                tickUpperAllowed: TICK_UPPER
-            }),
-            _rwdTokenData: generateRewardTokenData(),
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_V3_UTILS,
-            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
-        });
+        CamelotV3Farm(farmProxy).initialize({_input: input});
+        input.camelotPoolData.tickLowerAllowed = TICK_LOWER; // reset
 
         if (spacing > 1) {
             // Fails for _tickLower % spacing != 0
+            input.camelotPoolData.tickLowerAllowed = -887271;
             vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidTickRange.selector));
-            CamelotV3Farm(farmProxy).initialize({
-                _farmId: FARM_ID,
-                _farmStartTime: block.timestamp,
-                _cooldownPeriod: 0,
-                _farmRegistry: FARM_REGISTRY,
-                _camelotPoolData: CamelotPoolData({
-                    tokenA: DAI,
-                    tokenB: USDCe,
-                    tickLowerAllowed: -887271,
-                    tickUpperAllowed: TICK_UPPER
-                }),
-                _rwdTokenData: generateRewardTokenData(),
-                _camelotV3Factory: CAMELOT_V3_FACTORY,
-                _nftContract: NFPM,
-                _camelotUtils: CAMELOT_V3_UTILS,
-                _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
-            });
+            CamelotV3Farm(farmProxy).initialize({_input: input});
+            input.camelotPoolData.tickLowerAllowed = TICK_LOWER; // reset
 
             // Fails for _tickUpper % spacing != 0
+            input.camelotPoolData.tickUpperAllowed = 887271;
             vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidTickRange.selector));
-            CamelotV3Farm(farmProxy).initialize({
-                _farmId: FARM_ID,
-                _farmStartTime: block.timestamp,
-                _cooldownPeriod: 0,
-                _farmRegistry: FARM_REGISTRY,
-                _camelotPoolData: CamelotPoolData({
-                    tokenA: DAI,
-                    tokenB: USDCe,
-                    tickLowerAllowed: TICK_LOWER,
-                    tickUpperAllowed: 887271
-                }),
-                _rwdTokenData: generateRewardTokenData(),
-                _camelotV3Factory: CAMELOT_V3_FACTORY,
-                _nftContract: NFPM,
-                _camelotUtils: CAMELOT_V3_UTILS,
-                _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
-            });
+            CamelotV3Farm(farmProxy).initialize({_input: input});
+            input.camelotPoolData.tickUpperAllowed = TICK_UPPER; // reset
         }
 
         // Fails for _tickUpper > 887272
+        input.camelotPoolData.tickUpperAllowed = 887272 + 1;
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidTickRange.selector));
-        CamelotV3Farm(farmProxy).initialize({
-            _farmId: FARM_ID,
-            _farmStartTime: block.timestamp,
-            _cooldownPeriod: 0,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: CamelotPoolData({
-                tokenA: DAI,
-                tokenB: USDCe,
-                tickLowerAllowed: TICK_LOWER,
-                tickUpperAllowed: 887272 + 1
-            }),
-            _rwdTokenData: generateRewardTokenData(),
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_V3_UTILS,
-            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
-        });
+        CamelotV3Farm(farmProxy).initialize({_input: input});
+        input.camelotPoolData.tickUpperAllowed = TICK_UPPER; // reset
     }
 
     function test_Initialize_RevertWhen_InvalidCamelotPoolConfig() public {
         vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.InvalidCamelotPoolConfig.selector));
-        CamelotV3Farm(farmProxy).initialize({
-            _farmId: FARM_ID,
-            _farmStartTime: block.timestamp,
-            _cooldownPeriod: 0,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: CamelotPoolData({
+        InitializeInput memory input = InitializeInput({
+            farmId: FARM_ID,
+            farmStartTime: block.timestamp,
+            cooldownPeriod: 0,
+            farmRegistry: FARM_REGISTRY,
+            camelotPoolData: CamelotPoolData({
                 tokenA: USDCe, // this leads to invalid pool
                 tokenB: USDCe,
                 tickLowerAllowed: TICK_LOWER,
                 tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData(),
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_V3_UTILS,
-            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
+            rwdTokenData: generateRewardTokenData(),
+            camelotV3Factory: CAMELOT_V3_FACTORY,
+            nftContract: NFPM,
+            camelotUtils: CAMELOT_V3_UTILS,
+            nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
+        CamelotV3Farm(farmProxy).initialize({_input: input});
     }
 
     function test_initialize() public {
         address camelotPool = ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe);
-        CamelotV3Farm(farmProxy).initialize({
-            _farmId: FARM_ID,
-            _farmStartTime: block.timestamp,
-            _cooldownPeriod: COOLDOWN_PERIOD_DAYS,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: CamelotPoolData({
+        InitializeInput memory input = InitializeInput({
+            farmId: FARM_ID,
+            farmStartTime: block.timestamp,
+            cooldownPeriod: COOLDOWN_PERIOD_DAYS,
+            farmRegistry: FARM_REGISTRY,
+            camelotPoolData: CamelotPoolData({
                 tokenA: DAI,
                 tokenB: USDCe,
                 tickLowerAllowed: TICK_LOWER,
                 tickUpperAllowed: TICK_UPPER
             }),
-            _rwdTokenData: generateRewardTokenData(),
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_V3_UTILS,
-            _nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
+            rwdTokenData: generateRewardTokenData(),
+            camelotV3Factory: CAMELOT_V3_FACTORY,
+            nftContract: NFPM,
+            camelotUtils: CAMELOT_V3_UTILS,
+            nfpmUtils: CAMELOT_V3_NONFUNGIBLE_POSITION_MANAGER_UTILS
         });
+        CamelotV3Farm(farmProxy).initialize({_input: input});
 
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(CamelotV3Farm(farmProxy).tickLowerAllowed(), TICK_LOWER);

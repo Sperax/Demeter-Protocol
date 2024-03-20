@@ -48,6 +48,31 @@ struct CamelotPoolData {
     int24 tickUpperAllowed;
 }
 
+// Defines a struct for inputs used for initializing this farm.
+// farmId - String ID of the farm.
+// farmStartTime - time of farm start.
+// cooldownPeriod - cooldown period for locked deposits in days.
+// cooldownPeriod = 0 Disables lockup functionality for the farm.
+// farmRegistry - Address of the Demeter Farm Registry.
+// camelotPoolData - init data for CamelotV3 pool.
+// rwdTokenData - init data for reward tokens.
+// uniV3Factory - Factory contract of Camelot V3.
+// nftContract - NFT contract's address (NFPM).
+// camelotUtils - address of our custom camelot utils contract.
+// nfpmUtils - address of our custom camelot nonfungible position manager utils contract
+struct InitializeInput {
+    string farmId;
+    uint256 farmStartTime;
+    uint256 cooldownPeriod;
+    address farmRegistry;
+    CamelotPoolData camelotPoolData;
+    RewardTokenData[] rwdTokenData;
+    address camelotV3Factory;
+    address nftContract;
+    address camelotUtils;
+    address nfpmUtils;
+}
+
 contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
@@ -69,50 +94,31 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     error InvalidTickRange();
     error InvalidAmount();
 
-    /// @notice constructor
-    /// @param _farmId - String ID of the farm.
-    /// @param _farmStartTime - time of farm start.
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days.
-    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _farmRegistry - Address of the Demeter Farm Registry.
-    /// @param _camelotPoolData - init data for CamelotV3 pool.
-    /// @param _rwdTokenData - init data for reward tokens.
-    /// @param _camelotV3Factory - Factory contract of Camelot V3.
-    /// @param _nftContract - NFT contract's address (NFPM).
-    /// @param _camelotUtils - address of our custom camelot utils contract.
-    /// @param _nfpmUtils - address of our custom camelot nonfungible position manager utils contract.
-    function initialize(
-        string calldata _farmId,
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        address _farmRegistry,
-        CamelotPoolData memory _camelotPoolData,
-        RewardTokenData[] memory _rwdTokenData,
-        address _camelotV3Factory,
-        address _nftContract,
-        address _camelotUtils,
-        address _nfpmUtils
-    ) external initializer {
-        _validateNonZeroAddr(_camelotV3Factory);
-        _validateNonZeroAddr(_nftContract);
-        _validateNonZeroAddr(_camelotUtils);
-        _validateNonZeroAddr(_nfpmUtils);
+    /// @notice Initializer function of this farm
+    /// @param _input A struct having all the input params.
+    function initialize(InitializeInput calldata _input) external initializer {
+        _validateNonZeroAddr(_input.camelotV3Factory);
+        _validateNonZeroAddr(_input.nftContract);
+        _validateNonZeroAddr(_input.camelotUtils);
+        _validateNonZeroAddr(_input.nfpmUtils);
 
         // initialize camelot related data
-        camelotPool = ICamelotV3Factory(_camelotV3Factory).poolByPair(_camelotPoolData.tokenA, _camelotPoolData.tokenB);
+        camelotPool = ICamelotV3Factory(_input.camelotV3Factory).poolByPair(
+            _input.camelotPoolData.tokenA, _input.camelotPoolData.tokenB
+        );
         if (camelotPool == address(0)) {
             revert InvalidCamelotPoolConfig();
         }
-        _validateTickRange(_camelotPoolData.tickLowerAllowed, _camelotPoolData.tickUpperAllowed);
+        _validateTickRange(_input.camelotPoolData.tickLowerAllowed, _input.camelotPoolData.tickUpperAllowed);
 
-        tickLowerAllowed = _camelotPoolData.tickLowerAllowed;
-        tickUpperAllowed = _camelotPoolData.tickUpperAllowed;
-        camelotV3Factory = _camelotV3Factory;
-        nftContract = _nftContract;
-        camelotUtils = _camelotUtils;
-        nfpmUtils = _nfpmUtils;
-        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _farmRegistry);
+        tickLowerAllowed = _input.camelotPoolData.tickLowerAllowed;
+        tickUpperAllowed = _input.camelotPoolData.tickUpperAllowed;
+        camelotV3Factory = _input.camelotV3Factory;
+        nftContract = _input.nftContract;
+        camelotUtils = _input.camelotUtils;
+        nfpmUtils = _input.nfpmUtils;
+        _setupFarm(_input.farmId, _input.farmStartTime, _input.cooldownPeriod, _input.rwdTokenData);
+        _setupFarmExpiry(_input.farmStartTime, _input.farmRegistry);
     }
 
     /// @notice Allow user to increase liquidity for a deposit.

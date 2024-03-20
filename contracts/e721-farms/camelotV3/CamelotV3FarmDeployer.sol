@@ -25,7 +25,7 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {CamelotV3Farm, RewardTokenData, CamelotPoolData} from "./CamelotV3Farm.sol";
+import {CamelotV3Farm, RewardTokenData, CamelotPoolData, InitializeInput} from "./CamelotV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -83,18 +83,19 @@ contract CamelotV3FarmDeployer is FarmDeployer, ReentrancyGuard {
         _validateNonZeroAddr(_data.farmAdmin);
 
         CamelotV3Farm farmInstance = CamelotV3Farm(Clones.clone(farmImplementation));
-        farmInstance.initialize({
-            _farmId: farmId,
-            _farmStartTime: _data.farmStartTime,
-            _cooldownPeriod: _data.cooldownPeriod,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPoolData: _data.camelotPoolData,
-            _rwdTokenData: _data.rewardData,
-            _camelotV3Factory: CAMELOT_V3_FACTORY,
-            _nftContract: NFPM,
-            _camelotUtils: CAMELOT_UTILS,
-            _nfpmUtils: CAMELOT_NFPM_UTILS
+        InitializeInput memory input = InitializeInput({
+            farmId: farmId,
+            farmStartTime: _data.farmStartTime,
+            cooldownPeriod: _data.cooldownPeriod,
+            farmRegistry: FARM_REGISTRY,
+            camelotPoolData: _data.camelotPoolData,
+            rwdTokenData: _data.rewardData,
+            camelotV3Factory: CAMELOT_V3_FACTORY,
+            nftContract: NFPM,
+            camelotUtils: CAMELOT_UTILS,
+            nfpmUtils: CAMELOT_NFPM_UTILS
         });
+        farmInstance.initialize({_input: input});
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
