@@ -4,6 +4,8 @@ pragma solidity 0.8.24;
 import {INFTPool, IPair} from "../e721-farms/camelotV2/interfaces/ICamelotV2.sol";
 import {IUniswapV3PoolState} from "../e721-farms/uniswapV3/interfaces/IUniswapV3.sol";
 import {IUniswapV3Utils} from "../e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
+import {ICamelotV3Utils} from "../e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
+import {ICamelotV3PoolState} from "../e721-farms/camelotV3/interfaces/ICamelotV3.sol";
 
 library TokenUtils {
     uint32 private constant MA_PERIOD = 10 minutes;
@@ -42,5 +44,22 @@ library TokenUtils {
         uint160 sqrtPriceX96 = IUniswapV3Utils(_uniUtils).getSqrtRatioAtTick(timeWeightedAverageTick);
         (amounts[0], amounts[1]) =
             IUniswapV3Utils(_uniUtils).getAmountsForLiquidity(sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity));
+    }
+
+    function getCamelotV3TokenAmounts(
+        address _camelotPool,
+        address _camelotUtils,
+        int24 _tickLower,
+        int24 _tickUpper,
+        uint256 _liquidity
+    ) public view returns (address[] memory tokens, uint256[] memory amounts) {
+        tokens = new address[](2);
+        amounts = new uint256[](2);
+        tokens[0] = ICamelotV3PoolState(_camelotPool).token0();
+        tokens[1] = ICamelotV3PoolState(_camelotPool).token1();
+        (uint160 sqrtPriceX96,,,,,,,) = ICamelotV3PoolState(_camelotPool).globalState();
+        (amounts[0], amounts[1]) = ICamelotV3Utils(_camelotUtils).getAmountsForLiquidity(
+            sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity)
+        );
     }
 }

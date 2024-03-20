@@ -4,12 +4,17 @@ pragma solidity 0.8.24;
 // import contracts
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+
 import {
+    Farm,
     E721Farm,
     UniV3Farm,
     UniswapPoolData,
+    RewardTokenData,
     IUniswapV3Factory,
     IUniswapV3TickSpacing,
+    IUniswapV3Utils,
     INFPM,
     OperableDeposit,
     InitializeInput
@@ -18,13 +23,14 @@ import {
     INFPMUtils,
     Position
 } from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
+import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
-import "../../features/ExpirableFarm.t.sol";
-import "../../utils/UpgradeUtil.t.sol";
+import {FarmTest, FarmInheritTest} from "../../Farm.t.sol";
+import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
+import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
 
@@ -480,12 +486,19 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
-        (uint256 amount0, uint256 amount1) = UniV3Farm(lockupFarm).computeUniswapFee(_tokenId);
+
+        (uint256 amt0, uint256 amt1) = IUniswapV3Utils(UNISWAP_UTILS).fees(NFPM, _tokenId);
 
         vm.expectEmit(address(lockupFarm));
-        emit PoolFeeCollected(currentActor, _tokenId, amount0, amount1);
+        emit PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
+
+        uint256 amt0Before = IERC20(DAI).balanceOf(currentActor);
+        uint256 amt1Before = IERC20(USDCe).balanceOf(currentActor);
 
         UniV3Farm(lockupFarm).claimUniswapFee(depositId);
+
+        assertEq(amt0Before + amt0, IERC20(DAI).balanceOf(currentActor));
+        assertEq(amt1Before + amt1, IERC20(USDCe).balanceOf(currentActor));
     }
 }
 
