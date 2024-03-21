@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -42,7 +42,7 @@ contract RewarderFactory is Ownable {
 
     /// @notice Constructor of this contract.
     /// @param _oracle Address of the master price oracle of USDs.
-    constructor(address _oracle) Ownable() {
+    constructor(address _oracle) Ownable(msg.sender) {
         updateOracle(_oracle);
         rewarderImplementation = address(new Rewarder());
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -25,12 +25,11 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
+import {RewardTokenData, UniswapPoolData, InitializeInput} from "./UniV3Farm.sol";
 import {UniV3ActiveLiquidityFarm} from "./UniV3ActiveLiquidityFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
+contract UniV3ActiveLiquidityDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
@@ -82,20 +81,21 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     /// @param _data data for deployment.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-
         UniV3ActiveLiquidityFarm farmInstance = UniV3ActiveLiquidityFarm(Clones.clone(farmImplementation));
-        farmInstance.initialize({
-            _farmId: farmId,
-            _farmStartTime: _data.farmStartTime,
-            _cooldownPeriod: _data.cooldownPeriod,
-            _farmRegistry: FARM_REGISTRY,
-            _uniswapPoolData: _data.uniswapPoolData,
-            _rwdTokenData: _data.rewardData,
-            _uniV3Factory: UNI_V3_FACTORY,
-            _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
-            _nfpmUtils: NFPM_UTILS
-        });
+        farmInstance.initialize(
+            InitializeInput({
+                farmId: farmId,
+                farmStartTime: _data.farmStartTime,
+                cooldownPeriod: _data.cooldownPeriod,
+                farmRegistry: FARM_REGISTRY,
+                uniswapPoolData: _data.uniswapPoolData,
+                rwdTokenData: _data.rewardData,
+                uniV3Factory: UNI_V3_FACTORY,
+                nftContract: NFPM,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NFPM_UTILS
+            })
+        );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required
