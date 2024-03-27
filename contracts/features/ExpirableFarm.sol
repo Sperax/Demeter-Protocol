@@ -28,11 +28,14 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {Farm} from "../Farm.sol";
 import {IFarmRegistry} from "../interfaces/IFarmRegistry.sol";
 
+/// @title  ExpirableFarm contract of Demeter Protocol.
+/// @author Sperax Foundation.
+/// @notice This contract helps in creating farms with expiry feature.
 abstract contract ExpirableFarm is Farm {
     using SafeERC20 for IERC20;
 
-    uint256 public constant MIN_EXTENSION = 100; // 100 days
-    uint256 public constant MAX_EXTENSION = 300; // 300 days
+    uint256 public constant MIN_EXTENSION = 100; // 100 days.
+    uint256 public constant MAX_EXTENSION = 300; // 300 days.
     uint256 public farmEndTime;
     address public farmRegistry;
 
@@ -65,7 +68,7 @@ abstract contract ExpirableFarm is Farm {
     }
 
     /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
+    /// @dev Can be updated only before the farm start.
     ///      New start time should be in future.
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
@@ -99,7 +102,7 @@ abstract contract ExpirableFarm is Farm {
     /// @dev Function fetches all the fee params from farmRegistry.
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function _collectExtensionFee(uint256 _extensionDays) private {
-        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list.
         (address feeReceiver, address feeToken,, uint256 extensionFeePerDay) =
             IFarmRegistry(farmRegistry).getFeeParams(msg.sender);
         if (extensionFeePerDay != 0) {

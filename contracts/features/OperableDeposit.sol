@@ -27,6 +27,9 @@ pragma solidity 0.8.24;
 import {ExpirableFarm} from "./ExpirableFarm.sol";
 import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 
+/// @title OperableDeposit contract of Demeter Protocol.
+/// @author Sperax Foundation.
+/// @notice This contract helps in creating farms with increase/decrease deposit functionality.
 abstract contract OperableDeposit is ExpirableFarm {
     uint256 public constant PRECISION = 1e18;
 
@@ -36,7 +39,7 @@ abstract contract OperableDeposit is ExpirableFarm {
     error DecreaseDepositNotPermitted();
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
-    /// @param _depositId Unique deposit id for the deposit
+    /// @param _depositId Unique deposit id for the deposit.
     /// @param _amount _amount to be increased.
     function _updateSubscriptionForIncrease(uint256 _depositId, uint256 _amount) internal {
         uint256 numRewards = rewardTokens.length;
@@ -86,15 +89,15 @@ abstract contract OperableDeposit is ExpirableFarm {
     function _increaseDeposit(uint256 _depositId, uint256 _amount) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
-        // Validations
+        // Validations.
         _validateFarmActive(); // Increase deposit is allowed only when farm is active.
         if (userDeposit.expiryDate != 0) {
             revert DepositIsInCooldown();
         }
-        // claim the pending rewards for the deposit
+        // claim the pending rewards for the deposit.
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        // Update deposit Information
+        // Update deposit Information.
         _updateSubscriptionForIncrease(_depositId, _amount);
         userDeposit.liquidity += _amount;
 
@@ -104,7 +107,7 @@ abstract contract OperableDeposit is ExpirableFarm {
     function _decreaseDeposit(uint256 _depositId, uint256 _amount) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
-        //Validations
+        //Validations.
         _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
         _validateDeposit(msg.sender, _depositId);
 
@@ -115,10 +118,10 @@ abstract contract OperableDeposit is ExpirableFarm {
         if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
             revert DecreaseDepositNotPermitted();
         }
-        // claim the pending rewards for the deposit
+        // claim the pending rewards for the deposit.
         _updateAndClaimFarmRewards(msg.sender, _depositId);
 
-        // Update deposit info
+        // Update deposit info.
         _updateSubscriptionForDecrease(_depositId, _amount);
         userDeposit.liquidity -= _amount;
 

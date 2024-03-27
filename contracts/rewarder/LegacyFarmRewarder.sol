@@ -28,9 +28,9 @@ import {Rewarder, IFarm} from "./Rewarder.sol";
 import {TokenUtils} from "../utils/TokenUtils.sol";
 import {ICamelotFarm, IUniswapV3Farm} from "./interfaces/ILegacyRewarderHelpers.sol";
 
-/// @title FixedAPRRewarderSPA contract of Demeter Protocol
-/// @notice This contract tracks farms, their APR, and rewards
-/// @author Sperax Foundation
+/// @title FixedAPRRewarderSPA contract of Demeter Protocol.
+/// @author Sperax Foundation.
+/// @notice This contract tracks farms, their APR, and rewards.
 contract LegacyFarmRewarder is Rewarder {
     uint8 public constant COMMON_FUND_ID = 0;
     address public immutable UNISWAP_UTILS;
@@ -70,6 +70,8 @@ contract LegacyFarmRewarder is Rewarder {
 
     /// @notice A function to get token amounts.
     /// @param _farm Address of the farm.
+    /// @return _tokens Array of token addresses.
+    /// @return _amounts Array of token amounts.
     function _getTokenAmounts(address _farm) internal view override returns (address[] memory, uint256[] memory) {
         uint256 totalLiquidity = IFarm(_farm).getRewardFundInfo(COMMON_FUND_ID).totalLiquidity;
         if (isUniV3Farm[_farm]) {
@@ -85,6 +87,7 @@ contract LegacyFarmRewarder is Rewarder {
         }
     }
 
+    /// @notice A function to check if the farm has reward token.
     function _hasRewardToken(address) internal pure override returns (bool) {
         return true;
     }

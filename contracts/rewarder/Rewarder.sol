@@ -34,8 +34,8 @@ import {IFarm} from "../interfaces/IFarm.sol";
 import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 
 /// @title Rewarder contract of Demeter Protocol.
-/// @notice This contract tracks farms, their APR and other data for a specific reward token.
 /// @author Sperax Foundation.
+/// @notice This contract tracks farms, their APR and other data for a specific reward token.
 /// @dev Farms for UniV3 pools using Rewarder contract must have a minimum observationCardinality of 20.
 ///      It can be updated by calling increaseObservationCardinalityNext function on the pool.
 contract Rewarder is Ownable, Initializable, ReentrancyGuard {
@@ -52,7 +52,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         uint256 rewardRate;
         uint256 maxRewardRate;
         uint256[] baseAssetIndexes;
-        uint256 nonLockupRewardPer; // 5000 = 50%
+        uint256 nonLockupRewardPer; // 5000 = 50%.
     }
 
     // Configuration for fixed APR reward tokens.
@@ -64,18 +64,18 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         uint256 apr;
         uint256 maxRewardRate;
         address[] baseTokens;
-        uint256 nonLockupRewardPer; // 5000 = 50%
+        uint256 nonLockupRewardPer; // 5000 = 50%.
     }
 
     uint256 public constant MAX_PERCENTAGE = 10000;
-    uint256 public constant APR_PRECISION = 1e8; // 1%
+    uint256 public constant APR_PRECISION = 1e8; // 1%.
     uint256 public constant REWARD_PERIOD = 1 weeks;
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
-    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase
+    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase.
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
-    // farm -> FarmRewardConfig
+    // farm -> FarmRewardConfig.
     mapping(address => FarmRewardConfig) public farmRewardConfigs;
     mapping(address => bool) public calibrationRestricted;
     mapping(address => uint8) private _decimals;
@@ -185,7 +185,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             revert InvalidFarm();
         }
         address oracle = IRewarderFactory(rewarderFactory).oracle();
-        // validating new reward config
+        // validating new reward config.
         uint256 baseTokensLen = _rewardConfig.baseTokens.length;
         for (uint256 i; i < baseTokensLen;) {
             _validatePriceFeed(_rewardConfig.baseTokens[i], oracle);
@@ -310,7 +310,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @notice A function to set reward rate in the farm.
     /// @param _farm Address of the farm.
     /// @param _rwdRate Reward per second to be emitted.
-    /// @param _nonLockupRewardPer Reward percentage to be allocated to no lockup fund
+    /// @param _nonLockupRewardPer Reward percentage to be allocated to no lockup fund.
     function _setRewardRate(address _farm, uint256 _rwdRate, uint256 _nonLockupRewardPer) private {
         uint256[] memory _newRewardRates;
         if (IFarm(_farm).cooldownPeriod() == 0) {
@@ -347,7 +347,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
 
     /// @notice A function to validate farm.
     /// @param _farm Address of the farm to be validated.
-    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN
+    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN.
     /// as one of the reward tokens.
     function _isValidFarm(address _farm, address[] memory _baseTokens) private returns (bool) {
         return _hasRewardToken(_farm) && _hasBaseTokens(_farm, _baseTokens);

@@ -35,10 +35,10 @@ import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
 // Defines the Camelot pool init data for constructor.
-// tokenA - Address of tokenA
-// tokenB - Address of tokenB
-// tickLowerAllowed - Lower bound of the tick range for farm
-// tickUpperAllowed - Upper bound of the tick range for farm
+// tokenA - Address of tokenA.
+// tokenB - Address of tokenB.
+// tickLowerAllowed - Lower bound of the tick range for farm.
+// tickUpperAllowed - Upper bound of the tick range for farm.
 struct CamelotPoolData {
     address tokenA;
     address tokenB;
@@ -57,7 +57,7 @@ struct CamelotPoolData {
 // camelotV3Factory - Factory contract of Camelot V3.
 // nftContract - NFT contract's address (NFPM).
 // camelotUtils - address of our custom camelot utils contract.
-// nfpmUtils - address of our custom camelot nonfungible position manager utils contract
+// nfpmUtils - address of our custom camelot nonfungible position manager utils contract.
 struct InitializeInput {
     string farmId;
     uint256 farmStartTime;
@@ -71,20 +71,22 @@ struct InitializeInput {
     address nfpmUtils;
 }
 
+/// @title Camelot V3 farm.
+/// @author Sperax Foundation.
 contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // CamelotV3 params
+    // CamelotV3 params.
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public camelotPool;
     address public camelotV3Factory;
-    address public camelotUtils; // CamelotUtils (Camelot helper) contract
-    address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    address public camelotUtils; // CamelotUtils (Camelot helper) contract.
+    address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
-    // Custom Errors
+    // Custom Errors.
     error InvalidCamelotPoolConfig();
     error NoFeeToClaim();
     error IncorrectPoolToken();
@@ -92,7 +94,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     error InvalidTickRange();
     error InvalidAmount();
 
-    /// @notice Initializer function of this farm
+    /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
     function initialize(InitializeInput calldata _input) external initializer {
         _validateNonZeroAddr(_input.camelotV3Factory);
@@ -100,7 +102,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         _validateNonZeroAddr(_input.camelotUtils);
         _validateNonZeroAddr(_input.nfpmUtils);
 
-        // initialize camelot related data
+        // initialize camelot related data.
         camelotPool = ICamelotV3Factory(_input.camelotV3Factory).poolByPair(
             _input.camelotPoolData.tokenA, _input.camelotPoolData.tokenB
         );
@@ -144,7 +146,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         IERC20(positions.token0).forceApprove(pm, _amounts[0]);
         IERC20(positions.token1).forceApprove(pm, _amounts[1]);
 
-        // Increases liquidity in the current range
+        // Increases liquidity in the current range.
         (uint128 liquidity, uint256 amount0, uint256 amount1) = INFPM(pm).increaseLiquidity(
             INFPM.IncreaseLiquidityParams({
                 tokenId: tokenId,
@@ -203,7 +205,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Claim camelot pool fee for a deposit.
     /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit
+    /// @param _depositId Id of the deposit.
     function claimCamelotFee(uint256 _depositId) external nonReentrant {
         _validateFarmOpen();
         _validateDeposit(msg.sender, _depositId);
@@ -240,7 +242,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
-    /// @dev Calls ExpirableFarm's updateFarmStartTime function
+    /// @dev Calls ExpirableFarm's updateFarmStartTime function.
     function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
@@ -253,21 +255,21 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         return ExpirableFarm.isFarmOpen();
     }
 
-    /// @notice Validate the position for the pool and get Liquidity
-    /// @param _tokenId The tokenId of the position
-    /// @dev the position must adhere to the price ranges
+    /// @notice Validate the position for the pool and get Liquidity.
+    /// @param _tokenId The tokenId of the position.
+    /// @dev the position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
-        /// @dev Get the info of the required token
+        /// @dev Get the info of the required token.
         Position memory positions = ICamelotV3NFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
-        /// @dev Check if the token belongs to correct pool
+        /// @dev Check if the token belongs to correct pool.
 
         if (camelotPool != ICamelotV3Factory(camelotV3Factory).poolByPair(positions.token0, positions.token1)) {
             revert IncorrectPoolToken();
         }
 
-        /// @dev Check if the token adheres to the tick range
+        /// @dev Check if the token adheres to the tick range.
         if (positions.tickLower != tickLowerAllowed || positions.tickUpper != tickUpperAllowed) {
             revert IncorrectTickRange();
         }

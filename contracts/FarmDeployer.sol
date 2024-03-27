@@ -29,9 +29,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 
-/// @title FarmDeployer contract of Demeter Protocol
-/// @notice Exposes base functionalities which will be useful in every deployer
-/// @author Sperax Foundation
+/// @title FarmDeployer contract of Demeter Protocol.
+/// @notice Exposes base functionalities which will be useful in every deployer.
+/// @author Sperax Foundation.
 abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -39,7 +39,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     // Stores the address of farmImplementation.
     address public farmImplementation;
 
-    // Name of the farm
+    // Name of the farm.
     string public farmId;
 
     event FarmCreated(address farm, address creator, address indexed admin);
@@ -58,9 +58,9 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
         farmId = _farmId;
     }
 
-    /// @notice Update farm implementation's address
-    /// @dev only callable by owner
-    /// @param _newFarmImplementation New farm implementation's address
+    /// @notice Update farm implementation's address.
+    /// @dev only callable by owner.
+    /// @param _newFarmImplementation New farm implementation's address.
     function updateFarmImplementation(address _newFarmImplementation, string calldata _newFarmId) external onlyOwner {
         farmId = _newFarmId;
         farmImplementation = _newFarmImplementation;
@@ -71,7 +71,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     /// @notice Collect fee and transfer it to feeReceiver.
     /// @dev Function fetches all the fee params from farmRegistry.
     function _collectFee() internal virtual {
-        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list
+        // Here msg.sender would be the deployer/creator of the farm which will be checked in privileged deployer list.
         (address feeReceiver, address feeToken, uint256 feeAmount,) =
             IFarmRegistry(FARM_REGISTRY).getFeeParams(msg.sender);
         if (feeAmount != 0) {
@@ -80,7 +80,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Validate address
+    /// @notice Validate address.
     function _validateNonZeroAddr(address _addr) internal pure {
         if (_addr == address(0)) {
             revert InvalidAddress();

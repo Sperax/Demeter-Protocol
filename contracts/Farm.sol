@@ -32,6 +32,9 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
+/// @title Base Farm contract of Demeter Protocol.
+/// @author Sperax Foundation.
+/// @notice This contract contains the core logic for the Demeter farms.
 abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
 
@@ -245,8 +248,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewards;
     }
 
-    /// @notice Get deposit info for a deposit id
-    /// @param _depositId The id of the deposit
+    /// @notice Get deposit info for a deposit id.
+    /// @param _depositId The id of the deposit.
     function getDepositInfo(uint256 _depositId) external view returns (Deposit memory) {
         if (_depositId == 0 || _depositId > totalDeposits) {
             revert DepositDoesNotExist();
@@ -299,7 +302,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewardFunds[_fundId];
     }
 
-    /// @notice A function to get the reward tokens added in the farm
+    /// @notice A function to get the reward tokens added in the farm.
     function getRewardTokens() external view returns (address[] memory) {
         return rewardTokens;
     }
@@ -318,7 +321,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
+    /// @dev Can be updated only before the farm start.
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
@@ -688,7 +691,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             }
         }
 
-        // Initialize reward Data
+        // Initialize reward Data.
         for (uint8 iRwd; iRwd < numRewards;) {
             _addRewardData(_rwdTokenData[iRwd].token, _rwdTokenData[iRwd].tknManager);
             unchecked {

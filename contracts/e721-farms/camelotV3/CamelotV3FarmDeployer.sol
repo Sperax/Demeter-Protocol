@@ -28,13 +28,15 @@ import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {CamelotV3Farm, RewardTokenData, CamelotPoolData, InitializeInput} from "./CamelotV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
+/// @title Deployer for Camelot V3 farm.
+/// @author Sperax Foundation.
+/// @notice This contract allows anyone to calculate fees and create farms.
 contract CamelotV3FarmDeployer is FarmDeployer {
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment
+    // farmAdmin - Address to which ownership of farm is transferred to post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days)
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // camelotPoolData - Init data for CamelotV3 pool.
-    //                  (tokenA, tokenB, tickLower, tickUpper)
+    // camelotPoolData - Init data for CamelotV3 pool (tokenA, tokenB, tickLower, tickUpper).
     // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
     struct FarmData {
         address farmAdmin;
@@ -44,18 +46,18 @@ contract CamelotV3FarmDeployer is FarmDeployer {
         RewardTokenData[] rewardData;
     }
 
-    address public immutable CAMELOT_V3_FACTORY; // Camelot V3 factory
-    address public immutable NFPM; // Camelot NonfungiblePositionManager contract
-    address public immutable CAMELOT_UTILS; // CamelotUtils (Camelot helper) contract
-    address public immutable CAMELOT_NFPM_UTILS; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    address public immutable CAMELOT_V3_FACTORY; // Camelot V3 factory.
+    address public immutable NFPM; // Camelot NonfungiblePositionManager contract.
+    address public immutable CAMELOT_UTILS; // CamelotUtils (Camelot helper) contract.
+    address public immutable CAMELOT_NFPM_UTILS; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
-    /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of the Demeter Farm Registry
-    /// @param _farmId Id of the farm
-    /// @param _camelotV3Factory Address of CamelotV3 factory
-    /// @param _nfpm Address of Camelot NonfungiblePositionManager contract
-    /// @param _camelotUtils Address of CamelotUtils (Camelot helper) contract
-    /// @param _nfpmUtils Address of Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    /// @notice Constructor of the contract.
+    /// @param _farmRegistry Address of the Demeter Farm Registry.
+    /// @param _farmId Id of the farm.
+    /// @param _camelotV3Factory Address of CamelotV3 factory.
+    /// @param _nfpm Address of Camelot NonfungiblePositionManager contract.
+    /// @param _camelotUtils Address of CamelotUtils (Camelot helper) contract.
+    /// @param _nfpmUtils Address of Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
     constructor(
         address _farmRegistry,
         string memory _farmId,
@@ -97,7 +99,7 @@ contract CamelotV3FarmDeployer is FarmDeployer {
         farmInstance.initialize({_input: input});
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        // Calculate and collect fee if required
+        // Calculate and collect fee if required.
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);

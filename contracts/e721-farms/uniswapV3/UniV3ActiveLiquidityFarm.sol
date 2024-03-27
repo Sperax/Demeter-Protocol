@@ -27,7 +27,7 @@ pragma solidity 0.8.24;
 import {UniV3Farm} from "./UniV3Farm.sol";
 import {IUniswapV3PoolDerivedState, IUniswapV3PoolState} from "./interfaces/IUniswapV3.sol";
 
-/// @title UniV3ActiveLiquidityFarm
+/// @title UniV3ActiveLiquidityFarm.
 /// @notice This contract inherits the UniV3Farm contract and implements the reward distribution only for active liquidity.
 contract UniV3ActiveLiquidityFarm is UniV3Farm {
     uint32 public lastSecondsInside;

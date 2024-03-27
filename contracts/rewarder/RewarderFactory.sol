@@ -29,8 +29,8 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Rewarder} from "./Rewarder.sol";
 
 /// @title Demeter Rewarder Manager contract.
+/// @author Sperax Foundation.
 /// @notice This contract deploys new rewarders and keeps track of them.
-/// @author Sperax Foundation
 contract RewarderFactory is Ownable {
     address public oracle;
     address public rewarderImplementation;
@@ -49,7 +49,7 @@ contract RewarderFactory is Ownable {
 
     /// @notice A function to deploy new rewarder.
     /// @param _rwdToken Address of the reward token for which the rewarder is to be deployed.
-    /// @return rewarder Rewarder's address
+    /// @return rewarder Rewarder's address.
     function deployRewarder(address _rwdToken) external returns (address rewarder) {
         rewarder = Clones.clone(rewarderImplementation);
         Rewarder(rewarder).initialize(_rwdToken, oracle, msg.sender);
