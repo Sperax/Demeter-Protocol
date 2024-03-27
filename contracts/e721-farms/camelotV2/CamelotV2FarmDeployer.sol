@@ -31,7 +31,7 @@ import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
 /// @title Deployer for Camelot V2 farm.
 /// @author Sperax Foundation.
-/// @notice This contract allows anyone to calculate fees and create farms.
+/// @notice This contract allows anyone to calculate fees, pay fees and create farms.
 /// @dev It consults Camelot V2 factory to validate the pool.
 contract CamelotV2FarmDeployer is FarmDeployer {
     // @dev the token Order is not important.

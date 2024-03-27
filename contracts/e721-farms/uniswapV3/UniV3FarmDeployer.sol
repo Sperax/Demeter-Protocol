@@ -30,6 +30,7 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 /// @title Deployer for Uniswap V3 farm.
 /// @author Sperax Foundation.
+/// @notice This contract allows anyone to calculate fees, pay fees and create farms.
 contract UniV3FarmDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
