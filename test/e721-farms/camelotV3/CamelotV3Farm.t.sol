@@ -495,19 +495,25 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         assertEq(balance1After, amt1 + balance1Before);
     }
 
-    function testFuzz_claimCamelotFee_tickSpacingChanged(int24 tickSpacing)
+    function testFuzz_claimCamelotFee_tickSpacingChanged(int24 newTickSpacing)
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        vm.assume(tickSpacing >= 1 && tickSpacing <= 500);
+        int24 currentTickSpacing =
+            ICamelotV3TickSpacing(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).tickSpacing();
+
+        vm.assume(newTickSpacing >= 1 && newTickSpacing <= 500 && newTickSpacing != currentTickSpacing);
+
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = CamelotV3Farm(lockupFarm).depositToTokenId(depositId);
 
         address camelotFactoryOwner = ICamelotV3FactoryTesting(CAMELOT_V3_FACTORY).owner();
         vm.startPrank(camelotFactoryOwner);
-        ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(tickSpacing);
+        ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(
+            newTickSpacing
+        );
         vm.stopPrank();
 
         vm.startPrank(user);
