@@ -79,6 +79,8 @@ contract UniV3FarmDeployer is FarmDeployer {
 
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
+    /// @return address of the deployed farm.
+    /// @dev The caller of this function should approve feeAmount for this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 

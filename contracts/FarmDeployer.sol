@@ -30,8 +30,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 
 /// @title FarmDeployer contract of Demeter Protocol.
-/// @notice Exposes base functionalities which will be useful in every deployer.
 /// @author Sperax Foundation.
+/// @notice Exposes base functionalities which will be useful in every deployer.
 abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -39,7 +39,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     // Stores the address of farmImplementation.
     address public farmImplementation;
 
-    // Name of the farm.
+    // Id of the farm.
     string public farmId;
 
     event FarmCreated(address farm, address creator, address indexed admin);

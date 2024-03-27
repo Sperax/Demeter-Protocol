@@ -28,7 +28,7 @@ import {RewardFund, RewardData, Deposit, Subscription} from "./interfaces/DataTy
 
 /// @title FarmStorage contract of Demeter Protocol.
 /// @author Sperax Foundation.
-/// @notice This contract contains the storage variables for farms.
+/// @notice This contract contains the base storage variables for farms.
 abstract contract FarmStorage {
     // constants.
     uint8 public constant COMMON_FUND_ID = 0;

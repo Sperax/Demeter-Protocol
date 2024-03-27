@@ -228,6 +228,8 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     }
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
         return TokenUtils.getCamelotV3TokenAmounts({
             _camelotPool: camelotPool,
@@ -257,6 +259,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Validate the position for the pool and get Liquidity.
     /// @param _tokenId The tokenId of the position.
+    /// @return The liquidity of the position.
     /// @dev the position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {

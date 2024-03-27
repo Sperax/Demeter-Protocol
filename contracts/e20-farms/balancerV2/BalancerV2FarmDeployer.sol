@@ -70,8 +70,8 @@ contract BalancerV2FarmDeployer is FarmDeployer {
 
     /// @notice Deploys a new Balancer farm.
     /// @param _data data for deployment.
-    /// @return Address of the new farm.
-    /// @dev The caller of this function should approve feeAmount (USDs) for this contract.
+    /// @return address of the deployed farm.
+    /// @dev The caller of this function should approve feeAmount for this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
