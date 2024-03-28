@@ -37,7 +37,7 @@ import {BalancerV2Farm} from "./BalancerV2Farm.sol";
 contract BalancerV2FarmDeployer is FarmDeployer {
     using SafeERC20 for IERC20;
 
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment.
+    // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
@@ -71,7 +71,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
     /// @notice Deploys a new Balancer farm.
     /// @param _data data for deployment.
     /// @return address of the deployed farm.
-    /// @dev The caller of this function should approve feeAmount for this contract before calling this function.
+    /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
@@ -98,7 +98,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
 
     /// @notice A function to validate Balancer pool.
     /// @param _poolId bytes32 Id of the pool.
-    /// @return pool Address of the pool.
+    /// @return pool Address.
     function validatePool(bytes32 _poolId) public view returns (address pool) {
         (pool,) = IBalancerV2Vault(BALANCER_VAULT).getPool(_poolId);
         _validateNonZeroAddr(pool);

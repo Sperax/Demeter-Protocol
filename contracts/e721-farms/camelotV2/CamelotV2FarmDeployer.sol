@@ -83,7 +83,7 @@ contract CamelotV2FarmDeployer is FarmDeployer {
     /// @notice Deploys a new UniswapV3 farm.
     /// @param _data data for deployment.
     /// @return address of the deployed farm.
-    /// @dev The caller of this function should approve feeAmount for this contract before calling this function.
+    /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
         CamelotV2Farm farmInstance = CamelotV2Farm(Clones.clone(farmImplementation));
@@ -112,7 +112,7 @@ contract CamelotV2FarmDeployer is FarmDeployer {
     /// @notice Validates the pool.
     /// @param _tokenA Address of token A.
     /// @param _tokenB Address of token B.
-    /// @return pool Address of the pool.
+    /// @return pool Address.
     function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
         pool = ICamelotV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _validateNonZeroAddr(pool);
