@@ -339,7 +339,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Returns if farm is open.
-    ///         Farm is open if it not closed.
+    ///         Farm is open if it is not closed.
     /// @return bool true if farm is open.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmOpen() public view virtual returns (bool) {

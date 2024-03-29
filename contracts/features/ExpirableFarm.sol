@@ -83,7 +83,7 @@ abstract contract ExpirableFarm is Farm {
     }
 
     /// @notice Returns if farm is open.
-    ///         Farm is open if it not closed and not expired.
+    ///         Farm is open if it is not closed and not expired.
     /// @return bool true if farm is open.
     function isFarmOpen() public view virtual override returns (bool) {
         return super.isFarmOpen() && (block.timestamp <= farmEndTime);
