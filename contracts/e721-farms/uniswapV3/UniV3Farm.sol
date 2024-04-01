@@ -50,7 +50,7 @@ struct UniswapPoolData {
 
 // Defines a struct for inputs used for initializing this farm.
 // farmId - String ID of the farm.
-// farmStartTime - time of farm start.
+// farmStartTime - farm start time.
 // cooldownPeriod - cooldown period for locked deposits in days.
 // cooldownPeriod = 0 Disables lockup functionality for the farm.
 // farmRegistry - Address of the Demeter Farm Registry.

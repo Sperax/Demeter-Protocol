@@ -646,7 +646,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
-    /// @param _farmStartTime - Time of farm start.
+    /// @param _farmStartTime - farm start time.
     /// @param _cooldownPeriod - cooldown period in days for locked deposits. Egs: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
