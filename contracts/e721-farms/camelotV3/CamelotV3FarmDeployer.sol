@@ -34,10 +34,10 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 contract CamelotV3FarmDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days)
+    // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // camelotPoolData - Init data for CamelotV3 pool (tokenA, tokenB, tickLower, tickUpper).
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
+    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ].
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
