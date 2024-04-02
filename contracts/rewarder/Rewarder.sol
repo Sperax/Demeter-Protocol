@@ -151,12 +151,15 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
 
     /// @notice A function to get token amounts value of underlying pool of the farm.
     /// @param _farm Address of the farm.
+    /// @return Array of token addresses.
+    /// @return Array of token amounts.
     function getTokenAmounts(address _farm) external view returns (address[] memory, uint256[] memory) {
         return _getTokenAmounts(_farm);
     }
 
     /// @notice A function to get reward config for a farm.
     /// @param _farm Address of the farm.
+    /// @return FarmRewardConfig Farm reward config.
     function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
         _isConfigured(_farm);
         return farmRewardConfigs[_farm];
@@ -223,6 +226,8 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
 
     /// @notice An internal function to get token amounts for the farm.
     /// @param _farm Address of the farm.
+    /// @return Array of token addresses.
+    /// @return Array of token amounts.
     function _getTokenAmounts(address _farm) internal view virtual returns (address[] memory, uint256[] memory) {
         return IFarm(_farm).getTokenAmounts();
     }
@@ -347,6 +352,8 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
 
     /// @notice A function to validate farm.
     /// @param _farm Address of the farm to be validated.
+    /// @param _baseTokens Array of base tokens.
+    /// @return bool if farm is valid.
     /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN.
     /// as one of the reward tokens.
     function _isValidFarm(address _farm, address[] memory _baseTokens) private returns (bool) {
@@ -390,6 +397,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @notice A function to fetch and get the price of a token.
     /// @param _token Token for which the the price is to be fetched.
     /// @param _oracle Address of the oracle contract.
+    /// @return priceData Price data of the token.
     function _getPrice(address _token, address _oracle) private view returns (IOracle.PriceData memory priceData) {
         priceData = IOracle(_oracle).getPrice(_token);
     }
