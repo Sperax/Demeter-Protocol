@@ -28,6 +28,7 @@ import {E20Farm} from "../E20Farm.sol";
 
 /// @title Balancer V2 farm.
 /// @author Sperax Foundation.
+/// @notice This contract is the implementation of the Balancer V2 farm.
 contract BalancerV2Farm is E20Farm {
     error NotImplemented();
 
