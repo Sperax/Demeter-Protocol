@@ -314,7 +314,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     /// @return The tokens and amounts associated with the farm's liquidity.
-    /// @dev This function should be overridden by the implementation contract.
+    /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
     /// @notice Claim rewards for the user.
