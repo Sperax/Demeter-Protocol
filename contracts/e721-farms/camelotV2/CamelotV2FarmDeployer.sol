@@ -40,7 +40,7 @@ contract CamelotV2FarmDeployer is FarmDeployer {
         address tokenB;
     }
 
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment.
+    // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
     // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
