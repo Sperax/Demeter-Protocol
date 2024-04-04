@@ -37,7 +37,7 @@ contract UniV3FarmDeployer is FarmDeployer {
     // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // uniswapPoolData - Init data for UniswapV3 pool (tokenA, tokenB, feeTier, tickLower, tickUpper).
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ].
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;

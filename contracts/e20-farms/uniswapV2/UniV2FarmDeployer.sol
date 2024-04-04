@@ -48,7 +48,7 @@ contract UniV2FarmDeployer is FarmDeployer {
     // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // camelotPoolData - data for camelot pool (tokenA, tokenB).
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ].
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;

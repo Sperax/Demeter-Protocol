@@ -37,7 +37,7 @@ contract CamelotV3FarmDeployer is FarmDeployer {
     // cooldownPeriod -  cooldown period for locked deposits (in days).
     //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // camelotPoolData - Init data for CamelotV3 pool (tokenA, tokenB, tickLower, tickUpper).
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ].
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
