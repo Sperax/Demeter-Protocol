@@ -114,7 +114,7 @@ contract FarmRegistry is OwnableUpgradeable {
     /// @notice Function to add/ remove privileged deployer.
     /// @param _deployer Deployer(address) to add to privileged deployers list.
     /// @param _privilege Privilege(bool) whether true or false.
-    /// @dev Only callable by the owner
+    /// @dev Only callable by the owner.
     function updatePrivilege(address _deployer, bool _privilege) external onlyOwner {
         if (isPrivilegedDeployer[_deployer] == _privilege) {
             revert PrivilegeSameAsDesired();
