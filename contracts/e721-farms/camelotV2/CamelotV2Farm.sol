@@ -51,11 +51,11 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
 
     /// @notice constructor.
     /// @param _farmStartTime - farm start time.
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days.
+    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _farmRegistry - Address of the Demeter Farm Registry.
     /// @param _camelotPairPool - Camelot lp pool address.
-    /// @param _rwdTokenData - init data for reward tokens.
+    /// @param _rwdTokenData - Init data for reward tokens.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
@@ -249,7 +249,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
 
     /// @notice Returns if farm is open.
     ///         Farm is open if it is not closed.
-    /// @return bool true if farm is open.
+    /// @return bool True if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
@@ -259,7 +259,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
 
     /// @notice Validate the position for the pool and get Liquidity.
     /// @param _tokenId The tokenId of the position.
-    /// @dev the position must adhere to the price ranges.
+    /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     /// @return liquidity The liquidity of the position.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {

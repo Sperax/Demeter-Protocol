@@ -34,8 +34,8 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 contract UniV3FarmDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days).
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // cooldownPeriod -  Cooldown period for locked deposits (in days).
+    //                   Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // uniswapPoolData - Init data for UniswapV3 pool (tokenA, tokenB, feeTier, tickLower, tickUpper).
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
@@ -79,8 +79,8 @@ contract UniV3FarmDeployer is FarmDeployer {
     }
 
     /// @notice Deploys a new UniswapV3 farm.
-    /// @param _data data for deployment.
-    /// @return address of the deployed farm.
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
     /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);

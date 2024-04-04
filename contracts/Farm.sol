@@ -106,8 +106,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Add rewards to the farm.
-    /// @param _rwdToken the reward token's address.
-    /// @param _amount the amount of reward tokens to add.
+    /// @param _rwdToken The reward token's address.
+    /// @param _amount The amount of reward tokens to add.
     function addRewards(address _rwdToken, uint256 _amount) external nonReentrant {
         if (_amount == 0) {
             revert ZeroAmount();
@@ -347,7 +347,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Returns if farm is open.
     ///         Farm is open if it is not closed.
-    /// @return bool true if farm is open.
+    /// @return bool True if farm is open.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmOpen() public view virtual returns (bool) {
         return !isClosed;
@@ -355,7 +355,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Returns if farm is active.
     ///         Farm is active if it is not paused and not closed.
-    /// @return bool true if farm is active.
+    /// @return bool True if farm is active.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmActive() public view virtual returns (bool) {
         return !isPaused && isFarmOpen();
@@ -486,8 +486,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Common logic for withdraw.
-    /// @param _account address of the user.
-    /// @param _depositId user's deposit id.
+    /// @param _account Address of the user.
+    /// @param _depositId User's deposit id.
     function _withdraw(address _account, uint256 _depositId) internal {
         _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
@@ -654,8 +654,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
-    /// @param _farmStartTime - farm start time.
-    /// @param _cooldownPeriod - cooldown period in days for locked deposits. Egs: 7 means 7 days.
+    /// @param _farmStartTime - Farm start time.
+    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. Egs: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,

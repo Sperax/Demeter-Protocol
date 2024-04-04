@@ -39,8 +39,8 @@ contract BalancerV2FarmDeployer is FarmDeployer {
 
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days).
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // cooldownPeriod -  Cooldown period for locked deposits (in days).
+    //                   Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // poolId - ID of the pool. It is used to fetch the pool data from Balancer's vault.
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
@@ -54,7 +54,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
     // All the pool actions happen on Balancer's vault.
     address public immutable BALANCER_VAULT;
 
-    /// @notice Constructor of the contract.
+    /// @notice Constructor.
     /// @param _farmRegistry Address of the Demeter Farm Registry.
     /// @param _farmId Id of the farm.
     /// @param _balancerVault Address of Balancer's Vault.
@@ -69,8 +69,8 @@ contract BalancerV2FarmDeployer is FarmDeployer {
     }
 
     /// @notice Deploys a new Balancer farm.
-    /// @param _data data for deployment.
-    /// @return address of the deployed farm.
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
     /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
@@ -98,7 +98,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
 
     /// @notice Function to validate Balancer pool.
     /// @param _poolId bytes32 Id of the pool.
-    /// @return pool Address.
+    /// @return pool Pool address.
     function validatePool(bytes32 _poolId) public view returns (address pool) {
         (pool,) = IBalancerV2Vault(BALANCER_VAULT).getPool(_poolId);
         _validateNonZeroAddr(pool);

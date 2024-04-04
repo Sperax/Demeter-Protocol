@@ -353,7 +353,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @notice Function to validate farm.
     /// @param _farm Address of the farm to be validated.
     /// @param _baseTokens Array of base tokens.
-    /// @return bool if farm is valid.
+    /// @return bool True if farm is valid.
     /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN.
     /// as one of the reward tokens.
     function _isValidFarm(address _farm, address[] memory _baseTokens) private returns (bool) {

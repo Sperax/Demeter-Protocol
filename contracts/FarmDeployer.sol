@@ -59,7 +59,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     }
 
     /// @notice Update farm implementation's address.
-    /// @dev only callable by owner.
+    /// @dev Only callable by the owner.
     /// @param _newFarmImplementation New farm implementation's address.
     function updateFarmImplementation(address _newFarmImplementation, string calldata _newFarmId) external onlyOwner {
         farmId = _newFarmId;

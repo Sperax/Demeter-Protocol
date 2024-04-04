@@ -101,7 +101,7 @@ contract UniV2FarmDeployer is FarmDeployer {
     /// @notice Validates the pool.
     /// @param _tokenA Address of token A.
     /// @param _tokenB Address of token B.
-    /// @return pool Address.
+    /// @return pool Pool address.
     function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
         pool = IUniswapV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
         _validateNonZeroAddr(pool);

@@ -114,7 +114,7 @@ contract FarmRegistry is OwnableUpgradeable {
     /// @notice Function to add/ remove privileged deployer.
     /// @param _deployer Deployer(address) to add to privileged deployers list.
     /// @param _privilege Privilege(bool) whether true or false.
-    /// @dev to be only called by owner.
+    /// @dev Only callable by the owner
     function updatePrivilege(address _deployer, bool _privilege) external onlyOwner {
         if (isPrivilegedDeployer[_deployer] == _privilege) {
             revert PrivilegeSameAsDesired();
@@ -147,10 +147,10 @@ contract FarmRegistry is OwnableUpgradeable {
     }
 
     /// @notice Update the fee params for registry.
-    /// @param _receiver feeReceiver address.
-    /// @param _feeToken token address for fee.
-    /// @param _amount amount of token to be collected.
-    /// @param _extensionFeePerDay extension fee per day.
+    /// @param _receiver FeeReceiver address.
+    /// @param _feeToken Token address for fee.
+    /// @param _amount Amount of token to be collected.
+    /// @param _extensionFeePerDay Extension fee per day.
     function updateFeeParams(address _receiver, address _feeToken, uint256 _amount, uint256 _extensionFeePerDay)
         public
         onlyOwner

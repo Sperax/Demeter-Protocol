@@ -252,7 +252,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Returns if farm is open.
     ///         Farm is open if it is not closed.
-    /// @return bool true if farm is open.
+    /// @return bool True if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
@@ -261,7 +261,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @notice Validate the position for the pool and get Liquidity.
     /// @param _tokenId The tokenId of the position.
     /// @return The liquidity of the position.
-    /// @dev the position must adhere to the price ranges.
+    /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token.

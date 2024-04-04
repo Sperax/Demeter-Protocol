@@ -35,7 +35,7 @@ contract UniV3ActiveLiquidityFarm is UniV3Farm {
 
     /// @notice Returns if farm is active.
     ///         Farm is active if it is not paused, not closed, and liquidity is active.
-    /// @return bool true if farm is active.
+    /// @return bool True if farm is active.
     /// @dev This function checks if current tick is within this farm's tick range.
     function isFarmActive() public view override returns (bool) {
         return super.isFarmActive() && _isLiquidityActive();

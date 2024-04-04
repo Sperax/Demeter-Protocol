@@ -50,16 +50,16 @@ struct UniswapPoolData {
 
 // Defines a struct for inputs used for initializing this farm.
 // farmId - String ID of the farm.
-// farmStartTime - farm start time.
-// cooldownPeriod - cooldown period for locked deposits in days.
+// farmStartTime - Farm start time.
+// cooldownPeriod - Cooldown period for locked deposits in days.
 // cooldownPeriod = 0 Disables lockup functionality for the farm.
 // farmRegistry - Address of the Demeter Farm Registry.
-// uniswapPoolData - init data for UniswapV3 pool.
-// rwdTokenData - init data for reward tokens.
+// uniswapPoolData - Init data for UniswapV3 pool.
+// rwdTokenData - Init data for reward tokens.
 // uniV3Factory - Factory contract of Uniswap V3.
 // nftContract - NFT contract's address (NFPM).
-// uniswapUtils - address of our custom uniswap utils contract.
-// nfpmUtils - address of our custom uniswap nonfungible position manager utils contract.
+// uniswapUtils - Address of our custom uniswap utils contract.
+// nfpmUtils - Address of our custom uniswap nonfungible position manager utils contract.
 struct InitializeInput {
     string farmId;
     uint256 farmStartTime;
@@ -254,7 +254,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Returns if farm is open.
     ///         Farm is open if it is not closed.
-    /// @return bool true if farm is open.
+    /// @return bool True if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
@@ -262,7 +262,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Validate the position for the pool and get Liquidity.
     /// @param _tokenId The tokenId of the position.
-    /// @dev the position must adhere to the price ranges.
+    /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
