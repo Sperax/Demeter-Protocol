@@ -111,7 +111,7 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(deployer, false);
     }
 
-    /// @notice A function to add/ remove privileged deployer.
+    /// @notice Function to add/ remove privileged deployer.
     /// @param _deployer Deployer(address) to add to privileged deployers list.
     /// @param _privilege Privilege(bool) whether true or false.
     /// @dev to be only called by owner.

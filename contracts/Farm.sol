@@ -88,7 +88,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         _disableInitializers();
     }
 
-    /// @notice A function to be called to withdraw deposit.
+    /// @notice Function to be called to withdraw deposit.
     /// @param _depositId Id of the deposit.
     function withdraw(uint256 _depositId) external virtual;
 
@@ -306,13 +306,13 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewardFunds[_fundId];
     }
 
-    /// @notice A function to get the reward tokens added in the farm.
+    /// @notice Function to get the reward tokens added in the farm.
     /// @return The reward tokens added in the farm.
     function getRewardTokens() external view returns (address[] memory) {
         return rewardTokens;
     }
 
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     /// @return The tokens and amounts associated with the farm's liquidity.
     /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);

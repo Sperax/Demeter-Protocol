@@ -73,7 +73,7 @@ abstract contract E721Farm is Farm, IERC721Receiver {
         delete depositToTokenId[_depositId];
     }
 
-    /// @notice A function to get the liquidity. Must be defined by the farm.
+    /// @notice Function to get the liquidity. Must be defined by the farm.
     /// @param _tokenId The nft tokenId.
     /// @return The liquidity of the nft position.
     /// @dev This function should be overridden to add the respective logic.

@@ -56,7 +56,7 @@ contract LegacyFarmRewarder is Rewarder {
         UNISWAP_UTILS = _uniswapUtils;
     }
 
-    /// @notice A function to update the rewardToken configuration.
+    /// @notice Function to update the rewardToken configuration.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
     /// @param _isUniV3Farm Boolean to check if the farm is UniV3Farm or not.
@@ -68,7 +68,7 @@ contract LegacyFarmRewarder is Rewarder {
         super.updateRewardConfig(_farm, _rewardConfig);
     }
 
-    /// @notice A function to get token amounts.
+    /// @notice Function to get token amounts.
     /// @param _farm Address of the farm.
     /// @return _tokens Array of token addresses.
     /// @return _amounts Array of token amounts.
@@ -87,7 +87,7 @@ contract LegacyFarmRewarder is Rewarder {
         }
     }
 
-    /// @notice A function to check if the farm has reward token.
+    /// @notice Function to check if the farm has reward token.
     function _hasRewardToken(address) internal pure override returns (bool) {
         return true;
     }

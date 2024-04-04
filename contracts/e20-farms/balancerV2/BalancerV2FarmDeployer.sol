@@ -96,7 +96,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
         return farm;
     }
 
-    /// @notice A function to validate Balancer pool.
+    /// @notice Function to validate Balancer pool.
     /// @param _poolId bytes32 Id of the pool.
     /// @return pool Address.
     function validatePool(bytes32 _poolId) public view returns (address pool) {

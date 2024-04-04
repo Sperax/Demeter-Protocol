@@ -47,7 +47,7 @@ contract RewarderFactory is Ownable {
         rewarderImplementation = address(new Rewarder());
     }
 
-    /// @notice A function to deploy new rewarder.
+    /// @notice Function to deploy new rewarder.
     /// @param _rwdToken Address of the reward token for which the rewarder is to be deployed.
     /// @return rewarder Rewarder's address.
     function deployRewarder(address _rwdToken) external returns (address rewarder) {
@@ -56,7 +56,7 @@ contract RewarderFactory is Ownable {
         emit RewarderDeployed(_rwdToken, msg.sender, rewarder);
     }
 
-    /// @notice A function to update the oracle's address.
+    /// @notice Function to update the oracle's address.
     /// @param _newOracle Address of the new oracle.
     function updateOracle(address _newOracle) public onlyOwner {
         _validateNonZeroAddr(_newOracle);

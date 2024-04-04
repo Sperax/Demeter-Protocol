@@ -103,7 +103,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _initialize(_rwdToken, _oracle, _admin, msg.sender);
     }
 
-    /// @notice A function to calibrate rewards for a reward token for a farm.
+    /// @notice Function to calibrate rewards for a reward token for a farm.
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
     /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
@@ -115,14 +115,14 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return _calibrateReward(_farm);
     }
 
-    /// @notice A function to update the token manager's address in the farm.
+    /// @notice Function to update the token manager's address in the farm.
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerOfFarm(address _farm, address _newManager) external onlyOwner {
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
-    /// @notice A function to update APR.
+    /// @notice Function to update APR.
     /// @param _farm Address of the farm.
     /// @param _apr APR in 1e8 precision.
     function updateAPR(address _farm, uint256 _apr) external onlyOwner nonReentrant {
@@ -132,14 +132,14 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _calibrateReward(_farm);
     }
 
-    /// @notice A function to toggle calibration restriction.
+    /// @notice Function to toggle calibration restriction.
     /// @param _farm Address of farm for which calibration restriction is to be toggled.
     function toggleCalibrationRestriction(address _farm) external onlyOwner {
         calibrationRestricted[_farm] = !calibrationRestricted[_farm];
         emit CalibrationRestrictionToggled(_farm);
     }
 
-    /// @notice A function to recover ERC20 tokens from this contract.
+    /// @notice Function to recover ERC20 tokens from this contract.
     /// @param _token Address of the token.
     /// @param _amount Amount of the tokens.
     function recoverERC20(address _token, uint256 _amount) external onlyOwner {
@@ -149,7 +149,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
-    /// @notice A function to get token amounts value of underlying pool of the farm.
+    /// @notice Function to get token amounts value of underlying pool of the farm.
     /// @param _farm Address of the farm.
     /// @return Array of token addresses.
     /// @return Array of token amounts.
@@ -157,7 +157,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return _getTokenAmounts(_farm);
     }
 
-    /// @notice A function to get reward config for a farm.
+    /// @notice Function to get reward config for a farm.
     /// @param _farm Address of the farm.
     /// @return FarmRewardConfig Farm reward config.
     function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
@@ -165,7 +165,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return farmRewardConfigs[_farm];
     }
 
-    /// @notice A function to calculate the time till which rewards are there for an LP.
+    /// @notice Function to calculate the time till which rewards are there for an LP.
     /// @param _farm Address of the farm for which the end time is to be calculated.
     /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
@@ -175,7 +175,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
-    /// @notice A function to update the REWARD_TOKEN configuration.
+    /// @notice Function to update the REWARD_TOKEN configuration.
     ///         This function calibrates reward so token manager must be updated to address of this in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
@@ -216,7 +216,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _transferOwnership(_admin);
     }
 
-    /// @notice A function to check if the farm's reward is configured.
+    /// @notice Function to check if the farm's reward is configured.
     /// @param _farm Address of the farm.
     function _isConfigured(address _farm) internal view {
         if (farmRewardConfigs[_farm].baseAssetIndexes.length == 0) {
@@ -232,7 +232,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return IFarm(_farm).getTokenAmounts();
     }
 
-    /// @notice A function to check the reward token of this is a farm's reward token.
+    /// @notice Function to check the reward token of this is a farm's reward token.
     /// @param _farm Address of the farm.
     /// @return If farm has one of the reward token as reward token of this.
     function _hasRewardToken(address _farm) internal view virtual returns (bool) {
@@ -312,7 +312,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
     }
 
-    /// @notice A function to set reward rate in the farm.
+    /// @notice Function to set reward rate in the farm.
     /// @param _farm Address of the farm.
     /// @param _rwdRate Reward per second to be emitted.
     /// @param _nonLockupRewardPer Reward percentage to be allocated to no lockup fund.
@@ -331,14 +331,14 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         }
     }
 
-    /// @notice A function to adjust global rewards per second emitted for a reward token.
+    /// @notice Function to adjust global rewards per second emitted for a reward token.
     /// @param _oldRewardRate Old emission rate.
     /// @param _newRewardRate New emission rate.
     function _adjustGlobalRewardRate(uint256 _oldRewardRate, uint256 _newRewardRate) private {
         totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
-    /// @notice A function to normalize asset amounts to be of precision 1e18.
+    /// @notice Function to normalize asset amounts to be of precision 1e18.
     /// @param _token Address of the asset token.
     /// @param _amount Amount of the token.
     /// @return Normalized amount of the token in 1e18.
@@ -350,7 +350,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return _amount;
     }
 
-    /// @notice A function to validate farm.
+    /// @notice Function to validate farm.
     /// @param _farm Address of the farm to be validated.
     /// @param _baseTokens Array of base tokens.
     /// @return bool if farm is valid.
@@ -360,7 +360,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return _hasRewardToken(_farm) && _hasBaseTokens(_farm, _baseTokens);
     }
 
-    /// @notice A function to check whether the base tokens are a subset of farm's assets.
+    /// @notice Function to check whether the base tokens are a subset of farm's assets.
     /// @param _farm Address of the farm.
     /// @param _baseTokens Array of base token addresses to be considered for value calculation.
     /// @dev It handles repeated base tokens as well and pushes indexed in farmRewardConfigs.
@@ -394,7 +394,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return true;
     }
 
-    /// @notice A function to fetch and get the price of a token.
+    /// @notice Function to fetch and get the price of a token.
     /// @param _token Token for which the the price is to be fetched.
     /// @param _oracle Address of the oracle contract.
     /// @return priceData Price data of the token.
@@ -402,7 +402,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         priceData = IOracle(_oracle).getPrice(_token);
     }
 
-    /// @notice A function to validate price feed.
+    /// @notice Function to validate price feed.
     /// @param _token Token to be validated.
     /// @param _oracle Address of the oracle.
     function _validatePriceFeed(address _token, address _oracle) private view {
@@ -411,7 +411,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         }
     }
 
-    /// @notice A function to validate the no lockup fund's reward percentage.
+    /// @notice Function to validate the no lockup fund's reward percentage.
     /// @param _percentage No lockup fund's reward percentage to be validated.
     function _validateRewardPer(uint256 _percentage) private pure {
         if (_percentage == 0 || _percentage > MAX_PERCENTAGE) {

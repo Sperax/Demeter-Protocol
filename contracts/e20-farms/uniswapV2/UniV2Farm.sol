@@ -31,7 +31,7 @@ import {TokenUtils} from "../../utils/TokenUtils.sol";
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V2 farm.
 contract UniV2Farm is E20Farm {
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory tokens, uint256[] memory amounts) {
