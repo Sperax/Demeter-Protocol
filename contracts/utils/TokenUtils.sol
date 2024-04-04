@@ -10,6 +10,11 @@ import {ICamelotV3PoolState} from "../e721-farms/camelotV3/interfaces/ICamelotV3
 library TokenUtils {
     uint32 private constant MA_PERIOD = 10 minutes;
 
+    /// @notice Get token amounts for Uniswap V2 farm based on the farm's liquidity.
+    /// @param _nftContract The NFPM address.
+    /// @param _farmLiquidity The farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getUniV2TokenAmounts(address _nftContract, uint256 _farmLiquidity)
         public
         view
@@ -26,6 +31,14 @@ library TokenUtils {
         amounts[1] = (_farmLiquidity * reserveB) / _totalSupply;
     }
 
+    /// @notice Get token amounts for Uniswap V3 farm based on the farm's liquidity.
+    /// @param _uniPool The Uniswap V3 pool address.
+    /// @param _uniUtils The Uniswap V3 utils address.
+    /// @param _tickLower The lower tick.
+    /// @param _tickUpper The upper tick.
+    /// @param _liquidity The farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getUniV3TokenAmounts(
         address _uniPool,
         address _uniUtils,
@@ -46,6 +59,14 @@ library TokenUtils {
             IUniswapV3Utils(_uniUtils).getAmountsForLiquidity(sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity));
     }
 
+    /// @notice Get token amounts for Camelot V3 farm based on the farm's liquidity.
+    /// @param _camelotPool The Camelot V3 pool address.
+    /// @param _camelotUtils The Camelot V3 utils address.
+    /// @param _tickLower The lower tick.
+    /// @param _tickUpper The upper tick.
+    /// @param _liquidity The farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getCamelotV3TokenAmounts(
         address _camelotPool,
         address _camelotUtils,
