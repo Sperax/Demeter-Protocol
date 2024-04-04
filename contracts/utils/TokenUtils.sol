@@ -11,7 +11,7 @@ library TokenUtils {
     uint32 private constant MA_PERIOD = 10 minutes;
 
     /// @notice Get token amounts for Uniswap V2 farm based on the farm's liquidity.
-    /// @param _nftContract The NFPM address.
+    /// @param _nftContract pool address.
     /// @param _farmLiquidity The farm's liquidity.
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
