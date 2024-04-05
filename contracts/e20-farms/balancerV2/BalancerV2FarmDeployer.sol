@@ -38,7 +38,7 @@ contract BalancerV2FarmDeployer is FarmDeployer {
     using SafeERC20 for IERC20;
 
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
-    // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
+    // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
     // cooldownPeriod -  Cooldown period for locked deposits (in days).
     //                   Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // poolId - ID of the pool. It is used to fetch the pool data from Balancer's vault.

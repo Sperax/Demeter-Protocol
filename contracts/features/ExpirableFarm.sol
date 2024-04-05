@@ -82,9 +82,9 @@ abstract contract ExpirableFarm is Farm {
             : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
     }
 
-    /// @notice Returns if farm is open.
+    /// @notice Returns bool status if farm is open.
     ///         Farm is open if it is not closed and not expired.
-    /// @return bool true if farm is open.
+    /// @return bool True if farm is open.
     function isFarmOpen() public view virtual override returns (bool) {
         return super.isFarmOpen() && (block.timestamp <= farmEndTime);
     }
