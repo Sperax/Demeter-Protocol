@@ -42,9 +42,9 @@ contract CamelotV2FarmDeployer is FarmDeployer {
 
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days).
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // lpTokenData - data for camelot pool (tokenA, tokenB).
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // lpTokenData - Data for camelot pool (tokenA, tokenB).
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;

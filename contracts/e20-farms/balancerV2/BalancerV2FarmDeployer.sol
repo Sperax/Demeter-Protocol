@@ -39,9 +39,9 @@ contract BalancerV2FarmDeployer is FarmDeployer {
 
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
-    // cooldownPeriod -  Cooldown period for locked deposits (in days).
-    //                   Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // poolId - ID of the pool. It is used to fetch the pool data from Balancer's vault.
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // poolId - Unique identifier used to access the pool's information from Balancer's vault.
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;

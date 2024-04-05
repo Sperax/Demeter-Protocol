@@ -35,8 +35,8 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 contract UniV3ActiveLiquidityDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
-    // cooldownPeriod -  Cooldown period for locked deposits (in days).
-    //                   Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
     // uniswapPoolData - Init data for UniswapV3 pool (tokenA, tokenB, feeTier, tickLower, tickUpper)
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
