@@ -65,7 +65,7 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
     }
 
-    /// @notice Function is called when user transfers the NFT to the contract.
+    /// @notice Function to deposit farm tokens into the farm.
     /// @param _amount Amount of farmToken to be deposited.
     /// @param _lockup The lockup flag (bool).
     function deposit(uint256 _amount, bool _lockup) external nonReentrant {
