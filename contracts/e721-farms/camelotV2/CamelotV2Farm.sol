@@ -172,7 +172,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return true;
     }
 
-    /// @notice Get the accrued uniswap fee for a deposit.
+    /// @notice Get the accrued camelot fee for a deposit.
     /// @param _tokenId The tokenId of the position.
     /// @return amount Grail rewards.
     function computePoolRewards(uint256 _tokenId) external view returns (uint256 amount) {
