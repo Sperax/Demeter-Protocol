@@ -50,7 +50,7 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _farmRegistry - Address of the Demeter Farm Registry.
     /// @param _farmToken Address of the farm token.
-    /// @param _rwdTokenData - Init data for reward tokens.
+    /// @param _rwdTokenData - Initialize data for reward tokens.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
