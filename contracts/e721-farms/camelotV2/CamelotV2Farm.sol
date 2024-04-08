@@ -55,7 +55,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _farmRegistry - Address of the Demeter Farm Registry.
     /// @param _camelotPairPool - Camelot lp pool address.
-    /// @param _rwdTokenData - Init data for reward tokens.
+    /// @param _rwdTokenData - Initialize data for reward tokens.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
