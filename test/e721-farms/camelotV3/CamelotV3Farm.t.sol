@@ -762,9 +762,13 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
     function testFuzz_DecreaseDeposit_tickSpacingChanged(
         bool isLockupFarm,
         uint256 _liquidityToWithdraw,
-        int24 tickSpacing
+        int24 newTickSpacing
     ) public {
-        vm.assume(tickSpacing >= 1 && tickSpacing <= 500);
+        int24 currentTickSpacing =
+            ICamelotV3TickSpacing(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).tickSpacing();
+
+        vm.assume(newTickSpacing >= 1 && newTickSpacing <= 500 && newTickSpacing != currentTickSpacing);
+
         address farm;
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
@@ -785,7 +789,9 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
 
         address camelotFactoryOwner = ICamelotV3FactoryTesting(CAMELOT_V3_FACTORY).owner();
         vm.startPrank(camelotFactoryOwner);
-        ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(tickSpacing);
+        ICamelotV3PoolTesting(ICamelotV3Factory(CAMELOT_V3_FACTORY).poolByPair(DAI, USDCe)).setTickSpacing(
+            newTickSpacing
+        );
         vm.stopPrank();
 
         vm.startPrank(user);
