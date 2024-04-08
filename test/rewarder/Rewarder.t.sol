@@ -58,14 +58,16 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
 }
 
 contract TestUpdateAPR is RewarderTest {
-    uint256 private constant APR = 1e9;
+    uint256 private APR;
 
     function test_RevertWhen_updateAPR_CallerIsNotTheOwner() public useKnownActor(actors[5]) {
+        APR = 1e9;
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
         rewarder.updateAPR(lockupFarm, APR);
     }
 
     function test_RevertWhen_updateAPR_NotConfigured() public useKnownActor(rewardManager) {
+        APR = 1e9;
         vm.expectRevert(abi.encodeWithSelector(Rewarder.FarmNotConfigured.selector, lockupFarm));
         rewarder.updateAPR(lockupFarm, APR);
     }
@@ -73,6 +75,7 @@ contract TestUpdateAPR is RewarderTest {
     function test_UpdateAPR() public useKnownActor(rewardManager) {
         _setupFarmRewards();
         rewarder.calibrateReward(lockupFarm);
+        APR = 12e8;
         changePrank(rewardManager);
         rewarder.updateAPR(lockupFarm, 12e8);
         (uint256 apr, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
