@@ -6,8 +6,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CamelotV2FarmTest} from "../e721-farms/camelotV2/CamelotV2Farm.t.sol";
 import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
-import {Rewarder} from "../../contracts/rewarder/Rewarder.sol";
+import {Rewarder, IERC20, ERC20} from "../../contracts/rewarder/Rewarder.sol";
 import {IOracle} from "../../contracts/interfaces/IOracle.sol";
+import {VmSafe} from "forge-std/Vm.sol";
 
 contract RewarderTest is CamelotV2FarmTest {
     RewarderFactory public rewarderFactory;
@@ -57,19 +58,66 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
 }
 
 contract TestUpdateAPR is RewarderTest {
-    uint256 private constant APR = 1e9;
+    uint256 private APR;
 
     function test_RevertWhen_updateAPR_CallerIsNotTheOwner() public useKnownActor(actors[5]) {
+        APR = 1e9;
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
         rewarder.updateAPR(lockupFarm, APR);
     }
 
     function test_RevertWhen_updateAPR_NotConfigured() public useKnownActor(rewardManager) {
+        APR = 1e9;
         vm.expectRevert(abi.encodeWithSelector(Rewarder.FarmNotConfigured.selector, lockupFarm));
         rewarder.updateAPR(lockupFarm, APR);
     }
 
     function test_UpdateAPR() public useKnownActor(rewardManager) {
+        _setupFarmRewards();
+        rewarder.calibrateReward(lockupFarm);
+        APR = 12e8;
+        changePrank(rewardManager);
+        rewarder.updateAPR(lockupFarm, APR);
+        (uint256 apr, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(apr, APR);
+        assertTrue(rewardRate > 0);
+        rewarder.updateAPR(lockupFarm, 0);
+        (apr, rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(apr, 0);
+        assertEq(rewardRate, 0);
+    }
+
+    function test_UpdateAPR_CapRewardsWithBalance() public useKnownActor(rewardManager) {
+        _setupFarmRewards();
+        changePrank(address(rewarder));
+        IERC20(USDCe).transfer(
+            actors[1], IERC20(USDCe).balanceOf(address(rewarder)) - 1 * 10 ** ERC20(USDCe).decimals()
+        );
+        uint256 rewardsSent = rewarder.calibrateReward(lockupFarm);
+        assertEq(rewardsSent, 1 * 10 ** ERC20(USDCe).decimals());
+    }
+
+    function test_UpdateAPR_CapRewardsWithMaxRwdRate() public useKnownActor(rewardManager) {
+        uint256 MAX_REWARD_RATE = 166665;
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = USDCe;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 5e9,
+            maxRewardRate: MAX_REWARD_RATE,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        deposit(lockupFarm, false, 1000);
+        rewarder.calibrateReward(lockupFarm);
+        (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertEq(rewardRate, MAX_REWARD_RATE);
+    }
+
+    function _setupFarmRewards() private {
         Rewarder.FarmRewardConfigInput memory rewardConfig;
         address[] memory baseAssets = new address[](1);
         baseAssets[0] = USDCe;
@@ -83,16 +131,6 @@ contract TestUpdateAPR is RewarderTest {
         changePrank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
         deposit(lockupFarm, false, 1000);
-        rewarder.calibrateReward(lockupFarm);
-        changePrank(rewardManager);
-        rewarder.updateAPR(lockupFarm, 12e8);
-        (uint256 apr, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
-        assertEq(apr, 12e8);
-        assertTrue(rewardRate > 0);
-        rewarder.updateAPR(lockupFarm, 0);
-        (apr, rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
-        assertEq(apr, 0);
-        assertEq(rewardRate, 0);
     }
 }
 
@@ -183,6 +221,112 @@ contract TestUpdateRewardConfig is RewarderTest {
         assertEq(rewardRate, 0);
         assertEq(maxRewardRate, intendedRwdConfig.maxRewardRate);
         assertEq(nonLockupRewardPer, intendedRwdConfig.nonLockupRewardPer);
+    }
+}
+
+contract TestRecoverERC20 is RewarderTest {
+    uint256 constant RECOVERY_AMOUNT = 1e21;
+    address constant RECOVERY_TOKEN = USDT; // Aave arb LUSD
+
+    function test_RevertWhen_CallerIsNotOwner() public useActor(5) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
+        rewarder.recoverERC20(RECOVERY_TOKEN, RECOVERY_AMOUNT);
+    }
+
+    function test_RevertWhen_ZeroAmount() public useKnownActor(rewardManager) {
+        vm.expectRevert(abi.encodeWithSelector(Rewarder.ZeroAmount.selector));
+        rewarder.recoverERC20(RECOVERY_TOKEN, RECOVERY_AMOUNT);
+    }
+
+    function test_RecoverERC20() public useKnownActor(rewardManager) {
+        deal(RECOVERY_TOKEN, address(rewarder), RECOVERY_AMOUNT);
+        uint256 balBefore = IERC20(RECOVERY_TOKEN).balanceOf(rewardManager);
+        rewarder.recoverERC20(RECOVERY_TOKEN, RECOVERY_AMOUNT);
+        uint256 balAfter = IERC20(RECOVERY_TOKEN).balanceOf(rewardManager);
+        assertEq(balAfter - balBefore, RECOVERY_AMOUNT);
+    }
+}
+
+contract TestCalibrationRestriction is RewarderTest {
+    function setUp() public override {
+        super.setUp();
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = USDCe;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 5e9,
+            maxRewardRate: UINT256_MAX,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        vm.prank(rewardManager);
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        vm.prank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+    }
+
+    function test_RevertWhen_CallerIsNotOwner() public useActor(5) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
+        rewarder.toggleCalibrationRestriction(lockupFarm);
+    }
+
+    function test_ToggleCalibrationRestriction() public {
+        vm.prank(rewardManager);
+        rewarder.toggleCalibrationRestriction(lockupFarm);
+        vm.expectRevert(abi.encodeWithSelector(Rewarder.CalibrationRestricted.selector, lockupFarm));
+        rewarder.calibrateReward(lockupFarm);
+    }
+
+    function test_ToggleCalibrationRestriction_CalibrateWhenCalledByOwner() public useKnownActor(rewardManager) {
+        rewarder.toggleCalibrationRestriction(lockupFarm);
+        // This should not revert
+        rewarder.calibrateReward(lockupFarm);
+    }
+
+    function test_ToggleCalibrationRestriction_RemoveRestriction() public {
+        vm.prank(rewardManager);
+        rewarder.toggleCalibrationRestriction(lockupFarm);
+        vm.prank(rewardManager);
+        rewarder.toggleCalibrationRestriction(lockupFarm);
+        rewarder.calibrateReward(lockupFarm);
+    }
+}
+
+contract GetTokenAmountsTest is RewarderTest {
+    function test_getTokenAmounts() public depositSetup(lockupFarm, true) {
+        (address[] memory tokens, uint256[] memory amounts) = rewarder.getTokenAmounts(lockupFarm);
+        (address[] memory expectedTokens, uint256[] memory expectedAmounts) =
+            CamelotV2Farm(lockupFarm).getTokenAmounts();
+        for (uint8 i; i < tokens.length; ++i) {
+            assertEq(tokens[i], expectedTokens[i]);
+            assertEq(amounts[i], expectedAmounts[i]);
+        }
+    }
+}
+
+contract TestRewardsEndTime is RewarderTest {
+    function test_rewardsEndTime() public depositSetup(lockupFarm, true) useKnownActor(rewardManager) {
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = USDCe;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 5e9,
+            maxRewardRate: UINT256_MAX,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        deposit(lockupFarm, false, 1000);
+        rewarder.calibrateReward(lockupFarm);
+        assertTrue(rewarder.totalRewardRate() > 0);
+        uint256 rewardsEndTime = rewarder.rewardsEndTime(lockupFarm);
+        uint256 farmBalance = IERC20(USDCe).balanceOf(lockupFarm);
+        (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        uint256 expectedRewardsEndTime = block.timestamp
+            + ((farmBalance / rewardRate) + (IERC20(USDCe).balanceOf(address(rewarder)) / rewarder.totalRewardRate()));
+        assertEq(rewardsEndTime, expectedRewardsEndTime);
     }
 }
 
