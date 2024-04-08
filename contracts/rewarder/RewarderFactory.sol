@@ -35,12 +35,14 @@ contract RewarderFactory is Ownable {
     address public oracle;
     address public rewarderImplementation;
 
+    // Events.
     event OracleUpdated(address newOracle);
     event RewarderDeployed(address indexed token, address indexed manager, address rewarder);
 
+    // Custom Errors.
     error InvalidAddress();
 
-    /// @notice Constructor of this contract.
+    /// @notice Constructor.
     /// @param _oracle Address of the master price oracle of USDs.
     constructor(address _oracle) Ownable(msg.sender) {
         updateOracle(_oracle);

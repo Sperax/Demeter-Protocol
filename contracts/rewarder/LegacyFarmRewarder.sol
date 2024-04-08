@@ -37,7 +37,7 @@ contract LegacyFarmRewarder is Rewarder {
 
     mapping(address => bool) public isUniV3Farm;
 
-    /// @notice Constructor of this contract.
+    /// @notice Constructor.
     /// @param _rewardToken Address of the Reward token.
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.

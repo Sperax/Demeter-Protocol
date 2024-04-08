@@ -38,6 +38,7 @@ import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./
 abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
 
+    // Events.
     event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
     event DepositWithdrawn(uint256 indexed depositId);

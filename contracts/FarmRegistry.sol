@@ -41,6 +41,7 @@ contract FarmRegistry is OwnableUpgradeable {
     // List of deployers for which fee won't be charged.
     mapping(address => bool) public isPrivilegedDeployer;
 
+    // Events.
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
     event FarmDeployerUpdated(address deployer, bool registered);
     event FeeParamsUpdated(address receiver, address token, uint256 amount, uint256 extensionFeePerDay);

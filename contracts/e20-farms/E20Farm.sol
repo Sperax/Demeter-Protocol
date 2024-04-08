@@ -38,6 +38,7 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     // Token params.
     address public farmToken;
 
+    // Events.
     event PoolFeeCollected(address indexed recipient, uint256 amt0Recv, uint256 amt1Recv);
 
     // Custom Errors.

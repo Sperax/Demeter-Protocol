@@ -42,6 +42,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     // Id of the farm.
     string public farmId;
 
+    // Events.
     event FarmCreated(address farm, address creator, address indexed admin);
     event FeeCollected(address indexed creator, address token, uint256 amount);
     event FarmImplementationUpdated(address newFarmImplementation, string newFarmId);

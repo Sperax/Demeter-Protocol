@@ -33,9 +33,11 @@ import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 abstract contract OperableDeposit is ExpirableFarm {
     uint256 public constant PRECISION = 1e18;
 
+    // Events.
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
 
+    // Custom Errors.
     error DecreaseDepositNotPermitted();
 
     /// @notice Update subscription data of a deposit for increase in liquidity.

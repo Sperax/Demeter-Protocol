@@ -80,11 +80,13 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     mapping(address => bool) public calibrationRestricted;
     mapping(address => uint8) private _decimals;
 
+    // Events.
     event RewardConfigUpdated(address indexed farm, FarmRewardConfigInput rewardConfig);
     event APRUpdated(address indexed farm, uint256 apr);
     event RewardCalibrated(address indexed farm, uint256 rewardsSent, uint256 rewardRate);
     event CalibrationRestrictionToggled(address indexed farm);
 
+    // Custom Errors.
     error InvalidAddress();
     error InvalidFarm();
     error FarmNotConfigured(address farm);

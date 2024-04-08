@@ -37,6 +37,7 @@ abstract contract E721Farm is Farm, IERC721Receiver {
 
     mapping(uint256 => uint256) public depositToTokenId;
 
+    // Custom Errors.
     error UnauthorisedNFTContract();
     error NoData();
 

@@ -85,6 +85,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     address public camelotUtils; // CamelotUtils (Camelot helper) contract.
     address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
+    // Events.
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
     // Custom Errors.
