@@ -385,23 +385,26 @@ abstract contract InitializeTest is UniV3FarmTest {
 }
 
 abstract contract OnERC721ReceivedTest is UniV3FarmTest {
-    function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDT).decimals();
+    function _mintHelper(address token0, address token1, int24 tickLower, int24 tickUpper)
+        internal
+        returns (uint256 tokenId)
+    {
+        uint256 depositAmount1 = 1e3 * 10 ** ERC20(token0).decimals();
+        uint256 depositAmount2 = 1e3 * 10 ** ERC20(token1).decimals();
 
-        deal(DAI, currentActor, depositAmount1);
-        IERC20(DAI).approve(NFPM, depositAmount1);
+        deal(token0, currentActor, depositAmount1);
+        IERC20(token0).approve(NFPM, depositAmount1);
 
-        deal(USDT, currentActor, depositAmount2);
-        IERC20(USDT).approve(NFPM, depositAmount2);
+        deal(token1, currentActor, depositAmount2);
+        IERC20(token1).approve(NFPM, depositAmount2);
 
-        (uint256 tokenId,,,) = INFPM(NFPM).mint(
+        (tokenId,,,) = INFPM(NFPM).mint(
             INFPM.MintParams({
-                token0: DAI,
-                token1: USDT, // incorrect token
+                token0: token0,
+                token1: token1,
                 fee: FEE_TIER,
-                tickLower: TICK_LOWER,
-                tickUpper: TICK_UPPER,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
                 amount0Desired: depositAmount1,
                 amount1Desired: depositAmount2,
                 amount0Min: 0,
@@ -410,57 +413,30 @@ abstract contract OnERC721ReceivedTest is UniV3FarmTest {
                 deadline: block.timestamp
             })
         );
+    }
+
+    function test_OnERC721Received_RevertWhen_IncorrectPoolToken() public useKnownActor(user) {
+        uint256 tokenId = _mintHelper(DAI, USDT, TICK_LOWER, TICK_UPPER);
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectPoolToken.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId, abi.encode(true));
     }
 
     function test_OnERC721Received_RevertWhen_IncorrectTickRange() public useKnownActor(user) {
-        uint256 depositAmount1 = 1e3 * 10 ** ERC20(DAI).decimals();
-        uint256 depositAmount2 = 1e3 * 10 ** ERC20(USDCe).decimals();
+        uint256 tokenId1 = _mintHelper(DAI, USDCe, TICK_LOWER + 1, TICK_UPPER);
 
-        deal(DAI, currentActor, depositAmount1 * 2);
-        IERC20(DAI).approve(NFPM, depositAmount1 * 2);
+        uint256 tokenId2 = _mintHelper(DAI, USDCe, TICK_LOWER + 1, TICK_UPPER + 1);
 
-        deal(USDCe, currentActor, depositAmount2 * 2);
-        IERC20(USDCe).approve(NFPM, depositAmount2 * 2);
-
-        (uint256 tokenId1,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                fee: FEE_TIER,
-                tickLower: TICK_LOWER + 1,
-                tickUpper: TICK_UPPER,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
-        (uint256 tokenId2,,,) = INFPM(NFPM).mint(
-            INFPM.MintParams({
-                token0: DAI,
-                token1: USDCe,
-                fee: FEE_TIER,
-                tickLower: TICK_LOWER + 1,
-                tickUpper: TICK_UPPER + 1,
-                amount0Desired: depositAmount1,
-                amount1Desired: depositAmount2,
-                amount0Min: 0,
-                amount1Min: 0,
-                recipient: currentActor,
-                deadline: block.timestamp
-            })
-        );
+        uint256 tokenId3 = _mintHelper(DAI, USDCe, TICK_LOWER, TICK_UPPER - 1);
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectTickRange.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId1, abi.encode(true));
 
         vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectTickRange.selector));
         IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId2, abi.encode(true));
+
+        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.IncorrectTickRange.selector));
+        IERC721(NFPM).safeTransferFrom(user, lockupFarm, tokenId3, abi.encode(true));
     }
 }
 
