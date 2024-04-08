@@ -77,9 +77,9 @@ contract TestUpdateAPR is RewarderTest {
         rewarder.calibrateReward(lockupFarm);
         APR = 12e8;
         changePrank(rewardManager);
-        rewarder.updateAPR(lockupFarm, 12e8);
+        rewarder.updateAPR(lockupFarm, APR);
         (uint256 apr, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
-        assertEq(apr, 12e8);
+        assertEq(apr, APR);
         assertTrue(rewardRate > 0);
         rewarder.updateAPR(lockupFarm, 0);
         (apr, rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
@@ -98,12 +98,13 @@ contract TestUpdateAPR is RewarderTest {
     }
 
     function test_UpdateAPR_CapRewardsWithMaxRwdRate() public useKnownActor(rewardManager) {
+        uint256 MAX_REWARD_RATE = 166665;
         Rewarder.FarmRewardConfigInput memory rewardConfig;
         address[] memory baseAssets = new address[](1);
         baseAssets[0] = USDCe;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 5e9,
-            maxRewardRate: 166665,
+            maxRewardRate: MAX_REWARD_RATE,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -113,7 +114,7 @@ contract TestUpdateAPR is RewarderTest {
         deposit(lockupFarm, false, 1000);
         rewarder.calibrateReward(lockupFarm);
         (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
-        assertEq(rewardRate, 166665);
+        assertEq(rewardRate, MAX_REWARD_RATE);
     }
 
     function _setupFarmRewards() private {
