@@ -97,7 +97,7 @@ abstract contract OperableDeposit is ExpirableFarm {
             revert DepositIsInCooldown();
         }
         // claim the pending rewards for the deposit.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         // Update deposit Information.
         _updateSubscriptionForIncrease(_depositId, _amount);
@@ -121,7 +121,7 @@ abstract contract OperableDeposit is ExpirableFarm {
             revert DecreaseDepositNotPermitted();
         }
         // claim the pending rewards for the deposit.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         // Update deposit info.
         _updateSubscriptionForDecrease(_depositId, _amount);
