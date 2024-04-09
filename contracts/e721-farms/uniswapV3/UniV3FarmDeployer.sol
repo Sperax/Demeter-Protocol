@@ -28,14 +28,16 @@ import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
 import {UniV3Farm, RewardTokenData, UniswapPoolData, InitializeInput} from "./UniV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
+/// @title Deployer for Uniswap V3 farm.
+/// @author Sperax Foundation.
+/// @notice This contract allows anyone to calculate fees, pay fees and create farms.
 contract UniV3FarmDeployer is FarmDeployer {
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment
-    // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days)
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // uniswapPoolData - Init data for UniswapV3 pool.
-    //                  (tokenA, tokenB, feeTier, tickLower, tickUpper)
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
+    // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
+    // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // uniswapPoolData - Init data for UniswapV3 pool (tokenA, tokenB, feeTier, tickLower, tickUpper).
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
@@ -44,18 +46,18 @@ contract UniV3FarmDeployer is FarmDeployer {
         RewardTokenData[] rewardData;
     }
 
-    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
-    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
-    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract
-    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory.
+    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract.
+    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract.
+    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
-    /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of the Demeter Farm Registry
-    /// @param _farmId Id of the farm
-    /// @param _uniV3Factory Address of UniswapV3 factory
-    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
-    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
-    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    /// @notice Constructor of the contract.
+    /// @param _farmRegistry Address of the Demeter Farm Registry.
+    /// @param _farmId Id of the farm.
+    /// @param _uniV3Factory Address of UniswapV3 factory.
+    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract.
+    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract.
+    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
     constructor(
         address _farmRegistry,
         string memory _farmId,
@@ -77,7 +79,9 @@ contract UniV3FarmDeployer is FarmDeployer {
     }
 
     /// @notice Deploys a new UniswapV3 farm.
-    /// @param _data data for deployment.
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
+    /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
@@ -98,7 +102,7 @@ contract UniV3FarmDeployer is FarmDeployer {
         );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        // Calculate and collect fee if required
+        // Calculate and collect fee if required.
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);

@@ -32,9 +32,13 @@ import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
+/// @title Base Farm contract of Demeter Protocol.
+/// @author Sperax Foundation.
+/// @notice This contract contains the core logic for the Demeter farms.
 abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
     using SafeERC20 for IERC20;
 
+    // Events.
     event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
     event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
     event DepositWithdrawn(uint256 indexed depositId);
@@ -85,7 +89,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         _disableInitializers();
     }
 
-    /// @notice A function to be called to withdraw deposit.
+    /// @notice Function to be called to withdraw deposit.
     /// @param _depositId Id of the deposit.
     function withdraw(uint256 _depositId) external virtual;
 
@@ -103,8 +107,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Add rewards to the farm.
-    /// @param _rwdToken the reward token's address.
-    /// @param _amount the amount of reward tokens to add.
+    /// @param _rwdToken The reward token's address.
+    /// @param _amount The amount of reward tokens to add.
     function addRewards(address _rwdToken, uint256 _amount) external nonReentrant {
         if (_amount == 0) {
             revert ZeroAmount();
@@ -245,8 +249,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewards;
     }
 
-    /// @notice Get deposit info for a deposit id
-    /// @param _depositId The id of the deposit
+    /// @notice Get deposit info for a deposit id.
+    /// @param _depositId The id of the deposit.
+    /// @return The deposit info (Deposit).
     function getDepositInfo(uint256 _depositId) external view returns (Deposit memory) {
         if (_depositId == 0 || _depositId > totalDeposits) {
             revert DepositDoesNotExist();
@@ -256,6 +261,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Get number of subscriptions for an account.
     /// @param _depositId The deposit id.
+    /// @return The number of subscriptions for the deposit.
     function getNumSubscriptions(uint256 _depositId) external view returns (uint256) {
         return subscriptions[_depositId].length;
     }
@@ -263,6 +269,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Get subscription stats for a deposit.
     /// @param _depositId The deposit id.
     /// @param _subscriptionId The subscription's id.
+    /// @return The subscription info (Subscription).
     function getSubscriptionInfo(uint256 _depositId, uint256 _subscriptionId)
         external
         view
@@ -292,6 +299,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Get farm reward fund info.
     /// @param _fundId The fund's id.
+    /// @return The reward fund info (RewardFund).
     function getRewardFundInfo(uint8 _fundId) external view returns (RewardFund memory) {
         if (_fundId >= rewardFunds.length) {
             revert RewardFundDoesNotExist();
@@ -299,12 +307,15 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return rewardFunds[_fundId];
     }
 
-    /// @notice A function to get the reward tokens added in the farm
+    /// @notice Function to get the reward tokens added in the farm.
+    /// @return The reward tokens added in the farm.
     function getRewardTokens() external view returns (address[] memory) {
         return rewardTokens;
     }
 
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @return The tokens and amounts associated with the farm's liquidity.
+    /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
     /// @notice Claim rewards for the user.
@@ -318,7 +329,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start
+    /// @dev Can be updated only before the farm start.
     ///      New start time should be in future.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
@@ -336,8 +347,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Returns if farm is open.
-    ///         Farm is open if it not closed.
-    /// @return bool true if farm is open.
+    ///         Farm is open if it is not closed.
+    /// @return bool True if farm is open.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmOpen() public view virtual returns (bool) {
         return !isClosed;
@@ -345,7 +356,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Returns if farm is active.
     ///         Farm is active if it is not paused and not closed.
-    /// @return bool true if farm is active.
+    /// @return bool True if farm is active.
     /// @dev This function can be overridden to add any new/additional logic.
     function isFarmActive() public view virtual returns (bool) {
         return !isPaused && isFarmOpen();
@@ -404,6 +415,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _account Address of the depositor.
     /// @param _lockup Lockup option for the deposit.
     /// @param _liquidity Liquidity amount to be added to the pool.
+    /// @return The deposit id.
     function _deposit(address _account, bool _lockup, uint256 _liquidity) internal returns (uint256) {
         // Allow deposit only when farm is not paused and not closed.
         _validateFarmActive();
@@ -475,8 +487,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Common logic for withdraw.
-    /// @param _account address of the user.
-    /// @param _depositId user's deposit id.
+    /// @param _account Address of the user.
+    /// @param _depositId User's deposit id.
     function _withdraw(address _account, uint256 _depositId) internal {
         _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
@@ -643,8 +655,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
-    /// @param _farmStartTime - Time of farm start.
-    /// @param _cooldownPeriod - cooldown period in days for locked deposits. Egs: 7 means 7 days.
+    /// @param _farmStartTime - Farm start time.
+    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. Egs: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
@@ -688,7 +700,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             }
         }
 
-        // Initialize reward Data
+        // Initialize reward Data.
         for (uint8 iRwd; iRwd < numRewards;) {
             _addRewardData(_rwdTokenData[iRwd].token, _rwdTokenData[iRwd].tknManager);
             unchecked {

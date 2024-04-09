@@ -35,11 +35,11 @@ import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
 // Defines the Uniswap pool init data for constructor.
-// tokenA - Address of tokenA
-// tokenB - Address of tokenB
-// feeTier - Fee tier for the Uniswap pool
-// tickLowerAllowed - Lower bound of the tick range for farm
-// tickUpperAllowed - Upper bound of the tick range for farm
+// tokenA - Address of tokenA.
+// tokenB - Address of tokenB.
+// feeTier - Fee tier for the Uniswap pool.
+// tickLowerAllowed - Lower bound of the tick range for farm.
+// tickUpperAllowed - Upper bound of the tick range for farm.
 struct UniswapPoolData {
     address tokenA;
     address tokenB;
@@ -50,16 +50,16 @@ struct UniswapPoolData {
 
 // Defines a struct for inputs used for initializing this farm.
 // farmId - String ID of the farm.
-// farmStartTime - time of farm start.
-// cooldownPeriod - cooldown period for locked deposits in days.
+// farmStartTime - Farm start time.
+// cooldownPeriod - Cooldown period for locked deposits in days.
 // cooldownPeriod = 0 Disables lockup functionality for the farm.
 // farmRegistry - Address of the Demeter Farm Registry.
-// uniswapPoolData - init data for UniswapV3 pool.
-// rwdTokenData - init data for reward tokens.
+// uniswapPoolData - Init data for UniswapV3 pool.
+// rwdTokenData - Init data for reward tokens.
 // uniV3Factory - Factory contract of Uniswap V3.
 // nftContract - NFT contract's address (NFPM).
-// uniswapUtils - address of our custom uniswap utils contract.
-// nfpmUtils - address of our custom uniswap nonfungible position manager utils contract
+// uniswapUtils - Address of our custom uniswap utils contract.
+// nfpmUtils - Address of our custom uniswap nonfungible position manager utils contract.
 struct InitializeInput {
     string farmId;
     uint256 farmStartTime;
@@ -73,10 +73,13 @@ struct InitializeInput {
     address nfpmUtils;
 }
 
+/// @title Uniswap V3 farm.
+/// @author Sperax Foundation.
+/// @notice This contract is the implementation of the Uniswap V3 farm.
 contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // UniswapV3 params
+    // UniswapV3 params.
     int24 public tickLowerAllowed;
     int24 public tickUpperAllowed;
     address public uniswapPool;
@@ -86,7 +89,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
-    // Custom Errors
+    // Custom Errors.
     error InvalidUniswapPoolConfig();
     error NoFeeToClaim();
     error IncorrectPoolToken();
@@ -94,7 +97,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     error InvalidTickRange();
     error InvalidAmount();
 
-    /// @notice Initializer function of this farm
+    /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
     function initialize(InitializeInput calldata _input) external initializer {
         _validateNonZeroAddr(_input.uniV3Factory);
@@ -102,7 +105,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         _validateNonZeroAddr(_input.uniswapUtils);
         _validateNonZeroAddr(_input.nfpmUtils);
 
-        // initialize uniswap related data
+        // initialize uniswap related data.
         uniswapPool = IUniswapV3Factory(_input.uniV3Factory).getPool(
             _input.uniswapPoolData.tokenA, _input.uniswapPoolData.tokenB, _input.uniswapPoolData.feeTier
         );
@@ -146,7 +149,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         IERC20(positions.token0).forceApprove(pm, _amounts[0]);
         IERC20(positions.token1).forceApprove(pm, _amounts[1]);
 
-        // Increases liquidity in the current range
+        // Increases liquidity in the current range.
         (uint128 liquidity, uint256 amount0, uint256 amount1) = INFPM(pm).increaseLiquidity(
             INFPM.IncreaseLiquidityParams({
                 tokenId: tokenId,
@@ -205,7 +208,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Claim uniswap pool fee for a deposit.
     /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit
+    /// @param _depositId Id of the deposit.
     function claimUniswapFee(uint256 _depositId) external nonReentrant {
         _validateFarmOpen();
         _validateDeposit(msg.sender, _depositId);
@@ -227,7 +230,9 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
         return TokenUtils.getUniV3TokenAmounts({
             _uniPool: uniswapPool,
@@ -242,34 +247,34 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
-    /// @dev Calls ExpirableFarm's updateFarmStartTime function
+    /// @dev Calls ExpirableFarm's updateFarmStartTime function.
     function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
     /// @notice Returns if farm is open.
-    ///         Farm is open if it not closed.
-    /// @return bool true if farm is open.
+    ///         Farm is open if it is not closed.
+    /// @return bool True if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
     }
 
-    /// @notice Validate the position for the pool and get Liquidity
-    /// @param _tokenId The tokenId of the position
-    /// @dev the position must adhere to the price ranges
+    /// @notice Validate the position for the pool and get Liquidity.
+    /// @param _tokenId The tokenId of the position.
+    /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
         Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
 
-        /// @dev Check if the token belongs to correct pool
+        /// @dev Check if the token belongs to correct pool.
 
         if (uniswapPool != IUniswapV3Factory(uniV3Factory).getPool(positions.token0, positions.token1, positions.fee)) {
             revert IncorrectPoolToken();
         }
 
-        /// @dev Check if the token adheres to the tick range
+        /// @dev Check if the token adheres to the tick range.
         if (positions.tickLower != tickLowerAllowed || positions.tickUpper != tickUpperAllowed) {
             revert IncorrectTickRange();
         }
@@ -277,6 +282,10 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         return uint256(positions.liquidity);
     }
 
+    /// @notice Validate the ticks (upper and lower).
+    /// @param _tickLower The lower tick of the range.
+    /// @param _tickUpper The upper tick of the range.
+    /// @dev The ticks must be within the max range and must be multiple of tickSpacing.
     function _validateTickRange(int24 _tickLower, int24 _tickUpper) private view {
         int24 spacing = IUniswapV3TickSpacing(uniswapPool).tickSpacing();
         if (
