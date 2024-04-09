@@ -178,7 +178,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     }
 
     /// @notice Function to update the REWARD_TOKEN configuration.
-    ///         This function calibrates reward so token manager must be updated to address of this in the farm.
+    ///         This function calibrates reward so token manager must be updated to address of this contract in the farm.
     /// @param _farm Address of the farm for which the config is to be updated.
     /// @param _rewardConfig The config which is to be set.
     function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig)
@@ -234,9 +234,9 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return IFarm(_farm).getTokenAmounts();
     }
 
-    /// @notice Function to check the reward token of this is a farm's reward token.
+    /// @notice Function to check if the reward token of this contract is one of farm's reward token.
     /// @param _farm Address of the farm.
-    /// @return If farm has one of the reward token as reward token of this.
+    /// @return If farm has one of the reward token as reward token of this contract.
     function _hasRewardToken(address _farm) internal view virtual returns (bool) {
         address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
         uint256 rwdTokensLen = rwdTokens.length;
