@@ -567,7 +567,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
         emit RewardsClaimed(_depositId, rewardsForEachSubs);
 
-        address _user = userDeposit.depositor;
+        address user = userDeposit.depositor;
         // Transfer the claimed rewards to the user if any.
         for (uint8 iRwd; iRwd < numRewards;) {
             if (totalRewards[iRwd] != 0) {
