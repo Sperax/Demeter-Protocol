@@ -263,7 +263,6 @@ abstract contract WithdrawTest is FarmTest {
     function _assertHelperOne(Deposit memory depositInfo) internal {
         assertEq(depositInfo.depositor, address(0));
         assertEq(depositInfo.liquidity, 0);
-        assertEq(depositInfo.startTime, 0);
         assertEq(depositInfo.expiryDate, 0);
         assertEq(depositInfo.cooldownPeriod, 0);
     }
@@ -283,7 +282,6 @@ abstract contract WithdrawTest is FarmTest {
                 Deposit memory depositInfo = Farm(farm).getDepositInfo(withdrawnDeposit);
                 assertEq(depositInfo.depositor, address(0));
                 assertEq(depositInfo.liquidity, 0);
-                assertEq(depositInfo.startTime, 0);
                 assertEq(depositInfo.expiryDate, 0);
                 assertEq(depositInfo.cooldownPeriod, 0);
 
@@ -636,7 +634,6 @@ abstract contract InitiateCooldownTest is FarmTest {
 
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        Deposit memory userDeposit = Farm(lockupFarm).getDepositInfo(depositId);
         skip(7 days);
         uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         rewardsForEachSubs = Farm(lockupFarm).computeRewards(currentActor, depositId);
@@ -645,7 +642,7 @@ abstract contract InitiateCooldownTest is FarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit CooldownInitiated(depositId, userDeposit.startTime + ((COOLDOWN_PERIOD_DAYS + 7) * 1 days));
+        emit CooldownInitiated(depositId, block.timestamp + (COOLDOWN_PERIOD_DAYS * 1 days));
         Farm(lockupFarm).initiateCooldown(depositId);
     }
 

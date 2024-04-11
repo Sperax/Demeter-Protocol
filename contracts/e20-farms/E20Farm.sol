@@ -108,7 +108,7 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     /// @param _depositId The id of the deposit to be withdrawn.
     function withdraw(uint256 _depositId) external override nonReentrant {
         uint256 liquidity = deposits[_depositId].liquidity;
-        _withdraw(msg.sender, _depositId);
+        _withdraw(_depositId);
 
         // Transfer the farmTokens to the user.
         IERC20(farmToken).safeTransfer(msg.sender, liquidity);

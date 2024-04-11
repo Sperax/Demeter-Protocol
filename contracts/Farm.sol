@@ -325,7 +325,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
         _validateFarmOpen();
         _validateDeposit(_account, _depositId);
-        _updateAndClaimFarmRewards(_account, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
     }
 
     /// @notice Update the farm start time.
@@ -436,7 +436,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         Deposit memory userDeposit = Deposit({
             depositor: _account,
             cooldownPeriod: 0,
-            startTime: block.timestamp,
             expiryDate: 0,
             totalRewardsClaimed: new uint256[](rewardTokens.length),
             liquidity: _liquidity
@@ -478,7 +477,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         userDeposit.cooldownPeriod = 0;
 
         // Claim the pending rewards for the user.
-        _updateAndClaimFarmRewards(msg.sender, _depositId);
+        _updateAndClaimFarmRewards(_depositId);
 
         // Unsubscribe the deposit from the lockup reward fund.
         _unsubscribeRewardFund(LOCKUP_FUND_ID, _depositId);
@@ -487,9 +486,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Common logic for withdraw.
-    /// @param _account Address of the user.
     /// @param _depositId User's deposit id.
-    function _withdraw(address _account, uint256 _depositId) internal {
+    function _withdraw(uint256 _depositId) internal {
         _validateDeposit(msg.sender, _depositId);
         // Check for the withdrawal criteria.
         // Note: If farm is paused, skip the cooldown check.
@@ -507,8 +505,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             }
         }
 
-        // Compute the user's unclaimed rewards.
-        _updateAndClaimFarmRewards(_account, _depositId);
+        // Computes the user's unclaimed rewards and sends it.
+        _updateAndClaimFarmRewards(_depositId);
 
         // unsubscribe the user from the common reward fund.
         _unsubscribeRewardFund(COMMON_FUND_ID, _depositId);
@@ -525,11 +523,10 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Claim rewards for the user.
-    /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant.
-    function _updateAndClaimFarmRewards(address _account, uint256 _depositId) internal {
+    function _updateAndClaimFarmRewards(uint256 _depositId) internal {
         _updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
@@ -570,6 +567,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
         emit RewardsClaimed(_depositId, rewardsForEachSubs);
 
+        address user = userDeposit.depositor;
         // Transfer the claimed rewards to the user if any.
         for (uint8 iRwd; iRwd < numRewards;) {
             if (totalRewards[iRwd] != 0) {
@@ -577,7 +575,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 rewardData[rewardToken].accRewardBal -= totalRewards[iRwd];
                 // Update the total rewards earned for the deposit.
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-                IERC20(rewardToken).safeTransfer(_account, totalRewards[iRwd]);
+                IERC20(rewardToken).safeTransfer(user, totalRewards[iRwd]);
             }
             unchecked {
                 ++iRwd;

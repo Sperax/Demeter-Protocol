@@ -219,16 +219,9 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
 }
 
 abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
-    function _assertHelper(
-        address depositor,
-        uint256 liquidity,
-        uint256 startTime,
-        uint256 expiryDate,
-        uint256 cooldownPeriod
-    ) internal {
+    function _assertHelper(address depositor, uint256 liquidity, uint256 expiryDate, uint256 cooldownPeriod) internal {
         assertEq(depositor, address(0));
         assertEq(liquidity, 0);
-        assertEq(startTime, 0);
         assertEq(expiryDate, 0);
         assertEq(cooldownPeriod, 0);
     }
@@ -248,11 +241,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
-                depositInfo.depositor,
-                depositInfo.liquidity,
-                depositInfo.startTime,
-                depositInfo.expiryDate,
-                depositInfo.cooldownPeriod
+                depositInfo.depositor, depositInfo.liquidity, depositInfo.expiryDate, depositInfo.cooldownPeriod
             );
             vm.warp(currentTimestamp); // reset the time
         }
@@ -276,11 +265,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
-                depositInfo.depositor,
-                depositInfo.liquidity,
-                depositInfo.startTime,
-                depositInfo.expiryDate,
-                depositInfo.cooldownPeriod
+                depositInfo.depositor, depositInfo.liquidity, depositInfo.expiryDate, depositInfo.cooldownPeriod
             );
             vm.warp(currentTimestamp); // reset the time
         }
