@@ -575,7 +575,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 rewardData[rewardToken].accRewardBal -= totalRewards[iRwd];
                 // Update the total rewards earned for the deposit.
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-                IERC20(rewardToken).safeTransfer(_user, totalRewards[iRwd]);
+                IERC20(rewardToken).safeTransfer(user, totalRewards[iRwd]);
             }
             unchecked {
                 ++iRwd;
