@@ -24,11 +24,9 @@ dependencies:
     ref: 1.0.0
     github: "@Uniswap/v3-core"
 
-compile:
-   cache_folder: .cache
 solidity:
   version: 0.8.16
-  optimize: False
+  optimize: True
 
   import_remapping:
           - "@openzeppelin/contracts=OpenZeppelin/4.9.5"
@@ -43,7 +41,11 @@ test:
       terminal: True  # Disable the terminal table (True by default)
       xml: True  # Enable XML report (.build/coverage.xml)
       html: True  # Enable HTML report (.build/htmlcov)
-
+deployments:
+  polygon:
+    mumbai:
+      - contract_type: TokenUtils
+        address: 0x160d4495A802E17608b26F3317a4E2B569E8997D
 
 foundry:
   request_timeout: 20  # Defaults to 30
