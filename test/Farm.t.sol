@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -261,7 +263,6 @@ abstract contract WithdrawTest is FarmTest {
     function _assertHelperOne(Deposit memory depositInfo) internal {
         assertEq(depositInfo.depositor, address(0));
         assertEq(depositInfo.liquidity, 0);
-        assertEq(depositInfo.startTime, 0);
         assertEq(depositInfo.expiryDate, 0);
         assertEq(depositInfo.cooldownPeriod, 0);
     }
@@ -281,7 +282,6 @@ abstract contract WithdrawTest is FarmTest {
                 Deposit memory depositInfo = Farm(farm).getDepositInfo(withdrawnDeposit);
                 assertEq(depositInfo.depositor, address(0));
                 assertEq(depositInfo.liquidity, 0);
-                assertEq(depositInfo.startTime, 0);
                 assertEq(depositInfo.expiryDate, 0);
                 assertEq(depositInfo.cooldownPeriod, 0);
 
@@ -634,7 +634,6 @@ abstract contract InitiateCooldownTest is FarmTest {
 
     function test_initiateCooldown_LockupFarm() public setup depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        Deposit memory userDeposit = Farm(lockupFarm).getDepositInfo(depositId);
         skip(7 days);
         uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         rewardsForEachSubs = Farm(lockupFarm).computeRewards(currentActor, depositId);
@@ -643,7 +642,7 @@ abstract contract InitiateCooldownTest is FarmTest {
         vm.expectEmit(address(lockupFarm));
         emit PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit CooldownInitiated(depositId, userDeposit.startTime + ((COOLDOWN_PERIOD_DAYS + 7) * 1 days));
+        emit CooldownInitiated(depositId, block.timestamp + (COOLDOWN_PERIOD_DAYS * 1 days));
         Farm(lockupFarm).initiateCooldown(depositId);
     }
 
@@ -1128,7 +1127,7 @@ abstract contract MulticallTest is FarmTest {
             bytes[] memory data = new bytes[](3);
             data[0] = abi.encodeWithSelector(Farm.updateCooldownPeriod.selector, cooldownPeriodInDays);
 
-            vm.expectRevert("Ownable: caller is not the owner");
+            vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
             Farm(lockupFarm).multicall(data);
         }
     }
@@ -1137,7 +1136,7 @@ abstract contract MulticallTest is FarmTest {
         bytes[] memory data = new bytes[](1);
         data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
 
-        vm.expectRevert("Address: low-level delegate call failed");
+        vm.expectRevert(Address.FailedInnerCall.selector);
         Farm(lockupFarm).multicall(data);
     }
 }

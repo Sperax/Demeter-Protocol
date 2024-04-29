@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 interface IOracle {
     struct PriceData {
@@ -9,7 +9,7 @@ interface IOracle {
 
     /// @notice Validates if price feed exists for a `_token`
     /// @param _token address of the desired token.
-    /// @return bool if price feed exists.
+    /// @return bool True if price feed exists.
     /// @dev Function reverts if price feed not set.
     function priceFeedExists(address _token) external view returns (bool);
 

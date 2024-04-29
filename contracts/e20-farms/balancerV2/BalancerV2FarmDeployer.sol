@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -27,24 +27,22 @@ pragma solidity 0.8.16;
 import {FarmDeployer, SafeERC20, IERC20, IFarmRegistry} from "../../FarmDeployer.sol";
 import {IBalancerV2Vault} from "./interfaces/IBalancerV2Vault.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {RewardTokenData} from "../E20Farm.sol";
 import {BalancerV2Farm} from "./BalancerV2Farm.sol";
 
-/// @title Deployer for Balancer farm
-/// @author Sperax Foundation
-/// @notice This contract allows anyone to calculate fees and create farms
-/// @dev It consults Balancer's vault to validate the pool
-contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
+/// @title Deployer for Balancer V2 farm.
+/// @author Sperax Foundation.
+/// @notice This contract allows anyone to calculate fees, pay fees and create farms.
+/// @dev It consults Balancer V2 Vault to validate the pool.
+contract BalancerV2FarmDeployer is FarmDeployer {
     using SafeERC20 for IERC20;
 
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment
-    // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days)
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // poolId - ID of the pool, can be 2 to 8.
-    //                  (tokenA, tokenB)
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
+    // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
+    // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // poolId - Unique identifier used to access the pool's information from Balancer's vault.
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
@@ -53,14 +51,14 @@ contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    // All the pool actions happen on Balancer's vault
+    // All the pool actions happen on Balancer's vault.
     address public immutable BALANCER_VAULT;
 
-    /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of the Demeter Farm Registry
-    /// @param _farmId Id of the farm
-    /// @param _balancerVault Address of Balancer's Vault
-    /// @dev Deploys one farm so that it can be cloned later
+    /// @notice Constructor.
+    /// @param _farmRegistry Address of the Demeter Farm Registry.
+    /// @param _farmId Id of the farm.
+    /// @param _balancerVault Address of Balancer's Vault.
+    /// @dev Deploys one farm so that it can be cloned later.
     constructor(address _farmRegistry, string memory _farmId, address _balancerVault)
         FarmDeployer(_farmRegistry, _farmId)
     {
@@ -71,15 +69,15 @@ contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
     }
 
     /// @notice Deploys a new Balancer farm.
-    /// @param _data data for deployment.
-    /// @return Address of the new farm
-    /// @dev The caller of this function should approve feeAmount (USDs) for this contract
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
+    /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
 
         address pairPool = validatePool(_data.poolId);
 
-        // Calculate and collect fee if required
+        // Calculate and collect fee if required.
         _collectFee();
 
         BalancerV2Farm farmInstance = BalancerV2Farm(Clones.clone(farmImplementation));
@@ -98,8 +96,9 @@ contract BalancerV2FarmDeployer is FarmDeployer, ReentrancyGuard {
         return farm;
     }
 
-    /// @notice A function to validate Balancer pool
-    /// @param _poolId bytes32 Id of the pool
+    /// @notice Function to validate Balancer pool.
+    /// @param _poolId bytes32 Id of the pool.
+    /// @return pool Pool address.
     function validatePool(bytes32 _poolId) public view returns (address pool) {
         (pool,) = IBalancerV2Vault(BALANCER_VAULT).getPool(_poolId);
         _validateNonZeroAddr(pool);

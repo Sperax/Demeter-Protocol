@@ -25,26 +25,18 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {CamelotV2Farm, RewardTokenData} from "./CamelotV2Farm.sol";
+import {CamelotV3Farm, RewardTokenData, CamelotPoolData, InitializeInput} from "./CamelotV3Farm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ICamelotV2Factory} from "./interfaces/ICamelotV2.sol";
 
-/// @title Deployer for Camelot V2 farm.
+/// @title Deployer for Camelot V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract allows anyone to calculate fees, pay fees and create farms.
-/// @dev It consults Camelot V2 factory to validate the pool.
-contract CamelotV2FarmDeployer is FarmDeployer {
-    // @dev the token Order is not important.
-    struct CamelotPoolData {
-        address tokenA;
-        address tokenB;
-    }
-
+contract CamelotV3FarmDeployer is FarmDeployer {
     // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
     // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
     // cooldownPeriod - Cooldown period for locked deposits (in days).
     //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // lpTokenData - Data for camelot pool (tokenA, tokenB).
+    // camelotPoolData - Init data for CamelotV3 pool (tokenA, tokenB, tickLower, tickUpper).
     // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
@@ -54,52 +46,59 @@ contract CamelotV2FarmDeployer is FarmDeployer {
         RewardTokenData[] rewardData;
     }
 
-    address public immutable PROTOCOL_FACTORY;
-    address public immutable ROUTER;
-    address public immutable NFT_POOL_FACTORY;
+    address public immutable CAMELOT_V3_FACTORY; // Camelot V3 factory.
+    address public immutable NFPM; // Camelot NonfungiblePositionManager contract.
+    address public immutable CAMELOT_UTILS; // CamelotUtils (Camelot helper) contract.
+    address public immutable CAMELOT_NFPM_UTILS; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
     /// @notice Constructor of the contract.
     /// @param _farmRegistry Address of the Demeter Farm Registry.
     /// @param _farmId Id of the farm.
-    /// @param _protocolFactory Address of Camelot factory.
-    /// @param _router Address of Camelot router.
-    /// @param _nftPoolFactory Address of Camelot NFT pool factory.
+    /// @param _camelotV3Factory Address of CamelotV3 factory.
+    /// @param _nfpm Address of Camelot NonfungiblePositionManager contract.
+    /// @param _camelotUtils Address of CamelotUtils (Camelot helper) contract.
+    /// @param _nfpmUtils Address of Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
     constructor(
         address _farmRegistry,
         string memory _farmId,
-        address _protocolFactory,
-        address _router,
-        address _nftPoolFactory
+        address _camelotV3Factory,
+        address _nfpm,
+        address _camelotUtils,
+        address _nfpmUtils
     ) FarmDeployer(_farmRegistry, _farmId) {
-        _validateNonZeroAddr(_protocolFactory);
-        _validateNonZeroAddr(_nftPoolFactory);
+        _validateNonZeroAddr(_camelotV3Factory);
+        _validateNonZeroAddr(_nfpm);
+        _validateNonZeroAddr(_camelotUtils);
+        _validateNonZeroAddr(_nfpmUtils);
 
-        PROTOCOL_FACTORY = _protocolFactory;
-        ROUTER = _router;
-        NFT_POOL_FACTORY = _nftPoolFactory;
-        farmImplementation = address(new CamelotV2Farm());
+        CAMELOT_V3_FACTORY = _camelotV3Factory;
+        NFPM = _nfpm;
+        CAMELOT_UTILS = _camelotUtils;
+        CAMELOT_NFPM_UTILS = _nfpmUtils;
+        farmImplementation = address(new CamelotV3Farm());
     }
 
-    /// @notice Deploys a new UniswapV3 farm.
-    /// @param _data data for deployment.
-    /// @return address of the deployed farm.
+    /// @notice Deploys a new CamelotV3 farm.
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
     /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-        CamelotV2Farm farmInstance = CamelotV2Farm(Clones.clone(farmImplementation));
 
-        address pairPool = validatePool(_data.camelotPoolData.tokenA, _data.camelotPoolData.tokenB);
-
-        farmInstance.initialize({
-            _farmId: farmId,
-            _farmStartTime: _data.farmStartTime,
-            _cooldownPeriod: _data.cooldownPeriod,
-            _farmRegistry: FARM_REGISTRY,
-            _camelotPairPool: pairPool,
-            _rwdTokenData: _data.rewardData,
-            _router: ROUTER,
-            _nftPoolFactory: NFT_POOL_FACTORY
+        CamelotV3Farm farmInstance = CamelotV3Farm(Clones.clone(farmImplementation));
+        InitializeInput memory input = InitializeInput({
+            farmId: farmId,
+            farmStartTime: _data.farmStartTime,
+            cooldownPeriod: _data.cooldownPeriod,
+            farmRegistry: FARM_REGISTRY,
+            camelotPoolData: _data.camelotPoolData,
+            rwdTokenData: _data.rewardData,
+            camelotV3Factory: CAMELOT_V3_FACTORY,
+            nftContract: NFPM,
+            camelotUtils: CAMELOT_UTILS,
+            nfpmUtils: CAMELOT_NFPM_UTILS
         });
+        farmInstance.initialize({_input: input});
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
         // Calculate and collect fee if required.
@@ -107,15 +106,5 @@ contract CamelotV2FarmDeployer is FarmDeployer {
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);
         return farm;
-    }
-
-    /// @notice Validates the pool.
-    /// @param _tokenA Address of token A.
-    /// @param _tokenB Address of token B.
-    /// @return pool Pool address.
-    function validatePool(address _tokenA, address _tokenB) public view returns (address pool) {
-        pool = ICamelotV2Factory(PROTOCOL_FACTORY).getPair(_tokenA, _tokenB);
-        _validateNonZeroAddr(pool);
-        return pool;
     }
 }

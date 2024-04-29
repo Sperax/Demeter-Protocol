@@ -1,4 +1,4 @@
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 interface IUniswapV2Factory {
     function getPair(address _tokenA, address _tokenB) external view returns (address);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -25,19 +25,20 @@ pragma solidity 0.8.16;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {FarmDeployer, IFarmRegistry} from "../../FarmDeployer.sol";
-import {RewardTokenData, UniswapPoolData} from "./UniV3Farm.sol";
+import {RewardTokenData, UniswapPoolData, InitializeInput} from "./UniV3Farm.sol";
 import {UniV3ActiveLiquidityFarm} from "./UniV3ActiveLiquidityFarm.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
-    // farmAdmin - Address to which ownership of farm is transferred to post deployment
-    // farmStartTime - Time after which the rewards start accruing for the deposits in the farm.
-    // cooldownPeriod -  cooldown period for locked deposits (in days)
-    //                   make cooldownPeriod = 0 for disabling lockup functionality of the farm.
-    // uniswapPoolData - Init data for UniswapV3 pool.
-    //                  (tokenA, tokenB, feeTier, tickLower, tickUpper)
-    // rewardTokenData - [(rewardTokenAddress, tknManagerAddress), ... ]
+/// @title Deployer for Uniswap V3 active liquidity farm.
+/// @author Sperax Foundation.
+/// @notice This contract allows anyone to calculate fees, pay fees and create farms.
+contract UniV3ActiveLiquidityDeployer is FarmDeployer {
+    // farmAdmin - Address to which ownership of farm is transferred to, post deployment.
+    // farmStartTime - Timestamp when reward accrual begins for deposits in the farm.
+    // cooldownPeriod - Cooldown period for locked deposits (in days).
+    //                  Make cooldownPeriod = 0 for disabling lockup functionality of the farm.
+    // uniswapPoolData - Init data for UniswapV3 pool (tokenA, tokenB, feeTier, tickLower, tickUpper)
+    // rewardTokenData - An array containing pairs of reward token addresses and their corresponding token manager addresses.
     struct FarmData {
         address farmAdmin;
         uint256 farmStartTime;
@@ -46,18 +47,18 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
         RewardTokenData[] rewardData;
     }
 
-    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory
-    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract
-    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract
-    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    address public immutable UNI_V3_FACTORY; // Uniswap V3 factory.
+    address public immutable NFPM; // Uniswap NonfungiblePositionManager contract.
+    address public immutable UNISWAP_UTILS; // UniswapUtils (Uniswap helper) contract.
+    address public immutable NFPM_UTILS; // Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
-    /// @notice Constructor of the contract
-    /// @param _farmRegistry Address of the Demeter Farm Registry
-    /// @param _farmId Id of the farm
-    /// @param _uniV3Factory Address of UniswapV3 factory
-    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract
-    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract
-    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract
+    /// @notice Constructor of the contract.
+    /// @param _farmRegistry Address of the Demeter Farm Registry.
+    /// @param _farmId Id of the farm.
+    /// @param _uniV3Factory Address of UniswapV3 factory.
+    /// @param _nfpm Address of Uniswap NonfungiblePositionManager contract.
+    /// @param _uniswapUtils Address of UniswapUtils (Uniswap helper) contract.
+    /// @param _nfpmUtils Address of Uniswap INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
     constructor(
         address _farmRegistry,
         string memory _farmId,
@@ -79,26 +80,29 @@ contract UniV3ActiveLiquidityDeployer is FarmDeployer, ReentrancyGuard {
     }
 
     /// @notice Deploys a new UniswapV3 farm.
-    /// @param _data data for deployment.
+    /// @param _data Data for deployment.
+    /// @return Address of the deployed farm.
+    /// @dev The caller of this function should approve feeAmount to this contract before calling this function.
     function createFarm(FarmData memory _data) external nonReentrant returns (address) {
         _validateNonZeroAddr(_data.farmAdmin);
-
         UniV3ActiveLiquidityFarm farmInstance = UniV3ActiveLiquidityFarm(Clones.clone(farmImplementation));
-        farmInstance.initialize({
-            _farmId: farmId,
-            _farmStartTime: _data.farmStartTime,
-            _cooldownPeriod: _data.cooldownPeriod,
-            _farmRegistry: FARM_REGISTRY,
-            _uniswapPoolData: _data.uniswapPoolData,
-            _rwdTokenData: _data.rewardData,
-            _uniV3Factory: UNI_V3_FACTORY,
-            _nftContract: NFPM,
-            _uniswapUtils: UNISWAP_UTILS,
-            _nfpmUtils: NFPM_UTILS
-        });
+        farmInstance.initialize(
+            InitializeInput({
+                farmId: farmId,
+                farmStartTime: _data.farmStartTime,
+                cooldownPeriod: _data.cooldownPeriod,
+                farmRegistry: FARM_REGISTRY,
+                uniswapPoolData: _data.uniswapPoolData,
+                rwdTokenData: _data.rewardData,
+                uniV3Factory: UNI_V3_FACTORY,
+                nftContract: NFPM,
+                uniswapUtils: UNISWAP_UTILS,
+                nfpmUtils: NFPM_UTILS
+            })
+        );
         farmInstance.transferOwnership(_data.farmAdmin);
         address farm = address(farmInstance);
-        // Calculate and collect fee if required
+        // Calculate and collect fee if required.
         _collectFee();
         emit FarmCreated(farm, msg.sender, _data.farmAdmin);
         IFarmRegistry(FARM_REGISTRY).registerFarm(farm, msg.sender);

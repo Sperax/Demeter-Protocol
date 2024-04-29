@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.16;
+pragma solidity 0.8.24;
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@***@@@@@@@@@@@@@@@@@@@@@@@@ //
@@ -29,31 +29,34 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {INFTPoolFactory, INFTPool, INFTHandler, IPair, IRouter} from "./interfaces/ICamelotV2.sol";
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
-import {Deposit} from "../../interfaces/DataTypes.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
 
+/// @title Camelot V2 farm.
+/// @author Sperax Foundation.
+/// @notice This contract is the implementation of the Camelot V2 farm.
 contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
     using SafeERC20 for IERC20;
 
-    // Camelot router
+    // Camelot router.
     address public router;
 
+    // Events.
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
 
-    // Custom Errors
+    // Custom Errors.
     error InvalidCamelotPoolConfig();
     error NotAllowed();
     error InvalidAmount();
 
-    /// @notice constructor
-    /// @param _farmStartTime - time of farm start
-    /// @param _cooldownPeriod - cooldown period for locked deposits in days
+    /// @notice constructor.
+    /// @param _farmStartTime - farm start time.
+    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _farmRegistry - Address of the Demeter Farm Registry
-    /// @param _camelotPairPool - Camelot lp pool address
-    /// @param _rwdTokenData - init data for reward tokens
+    /// @param _farmRegistry - Address of the Demeter Farm Registry.
+    /// @param _camelotPairPool - Camelot lp pool address.
+    /// @param _rwdTokenData - Initialize data for reward tokens.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
@@ -150,7 +153,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
 
     /// @notice Claim uniswap pool fee for a deposit.
     /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit
+    /// @param _depositId Id of the deposit.
     function claimPoolRewards(uint256 _depositId) external nonReentrant {
         _validateFarmOpen();
         _validateDeposit(msg.sender, _depositId);
@@ -170,7 +173,8 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return true;
     }
 
-    /// @notice Get the accrued uniswap fee for a deposit.
+    /// @notice Get the accrued camelot fee for a deposit.
+    /// @param _tokenId The tokenId of the position.
     /// @return amount Grail rewards.
     function computePoolRewards(uint256 _tokenId) external view returns (uint256 amount) {
         // Validate token.
@@ -178,7 +182,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return amount;
     }
 
-    /// @notice This function is called when liquidity is added to an existing position
+    /// @notice This function is called when liquidity is added to an existing position.
     function onNFTAddToPosition(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ )
         external
         view
@@ -189,7 +193,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return true;
     }
 
-    /// @notice This function is called when liquidity is withdrawn from an NFT position
+    /// @notice This function is called when liquidity is withdrawn from an NFT position.
     function onNFTWithdraw(address operator, uint256, /*tokenId*/ uint256 /*lpAmount*/ )
         external
         view
@@ -200,13 +204,13 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return true;
     }
 
-    /// @notice This function can be called before allocating funds into the strategy
-    ///         it accepts desired amounts, checks pool condition and returns the amount
-    ///         which will be needed/ accepted by the strategy for a balanced allocation
-    /// @param amountADesired Amount of token A that is desired to be allocated
-    /// @param amountBDesired Amount of token B that is desired to be allocated
-    /// @return amountA Amount A tokens which will be accepted in allocation
-    /// @return amountB Amount B tokens which will be accepted in allocation
+    /// @notice This function can be called before allocating funds into the strategy.
+    ///         it accepts desired amounts, checks pool condition and returns the amount.
+    ///         which will be needed/ accepted by the strategy for a balanced allocation.
+    /// @param amountADesired Amount of token A that is desired to be allocated.
+    /// @param amountBDesired Amount of token B that is desired to be allocated.
+    /// @return amountA Amount A tokens which will be accepted in allocation.
+    /// @return amountB Amount B tokens which will be accepted in allocation.
     function getDepositAmounts(uint256 amountADesired, uint256 amountBDesired)
         external
         view
@@ -228,7 +232,9 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         }
     }
 
-    /// @notice A function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
+    /// @return tokens An array of token addresses.
+    /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory tokens, uint256[] memory amounts) {
         return TokenUtils.getUniV2TokenAmounts(nftContract, rewardFunds[COMMON_FUND_ID].totalLiquidity);
     }
@@ -243,8 +249,8 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     }
 
     /// @notice Returns if farm is open.
-    ///         Farm is open if it not closed.
-    /// @return bool true if farm is open.
+    ///         Farm is open if it is not closed.
+    /// @return bool True if farm is open.
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
@@ -252,10 +258,11 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
 
     // --------------------- Private  Functions ---------------------
 
-    /// @notice Validate the position for the pool and get Liquidity
-    /// @param _tokenId The tokenId of the position
-    /// @dev the position must adhere to the price ranges
+    /// @notice Validate the position for the pool and get Liquidity.
+    /// @param _tokenId The tokenId of the position.
+    /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
+    /// @return liquidity The liquidity of the position.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
         (uint256 liquidity,,,,,,,) = INFTPool(nftContract).getStakingPosition(_tokenId);
