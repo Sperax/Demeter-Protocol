@@ -638,6 +638,7 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
         UniV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
     }
@@ -647,6 +648,7 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
         UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
@@ -656,6 +658,7 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         address farm;
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
+        skip(1);
 
         uint128 oldLiquidity = uint128(UniV3Farm(farm).getDepositInfo(depositId).liquidity);
         uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
@@ -667,14 +670,16 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         uint256[2] memory minAmounts = [uint256(0), uint256(0)];
         uint256 oldCommonTotalLiquidity =
             UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
-        uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
-        uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
+        UniV3Farm(farm).claimRewards(depositId);
+        IERC20(DAI).transfer(makeAddr("Random"), IERC20(DAI).balanceOf(currentActor));
+        IERC20(USDCe).transfer(makeAddr("Random"), IERC20(USDCe).balanceOf(currentActor));
+        assertEq(IERC20(DAI).balanceOf(currentActor), 0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), 0);
 
         vm.expectEmit(farm);
         emit DepositDecreased(depositId, liquidityToWithdraw);
         vm.expectEmit(true, false, false, false, NFPM);
         emit DecreaseLiquidity(tokenId, 0, 0, 0);
-
         vm.recordLogs();
         UniV3Farm(farm).decreaseDeposit(depositId, liquidityToWithdraw, minAmounts);
         VmSafe.Log[] memory entries = vm.getRecordedLogs();
@@ -693,8 +698,8 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         }
         assertTrue(found, "DecreaseLiquidity event not found");
         assertEq(loggedLiquidity, liquidityToWithdraw);
-        assertEq(IERC20(DAI).balanceOf(currentActor), oldUserToken0Balance + loggedAmount0);
-        assertEq(IERC20(USDCe).balanceOf(currentActor), oldUserToken1Balance + loggedAmount1);
+        assertEq(IERC20(DAI).balanceOf(currentActor), loggedAmount0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), loggedAmount1);
         assertEq(UniV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
         assertEq(
             UniV3Farm(farm).getRewardFundInfo(UniV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
