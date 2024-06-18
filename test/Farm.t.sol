@@ -135,6 +135,17 @@ abstract contract DepositTest is FarmTest {
             deposit(farm, lockup, 1e2);
         }
     }
+
+    function testFuzz_Deposit_Before_Farm_StartTime(bool lockup) public {
+        // Here time for rewards should be 0, hence, lastFundUpdateTime should be startTime itself
+        // and not the time when the deposit is made.
+        uint256 startTime = block.timestamp + 1 days;
+        address farm = createFarm(startTime, lockup);
+
+        deposit(farm, lockup, DEPOSIT_AMOUNT);
+
+        assertEq(Farm(farm).lastFundUpdateTime(), startTime);
+    }
 }
 
 abstract contract ClaimRewardsTest is FarmTest {
