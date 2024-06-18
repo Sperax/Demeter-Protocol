@@ -39,7 +39,7 @@ contract FarmRegistry is OwnableUpgradeable {
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
     // List of deployers for which fee won't be charged.
-    mapping(address => bool) public isPrivilegedDeployer;
+    mapping(address => bool) public isPrivilegedUser;
 
     // Events.
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
@@ -112,16 +112,16 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(deployer, false);
     }
 
-    /// @notice Function to add/ remove privileged deployer.
-    /// @param _deployer Deployer(address) to add to privileged deployers list.
+    /// @notice Function to add/remove privileged Users.
+    /// @param _userAddress User Address for which privilege is to be updated.
     /// @param _privilege Privilege(bool) whether true or false.
     /// @dev Only callable by the owner.
-    function updatePrivilege(address _deployer, bool _privilege) external onlyOwner {
-        if (isPrivilegedDeployer[_deployer] == _privilege) {
+    function updatePrivilege(address _userAddress, bool _privilege) external onlyOwner {
+        if (isPrivilegedUser[_userAddress] == _privilege) {
             revert PrivilegeSameAsDesired();
         }
-        isPrivilegedDeployer[_deployer] = _privilege;
-        emit PrivilegeUpdated(_deployer, _privilege);
+        isPrivilegedUser[_userAddress] = _privilege;
+        emit PrivilegeUpdated(_userAddress, _privilege);
     }
 
     /// @notice Get list of registered deployer.
@@ -141,7 +141,7 @@ contract FarmRegistry is OwnableUpgradeable {
     /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay.
     /// @dev It returns fee amount as 0 if deployer account is privileged.
     function getFeeParams(address _deployerAccount) external view returns (address, address, uint256, uint256) {
-        if (isPrivilegedDeployer[_deployerAccount]) {
+        if (isPrivilegedUser[_deployerAccount]) {
             return (feeReceiver, feeToken, 0, 0);
         }
         return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);
