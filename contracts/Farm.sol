@@ -801,6 +801,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Get the time elapsed since the last reward accrual.
     /// @return time The time elapsed since the last reward accrual.
     function _getRewardAccrualTimeElapsed() internal view virtual returns (uint256) {
+        if (lastFundUpdateTime > block.timestamp) {
+            return 0;
+        }
         unchecked {
             return block.timestamp - lastFundUpdateTime;
         }
