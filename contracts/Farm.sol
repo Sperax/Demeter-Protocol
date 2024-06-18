@@ -495,7 +495,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         // Note: If farm is paused, skip the cooldown check.
         if (isFarmActive()) {
             Deposit storage userDeposit = deposits[_depositId];
-            _validateNotRecentDeposit(deposits[_depositId].depositTs);
+            _validateNotRecentDeposit(userDeposit.depositTs);
             if (userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
