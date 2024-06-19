@@ -171,7 +171,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _farm Address of the farm for which the end time is to be calculated.
     /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
-        uint256 farmBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+        uint256 farmBalance = IFarm(_farm).getRewardBalance(REWARD_TOKEN);
         uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
         rewardsEndingOn = block.timestamp
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
@@ -290,7 +290,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
             // Calculating the deficit rewards in farm and sending them.
-            uint256 _farmRwdBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+            uint256 _farmRwdBalance = IFarm(_farm).getRewardBalance(REWARD_TOKEN);
             uint256 _rewarderRwdBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
             rewardsToSend = rewardRate * REWARD_PERIOD;
             if (rewardsToSend > _farmRwdBalance) {
