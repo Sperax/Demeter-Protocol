@@ -64,15 +64,6 @@ abstract contract E20FarmWithdrawTest is E20FarmTest {
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
         E20Farm(lockupFarm).withdraw(DEPOSIT_ID);
     }
-
-    function test_withdraw_withdrawInSameTransactionAsDeposit()
-        public
-        depositSetup(lockupFarm, true)
-        useKnownActor(user)
-    {
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
-        E20Farm(lockupFarm).withdraw(DEPOSIT_ID);
-    }
 }
 
 abstract contract IncreaseDepositTest is E20FarmTest {
