@@ -10,8 +10,6 @@ contract RewarderFactoryTest is Arbitrum {
     RewarderFactory public rewarderFactory;
     address public rewardManager;
 
-    address public constant ORACLE = 0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50;
-
     function setUp() public virtual override {
         super.setUp();
         vm.prank(PROXY_OWNER);

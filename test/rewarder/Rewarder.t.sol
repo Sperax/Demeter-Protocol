@@ -13,7 +13,6 @@ import {VmSafe} from "forge-std/Vm.sol";
 contract RewarderTest is CamelotV2FarmTest {
     RewarderFactory public rewarderFactory;
     Rewarder public rewarder;
-    address public constant ORACLE = 0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50;
     address public rewardToken;
     address public rewardManager;
     address public farmAdmin;

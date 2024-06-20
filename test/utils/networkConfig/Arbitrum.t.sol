@@ -26,6 +26,7 @@ abstract contract Arbitrum is BaseSetup, INetworkConfig {
     // Demeter constants
     // @note Add only demeter related constants and configurations
     address public constant USDS_VAULT = 0x6Bbc476Ee35CBA9e9c3A59fc5b10d7a0BC6f74Ca;
+    address public constant ORACLE = 0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50;
 
     // Farm constants
     // @note Add only specific farm related params, try to group them together
