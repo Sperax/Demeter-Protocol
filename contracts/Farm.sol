@@ -83,7 +83,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidAddress();
     error ZeroAmount();
     error InvalidCooldownPeriod();
-    error CannotWithdraw();
+    error WithdrawTooSoon();
 
     // Disallow initialization of a implementation contract.
     constructor() Ownable(msg.sender) {
@@ -780,7 +780,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev Reverts when deposit made in the same transaction.
     function _validateNotRecentDeposit(uint256 _depositTs) internal view {
         if (_depositTs == block.timestamp) {
-            revert CannotWithdraw();
+            revert WithdrawTooSoon();
         }
     }
 

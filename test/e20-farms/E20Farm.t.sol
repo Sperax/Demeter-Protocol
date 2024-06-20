@@ -61,7 +61,7 @@ abstract contract E20FarmWithdrawTest is E20FarmTest {
         deal(poolAddress, user, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         E20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
         E20Farm(lockupFarm).withdraw(DEPOSIT_ID);
     }
 }
@@ -205,7 +205,7 @@ abstract contract DecreaseDepositTest is E20FarmTest {
         deal(poolAddress, user, amt);
         ERC20(poolAddress).approve(address(lockupFarm), amt);
         E20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
         E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amt);
     }
 
@@ -214,7 +214,7 @@ abstract contract DecreaseDepositTest is E20FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
         E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
     }
 

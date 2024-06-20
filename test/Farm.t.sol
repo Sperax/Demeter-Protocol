@@ -331,7 +331,7 @@ abstract contract WithdrawTest is FarmTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdraw.selector));
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
         Farm(lockupFarm).withdraw(depositId);
     }
 
