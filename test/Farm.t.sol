@@ -136,15 +136,28 @@ abstract contract DepositTest is FarmTest {
         }
     }
 
-    function testFuzz_Deposit_Before_Farm_StartTime(bool lockup) public {
-        // Here time for rewards should be 0, hence, lastFundUpdateTime should be startTime itself
-        // and not the time when the deposit is made.
-        uint256 startTime = block.timestamp + 1 days;
-        address farm = createFarm(startTime, lockup);
+    function testFuzz_Deposit_Before_Farm_StartTime() public {
+        uint256 DEPOSIT_ID = 1;
+        uint256 startTime = block.timestamp + 5 days;
+        address farm = createFarm(startTime, false);
+        addRewards(farm);
+        setRewardRates(farm);
 
-        deposit(farm, lockup, DEPOSIT_AMOUNT);
+        address[] memory rewardTokens = getRewardTokens(farm);
+        uint256 accRewardBal;
+        (,, accRewardBal) = Farm(farm).rewardData(rewardTokens[0]);
+        assertEq(accRewardBal, 0);
 
-        assertEq(Farm(farm).lastFundUpdateTime(), startTime);
+        deposit(farm, false, DEPOSIT_AMOUNT);
+        skip(1 days);
+        deposit(farm, false, DEPOSIT_AMOUNT);
+
+        (,, accRewardBal) = Farm(farm).rewardData(rewardTokens[0]);
+        assertEq(accRewardBal, 0);
+        assertEq(Farm(farm).farmStartTime(), startTime); // Farm start time should be the same as the one set in createFarm
+        assertEq(Farm(farm).lastFundUpdateTime(), block.timestamp); // lastFundUpdateTime should be the time when the deposit is made
+        assertEq(Farm(farm).computeRewards(currentActor, DEPOSIT_ID)[0][0], 0); // rewards should be 0 as Farm is not started
+        assertEq(Farm(farm).getRewardBalance(rewardTokens[0]), IERC20(rewardTokens[0]).balanceOf(farm)); // rewardAcc should be 0, hence balance should be the same as the one added
     }
 }
 
@@ -977,9 +990,8 @@ abstract contract UpdateFarmStartTimeTest is FarmTest {
         Farm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
-        uint256 lastFundUpdateTime = Farm(farm).lastFundUpdateTime();
-
-        assertEq(lastFundUpdateTime, newStartTime);
+        assertEq(Farm(farm).farmStartTime(), newStartTime);
+        assertEq(Farm(farm).lastFundUpdateTime(), 0); // default value
     }
 }
 
