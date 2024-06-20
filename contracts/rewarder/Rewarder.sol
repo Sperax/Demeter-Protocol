@@ -73,6 +73,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
     address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase.
+    uint8 public REWARD_TOKEN_DECIMALS; // solhint-disable-line var-name-mixedcase.
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
     // farm -> FarmRewardConfig.
@@ -223,6 +224,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _validatePriceFeed(_rwdToken, _oracle);
         rewarderFactory = _rewarderFactory;
         REWARD_TOKEN = _rwdToken;
+        REWARD_TOKEN_DECIMALS = ERC20(_rwdToken).decimals();
         _validateNonZeroAddr(_admin);
         _transferOwnership(_admin);
     }
@@ -283,7 +285,9 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                 totalValue += (
                     priceData.price
                         * _normalizeAmount(
-                            assets[farmRewardConfig.baseAssetIndexes[i]], amounts[farmRewardConfig.baseAssetIndexes[i]]
+                            assets[farmRewardConfig.baseAssetIndexes[i]],
+                            amounts[farmRewardConfig.baseAssetIndexes[i]],
+                            REWARD_TOKEN_DECIMALS
                         )
                 ) / priceData.precision;
                 unchecked {
@@ -292,6 +296,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
             // Getting reward token price to calculate rewards emission.
             priceData = _getPrice(REWARD_TOKEN, oracle);
+            // For token with lower decimals the calculation of rewardRate might not be accurate because of precision loss in truncation.
             rewardRate = (
                 (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * DENOMINATOR)) / ONE_YEAR) * priceData.precision
             ) / priceData.price;
@@ -349,15 +354,23 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
-    /// @notice Function to normalize asset amounts to be of precision 1e18.
+    /// @notice Function to normalize asset amounts to be of precision _desiredPrecision.
     /// @param _token Address of the asset token.
     /// @param _amount Amount of the token.
-    /// @return Normalized amount of the token in 1e18.
-    function _normalizeAmount(address _token, uint256 _amount) private returns (uint256) {
-        if (_decimals[_token] == 0) {
-            _decimals[_token] = ERC20(_token).decimals();
+    /// @param _desiredPrecision Precision of reward token.
+    /// @return Normalized amount of the token in _desiredPrecision.
+    function _normalizeAmount(address _token, uint256 _amount, uint8 _desiredPrecision) private returns (uint256) {
+        uint8 decimals_ = _decimals[_token];
+        if (decimals_ == 0) {
+            decimals_ = ERC20(_token).decimals();
+            _decimals[_token] = decimals_;
         }
-        _amount *= 10 ** (18 - _decimals[_token]);
+        if (decimals_ < _desiredPrecision) {
+            return _amount * 10 ** (_desiredPrecision - decimals_);
+        }
+        if (decimals_ > _desiredPrecision) {
+            return _amount / 10 ** (decimals_ - _desiredPrecision);
+        }
         return _amount;
     }
 
