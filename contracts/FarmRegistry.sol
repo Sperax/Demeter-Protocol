@@ -112,16 +112,16 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(deployer, false);
     }
 
-    /// @notice Function to add/remove privileged Users.
-    /// @param _userAddress User Address for which privilege is to be updated.
+    /// @notice Function to add/remove privileged User.
+    /// @param _user User Address for which privilege is to be updated.
     /// @param _privilege Privilege(bool) whether true or false.
     /// @dev Only callable by the owner.
-    function updatePrivilege(address _userAddress, bool _privilege) external onlyOwner {
-        if (isPrivilegedUser[_userAddress] == _privilege) {
+    function updatePrivilege(address _user, bool _privilege) external onlyOwner {
+        if (isPrivilegedUser[_user] == _privilege) {
             revert PrivilegeSameAsDesired();
         }
-        isPrivilegedUser[_userAddress] = _privilege;
-        emit PrivilegeUpdated(_userAddress, _privilege);
+        isPrivilegedUser[_user] = _privilege;
+        emit PrivilegeUpdated(_user, _privilege);
     }
 
     /// @notice Get list of registered deployer.
@@ -137,11 +137,11 @@ contract FarmRegistry is OwnableUpgradeable {
     }
 
     /// @notice Get all the fee parameters for creating farm.
-    /// @param _deployerAccount The account creating the farm.
+    /// @param _user The account creating the farm.
     /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay.
     /// @dev It returns fee amount as 0 if deployer account is privileged.
-    function getFeeParams(address _deployerAccount) external view returns (address, address, uint256, uint256) {
-        if (isPrivilegedUser[_deployerAccount]) {
+    function getFeeParams(address _user) external view returns (address, address, uint256, uint256) {
+        if (isPrivilegedUser[_user]) {
             return (feeReceiver, feeToken, 0, 0);
         }
         return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);
