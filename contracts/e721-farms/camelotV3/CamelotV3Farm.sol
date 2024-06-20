@@ -74,7 +74,7 @@ struct InitializeInput {
 /// @title Camelot V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V3 farm.
-contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
+contract CamelotV3Farm is E721Farm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // CamelotV3 params.
