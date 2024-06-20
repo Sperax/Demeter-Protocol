@@ -232,13 +232,23 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             bool lockup = i == 0 ? true : false;
             address farm = lockup ? lockupFarm : nonLockupFarm;
             depositSetupFn(farm, lockup);
-            ExpirableFarm(farm).getRewardBalance(rwdTokens[0]);
+            uint256 rewardBalance = ExpirableFarm(farm).getRewardBalance(rwdTokens[0]);
+            emit log_named_uint("rewardBalance", rewardBalance);
             uint256 currentTimestamp = block.timestamp;
-            vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
+            vm.warp(ExpirableFarm(farm).farmEndTime() + 1 days);
             vm.startPrank(user);
+            address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
+            uint256[][] memory rewardsForEachSubs = new uint256[][](rewardTokens.length);
+            rewardsForEachSubs = ExpirableFarm(farm).computeRewards(user, depositId);
+            for (uint8 j; j < rewardTokens.length; ++j) {
+                emit log_named_uint("rewardsForEachSubs", rewardsForEachSubs[0][j]);
+                // assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
+            }
+
             vm.expectEmit(address(farm));
             emit DepositWithdrawn(depositId);
             ExpirableFarm(farm).withdraw(depositId);
+            //! TODO missing negative test
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
                 depositInfo.depositor, depositInfo.liquidity, depositInfo.expiryDate, depositInfo.cooldownPeriod

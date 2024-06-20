@@ -27,6 +27,7 @@ pragma solidity 0.8.24;
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Farm} from "../Farm.sol";
 import {IFarmRegistry} from "../interfaces/IFarmRegistry.sol";
+import {console} from "forge-std/console.sol";
 
 /// @title  ExpirableFarm contract of Demeter Protocol.
 /// @author Sperax Foundation.
@@ -89,11 +90,27 @@ abstract contract ExpirableFarm is Farm {
         return super.isFarmOpen() && (block.timestamp <= farmEndTime);
     }
 
+    // --------------------- Internal  Functions ---------------------
+    function _updateFarmRewardData() internal virtual override(Farm) {
+        if (super.isFarmOpen() && block.timestamp > farmEndTime) {
+            // Only runs once, when farm is expired.
+            lastFundUpdateTime = block.timestamp - farmEndTime + lastFundUpdateTime;
+            super._updateFarmRewardData();
+            _closeFarm();
+            return;
+        }
+        super._updateFarmRewardData();
+    }
+
     /// @notice Setup the farm data for farm expiry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmRegistry) internal {
         _validateNonZeroAddr(_farmRegistry);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
         farmRegistry = _farmRegistry;
+    }
+
+    function _isRewardAccruable() internal view virtual override returns (bool) {
+        return !isPaused && super.isFarmOpen();
     }
 
     // --------------------- Private  Functions ---------------------

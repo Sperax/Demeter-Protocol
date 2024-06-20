@@ -259,6 +259,14 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
         return ExpirableFarm.isFarmOpen();
     }
 
+    function _updateFarmRewardData() internal override(ExpirableFarm, Farm) {
+        ExpirableFarm._updateFarmRewardData();
+    }
+
+    function _isRewardAccruable() internal view override(ExpirableFarm, Farm) returns (bool) {
+        return ExpirableFarm._isRewardAccruable();
+    }
+
     /// @notice Validate the position for the pool and get Liquidity.
     /// @param _tokenId The tokenId of the position.
     /// @return The liquidity of the position.

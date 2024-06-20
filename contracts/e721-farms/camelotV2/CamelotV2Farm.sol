@@ -256,6 +256,14 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         return ExpirableFarm.isFarmOpen();
     }
 
+    function _updateFarmRewardData() internal override(ExpirableFarm, Farm) {
+        ExpirableFarm._updateFarmRewardData();
+    }
+
+    function _isRewardAccruable() internal view override(ExpirableFarm, Farm) returns (bool) {
+        return ExpirableFarm._isRewardAccruable();
+    }
+
     // --------------------- Private  Functions ---------------------
 
     /// @notice Validate the position for the pool and get Liquidity.

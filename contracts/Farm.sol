@@ -29,6 +29,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {console} from "forge-std/console.sol";
+
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
@@ -153,6 +155,10 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function closeFarm() external onlyOwner nonReentrant {
         _validateFarmOpen();
         _updateFarmRewardData();
+        _closeFarm();
+    }
+
+    function _closeFarm() internal {
         isPaused = true;
         isClosed = true;
         uint256 numRewards = rewardTokens.length;
@@ -625,7 +631,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         if (time > 0) {
             // If farm is paused don't accrue any rewards,
             // only update the lastFundUpdateTime.
-            if (isFarmActive()) {
+            console.log("_isRewardAccruable: %s", _isRewardAccruable());
+            if (_isRewardAccruable()) {
+                console.log("Updating farm reward data");
                 uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
@@ -635,6 +643,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                         for (uint8 iRwd; iRwd < numRewards;) {
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(iRwd, iFund, time);
+                            console.log("Accrued rewards for fund %s and reward %s is %s", iFund, iRwd, accRewards);
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
 
@@ -650,6 +659,10 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             }
             _updateLastRewardAccrualTime();
         }
+    }
+
+    function _isRewardAccruable() internal view virtual returns (bool) {
+        return isFarmActive();
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
