@@ -117,7 +117,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         if (rewardData[_rwdToken].tknManager == address(0)) {
             revert InvalidRewardToken();
         }
-        _updateFarmRewardData();
+        updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
     }
@@ -143,7 +143,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         if (isPaused == _isPaused) {
             revert FarmAlreadyInRequiredState();
         }
-        _updateFarmRewardData();
+        updateFarmRewardData();
         isPaused = _isPaused;
         emit FarmPaused(isPaused);
     }
@@ -152,7 +152,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev Shuts down the farm completely.
     function closeFarm() external onlyOwner nonReentrant {
         _validateFarmOpen();
-        _updateFarmRewardData();
+        updateFarmRewardData();
         isPaused = true;
         isClosed = true;
         uint256 numRewards = rewardTokens.length;
@@ -179,7 +179,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev Function recovers minOf(_amount, rewardsLeft).
     function recoverRewardFunds(address _rwdToken, uint256 _amount) external nonReentrant {
         _validateTokenManager(_rwdToken);
-        _updateFarmRewardData();
+        updateFarmRewardData();
         _recoverRewardFunds(_rwdToken, _amount);
     }
 
@@ -189,7 +189,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
-        _updateFarmRewardData();
+        updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
     }
 
@@ -318,6 +318,39 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
+    /// @notice Function to update the FarmRewardData for all funds.
+    function updateFarmRewardData() public {
+        uint256 time = _getRewardAccrualTimeElapsed();
+        if (time > 0) {
+            // If farm is paused don't accrue any rewards,
+            // only update the lastFundUpdateTime.
+            if (isFarmActive()) {
+                uint256 numFunds = rewardFunds.length;
+                uint256 numRewards = rewardTokens.length;
+                // Update the reward funds.
+                for (uint8 iFund; iFund < numFunds;) {
+                    RewardFund storage fund = rewardFunds[iFund];
+                    if (fund.totalLiquidity != 0) {
+                        for (uint8 iRwd; iRwd < numRewards;) {
+                            // Get the accrued rewards for the time.
+                            uint256 accRewards = _getAccRewards(iRwd, iFund, time);
+                            rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
+                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
+
+                            unchecked {
+                                ++iRwd;
+                            }
+                        }
+                    }
+                    unchecked {
+                        ++iFund;
+                    }
+                }
+            }
+            _updateLastRewardAccrualTime();
+        }
+    }
+
     /// @notice Claim rewards for the user.
     /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
@@ -430,7 +463,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert NoLiquidityInPosition();
         }
         // Update the reward funds.
-        _updateFarmRewardData();
+        updateFarmRewardData();
 
         // Prepare data to be stored.
         Deposit memory userDeposit = Deposit({
@@ -527,7 +560,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant.
     function _updateAndClaimFarmRewards(uint256 _depositId) internal {
-        _updateFarmRewardData();
+        updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
         Subscription[] storage depositSubs = subscriptions[_depositId];
@@ -617,39 +650,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             }
         }
         emit RewardRateUpdated(_rwdToken, _newRewardRates);
-    }
-
-    /// @notice Function to update the FarmRewardData for all funds.
-    function _updateFarmRewardData() internal virtual {
-        uint256 time = _getRewardAccrualTimeElapsed();
-        if (time > 0) {
-            // If farm is paused don't accrue any rewards,
-            // only update the lastFundUpdateTime.
-            if (isFarmActive()) {
-                uint256 numFunds = rewardFunds.length;
-                uint256 numRewards = rewardTokens.length;
-                // Update the reward funds.
-                for (uint8 iFund; iFund < numFunds;) {
-                    RewardFund storage fund = rewardFunds[iFund];
-                    if (fund.totalLiquidity != 0) {
-                        for (uint8 iRwd; iRwd < numRewards;) {
-                            // Get the accrued rewards for the time.
-                            uint256 accRewards = _getAccRewards(iRwd, iFund, time);
-                            rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
-                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
-
-                            unchecked {
-                                ++iRwd;
-                            }
-                        }
-                    }
-                    unchecked {
-                        ++iFund;
-                    }
-                }
-            }
-            _updateLastRewardAccrualTime();
-        }
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.

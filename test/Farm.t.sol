@@ -1134,7 +1134,7 @@ abstract contract MulticallTest is FarmTest {
 
     function test_Multicall_RevertWhen_CallInternalFunction() public useKnownActor(owner) {
         bytes[] memory data = new bytes[](1);
-        data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
+        data[0] = abi.encodeWithSignature("_updateLastRewardAccrualTime()");
 
         vm.expectRevert(Address.FailedInnerCall.selector);
         Farm(lockupFarm).multicall(data);
