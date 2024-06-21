@@ -35,12 +35,14 @@ struct Subscription {
 // liquidity - amount of liquidity in the deposit.
 // expiryDate - expiry time (if deposit is locked).
 // cooldownPeriod - cooldown period in days (if deposit is locked).
+// depositTs - Timestamp of deposit, increaseDeposit saved to prevent deposit and withdrawals in same tx.
 // totalRewardsClaimed - total rewards claimed for the deposit.
 struct Deposit {
     address depositor;
     uint256 liquidity;
     uint256 expiryDate;
     uint256 cooldownPeriod;
+    uint256 depositTs;
     uint256[] totalRewardsClaimed;
 }
 
