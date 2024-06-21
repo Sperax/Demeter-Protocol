@@ -99,7 +99,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
-    function initialize(InitializeInput calldata _input) external initializer {
+    function initialize(InitializeInput calldata _input) external {
         _validateNonZeroAddr(_input.camelotV3Factory);
         _validateNonZeroAddr(_input.nftContract);
         _validateNonZeroAddr(_input.camelotUtils);
