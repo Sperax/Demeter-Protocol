@@ -72,7 +72,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     uint256 public constant REWARD_PERIOD = 1 weeks;
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
-    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase.
+    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
     // farm -> FarmRewardConfig.
