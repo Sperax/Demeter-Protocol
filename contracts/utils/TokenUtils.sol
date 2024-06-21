@@ -29,6 +29,7 @@ import {IUniswapV3PoolState} from "../e721-farms/uniswapV3/interfaces/IUniswapV3
 import {IUniswapV3Utils} from "../e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
 import {ICamelotV3Utils} from "../e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
 import {ICamelotV3PoolState} from "../e721-farms/camelotV3/interfaces/ICamelotV3.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title Utility library to calculate token amounts for different farms based on the farm's liquidity.
 /// @author Sperax Foundation.
@@ -81,8 +82,9 @@ library TokenUtils {
         oldestObservationSecondsAgo = oldestObservationSecondsAgo < MA_PERIOD ? MA_PERIOD : oldestObservationSecondsAgo;
         (int24 timeWeightedAverageTick,) = IUniswapV3Utils(_uniUtils).consult(_uniPool, oldestObservationSecondsAgo);
         uint160 sqrtPriceX96 = IUniswapV3Utils(_uniUtils).getSqrtRatioAtTick(timeWeightedAverageTick);
-        (amounts[0], amounts[1]) =
-            IUniswapV3Utils(_uniUtils).getAmountsForLiquidity(sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity));
+        (amounts[0], amounts[1]) = IUniswapV3Utils(_uniUtils).getAmountsForLiquidity(
+            sqrtPriceX96, _tickLower, _tickUpper, SafeCast.toUint128(_liquidity)
+        );
     }
 
     /// @notice Get token amounts for Camelot V3 farm based on the farm's liquidity.
@@ -106,7 +108,7 @@ library TokenUtils {
         tokens[1] = ICamelotV3PoolState(_camelotPool).token1();
         (uint160 sqrtPriceX96,,,,,,,) = ICamelotV3PoolState(_camelotPool).globalState();
         (amounts[0], amounts[1]) = ICamelotV3Utils(_camelotUtils).getAmountsForLiquidity(
-            sqrtPriceX96, _tickLower, _tickUpper, uint128(_liquidity)
+            sqrtPriceX96, _tickLower, _tickUpper, SafeCast.toUint128(_liquidity)
         );
     }
 }
