@@ -25,6 +25,7 @@ import {
 import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol";
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
@@ -220,7 +221,7 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
             INFPM(NFPM).decreaseLiquidity(
                 INFPM.DecreaseLiquidityParams({
                     tokenId: tokenId,
-                    liquidity: uint128(liquidity),
+                    liquidity: SafeCast.toUint128(liquidity),
                     amount0Min: 0,
                     amount1Min: 0,
                     deadline: block.timestamp
@@ -373,7 +374,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
         assertEq(CamelotV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
         assertEq(CamelotV3Farm(farmProxy).camelotPool(), camelotPool);
         assertEq(CamelotV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
-        assertEq(CamelotV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
+        assertEq(CamelotV3Farm(farmProxy).farmStartTime(), block.timestamp);
+        assertEq(CamelotV3Farm(farmProxy).lastFundUpdateTime(), 0);
         assertEq(CamelotV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(CamelotV3Farm(farmProxy).camelotV3Factory(), CAMELOT_V3_FACTORY);
@@ -695,6 +697,7 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
         CamelotV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
     }
@@ -704,6 +707,7 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(user)
     {
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(OperableDeposit.DecreaseDepositNotPermitted.selector));
         CamelotV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
@@ -713,9 +717,10 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         address farm;
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
+        skip(1);
 
-        uint128 oldLiquidity = uint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
-        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        uint128 oldLiquidity = SafeCast.toUint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = SafeCast.toUint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
@@ -724,8 +729,9 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         uint256[2] memory minAmounts = [uint256(0), uint256(0)];
         uint256 oldCommonTotalLiquidity =
             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
-        uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
-        uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
+        CamelotV3Farm(farm).claimRewards(depositId);
+        IERC20(DAI).transfer(makeAddr("Random"), IERC20(DAI).balanceOf(currentActor));
+        IERC20(USDCe).transfer(makeAddr("Random"), IERC20(USDCe).balanceOf(currentActor));
 
         vm.expectEmit(farm);
         emit DepositDecreased(depositId, liquidityToWithdraw);
@@ -750,8 +756,8 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         }
         assertTrue(found, "DecreaseLiquidity event not found");
         assertEq(loggedLiquidity, liquidityToWithdraw);
-        assertEq(IERC20(DAI).balanceOf(currentActor), oldUserToken0Balance + loggedAmount0);
-        assertEq(IERC20(USDCe).balanceOf(currentActor), oldUserToken1Balance + loggedAmount1);
+        assertEq(IERC20(DAI).balanceOf(currentActor), loggedAmount0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), loggedAmount1);
         assertEq(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
         assertEq(
             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
@@ -772,9 +778,10 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         address farm;
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
+        skip(1);
 
-        uint128 oldLiquidity = uint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
-        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        uint128 oldLiquidity = SafeCast.toUint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = SafeCast.toUint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
@@ -783,8 +790,9 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         uint256[2] memory minAmounts = [uint256(0), uint256(0)];
         uint256 oldCommonTotalLiquidity =
             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity;
-        uint256 oldUserToken0Balance = IERC20(DAI).balanceOf(currentActor);
-        uint256 oldUserToken1Balance = IERC20(USDCe).balanceOf(currentActor);
+        CamelotV3Farm(farm).claimRewards(depositId);
+        IERC20(DAI).transfer(makeAddr("Random"), IERC20(DAI).balanceOf(currentActor));
+        IERC20(USDCe).transfer(makeAddr("Random"), IERC20(USDCe).balanceOf(currentActor));
         vm.stopPrank();
 
         address camelotFactoryOwner = ICamelotV3FactoryTesting(CAMELOT_V3_FACTORY).owner();
@@ -807,19 +815,19 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         uint128 loggedLiquidity;
         uint256 loggedAmount0;
         uint256 loggedAmount1;
-        // bool found = false;
+        bool found = false;
 
         for (uint256 i = 0; i < entries.length; i++) {
             if (entries[i].topics[0] == keccak256("DecreaseLiquidity(uint256,uint128,uint256,uint256)")) {
                 (loggedLiquidity, loggedAmount0, loggedAmount1) =
                     abi.decode(entries[i].data, (uint128, uint256, uint256));
-                // found = true;
+                found = true;
             }
         }
-        // assertTrue(found, "DecreaseLiquidity event not found");
+        assertTrue(found, "DecreaseLiquidity event not found");
         assertEq(loggedLiquidity, liquidityToWithdraw);
-        assertEq(IERC20(DAI).balanceOf(currentActor), oldUserToken0Balance + loggedAmount0);
-        assertEq(IERC20(USDCe).balanceOf(currentActor), oldUserToken1Balance + loggedAmount1);
+        assertEq(IERC20(DAI).balanceOf(currentActor), loggedAmount0);
+        assertEq(IERC20(USDCe).balanceOf(currentActor), loggedAmount1);
         assertEq(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity, oldLiquidity - liquidityToWithdraw);
         assertEq(
             CamelotV3Farm(farm).getRewardFundInfo(CamelotV3Farm(farm).COMMON_FUND_ID()).totalLiquidity,
@@ -843,7 +851,7 @@ abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
             sqrtRatioX96,
             CamelotV3Farm(lockupFarm).tickLowerAllowed(),
             CamelotV3Farm(lockupFarm).tickUpperAllowed(),
-            uint128(
+            SafeCast.toUint128(
                 CamelotV3Farm(lockupFarm).getRewardFundInfo(CamelotV3Farm(lockupFarm).COMMON_FUND_ID()).totalLiquidity
             )
         );

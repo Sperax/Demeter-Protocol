@@ -49,6 +49,23 @@ abstract contract E20FarmDepositTest is E20FarmTest {
     }
 }
 
+abstract contract E20FarmWithdrawTest is E20FarmTest {
+    function test_revertWhen_withdraw_withdrawInSameTransactionAsIncrease()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        address poolAddress = getPoolAddress();
+        uint256 amt = 500 * 10 ** ERC20(poolAddress).decimals();
+
+        deal(poolAddress, user, amt);
+        ERC20(poolAddress).approve(address(lockupFarm), amt);
+        E20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
+        E20Farm(lockupFarm).withdraw(DEPOSIT_ID);
+    }
+}
+
 abstract contract IncreaseDepositTest is E20FarmTest {
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
 
@@ -177,8 +194,33 @@ abstract contract RecoverERC20E20FarmTest is E20FarmTest {
 abstract contract DecreaseDepositTest is E20FarmTest {
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
 
+    function test_revertWhen_decreaseDeposit_decreaseInSameTransactionAsIncrease()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        address poolAddress = getPoolAddress();
+        uint256 amt = 500 * 10 ** ERC20(poolAddress).decimals();
+
+        deal(poolAddress, user, amt);
+        ERC20(poolAddress).approve(address(lockupFarm), amt);
+        E20Farm(lockupFarm).increaseDeposit(DEPOSIT_ID, amt);
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
+        E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amt);
+    }
+
+    function test_decreaseDeposit_decreaseInSameTransactionAsDeposit()
+        public
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
+        E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, AMOUNT);
+    }
+
     function test_zeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 amount;
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
         E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amount);
     }
@@ -261,6 +303,7 @@ abstract contract DecreaseDepositTest is E20FarmTest {
 
 abstract contract E20FarmInheritTest is
     E20FarmDepositTest,
+    E20FarmWithdrawTest,
     IncreaseDepositTest,
     RecoverERC20E20FarmTest,
     DecreaseDepositTest

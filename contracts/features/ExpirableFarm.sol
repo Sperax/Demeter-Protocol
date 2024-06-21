@@ -52,7 +52,7 @@ abstract contract ExpirableFarm is Farm {
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function extendFarmDuration(uint256 _extensionDays) external onlyOwner nonReentrant {
         _validateFarmOpen();
-        if (lastFundUpdateTime > block.timestamp) {
+        if (farmStartTime > block.timestamp) {
             revert FarmNotYetStarted();
         }
         if (_extensionDays < MIN_EXTENSION || _extensionDays > MAX_EXTENSION) {
@@ -73,13 +73,13 @@ abstract contract ExpirableFarm is Farm {
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) public virtual override onlyOwner {
-        uint256 _currentLastFundUpdateTime = lastFundUpdateTime;
+        uint256 currentFarmStartTime = farmStartTime;
 
         super.updateFarmStartTime(_newStartTime);
 
-        farmEndTime = (_newStartTime > _currentLastFundUpdateTime)
-            ? farmEndTime + (_newStartTime - _currentLastFundUpdateTime)
-            : farmEndTime - (_currentLastFundUpdateTime - _newStartTime);
+        farmEndTime = (_newStartTime > currentFarmStartTime)
+            ? farmEndTime + (_newStartTime - currentFarmStartTime)
+            : farmEndTime - (currentFarmStartTime - _newStartTime);
     }
 
     /// @notice Returns bool status if farm is open.
