@@ -39,6 +39,7 @@ abstract contract OperableDeposit is ExpirableFarm {
 
     // Custom Errors.
     error DecreaseDepositNotPermitted();
+    error InsufficientLiquidity();
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
     /// @param _depositId Unique deposit id for the deposit.
@@ -119,6 +120,9 @@ abstract contract OperableDeposit is ExpirableFarm {
 
         if (_amount == 0) {
             revert CannotWithdrawZeroAmount();
+        }
+        if (_amount > userDeposit.liquidity) {
+            revert InsufficientLiquidity();
         }
 
         if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {
