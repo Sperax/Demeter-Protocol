@@ -24,10 +24,9 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
@@ -38,7 +37,7 @@ import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
 /// @notice This contract tracks farms, their APR and other data for a specific reward token.
 /// @dev Farms for UniV3 pools using Rewarder contract must have a minimum observationCardinality of 20.
 ///      It can be updated by calling increaseObservationCardinalityNext function on the pool.
-contract Rewarder is Ownable, Initializable, ReentrancyGuard {
+contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // Configuration for fixed APR reward tokens.
@@ -95,7 +94,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     error InvalidRewardPercentage(uint256 percentage);
     error CalibrationRestricted(address farm);
 
-    constructor() Ownable(msg.sender) {
+    constructor() {
         _disableInitializers();
     }
 
@@ -103,7 +102,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _rwdToken Address of the reward token.
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.
-    function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
+    function initialize(address _rwdToken, address _oracle, address _admin) external {
         _initialize(_rwdToken, _oracle, _admin, msg.sender);
     }
 
@@ -221,12 +220,14 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.
     /// @param _rewarderFactory Address of Rewarder factory contract.
-    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory) internal {
+    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory)
+        internal
+        initializer
+    {
         _validatePriceFeed(_rwdToken, _oracle);
         rewarderFactory = _rewarderFactory;
         REWARD_TOKEN = _rwdToken;
-        _validateNonZeroAddr(_admin);
-        _transferOwnership(_admin);
+        __Ownable_init_unchained(_admin);
     }
 
     /// @notice Function to check if the farm's reward is configured.
