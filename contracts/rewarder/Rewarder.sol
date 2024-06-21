@@ -285,9 +285,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                 totalValue += (
                     priceData.price
                         * _normalizeAmount(
-                            assets[farmRewardConfig.baseAssetIndexes[i]],
-                            amounts[farmRewardConfig.baseAssetIndexes[i]],
-                            REWARD_TOKEN_DECIMALS
+                            assets[farmRewardConfig.baseAssetIndexes[i]], amounts[farmRewardConfig.baseAssetIndexes[i]]
                         )
                 ) / priceData.precision;
                 unchecked {
@@ -402,22 +400,18 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         return true;
     }
 
-    /// @notice Function to normalize asset amounts to be of precision _desiredPrecision.
+    /// @notice Function to normalize asset amounts to be of precision REWARD_TOKEN_DECIMALS.
     /// @param _token Address of the asset token.
     /// @param _amount Amount of the token.
-    /// @param _desiredPrecision Precision of reward token.
     /// @return Normalized amount of the token in _desiredPrecision.
-    function _normalizeAmount(address _token, uint256 _amount, uint8 _desiredPrecision)
-        private
-        view
-        returns (uint256)
-    {
+    function _normalizeAmount(address _token, uint256 _amount) private view returns (uint256) {
         uint8 decimals = _decimals[_token];
-        if (decimals < _desiredPrecision) {
-            return _amount * 10 ** (_desiredPrecision - decimals);
+        uint8 rwdTokenDecimals = REWARD_TOKEN_DECIMALS;
+        if (decimals < rwdTokenDecimals) {
+            return _amount * 10 ** (rwdTokenDecimals - decimals);
         }
-        if (decimals > _desiredPrecision) {
-            return _amount / 10 ** (decimals - _desiredPrecision);
+        if (decimals > rwdTokenDecimals) {
+            return _amount / 10 ** (decimals - rwdTokenDecimals);
         }
         return _amount;
     }
