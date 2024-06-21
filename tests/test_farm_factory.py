@@ -352,7 +352,7 @@ class TestUpdatePrivilege:
             True,
             {'from': deployer}
         )
-        assert farm_deployer.isPrivilegedDeployer(accounts[1])
+        assert farm_deployer.isPrivilegedUser(accounts[1])
         self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], True)
 
     def test_removePrivilege(self, farm_deployer):
@@ -366,7 +366,7 @@ class TestUpdatePrivilege:
             False,
             {'from': deployer}
         )
-        assert not farm_deployer.isPrivilegedDeployer(accounts[1])
+        assert not farm_deployer.isPrivilegedUser(accounts[1])
         self.checkEventData(tx.events['PrivilegeUpdated'], accounts[1], False)
 
     def test_updateSamePrivilege_true(self, farm_deployer):
@@ -416,7 +416,7 @@ class TestUpdatePrivilege:
                     True,
                     {'from': deployer}
                 )
-                assert farm_deployer.isPrivilegedDeployer(accounts[i])
+                assert farm_deployer.isPrivilegedUser(accounts[i])
 
 
 # @pytest.mark.skip()

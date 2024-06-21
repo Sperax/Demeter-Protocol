@@ -29,6 +29,7 @@ import {Farm, E721Farm} from "../E721Farm.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {INFPM, ICamelotV3Factory, ICamelotV3TickSpacing} from "./interfaces/ICamelotV3.sol";
 import {ICamelotV3NFPMUtils, Position} from "./interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
@@ -199,8 +200,8 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
             INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
-                amount0Max: uint128(amount0),
-                amount1Max: uint128(amount1)
+                amount0Max: SafeCast.toUint128(amount0),
+                amount1Max: SafeCast.toUint128(amount1)
             })
         );
     }
