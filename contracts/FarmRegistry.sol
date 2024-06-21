@@ -39,7 +39,7 @@ contract FarmRegistry is OwnableUpgradeable {
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
     // List of deployers for which fee won't be charged.
-    mapping(address => bool) public isPrivilegedDeployer;
+    mapping(address => bool) public isPrivilegedUser;
 
     // Events.
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
@@ -112,16 +112,16 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(deployer, false);
     }
 
-    /// @notice Function to add/ remove privileged deployer.
-    /// @param _deployer Deployer(address) to add to privileged deployers list.
+    /// @notice Function to add/remove privileged User.
+    /// @param _user User Address for which privilege is to be updated.
     /// @param _privilege Privilege(bool) whether true or false.
     /// @dev Only callable by the owner.
-    function updatePrivilege(address _deployer, bool _privilege) external onlyOwner {
-        if (isPrivilegedDeployer[_deployer] == _privilege) {
+    function updatePrivilege(address _user, bool _privilege) external onlyOwner {
+        if (isPrivilegedUser[_user] == _privilege) {
             revert PrivilegeSameAsDesired();
         }
-        isPrivilegedDeployer[_deployer] = _privilege;
-        emit PrivilegeUpdated(_deployer, _privilege);
+        isPrivilegedUser[_user] = _privilege;
+        emit PrivilegeUpdated(_user, _privilege);
     }
 
     /// @notice Get list of registered deployer.
@@ -137,11 +137,11 @@ contract FarmRegistry is OwnableUpgradeable {
     }
 
     /// @notice Get all the fee parameters for creating farm.
-    /// @param _deployerAccount The account creating the farm.
+    /// @param _user The account creating the farm.
     /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay.
     /// @dev It returns fee amount as 0 if deployer account is privileged.
-    function getFeeParams(address _deployerAccount) external view returns (address, address, uint256, uint256) {
-        if (isPrivilegedDeployer[_deployerAccount]) {
+    function getFeeParams(address _user) external view returns (address, address, uint256, uint256) {
+        if (isPrivilegedUser[_user]) {
             return (feeReceiver, feeToken, 0, 0);
         }
         return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);

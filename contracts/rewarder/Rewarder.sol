@@ -72,7 +72,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     uint256 public constant REWARD_PERIOD = 1 weeks;
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
-    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase.
+    address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
     // farm -> FarmRewardConfig.
@@ -121,7 +121,16 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerOfFarm(address _farm, address _newManager) external onlyOwner {
+        _validateNonZeroAddr(_farm);
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
+    }
+
+    /// @notice Function to recover reward funds from the farm.
+    /// @param _farm Farm's address from which reward funds is to be recovered.
+    /// @param _amount Amount which is to be recovered.
+    function recoverRewardFundsOfFarm(address _farm, uint256 _amount) external onlyOwner {
+        _validateNonZeroAddr(_farm);
+        IFarm(_farm).recoverRewardFunds(REWARD_TOKEN, _amount);
     }
 
     /// @notice Function to update APR.
@@ -171,7 +180,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _farm Address of the farm for which the end time is to be calculated.
     /// @return rewardsEndingOn Timestamp in seconds till which the rewards are there in farm and in rewarder.
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
-        uint256 farmBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+        uint256 farmBalance = IFarm(_farm).getRewardBalance(REWARD_TOKEN);
         uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
         rewardsEndingOn = block.timestamp
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
@@ -283,14 +292,15 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
             // Getting reward token price to calculate rewards emission.
             priceData = _getPrice(REWARD_TOKEN, oracle);
-            rewardRate = (
-                (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * DENOMINATOR)) / ONE_YEAR) * priceData.precision
-            ) / priceData.price;
+            // rewardValuePerSecond = (APR * totalValue / 100) / 365 days.
+            // rewardRate = rewardValuePerSecond * pricePrecision / price.
+            rewardRate = (farmRewardConfig.apr * totalValue * priceData.precision)
+                / (APR_PRECISION * DENOMINATOR * ONE_YEAR * priceData.price);
             if (rewardRate > farmRewardConfig.maxRewardRate) {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
             // Calculating the deficit rewards in farm and sending them.
-            uint256 _farmRwdBalance = IERC20(REWARD_TOKEN).balanceOf(_farm);
+            uint256 _farmRwdBalance = IFarm(_farm).getRewardBalance(REWARD_TOKEN);
             uint256 _rewarderRwdBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
             rewardsToSend = rewardRate * REWARD_PERIOD;
             if (rewardsToSend > _farmRwdBalance) {

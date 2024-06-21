@@ -8,12 +8,11 @@ import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
 import {Rewarder, IERC20, ERC20} from "../../contracts/rewarder/Rewarder.sol";
 import {IOracle} from "../../contracts/interfaces/IOracle.sol";
-import {VmSafe} from "forge-std/Vm.sol";
+import {Farm} from "./../../contracts/Farm.sol";
 
 contract RewarderTest is CamelotV2FarmTest {
     RewarderFactory public rewarderFactory;
     Rewarder public rewarder;
-    address public constant ORACLE = 0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50;
     address public rewardToken;
     address public rewardManager;
     address public farmAdmin;
@@ -54,6 +53,29 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
         rewarder.updateTokenManagerOfFarm(lockupFarm, actors[1]);
         (address tokenManager,,) = CamelotV2Farm(lockupFarm).rewardData(rewardToken);
         assertEq(tokenManager, actors[1]);
+    }
+}
+
+contract TestRecoverRewardFundsOfFarm is RewarderTest {
+    uint256 public amount;
+
+    function test_RevertWhen_CallerIsNotTheOwner() public useKnownActor(actors[5]) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[5]));
+        rewarder.recoverRewardFundsOfFarm(lockupFarm, amount);
+    }
+
+    function test_recoverRewardFundsOfFarm() public {
+        vm.prank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        uint256 balanceBefore = IERC20(USDCe).balanceOf(address(rewarder));
+        amount = 100 * 10 ** ERC20(USDCe).decimals();
+        deal(USDCe, lockupFarm, amount);
+        vm.expectEmit(true, true, true, true, lockupFarm);
+        emit Farm.FundsRecovered(address(rewarder), USDCe, amount);
+        vm.prank(rewardManager);
+        rewarder.recoverRewardFundsOfFarm(lockupFarm, amount);
+        uint256 balanceAfter = IERC20(USDCe).balanceOf(address(rewarder));
+        assertEq(balanceAfter - balanceBefore, amount);
     }
 }
 

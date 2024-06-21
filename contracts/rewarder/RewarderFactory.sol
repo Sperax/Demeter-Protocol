@@ -38,6 +38,7 @@ contract RewarderFactory is Ownable {
     // Events.
     event OracleUpdated(address newOracle);
     event RewarderDeployed(address indexed token, address indexed manager, address rewarder);
+    event RewarderImplementationUpdated(address _newRewarderImplementation);
 
     // Custom Errors.
     error InvalidAddress();
@@ -56,6 +57,15 @@ contract RewarderFactory is Ownable {
         rewarder = Clones.clone(rewarderImplementation);
         Rewarder(rewarder).initialize(_rwdToken, oracle, msg.sender);
         emit RewarderDeployed(_rwdToken, msg.sender, rewarder);
+    }
+
+    /// @notice Update rewarder implementation's address
+    /// @param _newRewarderImplementation New Rewarder Implementation
+    function updateRewarderImplementation(address _newRewarderImplementation) external onlyOwner {
+        _validateNonZeroAddr(_newRewarderImplementation);
+        rewarderImplementation = _newRewarderImplementation;
+
+        emit RewarderImplementationUpdated(_newRewarderImplementation);
     }
 
     /// @notice Function to update the oracle's address.

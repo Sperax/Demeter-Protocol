@@ -54,6 +54,7 @@ contract UniV3ActiveLiquidityFarm is UniV3Farm {
     /// @return time The time elapsed since the last reward accrual.
     /// @dev This function is overridden from Farm to incorporate reward distribution only for active liquidity.
     function _getRewardAccrualTimeElapsed() internal view override returns (uint256) {
+        if (farmStartTime > block.timestamp || lastSecondsInside == 0) return 0; // Farm has not started
         (,, uint32 secondsInside) =
             IUniswapV3PoolDerivedState(uniswapPool).snapshotCumulativesInside(tickLowerAllowed, tickUpperAllowed);
         return secondsInside - lastSecondsInside;

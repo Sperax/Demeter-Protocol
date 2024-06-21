@@ -335,14 +335,14 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
         _validateFarmOpen();
-        if (lastFundUpdateTime <= block.timestamp) {
+        if (farmStartTime <= block.timestamp) {
             revert FarmAlreadyStarted();
         }
         if (_newStartTime < block.timestamp) {
             revert InvalidTime();
         }
 
-        lastFundUpdateTime = _newStartTime;
+        farmStartTime = _newStartTime;
 
         emit FarmStartTimeUpdated(_newStartTime);
     }
@@ -377,12 +377,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 numFunds = rewardFunds.length;
         uint256 rewardsAcc = rwdData.accRewardBal;
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
-        if (block.timestamp > lastFundUpdateTime) {
-            uint256 time;
-            unchecked {
-                time = block.timestamp - lastFundUpdateTime;
-            }
-            // Compute the accrued reward balance for time
+        uint256 time = _getRewardAccrualTimeElapsed();
+        if (time != 0) {
             for (uint8 iFund; iFund < numFunds;) {
                 if (rewardFunds[iFund].totalLiquidity != 0) {
                     rewardsAcc += rewardFunds[iFund].rewardsPerSec[rwdData.id] * time;
@@ -626,8 +622,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function _updateFarmRewardData() internal virtual {
         uint256 time = _getRewardAccrualTimeElapsed();
         if (time > 0) {
-            // If farm is paused don't accrue any rewards,
-            // only update the lastFundUpdateTime.
+            // Accrue rewards if farm is active.
             if (isFarmActive()) {
                 uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
@@ -651,8 +646,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                     }
                 }
             }
-            _updateLastRewardAccrualTime();
         }
+        _updateLastRewardAccrualTime(); // Update the last reward accrual time.
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
@@ -671,7 +666,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         farmId = _farmId;
         _transferOwnership(msg.sender);
         // Initialize farm global params.
-        lastFundUpdateTime = _farmStartTime;
+        farmStartTime = _farmStartTime;
 
         // Check for lockup functionality.
         // @dev If _cooldownPeriod is 0, then the lockup functionality is disabled for the farm.
@@ -813,6 +808,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Get the time elapsed since the last reward accrual.
     /// @return time The time elapsed since the last reward accrual.
     function _getRewardAccrualTimeElapsed() internal view virtual returns (uint256) {
+        if (farmStartTime > block.timestamp || lastFundUpdateTime == 0) {
+            return 0;
+        }
         unchecked {
             return block.timestamp - lastFundUpdateTime;
         }

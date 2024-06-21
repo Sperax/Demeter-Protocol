@@ -25,6 +25,7 @@ import {
 } from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
@@ -206,7 +207,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
             INFPM(NFPM).decreaseLiquidity(
                 INFPM.DecreaseLiquidityParams({
                     tokenId: tokenId,
-                    liquidity: uint128(liquidity),
+                    liquidity: SafeCast.toUint128(liquidity),
                     amount0Min: 0,
                     amount1Min: 0,
                     deadline: block.timestamp
@@ -374,7 +375,8 @@ abstract contract InitializeTest is UniV3FarmTest {
         assertEq(UniV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
         assertEq(UniV3Farm(farmProxy).uniswapPool(), uniswapPool);
         assertEq(UniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
-        assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
+        assertEq(UniV3Farm(farmProxy).farmStartTime(), block.timestamp);
+        assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), 0);
         assertEq(UniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);
@@ -660,8 +662,8 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         depositSetupFn(farm, false);
         skip(1);
 
-        uint128 oldLiquidity = uint128(UniV3Farm(farm).getDepositInfo(depositId).liquidity);
-        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        uint128 oldLiquidity = SafeCast.toUint128(UniV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = SafeCast.toUint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
