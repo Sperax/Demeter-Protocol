@@ -289,6 +289,7 @@ abstract contract WithdrawTest is FarmTest {
         assertEq(depositInfo.liquidity, 0);
         assertEq(depositInfo.expiryDate, 0);
         assertEq(depositInfo.cooldownPeriod, 0);
+        assertEq(depositInfo.depositTs, 0);
     }
 
     function _assertHelperTwo(
@@ -308,6 +309,7 @@ abstract contract WithdrawTest is FarmTest {
                 assertEq(depositInfo.liquidity, 0);
                 assertEq(depositInfo.expiryDate, 0);
                 assertEq(depositInfo.cooldownPeriod, 0);
+                assertEq(depositInfo.depositTs, 0);
 
                 vm.expectRevert(abi.encodeWithSelector(Farm.SubscriptionDoesNotExist.selector));
                 Farm(farm).getSubscriptionInfo(i, 0);
@@ -341,7 +343,19 @@ abstract contract WithdrawTest is FarmTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
+        skip(1);
         vm.expectRevert(abi.encodeWithSelector(Farm.PleaseInitiateCooldown.selector));
+        Farm(lockupFarm).withdraw(depositId);
+    }
+
+    function test_Withdraw_RevertWhen_DepositInSameTs()
+        public
+        setup
+        depositSetup(lockupFarm, true)
+        useKnownActor(user)
+    {
+        uint256 depositId = 1;
+        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
         Farm(lockupFarm).withdraw(depositId);
     }
 
@@ -429,6 +443,8 @@ abstract contract WithdrawTest is FarmTest {
             if (lockup) {
                 Farm(farm).initiateCooldown(depositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
+            } else {
+                skip(1);
             }
             Farm(farm).getRewardBalance(rwdTokens[0]);
             Farm(farm).getDepositInfo(depositId);
@@ -476,6 +492,8 @@ abstract contract WithdrawTest is FarmTest {
             if (lockup) {
                 Farm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
+            } else {
+                skip(1);
             }
             Farm(farm).getRewardBalance(rwdTokens[0]);
             Farm(farm).getDepositInfo(withdrawnDepositId);
@@ -526,6 +544,8 @@ abstract contract WithdrawTest is FarmTest {
             if (lockup) {
                 Farm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
+            } else {
+                skip(1);
             }
             Farm(farm).getRewardBalance(rwdTokens[0]);
             Farm(farm).getDepositInfo(withdrawnDepositId);
@@ -576,6 +596,8 @@ abstract contract WithdrawTest is FarmTest {
             if (lockup) {
                 Farm(farm).initiateCooldown(withdrawnDepositId);
                 skip(cooldownTime); //100 seconds after the end of CoolDown Period
+            } else {
+                skip(1);
             }
             Farm(farm).getRewardBalance(rwdTokens[0]);
             Farm(farm).getDepositInfo(withdrawnDepositId);

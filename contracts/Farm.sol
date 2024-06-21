@@ -83,6 +83,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidAddress();
     error ZeroAmount();
     error InvalidCooldownPeriod();
+    error WithdrawTooSoon();
 
     // Disallow initialization of a implementation contract.
     constructor() Ownable(msg.sender) {
@@ -431,10 +432,11 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         // Prepare data to be stored.
         Deposit memory userDeposit = Deposit({
             depositor: _account,
-            cooldownPeriod: 0,
+            liquidity: _liquidity,
             expiryDate: 0,
-            totalRewardsClaimed: new uint256[](rewardTokens.length),
-            liquidity: _liquidity
+            cooldownPeriod: 0,
+            depositTs: block.timestamp,
+            totalRewardsClaimed: new uint256[](rewardTokens.length)
         });
 
         // @dev Pre increment because we want deposit IDs to start with 1.
@@ -489,6 +491,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         // Note: If farm is paused, skip the cooldown check.
         if (isFarmActive()) {
             Deposit storage userDeposit = deposits[_depositId];
+            _validateNotRecentDeposit(userDeposit.depositTs);
             if (userDeposit.cooldownPeriod != 0) {
                 revert PleaseInitiateCooldown();
             }
@@ -764,6 +767,15 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function _validateDeposit(address _account, uint256 _depositId) internal view {
         if (deposits[_depositId].depositor != _account || _account == address(0)) {
             revert DepositDoesNotExist();
+        }
+    }
+
+    /// @notice A function to validate deposit ts to prevent flash loan vulnerabilities
+    /// @param _depositTs depositTs of user's deposit. (It represents deposit ts or increaseDeposit ts)
+    /// @dev Reverts when deposit made in the same transaction.
+    function _validateNotRecentDeposit(uint256 _depositTs) internal view {
+        if (_depositTs == block.timestamp) {
+            revert WithdrawTooSoon();
         }
     }
 
