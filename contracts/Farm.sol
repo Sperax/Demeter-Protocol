@@ -115,9 +115,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert ZeroAmount();
         }
         _validateFarmOpen();
-        if (rewardData[_rwdToken].tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
+        _validateRewardToken(_rwdToken);
+
         updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
@@ -286,6 +285,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdToken The reward token's address.
     /// @return The reward rates for the reward token (uint256[]).
     function getRewardRates(address _rwdToken) external view returns (uint256[] memory) {
+        _validateRewardToken(_rwdToken);
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
@@ -402,9 +402,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 
-        if (rwdData.tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
+        _validateRewardToken(_rwdToken);
 
         uint256 numFunds = rewardFunds.length;
         uint256 rewardsAcc = rwdData.accRewardBal;
@@ -802,6 +800,14 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function _validateTokenManager(address _rwdToken) internal view {
         if (msg.sender != rewardData[_rwdToken].tknManager) {
             revert NotTheTokenManager();
+        }
+    }
+
+    /// @notice Validate the reward token is valid.
+    /// @param _rwdToken Address of reward token.
+    function _validateRewardToken(address _rwdToken) internal view {
+        if (rewardData[_rwdToken].tknManager == address(0)) {
+            revert InvalidRewardToken();
         }
     }
 

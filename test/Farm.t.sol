@@ -1080,6 +1080,14 @@ abstract contract CloseFarmTest is FarmTest {
     }
 }
 
+// TODO add more positive test cases
+abstract contract GetRewardRates is FarmTest {
+    function test_RevertWhen_InvalidRewardToken() public setup {
+        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardToken.selector));
+        Farm(nonLockupFarm).getRewardRates(invalidRewardToken);
+    }
+}
+
 abstract contract _SetupFarmTest is FarmTest {
     function test_SetupFarm_RevertWhen_InvalidFarmStartTime() public {
         vm.expectRevert(abi.encodeWithSelector(Farm.InvalidFarmStartTime.selector));
