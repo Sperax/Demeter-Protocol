@@ -11,5 +11,5 @@ interface IFarmRegistry {
         view
         returns (address feeFeceiver, address feeToken, uint256 feeAmount, uint256 extensionFeePerDay);
 
-    function isPrivilegedDeployer(address _user) external view returns (bool);
+    function isPrivilegedUser(address _user) external view returns (bool);
 }

@@ -207,7 +207,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
         vm.expectEmit(address(registry));
         emit PrivilegeUpdated(owner, true);
         FarmRegistry(registry).updatePrivilege(owner, true);
-        assertEq(FarmRegistry(registry).isPrivilegedDeployer(owner), true);
+        assertEq(FarmRegistry(registry).isPrivilegedUser(owner), true);
 
         // Test getFeeParams
         (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =

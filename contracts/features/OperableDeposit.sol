@@ -103,6 +103,9 @@ abstract contract OperableDeposit is ExpirableFarm {
         _updateSubscriptionForIncrease(_depositId, _amount);
         userDeposit.liquidity += _amount;
 
+        // Update depositTs to prevent flash loan vulnerabilities
+        userDeposit.depositTs = block.timestamp;
+
         emit DepositIncreased(_depositId, _amount);
     }
 
@@ -112,6 +115,7 @@ abstract contract OperableDeposit is ExpirableFarm {
         //Validations.
         _validateFarmOpen(); // Withdraw instead of decrease deposit when farm is closed.
         _validateDeposit(msg.sender, _depositId);
+        _validateNotRecentDeposit(userDeposit.depositTs);
 
         if (_amount == 0) {
             revert CannotWithdrawZeroAmount();

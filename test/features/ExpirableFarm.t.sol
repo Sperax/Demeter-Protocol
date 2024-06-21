@@ -17,26 +17,29 @@ abstract contract ExpirableFarmTest is FarmTest {
 
 abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
     function _assertHelper(
-        uint256 farmStartTime,
+        uint256 initialStartTime,
         uint256 farmEndTimeBeforeUpdate,
         uint256 farmEndTimeAfterUpdate,
-        uint256 lastFundUpdateTime,
+        uint256 farmStartTimeAfterUpdate,
         uint256 newStartTime,
-        uint256 timeDelta
+        uint256 timeDelta,
+        uint256 lastFundUpdateTime
     ) internal {
-        if (newStartTime > farmStartTime) {
+        if (newStartTime > initialStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate + timeDelta);
             assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
-            assertEq(lastFundUpdateTime, newStartTime);
-        } else if (newStartTime < farmStartTime) {
+            assertEq(farmStartTimeAfterUpdate, newStartTime);
+        } else if (newStartTime < initialStartTime) {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate - timeDelta);
             assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
-            assertEq(lastFundUpdateTime, newStartTime);
+            assertEq(farmStartTimeAfterUpdate, newStartTime);
         } else {
             assertEq(farmEndTimeAfterUpdate, farmEndTimeBeforeUpdate);
             assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
-            assertEq(lastFundUpdateTime, newStartTime);
+            assertEq(farmStartTimeAfterUpdate, newStartTime);
         }
+
+        assertEq(lastFundUpdateTime, 0);
     }
 
     function test_updateFarmStartTime_RevertWhen_FarmHasExpired() public useKnownActor(owner) {
@@ -46,17 +49,19 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
         ExpirableFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
-    function testFuzz_updateFarmStartTimeWithExpiry(bool lockup, uint256 farmStartTime, uint256 newStartTime) public {
-        farmStartTime = bound(farmStartTime, block.timestamp + 2, type(uint64).max);
-        newStartTime = bound(newStartTime, farmStartTime - 1, type(uint64).max);
-        address farm = createFarm(farmStartTime, lockup);
+    function testFuzz_updateFarmStartTimeWithExpiry(bool lockup, uint256 initialStartTime, uint256 newStartTime)
+        public
+    {
+        initialStartTime = bound(initialStartTime, block.timestamp + 2, type(uint64).max);
+        newStartTime = bound(newStartTime, initialStartTime - 1, type(uint64).max);
+        address farm = createFarm(initialStartTime, lockup);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
         uint256 timeDelta;
 
-        if (newStartTime > farmStartTime) {
-            timeDelta = newStartTime - farmStartTime;
-        } else if (newStartTime < farmStartTime) {
-            timeDelta = farmStartTime - newStartTime;
+        if (newStartTime > initialStartTime) {
+            timeDelta = newStartTime - initialStartTime;
+        } else if (newStartTime < initialStartTime) {
+            timeDelta = initialStartTime - newStartTime;
         }
 
         vm.startPrank(owner);
@@ -66,10 +71,17 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
         vm.stopPrank();
 
         uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 farmStartTimeAfterUpdate = ExpirableFarm(farm).farmStartTime();
         uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         _assertHelper(
-            farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
+            initialStartTime,
+            farmEndTimeBeforeUpdate,
+            farmEndTimeAfterUpdate,
+            farmStartTimeAfterUpdate,
+            newStartTime,
+            timeDelta,
+            lastFundUpdateTime
         );
     }
 
@@ -77,17 +89,17 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
     // so wrote the below tests.
 
     function testFuzz_updateFarmStartTime_end_time_withDelta(bool lockup, uint256 newStartTime) public {
-        uint256 farmStartTime = block.timestamp + 50 days;
+        uint256 initialStartTime = block.timestamp + 50 days;
         newStartTime = bound(newStartTime, block.timestamp, type(uint64).max);
 
-        address farm = createFarm(farmStartTime, lockup);
+        address farm = createFarm(initialStartTime, lockup);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
         uint256 timeDelta;
 
-        if (newStartTime > farmStartTime) {
-            timeDelta = newStartTime - farmStartTime;
-        } else if (newStartTime < farmStartTime) {
-            timeDelta = farmStartTime - newStartTime;
+        if (newStartTime > initialStartTime) {
+            timeDelta = newStartTime - initialStartTime;
+        } else if (newStartTime < initialStartTime) {
+            timeDelta = initialStartTime - newStartTime;
         }
 
         vm.startPrank(owner);
@@ -98,34 +110,45 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
         vm.stopPrank();
 
         uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 farmStartTimeAfterUpdate = ExpirableFarm(farm).farmStartTime();
         uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         _assertHelper(
-            farmStartTime, farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate, lastFundUpdateTime, newStartTime, timeDelta
+            initialStartTime,
+            farmEndTimeBeforeUpdate,
+            farmEndTimeAfterUpdate,
+            farmStartTimeAfterUpdate,
+            newStartTime,
+            timeDelta,
+            lastFundUpdateTime
         );
     }
 
-    function testFuzz_updateFarmStartTime_end_time_noDelta(bool lockup, uint256 farmStartTime) public {
-        farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
-        address farm = createFarm(farmStartTime, lockup);
+    function testFuzz_updateFarmStartTime_end_time_noDelta(bool lockup, uint256 initialStartTime) public {
+        initialStartTime = bound(initialStartTime, block.timestamp + 1, type(uint64).max);
+        address farm = createFarm(initialStartTime, lockup);
+        uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(farmStartTime);
-        ExpirableFarm(farm).updateFarmStartTime(farmStartTime);
+        emit FarmStartTimeUpdated(initialStartTime);
+        ExpirableFarm(farm).updateFarmStartTime(initialStartTime);
         vm.stopPrank();
 
         uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 farmStartTimeAfterUpdate = ExpirableFarm(farm).farmStartTime();
         uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
-        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - farmStartTime);
-        assertEq(lastFundUpdateTime, farmStartTime);
+        assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - initialStartTime);
+        assertEq(farmEndTimeBeforeUpdate, farmEndTimeAfterUpdate);
+        assertEq(farmStartTimeAfterUpdate, initialStartTime);
+        assertEq(lastFundUpdateTime, 0);
     }
 
     function testFuzz_updateFarmStartTime_end_time_withDelta_multiUpdate(bool lockup) public {
-        uint256 farmStartTime = block.timestamp + 50 days;
+        uint256 initialStartTime = block.timestamp + 50 days;
         uint256 newStartTime;
-        address farm = createFarm(farmStartTime, lockup);
+        address farm = createFarm(initialStartTime, lockup);
 
         vm.startPrank(owner);
         for (uint256 i; i < 8; ++i) {
@@ -136,10 +159,12 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
         vm.stopPrank();
 
         uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 farmStartTimeAfterUpdate = ExpirableFarm(farm).farmStartTime();
         uint256 lastFundUpdateTime = ExpirableFarm(farm).lastFundUpdateTime();
 
         assertEq(MIN_EXTENSION * 1 days, farmEndTimeAfterUpdate - newStartTime);
-        assertEq(lastFundUpdateTime, newStartTime);
+        assertEq(farmStartTimeAfterUpdate, newStartTime);
+        assertEq(lastFundUpdateTime, 0);
     }
 }
 
