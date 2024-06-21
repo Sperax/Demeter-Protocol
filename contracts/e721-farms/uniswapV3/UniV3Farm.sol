@@ -100,7 +100,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
-    function initialize(InitializeInput calldata _input) external {
+    function initialize(InitializeInput calldata _input) external initializer {
         _validateNonZeroAddr(_input.uniV3Factory);
         _validateNonZeroAddr(_input.nftContract);
         _validateNonZeroAddr(_input.uniswapUtils);
