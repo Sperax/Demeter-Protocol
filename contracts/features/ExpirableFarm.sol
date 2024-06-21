@@ -73,13 +73,13 @@ abstract contract ExpirableFarm is Farm {
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
     function updateFarmStartTime(uint256 _newStartTime) public virtual override onlyOwner {
-        uint256 _currentFarmStartTime = farmStartTime;
+        uint256 currentFarmStartTime = farmStartTime;
 
         super.updateFarmStartTime(_newStartTime);
 
-        farmEndTime = (_newStartTime > _currentFarmStartTime)
-            ? farmEndTime + (_newStartTime - _currentFarmStartTime)
-            : farmEndTime - (_currentFarmStartTime - _newStartTime);
+        farmEndTime = (_newStartTime > currentFarmStartTime)
+            ? farmEndTime + (_newStartTime - currentFarmStartTime)
+            : farmEndTime - (currentFarmStartTime - _newStartTime);
     }
 
     /// @notice Returns bool status if farm is open.
