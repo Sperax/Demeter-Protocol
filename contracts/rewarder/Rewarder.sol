@@ -357,26 +357,6 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
-    /// @notice Function to normalize asset amounts to be of precision _desiredPrecision.
-    /// @param _token Address of the asset token.
-    /// @param _amount Amount of the token.
-    /// @param _desiredPrecision Precision of reward token.
-    /// @return Normalized amount of the token in _desiredPrecision.
-    function _normalizeAmount(address _token, uint256 _amount, uint8 _desiredPrecision) private returns (uint256) {
-        uint8 decimals_ = _decimals[_token];
-        if (decimals_ == 0) {
-            decimals_ = ERC20(_token).decimals();
-            _decimals[_token] = decimals_;
-        }
-        if (decimals_ < _desiredPrecision) {
-            return _amount * 10 ** (_desiredPrecision - decimals_);
-        }
-        if (decimals_ > _desiredPrecision) {
-            return _amount / 10 ** (decimals_ - _desiredPrecision);
-        }
-        return _amount;
-    }
-
     /// @notice Function to validate farm.
     /// @param _farm Address of the farm to be validated.
     /// @param _baseTokens Array of base tokens.
@@ -401,6 +381,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             hasBaseTokens = false;
             for (uint8 j; j < _assetsLen;) {
                 if (_baseTokens[i] == _assets[j]) {
+                    _decimals[_baseTokens[i]] = ERC20(_baseTokens[i]).decimals();
                     hasBaseTokens = true;
                     farmRewardConfigs[_farm].baseAssetIndexes.push(j);
                     // Deleting will make _assets[j] -> 0x0 so if _baseTokens have repeated address, this function will return false.
@@ -419,6 +400,26 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
         }
         return true;
+    }
+
+    /// @notice Function to normalize asset amounts to be of precision _desiredPrecision.
+    /// @param _token Address of the asset token.
+    /// @param _amount Amount of the token.
+    /// @param _desiredPrecision Precision of reward token.
+    /// @return Normalized amount of the token in _desiredPrecision.
+    function _normalizeAmount(address _token, uint256 _amount, uint8 _desiredPrecision)
+        private
+        view
+        returns (uint256)
+    {
+        uint8 decimals = _decimals[_token];
+        if (decimals < _desiredPrecision) {
+            return _amount * 10 ** (_desiredPrecision - decimals);
+        }
+        if (decimals > _desiredPrecision) {
+            return _amount / 10 ** (decimals - _desiredPrecision);
+        }
+        return _amount;
     }
 
     /// @notice Function to fetch and get the price of a token.
