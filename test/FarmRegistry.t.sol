@@ -100,6 +100,21 @@ contract RegisterFarmTest is FarmRegistryTest {
         FarmRegistry(registry).registerFarm(actors[6], actors[4]);
     }
 
+    function test_RevertWhen_FarmAlreadyRegistered()
+        public
+        useKnownActor(FARM_REGISTRY_OWNER)
+        initialized
+        deployerRegistered
+    {
+        address farm = actors[6];
+        address creator = actors[5];
+        vm.startPrank(owner);
+
+        FarmRegistry(registry).registerFarm(farm, creator);
+        vm.expectRevert(abi.encodeWithSelector(FarmRegistry.FarmAlreadyRegistered.selector));
+        FarmRegistry(registry).registerFarm(farm, creator);
+    }
+
     function test_registerFarm() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         address farm = actors[6];
         address creator = actors[5];

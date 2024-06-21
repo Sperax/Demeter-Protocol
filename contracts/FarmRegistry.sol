@@ -49,6 +49,7 @@ contract FarmRegistry is OwnableUpgradeable {
 
     // Custom Errors.
     error DeployerNotRegistered();
+    error FarmAlreadyRegistered();
     error DeployerAlreadyRegistered();
     error InvalidDeployerId();
     error PrivilegeSameAsDesired();
@@ -80,6 +81,10 @@ contract FarmRegistry is OwnableUpgradeable {
         if (!deployerRegistered[msg.sender]) {
             revert DeployerNotRegistered();
         }
+        if (farmRegistered[_farm]) {
+            revert FarmAlreadyRegistered();
+        }
+
         farms.push(_farm);
         farmRegistered[_farm] = true;
         emit FarmRegistered(_farm, _creator, msg.sender);
