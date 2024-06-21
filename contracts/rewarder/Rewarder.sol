@@ -121,7 +121,16 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerOfFarm(address _farm, address _newManager) external onlyOwner {
+        _validateNonZeroAddr(_farm);
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
+    }
+
+    /// @notice Function to recover reward funds from the farm.
+    /// @param _farm Farm's address from which reward funds is to be recovered.
+    /// @param _amount Amount which is to be recovered.
+    function recoverRewardFundsOfFarm(address _farm, uint256 _amount) external onlyOwner {
+        _validateNonZeroAddr(_farm);
+        IFarm(_farm).recoverRewardFunds(REWARD_TOKEN, _amount);
     }
 
     /// @notice Function to update APR.
