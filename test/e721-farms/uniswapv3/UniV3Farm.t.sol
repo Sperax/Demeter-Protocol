@@ -375,7 +375,8 @@ abstract contract InitializeTest is UniV3FarmTest {
         assertEq(UniV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
         assertEq(UniV3Farm(farmProxy).uniswapPool(), uniswapPool);
         assertEq(UniV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
-        assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
+        assertEq(UniV3Farm(farmProxy).farmStartTime(), block.timestamp);
+        assertEq(UniV3Farm(farmProxy).lastFundUpdateTime(), 0);
         assertEq(UniV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(UniV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(UniV3Farm(farmProxy).uniV3Factory(), UNIV3_FACTORY);

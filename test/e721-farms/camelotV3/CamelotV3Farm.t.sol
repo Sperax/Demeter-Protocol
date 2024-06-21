@@ -374,7 +374,8 @@ abstract contract InitializeTest is CamelotV3FarmTest {
         assertEq(CamelotV3Farm(farmProxy).tickUpperAllowed(), TICK_UPPER);
         assertEq(CamelotV3Farm(farmProxy).camelotPool(), camelotPool);
         assertEq(CamelotV3Farm(farmProxy).owner(), address(this)); // changes to admin when called via deployer
-        assertEq(CamelotV3Farm(farmProxy).lastFundUpdateTime(), block.timestamp);
+        assertEq(CamelotV3Farm(farmProxy).farmStartTime(), block.timestamp);
+        assertEq(CamelotV3Farm(farmProxy).lastFundUpdateTime(), 0);
         assertEq(CamelotV3Farm(farmProxy).cooldownPeriod(), COOLDOWN_PERIOD_DAYS * 1 days);
         assertEq(CamelotV3Farm(farmProxy).farmId(), FARM_ID);
         assertEq(CamelotV3Farm(farmProxy).camelotV3Factory(), CAMELOT_V3_FACTORY);
