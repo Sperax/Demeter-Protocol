@@ -283,9 +283,10 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
             // Getting reward token price to calculate rewards emission.
             priceData = _getPrice(REWARD_TOKEN, oracle);
-            rewardRate = (
-                (((farmRewardConfig.apr * totalValue) / (APR_PRECISION * DENOMINATOR)) / ONE_YEAR) * priceData.precision
-            ) / priceData.price;
+            // rewardValuePerSecond = (APR * totalValue / 100) / 365 days.
+            // rewardRate = rewardValuePerSecond * pricePrecision / price.
+            rewardRate = (farmRewardConfig.apr * totalValue * priceData.precision)
+                / (APR_PRECISION * DENOMINATOR * ONE_YEAR * priceData.price);
             if (rewardRate > farmRewardConfig.maxRewardRate) {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
