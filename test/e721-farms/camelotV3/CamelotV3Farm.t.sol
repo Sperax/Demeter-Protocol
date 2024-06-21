@@ -25,6 +25,7 @@ import {
 import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol";
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
@@ -220,7 +221,7 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
             INFPM(NFPM).decreaseLiquidity(
                 INFPM.DecreaseLiquidityParams({
                     tokenId: tokenId,
-                    liquidity: uint128(liquidity),
+                    liquidity: SafeCast.toUint128(liquidity),
                     amount0Min: 0,
                     amount1Min: 0,
                     deadline: block.timestamp
@@ -715,8 +716,8 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
 
-        uint128 oldLiquidity = uint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
-        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        uint128 oldLiquidity = SafeCast.toUint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = SafeCast.toUint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
@@ -774,8 +775,8 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         farm = isLockupFarm ? lockupFarm : nonLockupFarm;
         depositSetupFn(farm, false);
 
-        uint128 oldLiquidity = uint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
-        uint128 liquidityToWithdraw = uint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
+        uint128 oldLiquidity = SafeCast.toUint128(CamelotV3Farm(farm).getDepositInfo(depositId).liquidity);
+        uint128 liquidityToWithdraw = SafeCast.toUint128(bound(_liquidityToWithdraw, 1, oldLiquidity));
         assertEq(currentActor, user);
         assert(DAI < USDCe); // To ensure that the first token is DAI and the second is USDCe
 
@@ -844,7 +845,7 @@ abstract contract GetTokenAmountsTest is CamelotV3FarmTest {
             sqrtRatioX96,
             CamelotV3Farm(lockupFarm).tickLowerAllowed(),
             CamelotV3Farm(lockupFarm).tickUpperAllowed(),
-            uint128(
+            SafeCast.toUint128(
                 CamelotV3Farm(lockupFarm).getRewardFundInfo(CamelotV3Farm(lockupFarm).COMMON_FUND_ID()).totalLiquidity
             )
         );
