@@ -44,6 +44,7 @@ abstract contract FarmStorage {
 
     uint256 public cooldownPeriod;
     uint256 public lastFundUpdateTime;
+    uint256 public farmStartTime;
     uint256 public totalDeposits;
 
     // Reward info.

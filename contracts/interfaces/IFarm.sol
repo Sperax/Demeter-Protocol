@@ -19,4 +19,6 @@ interface IFarm {
     function getRewardFundInfo(uint8 _fundId) external view returns (RewardFund memory);
 
     function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
+
+    function getRewardBalance(address _rwdToken) external view returns (uint256);
 }
