@@ -619,8 +619,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function _updateFarmRewardData() internal virtual {
         uint256 time = _getRewardAccrualTimeElapsed();
         if (time > 0) {
-            // If farm is paused don't accrue any rewards,
-            // only update the lastFundUpdateTime.
+            // Accrue rewards if farm is active.
             if (isFarmActive()) {
                 uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
@@ -645,7 +644,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 }
             }
         }
-        _updateLastRewardAccrualTime();
+        _updateLastRewardAccrualTime(); // Update the last reward accrual time.
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
