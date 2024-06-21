@@ -8,6 +8,8 @@ interface IFarm {
 
     function setRewardRate(address _rwdToken, uint256[] memory _newRwdRates) external;
 
+    function recoverRewardFunds(address _rwdToken, uint256 _amount) external;
+
     function rewardData(address _token) external view returns (RewardData memory);
 
     function cooldownPeriod() external view returns (uint256);
@@ -19,4 +21,6 @@ interface IFarm {
     function getRewardFundInfo(uint8 _fundId) external view returns (RewardFund memory);
 
     function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
+
+    function getRewardBalance(address _rwdToken) external view returns (uint256);
 }

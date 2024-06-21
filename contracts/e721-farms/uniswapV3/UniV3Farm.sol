@@ -33,6 +33,7 @@ import {INFPM, IUniswapV3Factory, IUniswapV3TickSpacing} from "./interfaces/IUni
 import {INFPMUtils, Position} from "./interfaces/INonfungiblePositionManagerUtils.sol";
 import {OperableDeposit} from "../../features/OperableDeposit.sol";
 import {TokenUtils} from "../../utils/TokenUtils.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // Defines the Uniswap pool init data for constructor.
 // tokenA - Address of tokenA.
@@ -200,8 +201,8 @@ contract UniV3Farm is E721Farm, OperableDeposit {
             INFPM.CollectParams({
                 tokenId: tokenId,
                 recipient: msg.sender,
-                amount0Max: uint128(amount0),
-                amount1Max: uint128(amount1)
+                amount0Max: SafeCast.toUint128(amount0),
+                amount1Max: SafeCast.toUint128(amount1)
             })
         );
     }
