@@ -58,7 +58,7 @@ abstract contract E20Farm is OperableDeposit {
         address _farmRegistry,
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
-    ) external initializer {
+    ) external {
         // initialize farmToken related data.
         farmToken = _farmToken;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
