@@ -224,6 +224,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         rewards = new uint256[][](numDepositSubs);
 
         uint256 time = _getRewardAccrualTimeElapsed();
+        uint256[] memory accumulatedRewards = new uint256[](numRewards);
 
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
@@ -232,7 +233,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
-                    uint256 accRewards = _getAccRewards(iRwd, fundId, time);
+                    uint256 accRewards = _getAccRewards(iRwd, fundId, time, accumulatedRewards[iRwd]); // accumulatedRewards is sent to consider the already accrued rewards.
+                    accumulatedRewards[iRwd] += accRewards;
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
                 }
@@ -333,7 +335,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                     if (fund.totalLiquidity != 0) {
                         for (uint8 iRwd; iRwd < numRewards;) {
                             // Get the accrued rewards for the time.
-                            uint256 accRewards = _getAccRewards(iRwd, iFund, time);
+                            uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
 
@@ -734,14 +736,21 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
     /// @param _time Time interval for the reward computation.
-    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time) internal view returns (uint256) {
+    /// @param _alreadyAccRewardBal Already accrued reward balance.
+    /// @dev `_alreadyAccRewardBal` is useful when this function called from `computeRewards` function.
+    /// As `computeReward` is a view function and it doesn't update the `accRewardBal` in the `rewardData`.
+    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time, uint256 _alreadyAccRewardBal)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 rewardsPerSec = rewardFunds[_fundId].rewardsPerSec[_rwdId];
         if (rewardsPerSec == 0) {
             return 0;
         }
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
-        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
+        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal + _alreadyAccRewardBal;
 
         uint256 rwdBal = 0;
         // Calculate the available reward funds in the farm.
