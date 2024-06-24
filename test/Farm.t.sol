@@ -635,11 +635,8 @@ abstract contract GetRewardTokensTest is FarmTest {
         address[] memory _rwdTokens = Farm(lockupFarm).getRewardTokens();
         uint256 _rwdTokensLen = _rwdTokens.length;
         assertEq(rwdTokens.length, _rwdTokensLen);
-        for (uint8 i; i < _rwdTokensLen;) {
+        for (uint8 i; i < _rwdTokensLen; ++i) {
             assertEq(_rwdTokens[i], rwdTokens[i]);
-            unchecked {
-                ++i;
-            }
         }
     }
 }

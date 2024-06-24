@@ -202,11 +202,8 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         address oracle = IRewarderFactory(rewarderFactory).oracle();
         // validating new reward config.
         uint256 baseTokensLen = _rewardConfig.baseTokens.length;
-        for (uint256 i; i < baseTokensLen;) {
+        for (uint256 i; i < baseTokensLen; ++i) {
             _validatePriceFeed(_rewardConfig.baseTokens[i], oracle);
-            unchecked {
-                ++i;
-            }
         }
         _validateRewardPer(_rewardConfig.nonLockupRewardPer);
         farmRewardConfigs[_farm].apr = _rewardConfig.apr;
@@ -251,12 +248,9 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     function _hasRewardToken(address _farm) internal view virtual returns (bool) {
         address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
         uint256 rwdTokensLen = rwdTokens.length;
-        for (uint8 i; i < rwdTokensLen;) {
+        for (uint8 i; i < rwdTokensLen; ++i) {
             if (rwdTokens[i] == REWARD_TOKEN) {
                 return true;
-            }
-            unchecked {
-                ++i;
             }
         }
         return false;
@@ -280,7 +274,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             uint256 baseTokensLen = farmRewardConfig.baseAssetIndexes.length;
             IOracle.PriceData memory priceData;
             address oracle = IRewarderFactory(rewarderFactory).oracle();
-            for (uint8 i; i < baseTokensLen;) {
+            for (uint8 i; i < baseTokensLen; ++i) {
                 priceData = _getPrice(assets[farmRewardConfig.baseAssetIndexes[i]], oracle);
                 totalValue += (
                     priceData.price
@@ -288,9 +282,6 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                             assets[farmRewardConfig.baseAssetIndexes[i]], amounts[farmRewardConfig.baseAssetIndexes[i]]
                         )
                 ) / priceData.precision;
-                unchecked {
-                    ++i;
-                }
             }
             // Getting reward token price to calculate rewards emission.
             priceData = _getPrice(REWARD_TOKEN, oracle);
@@ -375,9 +366,9 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         uint256 _assetsLen = _assets.length;
         uint256 _baseTokensLen = _baseTokens.length;
         bool hasBaseTokens;
-        for (uint8 i; i < _baseTokensLen;) {
+        for (uint8 i; i < _baseTokensLen; ++i) {
             hasBaseTokens = false;
-            for (uint8 j; j < _assetsLen;) {
+            for (uint8 j; j < _assetsLen; ++j) {
                 if (_baseTokens[i] == _assets[j]) {
                     _decimals[_baseTokens[i]] = ERC20(_baseTokens[i]).decimals();
                     hasBaseTokens = true;
@@ -386,15 +377,9 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                     delete _assets[j];
                     break;
                 }
-                unchecked {
-                    ++j;
-                }
             }
             if (!hasBaseTokens) {
                 return false;
-            }
-            unchecked {
-                ++i;
             }
         }
         return true;
