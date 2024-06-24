@@ -73,6 +73,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     uint256 public constant DENOMINATOR = 100;
     uint256 public constant ONE_YEAR = 365 days;
     address public REWARD_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint8 public REWARD_TOKEN_DECIMALS; // solhint-disable-line var-name-mixedcase
     uint256 public totalRewardRate; // Rewards emitted per second for all the farms from this rewarder.
     address public rewarderFactory;
     // farm -> FarmRewardConfig.
@@ -223,6 +224,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         _validatePriceFeed(_rwdToken, _oracle);
         rewarderFactory = _rewarderFactory;
         REWARD_TOKEN = _rwdToken;
+        REWARD_TOKEN_DECIMALS = ERC20(_rwdToken).decimals();
         _validateNonZeroAddr(_admin);
         _transferOwnership(_admin);
     }
@@ -292,10 +294,13 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
             // Getting reward token price to calculate rewards emission.
             priceData = _getPrice(REWARD_TOKEN, oracle);
+
+            // For token with lower decimals the calculation of rewardRate might not be accurate because of precision loss in truncation.
             // rewardValuePerSecond = (APR * totalValue / 100) / 365 days.
             // rewardRate = rewardValuePerSecond * pricePrecision / price.
             rewardRate = (farmRewardConfig.apr * totalValue * priceData.precision)
                 / (APR_PRECISION * DENOMINATOR * ONE_YEAR * priceData.price);
+
             if (rewardRate > farmRewardConfig.maxRewardRate) {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
@@ -308,7 +313,6 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
                 if (rewardsToSend > _rewarderRwdBalance) {
                     rewardsToSend = _rewarderRwdBalance;
                 }
-                IERC20(REWARD_TOKEN).safeTransfer(_farm, rewardsToSend);
             } else {
                 rewardsToSend = 0;
             }
@@ -322,6 +326,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         farmRewardConfigs[_farm].rewardRate = rewardRate;
         emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
         _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
+        if (rewardsToSend != 0) IERC20(REWARD_TOKEN).safeTransfer(_farm, rewardsToSend);
     }
 
     /// @notice Function to set reward rate in the farm.
@@ -350,18 +355,6 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
-    /// @notice Function to normalize asset amounts to be of precision 1e18.
-    /// @param _token Address of the asset token.
-    /// @param _amount Amount of the token.
-    /// @return Normalized amount of the token in 1e18.
-    function _normalizeAmount(address _token, uint256 _amount) private returns (uint256) {
-        if (_decimals[_token] == 0) {
-            _decimals[_token] = ERC20(_token).decimals();
-        }
-        _amount *= 10 ** (18 - _decimals[_token]);
-        return _amount;
-    }
-
     /// @notice Function to validate farm.
     /// @param _farm Address of the farm to be validated.
     /// @param _baseTokens Array of base tokens.
@@ -386,6 +379,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             hasBaseTokens = false;
             for (uint8 j; j < _assetsLen;) {
                 if (_baseTokens[i] == _assets[j]) {
+                    _decimals[_baseTokens[i]] = ERC20(_baseTokens[i]).decimals();
                     hasBaseTokens = true;
                     farmRewardConfigs[_farm].baseAssetIndexes.push(j);
                     // Deleting will make _assets[j] -> 0x0 so if _baseTokens have repeated address, this function will return false.
@@ -404,6 +398,22 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
             }
         }
         return true;
+    }
+
+    /// @notice Function to normalize asset amounts to be of precision REWARD_TOKEN_DECIMALS.
+    /// @param _token Address of the asset token.
+    /// @param _amount Amount of the token.
+    /// @return Normalized amount of the token in _desiredPrecision.
+    function _normalizeAmount(address _token, uint256 _amount) private view returns (uint256) {
+        uint8 decimals = _decimals[_token];
+        uint8 rwdTokenDecimals = REWARD_TOKEN_DECIMALS;
+        if (decimals < rwdTokenDecimals) {
+            return _amount * 10 ** (rwdTokenDecimals - decimals);
+        }
+        if (decimals > rwdTokenDecimals) {
+            return _amount / 10 ** (decimals - rwdTokenDecimals);
+        }
+        return _amount;
     }
 
     /// @notice Function to fetch and get the price of a token.
