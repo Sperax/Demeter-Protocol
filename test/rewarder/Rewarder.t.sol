@@ -120,7 +120,7 @@ contract TestUpdateAPR is RewarderTest {
     }
 
     function test_UpdateAPR_CapRewardsWithMaxRwdRate() public useKnownActor(rewardManager) {
-        uint256 MAX_REWARD_RATE = 166665;
+        uint256 MAX_REWARD_RATE = 50; // 50 wei: Because rwdToken decimals are 6
         Rewarder.FarmRewardConfigInput memory rewardConfig;
         address[] memory baseAssets = new address[](1);
         baseAssets[0] = USDCe;
@@ -133,10 +133,53 @@ contract TestUpdateAPR is RewarderTest {
         rewarder.updateRewardConfig(lockupFarm, rewardConfig);
         changePrank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
-        deposit(lockupFarm, false, 1000);
+        deposit(lockupFarm, false, 100000);
         rewarder.calibrateReward(lockupFarm);
         (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
         assertEq(rewardRate, MAX_REWARD_RATE);
+    }
+
+    function test_UpdateAPR_ForBaseTokenDecimalsMoreThanRwdTokenDecimals() public useKnownActor(rewardManager) {
+        rewarder = Rewarder(rewarderFactory.deployRewarder(USDCe));
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = DAI;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 12e8,
+            maxRewardRate: UINT256_MAX,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        deposit(lockupFarm, false, 1000);
+        rewarder.calibrateReward(lockupFarm);
+        (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertTrue((rewardRate * 30 days) / 1e6 > 0);
+        assertEq((rewardRate * 30 days) / 1e9, 0);
+    }
+
+    function test_UpdateAPR_ForRwdTokenDecimalsMoreThanBaseTokenDecimals() public useKnownActor(rewardManager) {
+        vm.mockCall(USDCe, abi.encodeWithSelector(ERC20.decimals.selector), abi.encode(20));
+        rewarder = Rewarder(rewarderFactory.deployRewarder(USDCe));
+        vm.clearMockedCalls();
+        Rewarder.FarmRewardConfigInput memory rewardConfig;
+        address[] memory baseAssets = new address[](1);
+        baseAssets[0] = DAI;
+        rewardConfig = Rewarder.FarmRewardConfigInput({
+            apr: 12e8,
+            maxRewardRate: UINT256_MAX,
+            baseTokens: baseAssets,
+            nonLockupRewardPer: 5000
+        });
+        rewarder.updateRewardConfig(lockupFarm, rewardConfig);
+        changePrank(owner);
+        CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
+        deposit(lockupFarm, false, 1000);
+        rewarder.calibrateReward(lockupFarm);
+        (, uint256 rewardRate,,) = rewarder.farmRewardConfigs(lockupFarm);
+        assertTrue((rewardRate * 30 days) / 1e20 > 0);
     }
 
     function _setupFarmRewards() private {
