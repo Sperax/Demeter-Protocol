@@ -51,12 +51,15 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     error InvalidAmount();
 
     /// @notice constructor.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - farm start time.
     /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _farmRegistry - Address of the Demeter Farm Registry.
     /// @param _camelotPairPool - Camelot lp pool address.
     /// @param _rwdTokenData - Initialize data for reward tokens.
+    /// @param _router Camelot Router's address.
+    /// @param _nftPoolFactory Non fungible position manager contract for Camelot V2.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,

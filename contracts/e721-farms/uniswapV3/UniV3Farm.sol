@@ -265,6 +265,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _tokenId The tokenId of the position.
     /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
+    /// @return liquidity Liquidity in the position.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
         Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);

@@ -85,7 +85,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidCooldownPeriod();
     error WithdrawTooSoon();
 
-    // Disallow initialization of a implementation contract.
+    // Disallow initialization of an implementation contract.
     constructor() Ownable(msg.sender) {
         _disableInitializers();
     }
@@ -126,7 +126,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days). Egs: 7 means 7 days.
+    /// @param _newCooldownPeriod The new cooldown period (in days). E.g: 7 means 7 days.
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
@@ -651,8 +651,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - Farm start time.
-    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. Egs: 7 means 7 days.
+    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. E.g: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
@@ -736,6 +737,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
     /// @param _time Time interval for the reward computation.
+    /// @return accRewards Accrued rewards for the given `_rwdId`, `_fundId` and `_time`.
     function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time) internal view returns (uint256) {
         uint256 rewardsPerSec = rewardFunds[_fundId].rewardsPerSec[_rwdId];
         if (rewardsPerSec == 0) {
@@ -833,8 +835,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _depositId The unique ID of the deposit.
     /// @param _fundId The reward fund id.
+    /// @param _depositId The unique ID of the deposit.
     /// @param _liquidity The liquidity of the deposit.
     function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
         // Subscribe to the reward fund.

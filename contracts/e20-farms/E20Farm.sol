@@ -46,6 +46,7 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     error CannotWithdrawFarmToken();
 
     /// @notice Constructor.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - Farm start time.
     /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
