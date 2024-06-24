@@ -47,7 +47,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
-    event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
+    event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
@@ -158,7 +158,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 numRewards = rewardTokens.length;
         for (uint8 iRwd; iRwd < numRewards;) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
-            _setRewardRate(rewardTokens[iRwd], new uint256[](rewardFunds.length));
+            _setRewardRate(rewardTokens[iRwd], new uint128[](rewardFunds.length));
             unchecked {
                 ++iRwd;
             }
@@ -186,7 +186,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
+    function setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
         updateFarmRewardData();
@@ -634,7 +634,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) internal {
+    function _setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) internal {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
         if (_newRewardRates.length != numFunds) {
