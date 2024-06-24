@@ -103,7 +103,7 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @param _rwdToken Address of the reward token.
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.
-    function initialize(address _rwdToken, address _oracle, address _admin) external {
+    function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
         _initialize(_rwdToken, _oracle, _admin, msg.sender);
     }
 
@@ -221,10 +221,7 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @param _oracle Address of the USDs Master Price Oracle.
     /// @param _admin Admin/ deployer of this contract.
     /// @param _rewarderFactory Address of Rewarder factory contract.
-    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory)
-        internal
-        initializer
-    {
+    function _initialize(address _rwdToken, address _oracle, address _admin, address _rewarderFactory) internal {
         _validatePriceFeed(_rwdToken, _oracle);
         rewarderFactory = _rewarderFactory;
         REWARD_TOKEN = _rwdToken;
