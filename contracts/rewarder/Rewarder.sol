@@ -311,7 +311,6 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                 if (rewardsToSend > _rewarderRwdBalance) {
                     rewardsToSend = _rewarderRwdBalance;
                 }
-                IERC20(REWARD_TOKEN).safeTransfer(_farm, rewardsToSend);
             } else {
                 rewardsToSend = 0;
             }
@@ -325,6 +324,7 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         farmRewardConfigs[_farm].rewardRate = rewardRate;
         emit RewardCalibrated(_farm, rewardsToSend, rewardRate);
         _setRewardRate(_farm, rewardRate, farmRewardConfig.nonLockupRewardPer);
+        if (rewardsToSend != 0) IERC20(REWARD_TOKEN).safeTransfer(_farm, rewardsToSend);
     }
 
     /// @notice Function to set reward rate in the farm.
