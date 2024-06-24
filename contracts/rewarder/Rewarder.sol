@@ -227,8 +227,6 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         REWARD_TOKEN = _rwdToken;
         REWARD_TOKEN_DECIMALS = ERC20(_rwdToken).decimals();
         __Ownable_init_unchained(_admin);
-        _validateNonZeroAddr(_admin);
-        _transferOwnership(_admin);
     }
 
     /// @notice Function to check if the farm's reward is configured.
