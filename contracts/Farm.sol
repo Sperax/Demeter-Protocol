@@ -157,12 +157,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         isPaused = true;
         isClosed = true;
         uint256 numRewards = rewardTokens.length;
-        for (uint8 iRwd; iRwd < numRewards;) {
+        for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
             _setRewardRate(rewardTokens[iRwd], new uint256[](rewardFunds.length));
-            unchecked {
-                ++iRwd;
-            }
         }
         emit FarmClosed();
     }
@@ -227,11 +224,11 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 time = _getRewardAccrualTimeElapsed();
 
         // Update the two reward funds.
-        for (uint8 iSub; iSub < numDepositSubs;) {
+        for (uint8 iSub; iSub < numDepositSubs; ++iSub) {
             Subscription storage sub = depositSubs[iSub];
             rewards[iSub] = new uint256[](numRewards);
             uint8 fundId = sub.fundId;
-            for (uint8 iRwd; iRwd < numRewards;) {
+            for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
                 if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time);
                     // update the accRewardPerShare for delta time.
@@ -239,12 +236,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 }
                 rewards[iSub][iRwd] =
                     ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
-                unchecked {
-                    ++iRwd;
-                }
-            }
-            unchecked {
-                ++iSub;
             }
         }
         return rewards;
@@ -289,11 +280,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
-        for (uint8 iFund; iFund < numFunds;) {
+        for (uint8 iFund; iFund < numFunds; ++iFund) {
             rates[iFund] = rewardFunds[iFund].rewardsPerSec[id];
-            unchecked {
-                ++iFund;
-            }
         }
         return rates;
     }
@@ -379,12 +367,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 supply = IERC20(_rwdToken).balanceOf(address(this));
         uint256 time = _getRewardAccrualTimeElapsed();
         if (time != 0) {
-            for (uint8 iFund; iFund < numFunds;) {
+            for (uint8 iFund; iFund < numFunds; ++iFund) {
                 if (rewardFunds[iFund].totalLiquidity != 0) {
                     rewardsAcc += rewardFunds[iFund].rewardsPerSec[rwdData.id] * time;
-                }
-                unchecked {
-                    ++iFund;
                 }
             }
         }
@@ -537,13 +522,13 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256[][] memory rewardsForEachSubs = new uint256[][](numSubs);
 
         // Compute the rewards for each subscription.
-        for (uint8 iSub; iSub < numSubs;) {
+        for (uint8 iSub; iSub < numSubs; ++iSub) {
             uint8 fundId = depositSubs[iSub].fundId;
             uint256[] memory rewards = new uint256[](numRewards);
             rewardsForEachSubs[iSub] = new uint256[](numRewards);
             RewardFund storage fund = rewardFunds[fundId];
 
-            for (uint256 iRwd; iRwd < numRewards;) {
+            for (uint256 iRwd; iRwd < numRewards; ++iRwd) {
                 // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
                 uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PREC;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
@@ -553,31 +538,21 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 // Update userRewardDebt for the subscriptions
                 // rewardDebt = liquidity * accRewardPerShare
                 depositSubs[iSub].rewardDebt[iRwd] = accRewards;
-                unchecked {
-                    ++iRwd;
-                }
             }
             rewardsForEachSubs[iSub] = rewards;
-
-            unchecked {
-                ++iSub;
-            }
         }
 
         emit RewardsClaimed(_depositId, rewardsForEachSubs);
 
         address user = userDeposit.depositor;
         // Transfer the claimed rewards to the user if any.
-        for (uint8 iRwd; iRwd < numRewards;) {
+        for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] != 0) {
                 address rewardToken = rewardTokens[iRwd];
                 rewardData[rewardToken].accRewardBal -= totalRewards[iRwd];
                 // Update the total rewards earned for the deposit.
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
                 IERC20(rewardToken).safeTransfer(user, totalRewards[iRwd]);
-            }
-            unchecked {
-                ++iRwd;
             }
         }
     }
@@ -609,11 +584,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert InvalidRewardRatesLength();
         }
         // Update the reward rate.
-        for (uint8 iFund; iFund < numFunds;) {
+        for (uint8 iFund; iFund < numFunds; ++iFund) {
             rewardFunds[iFund].rewardsPerSec[id] = _newRewardRates[iFund];
-            unchecked {
-                ++iFund;
-            }
         }
         emit RewardRateUpdated(_rwdToken, _newRewardRates);
     }
@@ -627,22 +599,15 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 uint256 numFunds = rewardFunds.length;
                 uint256 numRewards = rewardTokens.length;
                 // Update the reward funds.
-                for (uint8 iFund; iFund < numFunds;) {
+                for (uint8 iFund; iFund < numFunds; ++iFund) {
                     RewardFund storage fund = rewardFunds[iFund];
                     if (fund.totalLiquidity != 0) {
-                        for (uint8 iRwd; iRwd < numRewards;) {
+                        for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(iRwd, iFund, time);
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
-
-                            unchecked {
-                                ++iRwd;
-                            }
                         }
-                    }
-                    unchecked {
-                        ++iFund;
                     }
                 }
             }
@@ -684,24 +649,18 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         }
 
         // Initialize fund storage.
-        for (uint8 i; i < numFunds;) {
+        for (uint8 i; i < numFunds; ++i) {
             RewardFund memory _rewardFund = RewardFund({
                 totalLiquidity: 0,
                 rewardsPerSec: new uint256[](numRewards),
                 accRewardPerShare: new uint256[](numRewards)
             });
             rewardFunds.push(_rewardFund);
-            unchecked {
-                ++i;
-            }
         }
 
         // Initialize reward Data.
-        for (uint8 iRwd; iRwd < numRewards;) {
+        for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
             _addRewardData(_rwdTokenData[iRwd].token, _rwdTokenData[iRwd].tknManager);
-            unchecked {
-                ++iRwd;
-            }
         }
 
         emit FarmStartTimeUpdated(_farmStartTime);
@@ -812,7 +771,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             return 0;
         }
         unchecked {
-            return block.timestamp - lastFundUpdateTime;
+            return block.timestamp - lastFundUpdateTime; // lastFundUpdateTime is always equal or less than block.timestamp.
         }
     }
 
@@ -846,11 +805,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         });
 
         // Initialize user's reward debt.
-        for (uint8 iRwd; iRwd < numRewards;) {
+        for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
             subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
-            unchecked {
-                ++iRwd;
-            }
         }
 
         subscriptions[_depositId].push(subscription);
@@ -871,16 +827,13 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         // Unsubscribe from the reward fund.
         Subscription[] storage depositSubs = subscriptions[_depositId];
         uint256 numSubs = depositSubs.length;
-        for (uint256 iSub; iSub < numSubs;) {
+        for (uint256 iSub; iSub < numSubs; ++iSub) {
             if (depositSubs[iSub].fundId == _fundId) {
                 // Persist the reward information.
                 uint256[] memory rewardClaimed = new uint256[](numRewards);
 
-                for (uint8 iRwd; iRwd < numRewards;) {
+                for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
                     rewardClaimed[iRwd] = depositSubs[iSub].rewardClaimed[iRwd];
-                    unchecked {
-                        ++iRwd;
-                    }
                 }
 
                 // Delete the subscription from the list.
@@ -893,9 +846,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                 emit PoolUnsubscribed(_depositId, _fundId, rewardClaimed);
 
                 break;
-            }
-            unchecked {
-                ++iSub;
             }
         }
     }
