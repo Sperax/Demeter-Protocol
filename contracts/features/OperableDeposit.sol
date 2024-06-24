@@ -31,8 +31,6 @@ import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 /// @author Sperax Foundation.
 /// @notice This contract helps in creating farms with increase/decrease deposit functionality.
 abstract contract OperableDeposit is Farm {
-    uint256 public constant PRECISION = 1e18;
-
     // Events.
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
@@ -53,7 +51,7 @@ abstract contract OperableDeposit is Farm {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
+                _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
@@ -77,7 +75,7 @@ abstract contract OperableDeposit is Farm {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
+                _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
                 unchecked {
                     ++iRwd;
                 }
