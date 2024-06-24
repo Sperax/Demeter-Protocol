@@ -52,7 +52,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         uint256 rewardRate;
         uint256 maxRewardRate;
         uint256[] baseAssetIndexes;
-        uint256 nonLockupRewardPer; // 5000 = 50%.
+        uint256 nonLockupRewardPer; // 5e3 = 50%.
     }
 
     // Configuration for fixed APR reward tokens.
@@ -64,10 +64,10 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
         uint256 apr;
         uint256 maxRewardRate;
         address[] baseTokens;
-        uint256 nonLockupRewardPer; // 5000 = 50%.
+        uint256 nonLockupRewardPer; // 5e3 = 50%.
     }
 
-    uint256 public constant MAX_PERCENTAGE = 10000;
+    uint256 public constant MAX_PERCENTAGE = 1e4;
     uint256 public constant APR_PRECISION = 1e8; // 1%.
     uint256 public constant REWARD_PERIOD = 1 weeks;
     uint256 public constant DENOMINATOR = 100;
