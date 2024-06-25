@@ -49,7 +49,7 @@ contract UniV2Farm is E20Farm, ExpirableFarm {
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
     ) external {
-        super.initialize(_farmId, _farmStartTime, _cooldownPeriod, _farmToken, _rwdTokenData);
+        super._initialize(_farmId, _farmStartTime, _cooldownPeriod, _farmToken, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
     }
 
