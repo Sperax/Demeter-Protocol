@@ -77,7 +77,7 @@ struct InitializeInput {
 /// @title Uniswap V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V3 farm.
-contract UniV3Farm is E721Farm, OperableDeposit {
+contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params.

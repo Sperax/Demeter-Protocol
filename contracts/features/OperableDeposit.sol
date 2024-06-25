@@ -24,13 +24,13 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
-import {ExpirableFarm} from "./ExpirableFarm.sol";
+import {Farm} from "../Farm.sol";
 import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 
 /// @title OperableDeposit contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract helps in creating farms with increase/decrease deposit functionality.
-abstract contract OperableDeposit is ExpirableFarm {
+abstract contract OperableDeposit is Farm {
     uint256 public constant PRECISION = 1e18;
 
     // Events.
