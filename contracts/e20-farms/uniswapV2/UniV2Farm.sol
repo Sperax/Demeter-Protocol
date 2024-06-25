@@ -65,7 +65,7 @@ contract UniV2Farm is E20Farm, ExpirableFarm {
     ///      New start time should be in future.
     ///      Adjusts the farm end time accordingly.
     /// @param _newStartTime The new farm start time.
-    function updateFarmStartTime(uint256 _newStartTime) public override(ExpirableFarm, Farm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(ExpirableFarm, Farm) {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
