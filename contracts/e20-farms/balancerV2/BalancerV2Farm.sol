@@ -69,16 +69,16 @@ contract BalancerV2Farm is E20Farm, ExpirableFarm {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
-    /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
-    /// @param _token Address of token to be recovered.
-    function recoverERC20(address _token) public override(E20Farm, Farm) onlyOwner {
-        E20Farm.recoverERC20(_token);
-    }
-
     /// @notice Returns bool status if farm is open.
     ///         Farm is open if it is not closed and not expired.
     /// @return bool True if farm is open.
     function isFarmOpen() public view override(ExpirableFarm, Farm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
+    }
+
+    /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
+    /// @param _token Address of token to be recovered.
+    function _recoverERC20(address _token) internal override(E20Farm, Farm) {
+        E20Farm._recoverERC20(_token);
     }
 }

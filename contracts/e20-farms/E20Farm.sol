@@ -44,6 +44,24 @@ abstract contract E20Farm is OperableDeposit {
     error InvalidAmount();
     error CannotWithdrawFarmToken();
 
+    /// @notice Constructor.
+    /// @param _farmStartTime - Farm start time.
+    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
+    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _farmToken Address of the farm token.
+    /// @param _rwdTokenData - Initialize data for reward tokens.
+    function initialize(
+        string calldata _farmId,
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        address _farmToken,
+        RewardTokenData[] memory _rwdTokenData
+    ) public initializer {
+        // initialize farmToken related data.
+        farmToken = _farmToken;
+        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
+    }
+
     /// @notice Function to deposit farm tokens into the farm.
     /// @param _amount Amount of farmToken to be deposited.
     /// @param _lockup The lockup flag (bool).
@@ -92,29 +110,10 @@ abstract contract E20Farm is OperableDeposit {
         IERC20(farmToken).safeTransfer(msg.sender, liquidity);
     }
 
-    /// @notice Constructor.
-    /// @param _farmStartTime - Farm start time.
-    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
-    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _farmToken Address of the farm token.
-    /// @param _rwdTokenData - Initialize data for reward tokens.
-    function initialize(
-        string calldata _farmId,
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        address _farmToken,
-        RewardTokenData[] memory _rwdTokenData
-    ) public initializer {
-        // initialize farmToken related data.
-        farmToken = _farmToken;
-        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-    }
-
-    // --------------------- Admin  Functions ---------------------
     /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
     /// @param _token Address of token to be recovered.
-    function recoverERC20(address _token) public virtual override onlyOwner nonReentrant {
+    function _recoverERC20(address _token) internal virtual override {
         if (_token == farmToken) revert CannotWithdrawFarmToken();
-        _recoverE20(_token);
+        super._recoverERC20(_token);
     }
 }

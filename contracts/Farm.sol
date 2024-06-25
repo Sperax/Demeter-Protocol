@@ -170,7 +170,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered.
     function recoverERC20(address _token) external virtual onlyOwner nonReentrant {
-        _recoverE20(_token);
+        _recoverERC20(_token);
     }
 
     // --------------------- Token Manager Functions ---------------------
@@ -426,7 +426,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return (supply - rewardsAcc);
     }
 
-    function _recoverE20(address _token) internal {
+    function _recoverERC20(address _token) internal virtual {
         if (rewardData[_token].tknManager != address(0)) {
             revert CannotWithdrawRewardToken();
         }
