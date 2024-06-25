@@ -51,7 +51,7 @@ abstract contract OperableDeposit is Farm {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
+                _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
                 unchecked {
                     ++iRwd;
                 }
@@ -75,7 +75,7 @@ abstract contract OperableDeposit is Farm {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
-                _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC);
+                _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
                 unchecked {
                     ++iRwd;
                 }
