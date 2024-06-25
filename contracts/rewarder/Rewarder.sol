@@ -96,9 +96,7 @@ contract Rewarder is Ownable, Initializable, ReentrancyGuard {
     error InvalidRewardPercentage(uint256 percentage);
     error CalibrationRestricted(address farm);
 
-    constructor() Ownable(msg.sender) {
-        _disableInitializers();
-    }
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Initializer function of this contract.
     /// @param _rwdToken Address of the reward token.

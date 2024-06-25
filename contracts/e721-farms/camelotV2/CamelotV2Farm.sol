@@ -66,7 +66,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         RewardTokenData[] memory _rwdTokenData,
         address _router,
         address _nftPoolFactory
-    ) external {
+    ) external initializer {
         _validateNonZeroAddr(_router);
         // Initialize camelot related data nftContract = nft pool.
         nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);

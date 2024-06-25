@@ -659,7 +659,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData
-    ) internal initializer {
+    ) internal {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
