@@ -86,6 +86,9 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     address public camelotUtils; // CamelotUtils (Camelot helper) contract.
     address public nfpmUtils; // Camelot INonfungiblePositionManagerUtils (NonfungiblePositionManager helper) contract.
 
+    int256 internal constant MIN_TICK = -887272;
+    int256 internal constant MAX_TICK = 887272;
+
     // Events.
     event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
 
@@ -290,7 +293,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     function _validateTickRange(int24 _tickLower, int24 _tickUpper) private view {
         int24 spacing = ICamelotV3TickSpacing(camelotPool).tickSpacing();
         if (
-            _tickLower >= _tickUpper || _tickLower < -887272 || _tickLower % spacing != 0 || _tickUpper > 887272
+            _tickLower >= _tickUpper || _tickLower < MIN_TICK || _tickLower % spacing != 0 || _tickUpper > MAX_TICK
                 || _tickUpper % spacing != 0
         ) {
             revert InvalidTickRange();
