@@ -25,17 +25,16 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
 /// @title Base Farm contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract contains the core logic for the Demeter farms.
-abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
+abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgradeable, MulticallUpgradeable {
     using SafeERC20 for IERC20;
 
     // Events.
@@ -85,8 +84,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error InvalidCooldownPeriod();
     error WithdrawTooSoon();
 
-    // Disallow initialization of a implementation contract.
-    constructor() Ownable(msg.sender) {
+    // Disallow initialization of an implementation contract.
+    constructor() {
         _disableInitializers();
     }
 
@@ -125,7 +124,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days). Egs: 7 means 7 days.
+    /// @param _newCooldownPeriod The new cooldown period (in days). E.g: 7 means 7 days.
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
@@ -236,10 +235,10 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time, accumulatedRewards[iRwd]); // accumulatedRewards is sent to consider the already accrued rewards.
                     accumulatedRewards[iRwd] += accRewards;
                     // update the accRewardPerShare for delta time.
-                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
+                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PRECISION) / funds[fundId].totalLiquidity;
                 }
                 rewards[iSub][iRwd] =
-                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
+                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PRECISION) - sub.rewardDebt[iRwd];
                 unchecked {
                     ++iRwd;
                 }
@@ -337,7 +336,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
-                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
+                            fund.accRewardPerShare[iRwd] += (accRewards * PRECISION) / fund.totalLiquidity;
 
                             unchecked {
                                 ++iRwd;
@@ -576,8 +575,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             RewardFund storage fund = rewardFunds[fundId];
 
             for (uint256 iRwd; iRwd < numRewards;) {
-                // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
-                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PREC;
+                // rewards = (liquidity * accRewardPerShare) / PRECISION - rewardDebt
+                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PRECISION;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
 
@@ -651,20 +650,21 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - Farm start time.
-    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. Egs: 7 means 7 days.
+    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. E.g: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData
-    ) internal {
+    ) internal initializer {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
         farmId = _farmId;
-        _transferOwnership(msg.sender);
+        __Ownable_init_unchained(msg.sender);
         // Initialize farm global params.
         farmStartTime = _farmStartTime;
 
@@ -739,6 +739,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _alreadyAccRewardBal Already accrued reward balance.
     /// @dev `_alreadyAccRewardBal` is useful when this function called from `computeRewards` function.
     /// As `computeReward` is a view function and it doesn't update the `accRewardBal` in the `rewardData`.
+    /// @return accRewards Accrued rewards for the given `_rwdId`, `_fundId` and `_time`.
     function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time, uint256 _alreadyAccRewardBal)
         internal
         view
@@ -848,8 +849,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     }
 
     /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _depositId The unique ID of the deposit.
     /// @param _fundId The reward fund id.
+    /// @param _depositId The unique ID of the deposit.
     /// @param _liquidity The liquidity of the deposit.
     function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
         // Subscribe to the reward fund.
@@ -862,7 +863,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
         // Initialize user's reward debt.
         for (uint8 iRwd; iRwd < numRewards;) {
-            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
+            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION;
             unchecked {
                 ++iRwd;
             }

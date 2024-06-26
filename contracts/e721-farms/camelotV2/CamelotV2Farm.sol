@@ -36,7 +36,7 @@ import {TokenUtils} from "../../utils/TokenUtils.sol";
 /// @title Camelot V2 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V2 farm.
-contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
+contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // Camelot router.
@@ -51,12 +51,15 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     error InvalidAmount();
 
     /// @notice constructor.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - farm start time.
     /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
     /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
     /// @param _farmRegistry - Address of the Demeter Farm Registry.
     /// @param _camelotPairPool - Camelot lp pool address.
     /// @param _rwdTokenData - Initialize data for reward tokens.
+    /// @param _router Camelot Router's address.
+    /// @param _nftPoolFactory Non fungible position manager contract for Camelot V2.
     function initialize(
         string calldata _farmId,
         uint256 _farmStartTime,
@@ -66,7 +69,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         RewardTokenData[] memory _rwdTokenData,
         address _router,
         address _nftPoolFactory
-    ) external initializer {
+    ) external {
         _validateNonZeroAddr(_router);
         // Initialize camelot related data nftContract = nft pool.
         nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
