@@ -81,6 +81,7 @@ abstract contract ExpirableFarm is Farm {
         _farmEndTime = (_newStartTime > currentFarmStartTime)
             ? _farmEndTime + (_newStartTime - currentFarmStartTime)
             : _farmEndTime - (currentFarmStartTime - _newStartTime);
+
         farmEndTime = _farmEndTime;
         emit FarmEndTimeUpdated(_farmEndTime);
     }
