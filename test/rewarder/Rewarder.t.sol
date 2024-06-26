@@ -120,7 +120,7 @@ contract TestUpdateAPR is RewarderTest {
     }
 
     function test_UpdateAPR_CapRewardsWithMaxRwdRate() public useKnownActor(rewardManager) {
-        uint256 MAX_REWARD_RATE = 50; // 50 wei: Because rwdToken decimals are 6
+        uint128 MAX_REWARD_RATE = 50; // 50 wei: Because rwdToken decimals are 6
         Rewarder.FarmRewardConfigInput memory rewardConfig;
         address[] memory baseAssets = new address[](1);
         baseAssets[0] = USDCe;
@@ -146,7 +146,7 @@ contract TestUpdateAPR is RewarderTest {
         baseAssets[0] = DAI;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 12e8,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -169,7 +169,7 @@ contract TestUpdateAPR is RewarderTest {
         baseAssets[0] = DAI;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 12e8,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -188,7 +188,7 @@ contract TestUpdateAPR is RewarderTest {
         baseAssets[0] = USDCe;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 5e9,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -209,7 +209,7 @@ contract TestUpdateRewardConfig is RewarderTest {
         baseAssets[0] = USDCe;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 5e9,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -320,7 +320,7 @@ contract TestCalibrationRestriction is RewarderTest {
         baseAssets[0] = USDCe;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 5e9,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -376,7 +376,7 @@ contract TestRewardsEndTime is RewarderTest {
         baseAssets[0] = USDCe;
         rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 5e9,
-            maxRewardRate: UINT256_MAX,
+            maxRewardRate: type(uint128).max,
             baseTokens: baseAssets,
             nonLockupRewardPer: 5000
         });
@@ -402,7 +402,7 @@ contract TestFlow is RewarderTest {
         _baseTokens[1] = USDCe;
         Rewarder.FarmRewardConfigInput memory _rewardConfig = Rewarder.FarmRewardConfigInput({
             apr: 1e9,
-            maxRewardRate: type(uint256).max,
+            maxRewardRate: type(uint128).max,
             baseTokens: _baseTokens,
             nonLockupRewardPer: 5000
         });

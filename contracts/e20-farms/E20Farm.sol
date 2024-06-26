@@ -26,13 +26,12 @@ pragma solidity 0.8.24;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {RewardTokenData} from "../Farm.sol";
-import {ExpirableFarm} from "../features/ExpirableFarm.sol";
 import {OperableDeposit} from "../features/OperableDeposit.sol";
 
 /// @title  Base E20Farm contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract contains the core logic for E20 farms.
-abstract contract E20Farm is ExpirableFarm, OperableDeposit {
+abstract contract E20Farm is OperableDeposit {
     using SafeERC20 for IERC20;
 
     // Token params.
@@ -44,27 +43,6 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
     // Custom Errors.
     error InvalidAmount();
     error CannotWithdrawFarmToken();
-
-    /// @notice Constructor.
-    /// @param _farmStartTime - Farm start time.
-    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
-    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
-    /// @param _farmRegistry - Address of the Demeter Farm Registry.
-    /// @param _farmToken Address of the farm token.
-    /// @param _rwdTokenData - Initialize data for reward tokens.
-    function initialize(
-        string calldata _farmId,
-        uint256 _farmStartTime,
-        uint256 _cooldownPeriod,
-        address _farmRegistry,
-        address _farmToken,
-        RewardTokenData[] memory _rwdTokenData
-    ) external initializer {
-        // initialize farmToken related data.
-        farmToken = _farmToken;
-        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
-        _setupFarmExpiry(_farmStartTime, _farmRegistry);
-    }
 
     /// @notice Function to deposit farm tokens into the farm.
     /// @param _amount Amount of farmToken to be deposited.
@@ -114,11 +92,28 @@ abstract contract E20Farm is ExpirableFarm, OperableDeposit {
         IERC20(farmToken).safeTransfer(msg.sender, liquidity);
     }
 
-    // --------------------- Admin  Functions ---------------------
+    /// @notice Constructor.
+    /// @param _farmStartTime - Farm start time.
+    /// @param _cooldownPeriod - Cooldown period for locked deposits in days.
+    /// @dev _cooldownPeriod = 0 Disables lockup functionality for the farm.
+    /// @param _farmToken Address of the farm token.
+    /// @param _rwdTokenData - Initialize data for reward tokens.
+    function _initialize(
+        string calldata _farmId,
+        uint256 _farmStartTime,
+        uint256 _cooldownPeriod,
+        address _farmToken,
+        RewardTokenData[] memory _rwdTokenData
+    ) internal {
+        // initialize farmToken related data.
+        farmToken = _farmToken;
+        _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
+    }
+
     /// @notice Recover erc20 tokens other than the reward Tokens and farm token.
     /// @param _token Address of token to be recovered.
-    function recoverERC20(address _token) external override onlyOwner nonReentrant {
+    function _recoverERC20(address _token) internal virtual override {
         if (_token == farmToken) revert CannotWithdrawFarmToken();
-        _recoverE20(_token);
+        super._recoverERC20(_token);
     }
 }

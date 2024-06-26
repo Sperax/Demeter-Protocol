@@ -77,7 +77,7 @@ struct InitializeInput {
 /// @title Uniswap V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V3 farm.
-contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
+contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params.
@@ -103,7 +103,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
-    function initialize(InitializeInput calldata _input) external initializer {
+    function initialize(InitializeInput calldata _input) external {
         _validateNonZeroAddr(_input.uniV3Factory);
         _validateNonZeroAddr(_input.nftContract);
         _validateNonZeroAddr(_input.uniswapUtils);
@@ -252,7 +252,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
@@ -268,6 +268,7 @@ contract UniV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @param _tokenId The tokenId of the position.
     /// @dev The position must adhere to the price ranges.
     /// @dev Only allow specific pool token to be staked.
+    /// @return liquidity Liquidity in the position.
     function _getLiquidity(uint256 _tokenId) internal view override returns (uint256) {
         /// @dev Get the info of the required token
         Position memory positions = INFPMUtils(nfpmUtils).positions(nftContract, _tokenId);
