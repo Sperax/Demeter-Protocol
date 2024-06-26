@@ -62,8 +62,6 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
     uint256 constant depositId = 1;
     CamelotV3FarmDeployer public camelotV3FarmDeployer;
 
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-
     // Custom Errors
     error InvalidCamelotPoolConfig();
     error NoData();
@@ -71,6 +69,8 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
     error IncorrectPoolToken();
     error IncorrectTickRange();
     error InvalidTickRange();
+
+    event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
 
     function setUp() public virtual override {
         super.setUp();
@@ -467,7 +467,7 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         uint256 _tokenId = CamelotV3Farm(lockupFarm).depositToTokenId(depositId);
 
         vm.expectEmit(true, false, false, false, address(lockupFarm)); // for now ignoring amount0 and amount1
-        emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
+        emit CamelotV3Farm.PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
         vm.recordLogs();
 
@@ -520,7 +520,7 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
 
         vm.startPrank(user);
         vm.expectEmit(true, false, false, false, address(lockupFarm)); // for now ignoring amount0 and amount1
-        emit PoolFeeCollected(currentActor, _tokenId, 0, 0);
+        emit CamelotV3Farm.PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
         CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
     }
@@ -537,7 +537,6 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
         address pool
     );
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
 
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
@@ -628,7 +627,7 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
         vm.expectEmit(true, false, false, false, NFPM);
         emit IncreaseLiquidity(tokenId, 0, 0, 0, 0, address(0));
         vm.expectEmit(true, false, false, false, farm);
-        emit DepositIncreased(depositId, 0);
+        emit OperableDeposit.DepositIncreased(depositId, 0);
 
         vm.recordLogs();
         CamelotV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
@@ -675,9 +674,6 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
 
 abstract contract DecreaseDepositTest is CamelotV3FarmTest {
     uint128 constant dummyLiquidityToWithdraw = 1;
-
-    event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
-    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
 
     function test_DecreaseDeposit_RevertWhen_FarmIsClosed() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
@@ -734,7 +730,7 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         IERC20(USDCe).transfer(makeAddr("Random"), IERC20(USDCe).balanceOf(currentActor));
 
         vm.expectEmit(farm);
-        emit DepositDecreased(depositId, liquidityToWithdraw);
+        emit OperableDeposit.DepositDecreased(depositId, liquidityToWithdraw);
         vm.expectEmit(true, false, false, false, NFPM);
         emit DecreaseLiquidity(tokenId, 0, 0, 0);
 
@@ -804,7 +800,7 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
 
         vm.startPrank(user);
         vm.expectEmit(farm);
-        emit DepositDecreased(depositId, liquidityToWithdraw);
+        emit OperableDeposit.DepositDecreased(depositId, liquidityToWithdraw);
         vm.expectEmit(true, false, false, false, NFPM);
         emit DecreaseLiquidity(tokenId, 0, 0, 0);
 

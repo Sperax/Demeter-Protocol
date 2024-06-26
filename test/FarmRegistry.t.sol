@@ -20,11 +20,6 @@ abstract contract FarmRegistryTest is TestNetworkConfig {
     uint256 public constant EXTENSION_FEE_PER_DAY_LOWER_BOUND = 1e18;
     uint256 public constant EXTENSION_FEE_PER_DAY_UPPER_BOUND = 1e23;
 
-    event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerUpdated(address deployer, bool registered);
-    event FeeParamsUpdated(address receiver, address token, uint256 amount, uint256 extensionFeePerDay);
-    event PrivilegeUpdated(address deployer, bool privilege);
-
     modifier initialized() {
         FarmRegistry(registry).initialize(FARM_REGISTRY_OWNER, USDS, FEE_AMOUNT, EXTENSION_FEE_PER_DAY);
         _;
@@ -74,7 +69,7 @@ contract InitializeTest is FarmRegistryTest {
         uint256 _feeAmount;
         uint256 _extensionFeePerDay;
         vm.expectEmit(address(registry));
-        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        emit FarmRegistry.FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         FarmRegistry(registry).initialize(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         (_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay) =
             FarmRegistry(registry).getFeeParams(makeAddr("RANDOM"));
@@ -134,7 +129,7 @@ contract RegisterFarmTest is FarmRegistryTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(registry));
-        emit FarmRegistered(farm, creator, owner);
+        emit FarmRegistry.FarmRegistered(farm, creator, owner);
         FarmRegistry(registry).registerFarm(farm, creator);
         assertEq(FarmRegistry(registry).getFarmList()[0], farm);
     }
@@ -163,7 +158,7 @@ contract RegisterFarmDeployerTest is FarmRegistryTest {
     function test_registerFarmDeployer() public useKnownActor(FARM_REGISTRY_OWNER) initialized {
         address deployer = actors[5];
         vm.expectEmit(address(registry));
-        emit FarmDeployerUpdated(deployer, true);
+        emit FarmRegistry.FarmDeployerUpdated(deployer, true);
         FarmRegistry(registry).registerFarmDeployer(deployer);
         assertEq(FarmRegistry(registry).getFarmDeployerList()[0], deployer);
         assertEq(FarmRegistry(registry).deployerRegistered(deployer), true);
@@ -188,7 +183,7 @@ contract RemoveFarmDeployerTest is FarmRegistryTest {
         uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 1);
         uint16 lengthBfr = uint16(FarmRegistry(registry).getFarmDeployerList().length);
         vm.expectEmit(address(registry));
-        emit FarmDeployerUpdated(actors[11], false);
+        emit FarmRegistry.FarmDeployerUpdated(actors[11], false);
         FarmRegistry(registry).removeDeployer(deployerId);
         assertEq(FarmRegistry(registry).getFarmDeployerList()[0], owner);
         assertEq(FarmRegistry(registry).getFarmDeployerList()[1], actors[10]);
@@ -201,7 +196,7 @@ contract RemoveFarmDeployerTest is FarmRegistryTest {
         uint16 deployerId = uint16(FarmRegistry(registry).getFarmDeployerList().length - 2);
         uint16 lengthBfr = uint16(FarmRegistry(registry).getFarmDeployerList().length);
         vm.expectEmit(address(registry));
-        emit FarmDeployerUpdated(actors[10], false);
+        emit FarmRegistry.FarmDeployerUpdated(actors[10], false);
         FarmRegistry(registry).removeDeployer(deployerId);
         assertEq(FarmRegistry(registry).getFarmDeployerList()[0], owner);
         assertEq(FarmRegistry(registry).getFarmDeployerList()[1], actors[11]);
@@ -233,7 +228,7 @@ contract UpdatePrivilegeTest is FarmRegistryTest {
 
     function test_updatePrivilege() public useKnownActor(FARM_REGISTRY_OWNER) initialized deployerRegistered {
         vm.expectEmit(address(registry));
-        emit PrivilegeUpdated(owner, true);
+        emit FarmRegistry.PrivilegeUpdated(owner, true);
         FarmRegistry(registry).updatePrivilege(owner, true);
         assertEq(FarmRegistry(registry).isPrivilegedUser(owner), true);
 
@@ -277,7 +272,7 @@ contract UpdateFeeParamsTest is FarmRegistryTest {
         uint256 feeAmt = FEE_AMOUNT;
         uint256 extensionFeePerDay = EXTENSION_FEE_PER_DAY;
         vm.expectEmit(address(registry));
-        emit FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
+        emit FarmRegistry.FeeParamsUpdated(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         FarmRegistry(registry).updateFeeParams(feeReceiver, feeToken, feeAmt, extensionFeePerDay);
         // Test getFeeParams
         (address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay) =

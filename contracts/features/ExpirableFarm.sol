@@ -40,7 +40,7 @@ abstract contract ExpirableFarm is Farm {
     address public farmRegistry;
 
     event FarmEndTimeUpdated(uint256 newEndTime);
-    event ExtensionFeeCollected(address token, uint256 extensionFee);
+    event ExtensionFeeCollected(address indexed token, uint256 extensionFee);
 
     error InvalidExtension();
     error DurationExceeded();

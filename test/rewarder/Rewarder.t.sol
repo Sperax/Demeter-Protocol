@@ -48,7 +48,7 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
         vm.prank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
         vm.expectEmit(true, true, true, true, lockupFarm);
-        emit RewardDataUpdated(rewardToken, actors[1]);
+        emit Farm.RewardDataUpdated(rewardToken, actors[1]);
         vm.prank(rewardManager);
         rewarder.updateTokenManagerOfFarm(lockupFarm, actors[1]);
         (address tokenManager,,) = CamelotV2Farm(lockupFarm).rewardData(rewardToken);

@@ -10,8 +10,6 @@ import "../Farm.t.sol";
 import "../features/ExpirableFarm.t.sol";
 
 abstract contract E20FarmTest is FarmTest {
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
     uint256 public constant DEPOSIT_ID = 1;
     uint256 public constant AMOUNT = 10000;
 
@@ -31,15 +29,15 @@ abstract contract E20FarmDepositTest is E20FarmTest {
             uint256 farmBalanceBefore = ERC20(poolAddress).balanceOf(farm);
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
-            emit Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, amt);
+            emit Farm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, amt);
             E20Farm(farm).deposit(amt, lockup);
             uint256 usrBalanceAfter = ERC20(poolAddress).balanceOf(currentActor);
             uint256 farmBalanceAfter = ERC20(poolAddress).balanceOf(farm);
@@ -67,8 +65,6 @@ abstract contract E20FarmWithdrawTest is E20FarmTest {
 }
 
 abstract contract IncreaseDepositTest is E20FarmTest {
-    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
-
     function test_IncreaseDeposit_RevertWhen_InvalidAmount()
         public
         depositSetup(lockupFarm, true)
@@ -192,8 +188,6 @@ abstract contract RecoverERC20E20FarmTest is E20FarmTest {
 }
 
 abstract contract DecreaseDepositTest is E20FarmTest {
-    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
-
     function test_revertWhen_decreaseDeposit_decreaseInSameTransactionAsIncrease()
         public
         depositSetup(lockupFarm, true)

@@ -44,9 +44,9 @@ contract FarmRegistry is OwnableUpgradeable {
 
     // Events.
     event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerUpdated(address deployer, bool registered);
-    event FeeParamsUpdated(address receiver, address token, uint256 amount, uint256 extensionFeePerDay);
-    event PrivilegeUpdated(address deployer, bool privilege);
+    event FarmDeployerUpdated(address indexed deployer, bool registered);
+    event FeeParamsUpdated(address indexed receiver, address indexed token, uint256 amount, uint256 extensionFeePerDay);
+    event PrivilegeUpdated(address indexed deployer, bool privilege);
 
     // Custom Errors.
     error DeployerNotRegistered();

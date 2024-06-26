@@ -47,19 +47,13 @@ abstract contract OperableDeposit is Farm {
         Subscription[] storage _subscriptions = subscriptions[_depositId];
         RewardFund[] storage _rewardFunds = rewardFunds;
         uint256 numSubs = _subscriptions.length;
-        for (uint256 iSub; iSub < numSubs;) {
+        for (uint256 iSub; iSub < numSubs; ++iSub) {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards;) {
+            for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
                 _rewardDebt[iRwd] += ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
-                unchecked {
-                    ++iRwd;
-                }
             }
             _rewardFunds[_fundId].totalLiquidity += _amount;
-            unchecked {
-                ++iSub;
-            }
         }
     }
 
@@ -71,19 +65,13 @@ abstract contract OperableDeposit is Farm {
         Subscription[] storage _subscriptions = subscriptions[_depositId];
         RewardFund[] storage _rewardFunds = rewardFunds;
         uint256 numSubs = _subscriptions.length;
-        for (uint256 iSub; iSub < numSubs;) {
+        for (uint256 iSub; iSub < numSubs; ++iSub) {
             uint256[] storage _rewardDebt = _subscriptions[iSub].rewardDebt;
             uint8 _fundId = _subscriptions[iSub].fundId;
-            for (uint8 iRwd; iRwd < numRewards;) {
+            for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
                 _rewardDebt[iRwd] -= ((_amount * _rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION);
-                unchecked {
-                    ++iRwd;
-                }
             }
             _rewardFunds[_fundId].totalLiquidity -= _amount;
-            unchecked {
-                ++iSub;
-            }
         }
     }
 

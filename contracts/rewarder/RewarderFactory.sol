@@ -36,9 +36,9 @@ contract RewarderFactory is Ownable {
     address public rewarderImplementation;
 
     // Events.
-    event OracleUpdated(address newOracle);
-    event RewarderDeployed(address indexed token, address indexed manager, address rewarder);
-    event RewarderImplementationUpdated(address _newRewarderImplementation);
+    event OracleUpdated(address indexed newOracle);
+    event RewarderDeployed(address indexed token, address indexed manager, address indexed rewarder);
+    event RewarderImplementationUpdated(address indexed _newRewarderImplementation);
 
     // Custom Errors.
     error InvalidAddress();

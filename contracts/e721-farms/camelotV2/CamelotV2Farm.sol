@@ -41,6 +41,9 @@ contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm 
 
     // Camelot router.
     address public router;
+    address internal poolLpToken;
+    address internal poolToken0;
+    address internal poolToken1;
 
     // Events.
     event PoolRewardsCollected(address indexed recipient, uint256 indexed tokenId, uint256 grailAmt, uint256 xGrailAmt);
@@ -76,8 +79,12 @@ contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm 
         if (nftContract == address(0)) {
             revert InvalidCamelotPoolConfig();
         }
+        (address _lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
 
         router = _router;
+        poolLpToken = _lpToken;
+        poolToken0 = IPair(_lpToken).token0();
+        poolToken1 = IPair(_lpToken).token1();
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
         _setupFarmExpiry(_farmStartTime, _farmRegistry);
     }
@@ -95,10 +102,11 @@ contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm 
             revert InvalidAmount();
         }
 
-        (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
+        // Memory variables to store storage variables.
+        address lpToken = poolLpToken;
+        address token0 = poolToken0;
+        address token1 = poolToken1;
 
-        address token0 = IPair(lpToken).token0();
-        address token1 = IPair(lpToken).token1();
         IERC20(token0).safeTransferFrom(msg.sender, address(this), _amounts[0]);
         IERC20(token1).safeTransferFrom(msg.sender, address(this), _amounts[1]);
 
@@ -139,13 +147,10 @@ contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm 
 
         // Withdraw liquidity from nft pool
         INFTPool(nftContract).withdrawFromPosition(depositToTokenId[_depositId], _liquidityToWithdraw);
-        (address lpToken,,,,,,,) = INFTPool(nftContract).getPoolInfo();
-        address token0 = IPair(lpToken).token0();
-        address token1 = IPair(lpToken).token1();
-        IERC20(lpToken).forceApprove(router, _liquidityToWithdraw);
+        IERC20(poolLpToken).forceApprove(router, _liquidityToWithdraw);
         IRouter(router).removeLiquidity({
-            tokenA: token0,
-            tokenB: token1,
+            tokenA: poolToken0,
+            tokenB: poolToken1,
             liquidity: _liquidityToWithdraw,
             amountAMin: _minAmounts[0],
             amountBMin: _minAmounts[1],

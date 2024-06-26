@@ -75,15 +75,15 @@ contract UniswapV3ActiveLiquidityFarmTest is
 
         if (!locked) {
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+            emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
         } else {
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+            emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             vm.expectEmit(address(farm));
-            emit PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+            emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
         }
         vm.expectEmit(address(farm));
-        emit Deposited(Farm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
+        emit Farm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, locked, liquidity);
         IERC721(NFPM).safeTransferFrom(currentActor, farm, tokenId, abi.encode(locked));
         vm.stopPrank();
         return liquidity;
