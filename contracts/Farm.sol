@@ -47,7 +47,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
-    event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
+    event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
@@ -115,9 +115,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert ZeroAmount();
         }
         _validateFarmOpen();
-        if (rewardData[_rwdToken].tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
+        _validateRewardToken(_rwdToken);
+
         updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
@@ -159,7 +158,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 numRewards = rewardTokens.length;
         for (uint8 iRwd; iRwd < numRewards;) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
-            _setRewardRate(rewardTokens[iRwd], new uint256[](rewardFunds.length));
+            _setRewardRate(rewardTokens[iRwd], new uint128[](rewardFunds.length));
             unchecked {
                 ++iRwd;
             }
@@ -187,7 +186,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
+    function setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
         updateFarmRewardData();
@@ -225,6 +224,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         rewards = new uint256[][](numDepositSubs);
 
         uint256 time = _getRewardAccrualTimeElapsed();
+        uint256[] memory accumulatedRewards = new uint256[](numRewards);
 
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
@@ -233,7 +233,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
-                    uint256 accRewards = _getAccRewards(iRwd, fundId, time);
+                    uint256 accRewards = _getAccRewards(iRwd, fundId, time, accumulatedRewards[iRwd]); // accumulatedRewards is sent to consider the already accrued rewards.
+                    accumulatedRewards[iRwd] += accRewards;
                     // update the accRewardPerShare for delta time.
                     funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
                 }
@@ -286,6 +287,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdToken The reward token's address.
     /// @return The reward rates for the reward token (uint256[]).
     function getRewardRates(address _rwdToken) external view returns (uint256[] memory) {
+        _validateRewardToken(_rwdToken);
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
@@ -333,7 +335,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                     if (fund.totalLiquidity != 0) {
                         for (uint8 iRwd; iRwd < numRewards;) {
                             // Get the accrued rewards for the time.
-                            uint256 accRewards = _getAccRewards(iRwd, iFund, time);
+                            uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
                             fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
 
@@ -402,9 +404,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 
-        if (rwdData.tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
+        _validateRewardToken(_rwdToken);
 
         uint256 numFunds = rewardFunds.length;
         uint256 rewardsAcc = rwdData.accRewardBal;
@@ -634,7 +634,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) internal {
+    function _setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) internal {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
         if (_newRewardRates.length != numFunds) {
@@ -736,14 +736,21 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
     /// @param _time Time interval for the reward computation.
-    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time) internal view returns (uint256) {
+    /// @param _alreadyAccRewardBal Already accrued reward balance.
+    /// @dev `_alreadyAccRewardBal` is useful when this function called from `computeRewards` function.
+    /// As `computeReward` is a view function and it doesn't update the `accRewardBal` in the `rewardData`.
+    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time, uint256 _alreadyAccRewardBal)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 rewardsPerSec = rewardFunds[_fundId].rewardsPerSec[_rwdId];
         if (rewardsPerSec == 0) {
             return 0;
         }
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
-        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
+        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal + _alreadyAccRewardBal;
 
         uint256 rwdBal = 0;
         // Calculate the available reward funds in the farm.
@@ -802,6 +809,14 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function _validateTokenManager(address _rwdToken) internal view {
         if (msg.sender != rewardData[_rwdToken].tknManager) {
             revert NotTheTokenManager();
+        }
+    }
+
+    /// @notice Validate the reward token is valid.
+    /// @param _rwdToken Address of reward token.
+    function _validateRewardToken(address _rwdToken) internal view {
+        if (rewardData[_rwdToken].tknManager == address(0)) {
+            revert InvalidRewardToken();
         }
     }
 

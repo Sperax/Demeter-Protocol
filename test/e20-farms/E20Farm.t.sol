@@ -225,6 +225,19 @@ abstract contract DecreaseDepositTest is E20FarmTest {
         E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, amount);
     }
 
+    function test_CannotWithdrawZeroAmount() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        skip(1 days * 7);
+        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, 0);
+    }
+
+    function test_InsufficientLiquidity() public depositSetup(lockupFarm, true) useKnownActor(user) {
+        skip(1 days * 7);
+        Deposit memory depositInfo = E20Farm(lockupFarm).getDepositInfo(DEPOSIT_ID);
+        vm.expectRevert(abi.encodeWithSelector(OperableDeposit.InsufficientLiquidity.selector));
+        E20Farm(lockupFarm).decreaseDeposit(DEPOSIT_ID, depositInfo.liquidity + 1);
+    }
+
     function test_DecreaseDeposit_RevertWhen_LockupFarm_DecreaseDepositNotPermitted()
         public
         depositSetup(lockupFarm, true)
