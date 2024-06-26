@@ -104,7 +104,7 @@ abstract contract E20Farm is OperableDeposit {
         uint256 _cooldownPeriod,
         address _farmToken,
         RewardTokenData[] memory _rwdTokenData
-    ) internal initializer {
+    ) internal {
         // initialize farmToken related data.
         farmToken = _farmToken;
         _setupFarm(_farmId, _farmStartTime, _cooldownPeriod, _rwdTokenData);
