@@ -43,6 +43,7 @@ abstract contract ExpirableFarm is Farm {
     event ExtensionFeeCollected(address token, uint256 extensionFee);
 
     error InvalidExtension();
+    error DurationExceeded();
     error FarmNotYetStarted();
 
     /// @notice Update the farm end time.
@@ -60,8 +61,11 @@ abstract contract ExpirableFarm is Farm {
         }
 
         uint256 newFarmEndTime = farmEndTime + _extensionDays * 1 days;
-        farmEndTime = newFarmEndTime;
+        if (newFarmEndTime > block.timestamp + MAX_EXTENSION * 1 days) {
+            revert DurationExceeded();
+        }
 
+        farmEndTime = newFarmEndTime;
         _collectExtensionFee(_extensionDays);
 
         emit FarmEndTimeUpdated(newFarmEndTime);
