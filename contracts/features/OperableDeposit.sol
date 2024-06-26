@@ -24,13 +24,13 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@***************@@@@@@@@@@@@@@@ //
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
-import {ExpirableFarm} from "./ExpirableFarm.sol";
+import {Farm} from "../Farm.sol";
 import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 
 /// @title OperableDeposit contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract helps in creating farms with increase/decrease deposit functionality.
-abstract contract OperableDeposit is ExpirableFarm {
+abstract contract OperableDeposit is Farm {
     uint256 public constant PRECISION = 1e18;
 
     // Events.
@@ -39,6 +39,7 @@ abstract contract OperableDeposit is ExpirableFarm {
 
     // Custom Errors.
     error DecreaseDepositNotPermitted();
+    error InsufficientLiquidity();
 
     /// @notice Update subscription data of a deposit for increase in liquidity.
     /// @param _depositId Unique deposit id for the deposit.
@@ -119,6 +120,9 @@ abstract contract OperableDeposit is ExpirableFarm {
 
         if (_amount == 0) {
             revert CannotWithdrawZeroAmount();
+        }
+        if (_amount > userDeposit.liquidity) {
+            revert InsufficientLiquidity();
         }
 
         if (userDeposit.expiryDate != 0 || userDeposit.cooldownPeriod != 0) {

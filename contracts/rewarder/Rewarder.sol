@@ -31,6 +31,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IOracle} from "../interfaces/IOracle.sol";
 import {IFarm} from "../interfaces/IFarm.sol";
 import {IRewarderFactory} from "../interfaces/IRewarderFactory.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title Rewarder contract of Demeter Protocol.
 /// @author Sperax Foundation.
@@ -48,8 +49,8 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
     struct FarmRewardConfig {
         uint256 apr;
-        uint256 rewardRate;
-        uint256 maxRewardRate;
+        uint128 rewardRate;
+        uint128 maxRewardRate;
         uint256[] baseAssetIndexes;
         uint256 nonLockupRewardPer; // 5e3 = 50%.
     }
@@ -61,7 +62,7 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // nonLockupRewardPer - Reward percentage allocation for no lockup fund (rest goes to lockup fund).
     struct FarmRewardConfigInput {
         uint256 apr;
-        uint256 maxRewardRate;
+        uint128 maxRewardRate;
         address[] baseTokens;
         uint256 nonLockupRewardPer; // 5e3 = 50%.
     }
@@ -272,7 +273,7 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function _calibrateReward(address _farm) private returns (uint256 rewardsToSend) {
         FarmRewardConfig memory farmRewardConfig = farmRewardConfigs[_farm];
-        uint256 rewardRate;
+        uint128 rewardRate;
         if (farmRewardConfig.apr != 0) {
             (address[] memory assets, uint256[] memory amounts) = _getTokenAmounts(_farm);
             // Calculating total USD value for all the assets.
@@ -298,9 +299,10 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             // For token with lower decimals the calculation of rewardRate might not be accurate because of precision loss in truncation.
             // rewardValuePerSecond = (APR * totalValue / 100) / 365 days.
             // rewardRate = rewardValuePerSecond * pricePrecision / price.
-            rewardRate = (farmRewardConfig.apr * totalValue * priceData.precision)
-                / (APR_PRECISION * DENOMINATOR * ONE_YEAR * priceData.price);
-
+            rewardRate = SafeCast.toUint128(
+                (farmRewardConfig.apr * totalValue * priceData.precision)
+                    / (APR_PRECISION * DENOMINATOR * ONE_YEAR * priceData.price)
+            );
             if (rewardRate > farmRewardConfig.maxRewardRate) {
                 rewardRate = farmRewardConfig.maxRewardRate;
             }
@@ -333,15 +335,15 @@ contract Rewarder is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @param _farm Address of the farm.
     /// @param _rwdRate Reward per second to be emitted.
     /// @param _nonLockupRewardPer Reward percentage to be allocated to no lockup fund.
-    function _setRewardRate(address _farm, uint256 _rwdRate, uint256 _nonLockupRewardPer) private {
-        uint256[] memory _newRewardRates;
+    function _setRewardRate(address _farm, uint128 _rwdRate, uint256 _nonLockupRewardPer) private {
+        uint128[] memory _newRewardRates;
         if (IFarm(_farm).cooldownPeriod() == 0) {
-            _newRewardRates = new uint256[](1);
+            _newRewardRates = new uint128[](1);
             _newRewardRates[0] = _rwdRate;
             IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
         } else {
-            _newRewardRates = new uint256[](2);
-            uint256 commonFundShare = (_rwdRate * _nonLockupRewardPer) / MAX_PERCENTAGE;
+            _newRewardRates = new uint128[](2);
+            uint128 commonFundShare = SafeCast.toUint128((_rwdRate * _nonLockupRewardPer) / MAX_PERCENTAGE);
             _newRewardRates[0] = commonFundShare;
             _newRewardRates[1] = _rwdRate - commonFundShare;
             IFarm(_farm).setRewardRate(REWARD_TOKEN, _newRewardRates);
