@@ -78,6 +78,7 @@ contract FarmRegistry is OwnableUpgradeable {
     /// @param _farm Address of the created farm contract
     /// @param _creator Address of the farm creator.
     function registerFarm(address _farm, address _creator) external {
+        _validateNonZeroAddr(_farm);
         if (!deployerRegistered[msg.sender]) {
             revert DeployerNotRegistered();
         }
