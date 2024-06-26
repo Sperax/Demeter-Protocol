@@ -91,6 +91,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         address farm = createFarm(initialStartTime, lockup);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
+        uint256 farmStartTime = ExpirableFarm(farm).farmStartTime();
         uint256 timeDelta;
 
         if (newStartTime > initialStartTime) {
@@ -98,10 +99,14 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
         } else if (newStartTime < initialStartTime) {
             timeDelta = initialStartTime - newStartTime;
         }
-
+        uint256 newEndTime = (newStartTime > farmStartTime)
+            ? farmEndTimeBeforeUpdate + (newStartTime - farmStartTime)
+            : farmEndTimeBeforeUpdate - (farmStartTime - newStartTime);
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
         emit Farm.FarmStartTimeUpdated(newStartTime);
+        vm.expectEmit(address(farm));
+        emit ExpirableFarm.FarmEndTimeUpdated(newEndTime);
 
         ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
