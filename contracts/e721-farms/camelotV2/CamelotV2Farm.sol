@@ -36,7 +36,7 @@ import {TokenUtils} from "../../utils/TokenUtils.sol";
 /// @title Camelot V2 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V2 farm.
-contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit {
+contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // Camelot router.
