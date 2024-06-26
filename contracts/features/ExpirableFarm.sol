@@ -81,9 +81,14 @@ abstract contract ExpirableFarm is Farm {
 
         super.updateFarmStartTime(_newStartTime);
 
-        farmEndTime = (_newStartTime > currentFarmStartTime)
-            ? farmEndTime + (_newStartTime - currentFarmStartTime)
-            : farmEndTime - (currentFarmStartTime - _newStartTime);
+        uint256 _farmEndTime = farmEndTime;
+        _farmEndTime = (_newStartTime > currentFarmStartTime)
+            ? _farmEndTime + (_newStartTime - currentFarmStartTime)
+            : _farmEndTime - (currentFarmStartTime - _newStartTime);
+
+        farmEndTime = _farmEndTime;
+
+        emit FarmEndTimeUpdated(_farmEndTime);
     }
 
     /// @notice Returns bool status if farm is open.
