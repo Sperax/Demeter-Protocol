@@ -84,7 +84,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     error InvalidCooldownPeriod();
     error WithdrawTooSoon();
 
-    // Disallow initialization of a implementation contract.
+    // Disallow initialization of an implementation contract.
     constructor() {
         _disableInitializers();
     }
@@ -124,7 +124,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     // --------------------- Admin  Functions ---------------------
 
     /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days). Egs: 7 means 7 days.
+    /// @param _newCooldownPeriod The new cooldown period (in days). E.g: 7 means 7 days.
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
@@ -650,8 +650,9 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     }
 
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
+    /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - Farm start time.
-    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. Egs: 7 means 7 days.
+    /// @param _cooldownPeriod - Cooldown period in days for locked deposits. E.g: 7 means 7 days.
     /// @param _rwdTokenData - Reward data for each reward token.
     function _setupFarm(
         string calldata _farmId,
@@ -738,6 +739,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     /// @param _alreadyAccRewardBal Already accrued reward balance.
     /// @dev `_alreadyAccRewardBal` is useful when this function called from `computeRewards` function.
     /// As `computeReward` is a view function and it doesn't update the `accRewardBal` in the `rewardData`.
+    /// @return accRewards Accrued rewards for the given `_rwdId`, `_fundId` and `_time`.
     function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time, uint256 _alreadyAccRewardBal)
         internal
         view
@@ -847,8 +849,8 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     }
 
     /// @notice Add subscription to the reward fund for a deposit.
-    /// @param _depositId The unique ID of the deposit.
     /// @param _fundId The reward fund id.
+    /// @param _depositId The unique ID of the deposit.
     /// @param _liquidity The liquidity of the deposit.
     function _subscribeRewardFund(uint8 _fundId, uint256 _depositId, uint256 _liquidity) private {
         // Subscribe to the reward fund.

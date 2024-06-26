@@ -62,9 +62,9 @@ contract FarmRegistry is OwnableUpgradeable {
     }
 
     /// @notice constructor
+    /// @param _feeReceiver Receiver of the fees.
     /// @param _feeToken The fee token for farm creation.
     /// @param _feeAmount The fee amount to be paid by the creator.
-    /// @param _feeReceiver Receiver of the fees.
     /// @param _extensionFeePerDay Extension fee per day.
     function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay)
         external
