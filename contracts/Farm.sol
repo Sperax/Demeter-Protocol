@@ -235,10 +235,10 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
                     uint256 accRewards = _getAccRewards(iRwd, fundId, time, accumulatedRewards[iRwd]); // accumulatedRewards is sent to consider the already accrued rewards.
                     accumulatedRewards[iRwd] += accRewards;
                     // update the accRewardPerShare for delta time.
-                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
+                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PRECISION) / funds[fundId].totalLiquidity;
                 }
                 rewards[iSub][iRwd] =
-                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
+                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PRECISION) - sub.rewardDebt[iRwd];
                 unchecked {
                     ++iRwd;
                 }
@@ -336,7 +336,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
-                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
+                            fund.accRewardPerShare[iRwd] += (accRewards * PRECISION) / fund.totalLiquidity;
 
                             unchecked {
                                 ++iRwd;
@@ -575,8 +575,8 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
             RewardFund storage fund = rewardFunds[fundId];
 
             for (uint256 iRwd; iRwd < numRewards;) {
-                // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
-                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PREC;
+                // rewards = (liquidity * accRewardPerShare) / PRECISION - rewardDebt
+                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PRECISION;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
 
@@ -861,7 +861,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
 
         // Initialize user's reward debt.
         for (uint8 iRwd; iRwd < numRewards;) {
-            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
+            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION;
             unchecked {
                 ++iRwd;
             }

@@ -31,8 +31,6 @@ import {Subscription, RewardFund, Deposit} from "../interfaces/DataTypes.sol";
 /// @author Sperax Foundation.
 /// @notice This contract helps in creating farms with increase/decrease deposit functionality.
 abstract contract OperableDeposit is Farm {
-    uint256 public constant PRECISION = 1e18;
-
     // Events.
     event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
     event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
