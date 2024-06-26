@@ -25,17 +25,16 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
 /// @title Base Farm contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract contains the core logic for the Demeter farms.
-abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
+abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgradeable, MulticallUpgradeable {
     using SafeERC20 for IERC20;
 
     // Events.
@@ -86,7 +85,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error WithdrawTooSoon();
 
     // Disallow initialization of a implementation contract.
-    constructor() Ownable(msg.sender) {
+    constructor() {
         _disableInitializers();
     }
 
@@ -659,12 +658,12 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData
-    ) internal {
+    ) internal initializer {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
         farmId = _farmId;
-        _transferOwnership(msg.sender);
+        __Ownable_init_unchained(msg.sender);
         // Initialize farm global params.
         farmStartTime = _farmStartTime;
 

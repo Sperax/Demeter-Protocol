@@ -36,7 +36,7 @@ import {TokenUtils} from "../../utils/TokenUtils.sol";
 /// @title Camelot V2 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V2 farm.
-contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
+contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // Camelot router.
@@ -66,7 +66,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         RewardTokenData[] memory _rwdTokenData,
         address _router,
         address _nftPoolFactory
-    ) external initializer {
+    ) external {
         _validateNonZeroAddr(_router);
         // Initialize camelot related data nftContract = nft pool.
         nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);

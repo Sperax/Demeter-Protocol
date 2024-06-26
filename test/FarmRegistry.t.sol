@@ -106,7 +106,6 @@ contract RegisterFarmTest is FarmRegistryTest {
         initialized
         deployerRegistered
     {
-        address farm = actors[6];
         address creator = actors[5];
         vm.startPrank(owner);
 
