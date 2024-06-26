@@ -337,7 +337,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
                             // Get the accrued rewards for the time.
                             uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
                             rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
-                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
+                            fund.accRewardPerShare[iRwd] += (accRewards * PRECISION) / fund.totalLiquidity;
 
                             unchecked {
                                 ++iRwd;
