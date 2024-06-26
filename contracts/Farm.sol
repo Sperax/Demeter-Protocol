@@ -47,12 +47,12 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
     event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
-    event RewardAdded(address rwdToken, uint256 amount);
+    event RewardAdded(address indexed rwdToken, uint256 amount);
     event FarmClosed();
-    event RecoveredERC20(address token, uint256 amount);
+    event RecoveredERC20(address indexed token, uint256 amount);
     event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
-    event RewardDataUpdated(address indexed rwdToken, address newTokenManager);
-    event RewardTokenAdded(address indexed rwdToken, address rwdTokenManager);
+    event RewardDataUpdated(address indexed rwdToken, address indexed newTokenManager);
+    event RewardTokenAdded(address indexed rwdToken, address indexed rwdTokenManager);
     event FarmPaused(bool paused);
 
     // Custom Errors
