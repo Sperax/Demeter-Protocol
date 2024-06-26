@@ -47,8 +47,6 @@ abstract contract UniV3FarmTest is E721FarmTest {
     uint256 constant depositId = 1;
     UniV3FarmDeployer public uniV3FarmDeployer;
 
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-
     // Custom Errors
     error InvalidUniswapPoolConfig();
     error NoData();
@@ -468,7 +466,7 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         (uint256 amt0, uint256 amt1) = IUniswapV3Utils(UNISWAP_UTILS).fees(NFPM, _tokenId);
 
         vm.expectEmit(address(lockupFarm));
-        emit PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
+        emit UniV3Farm.PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
 
         uint256 amt0Before = IERC20(DAI).balanceOf(currentActor);
         uint256 amt1Before = IERC20(USDCe).balanceOf(currentActor);
@@ -483,7 +481,6 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
 abstract contract IncreaseDepositTest is UniV3FarmTest {
     event IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
 
     function test_IncreaseDeposit_RevertWhen_FarmIsInactive() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
@@ -574,7 +571,7 @@ abstract contract IncreaseDepositTest is UniV3FarmTest {
         vm.expectEmit(true, false, false, false, NFPM);
         emit IncreaseLiquidity(tokenId, 0, 0, 0);
         vm.expectEmit(true, false, false, false, farm);
-        emit DepositIncreased(depositId, 0);
+        emit OperableDeposit.DepositIncreased(depositId, 0);
 
         vm.recordLogs();
         UniV3Farm(farm).increaseDeposit(depositId, amounts, minAmounts);
@@ -620,7 +617,6 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
     uint128 constant dummyLiquidityToWithdraw = 1;
 
     event DecreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1);
-    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
 
     function test_DecreaseDeposit_RevertWhen_FarmIsClosed() public depositSetup(lockupFarm, true) {
         vm.startPrank(owner);
@@ -679,7 +675,7 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         assertEq(IERC20(USDCe).balanceOf(currentActor), 0);
 
         vm.expectEmit(farm);
-        emit DepositDecreased(depositId, liquidityToWithdraw);
+        emit OperableDeposit.DepositDecreased(depositId, liquidityToWithdraw);
         vm.expectEmit(true, false, false, false, NFPM);
         emit DecreaseLiquidity(tokenId, 0, 0, 0);
         vm.recordLogs();

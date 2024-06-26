@@ -36,15 +36,15 @@ abstract contract NFTDepositTest is E721FarmTest {
 
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
-            emit Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+            emit Farm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
             IERC721(nftContract).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
             uint256 depositId = E721Farm(farm).totalDeposits();
             Deposit memory userDeposit = E721Farm(farm).getDepositInfo(depositId);

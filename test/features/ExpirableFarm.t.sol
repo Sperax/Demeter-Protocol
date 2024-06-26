@@ -10,9 +10,6 @@ import "../Farm.t.sol";
 abstract contract ExpirableFarmTest is FarmTest {
     uint256 public constant MIN_EXTENSION = 100; // in days
     uint256 public constant MAX_EXTENSION = 300; // in days
-
-    event FarmEndTimeUpdated(uint256 newEndTime);
-    event ExtensionFeeCollected(address token, uint256 extensionFee);
 }
 
 abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
@@ -66,7 +63,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(newStartTime);
+        emit Farm.FarmStartTimeUpdated(newStartTime);
         ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
@@ -104,7 +101,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(newStartTime);
+        emit Farm.FarmStartTimeUpdated(newStartTime);
 
         ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
@@ -131,7 +128,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit FarmStartTimeUpdated(initialStartTime);
+        emit Farm.FarmStartTimeUpdated(initialStartTime);
         ExpirableFarm(farm).updateFarmStartTime(initialStartTime);
         vm.stopPrank();
 
@@ -226,10 +223,10 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
 
         if (extensionFeePerDay != 0) {
             vm.expectEmit(address(farm));
-            emit ExtensionFeeCollected(feeToken, extensionFeeAmount);
+            emit ExpirableFarm.ExtensionFeeCollected(feeToken, extensionFeeAmount);
         }
         vm.expectEmit(address(farm));
-        emit FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
+        emit ExpirableFarm.FarmEndTimeUpdated(farmEndTimeBeforeUpdate + extensionDays * 1 days);
 
         ExpirableFarm(farm).extendFarmDuration(extensionDays);
         uint256 farmEndTimeAfterUpdate = ExpirableFarm(farm).farmEndTime();
@@ -262,7 +259,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit DepositWithdrawn(depositId);
+            emit Farm.DepositWithdrawn(depositId);
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
@@ -286,7 +283,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit DepositWithdrawn(depositId);
+            emit Farm.DepositWithdrawn(depositId);
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(

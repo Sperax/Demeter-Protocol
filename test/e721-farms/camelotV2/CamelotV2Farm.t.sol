@@ -31,9 +31,6 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
 
     CamelotV2FarmDeployer internal camelotV2FarmDeployer;
 
-    event DepositIncreased(uint256 indexed depositId, uint256 liquidity);
-    event DepositDecreased(uint256 indexed depositId, uint256 liquidity);
-
     function setUp() public virtual override {
         super.setUp();
 
@@ -516,7 +513,7 @@ abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
         uint256[] memory _rewardDebtBefore = sub.rewardDebt;
         //We're not checking the data here
         vm.expectEmit(true, false, false, false);
-        emit DepositDecreased(1, liquidity / 2);
+        emit OperableDeposit.DepositDecreased(1, liquidity / 2);
         CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity / 2, minAmounts);
         Deposit memory userDepositAfter = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         _rwdFund = CamelotV2Farm(nonLockupFarm).getRewardFundInfo(0);
