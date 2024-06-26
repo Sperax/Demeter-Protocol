@@ -248,7 +248,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 

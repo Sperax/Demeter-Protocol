@@ -670,7 +670,7 @@ abstract contract RecoverERC20Test is FarmTest {
         Farm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20(bool lockup, uint256 amt) public useKnownActor(owner) {
+    function testFuzz_recoverERC20(bool lockup, uint256 amt) public useKnownActor(owner) {
         address farm = lockup ? lockupFarm : nonLockupFarm;
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(farm), 10e10);
@@ -1001,6 +1001,11 @@ abstract contract FarmPauseSwitchTest is FarmTest {
 }
 
 abstract contract UpdateFarmStartTimeTest is FarmTest {
+    function test_updateFarmStartTime_revertWhen_CallerIsNotOwner() public useActor(3) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[3]));
+        Farm(nonLockupFarm).updateFarmStartTime(block.timestamp);
+    }
+
     function test_UpdateFarmStartTime_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
