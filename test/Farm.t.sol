@@ -8,6 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {TestNetworkConfig} from "./utils/TestNetworkConfig.t.sol";
 import {Deposit, Subscription, RewardData, RewardFund} from "../contracts/interfaces/DataTypes.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 abstract contract FarmTest is TestNetworkConfig {
     uint8 public constant COMMON_FUND_ID = 0;
@@ -38,7 +39,7 @@ abstract contract FarmTest is TestNetworkConfig {
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
-    event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
+    event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
@@ -78,22 +79,7 @@ abstract contract FarmTest is TestNetworkConfig {
     }
 
     function setRewardRates(address farm) public useKnownActor(owner) {
-        if (Farm(farm).cooldownPeriod() != 0) {
-            uint256[] memory rwdRate = new uint256[](2);
-            address[] memory farmRewardTokens = getRewardTokens(farm);
-            for (uint8 i; i < farmRewardTokens.length; ++i) {
-                rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.01
-                rwdRate[1] = 2 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.02
-                Farm(farm).setRewardRate(farmRewardTokens[i], rwdRate);
-            }
-        } else {
-            uint256[] memory rwdRate = new uint256[](1);
-            address[] memory farmRewardTokens = getRewardTokens(farm);
-            for (uint8 i; i < farmRewardTokens.length; ++i) {
-                rwdRate[0] = 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100; //0.01
-                Farm(farm).setRewardRate(farmRewardTokens[i], rwdRate);
-            }
-        }
+        _setRewardRates(farm, false, 0);
     }
 
     function createFarm(uint256 startTime, bool lockup) public virtual returns (address);
@@ -104,6 +90,30 @@ abstract contract FarmTest is TestNetworkConfig {
 
     function getRewardTokens(address farm) public view returns (address[] memory) {
         return Farm(farm).getRewardTokens();
+    }
+
+    function _setRewardRates(address _farm, bool _customRwdRate, uint256 _rwdRate) internal {
+        address[] memory farmRewardTokens = getRewardTokens(_farm);
+        if (Farm(_farm).cooldownPeriod() != 0) {
+            uint128[] memory rwdRate = new uint128[](2);
+            for (uint8 i; i < farmRewardTokens.length; ++i) {
+                rwdRate[0] = SafeCast.toUint128(
+                    _customRwdRate ? _rwdRate : 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100
+                ); //0.01;
+                rwdRate[1] = SafeCast.toUint128(
+                    _customRwdRate ? _rwdRate : 2 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100
+                ); //0.02;
+                Farm(_farm).setRewardRate(farmRewardTokens[i], rwdRate);
+            }
+        } else {
+            uint128[] memory rwdRate = new uint128[](1);
+            for (uint8 i; i < farmRewardTokens.length; ++i) {
+                rwdRate[0] = SafeCast.toUint128(
+                    _customRwdRate ? _rwdRate : 1 * 10 ** ERC20(farmRewardTokens[i]).decimals() / 100
+                ); //0.01;
+                Farm(_farm).setRewardRate(farmRewardTokens[i], rwdRate);
+            }
+        }
     }
 }
 
@@ -206,6 +216,11 @@ abstract contract ClaimRewardsTest is FarmTest {
             address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 rewardsForEachSubsLength = lockup ? 2 : 1;
             depositSetupFn(farm, lockup);
+
+            vm.startPrank(owner);
+            _setRewardRates(farm, true, type(uint128).max);
+            vm.stopPrank();
+
             skip(15 days);
             vm.startPrank(user);
             address[] memory rewardTokens = getRewardTokens(farm);
@@ -219,7 +234,7 @@ abstract contract ClaimRewardsTest is FarmTest {
             vm.expectEmit(address(farm));
             emit RewardsClaimed(depositId, rewardsForEachSubs);
             Farm(farm).claimRewards(depositId);
-            // Checking the rewards claimed users balences
+            // Checking the rewards claimed users balances
             for (uint8 i; i < rewardTokens.length; ++i) {
                 if (lockup) {
                     assertEq(
@@ -260,7 +275,7 @@ abstract contract ClaimRewardsTest is FarmTest {
     function test_claimRewards_rwd_rate_0() public setup depositSetup(nonLockupFarm, false) {
         uint256 time = 15 days;
         uint256 depositId = 1;
-        uint256[] memory rwdRate = new uint256[](1);
+        uint128[] memory rwdRate = new uint128[](1);
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         uint256[] memory balances = new uint256[](rewardTokens.length);
         for (uint8 i; i < rewardTokens.length; ++i) {
@@ -655,7 +670,7 @@ abstract contract RecoverERC20Test is FarmTest {
         Farm(lockupFarm).recoverERC20(USDT);
     }
 
-    function testFuzz_recoverE20(bool lockup, uint256 amt) public useKnownActor(owner) {
+    function testFuzz_recoverERC20(bool lockup, uint256 amt) public useKnownActor(owner) {
         address farm = lockup ? lockupFarm : nonLockupFarm;
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(farm), 10e10);
@@ -736,7 +751,7 @@ abstract contract AddRewardsTest is FarmTest {
 
 abstract contract SetRewardRateTest is FarmTest {
     function test_SetRewardRate_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
-        uint256[] memory rwdRate = new uint256[](1);
+        uint128[] memory rwdRate = new uint128[](1);
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         rwdRate[0] = ERC20(rewardTokens[0]).decimals();
         Farm(nonLockupFarm).closeFarm();
@@ -745,11 +760,11 @@ abstract contract SetRewardRateTest is FarmTest {
     }
 
     function test_SetRewardRate_RevertWhen_InvalidRewardRatesLength() public useKnownActor(owner) {
-        uint256[] memory rwdRate = new uint256[](1);
+        uint128[] memory rwdRate = new uint128[](1);
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         for (uint8 i; i < rewardTokens.length; ++i) {
             uint8 decimals = ERC20(rewardTokens[i]).decimals();
-            rwdRate[0] = 2 * 10 ** decimals;
+            rwdRate[0] = SafeCast.toUint128(2 * 10 ** decimals);
             vm.startPrank(currentActor);
             vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardRatesLength.selector));
             Farm(lockupFarm).setRewardRate(rewardTokens[i], rwdRate);
@@ -758,27 +773,30 @@ abstract contract SetRewardRateTest is FarmTest {
 
     function testFuzz_setRewardRate(bool lockup, uint256 rwdRateNonLockup, uint256 rwdRateLockup) public {
         address farm = lockup ? lockupFarm : nonLockupFarm;
-        uint256[] memory rwdRate;
+        uint128[] memory rwdRate;
         if (lockup) {
-            rwdRate = new uint256[](2);
+            rwdRate = new uint128[](2);
         } else {
-            rwdRate = new uint256[](1);
+            rwdRate = new uint128[](1);
         }
         vm.startPrank(owner);
         address[] memory rewardTokens = getRewardTokens(farm);
         for (uint8 i; i < rewardTokens.length; ++i) {
             uint8 decimals = ERC20(rewardTokens[i]).decimals();
             rwdRateNonLockup = bound(rwdRateNonLockup, 1 * 10 ** decimals, 2 * 10 ** decimals);
-            rwdRate[0] = rwdRateNonLockup;
+            rwdRate[0] = SafeCast.toUint128(rwdRateNonLockup);
             if (lockup) {
                 rwdRateLockup = bound(rwdRateLockup, 2 * 10 ** decimals, 4 * 10 ** decimals);
-                rwdRate[1] = rwdRateLockup;
+                rwdRate[1] = SafeCast.toUint128(rwdRateLockup);
             }
 
             vm.expectEmit(address(farm));
             emit RewardRateUpdated(rewardTokens[i], rwdRate);
             Farm(farm).setRewardRate(rewardTokens[i], rwdRate);
-            assertEq(Farm(farm).getRewardRates(rewardTokens[i]), rwdRate);
+            assertEq(Farm(farm).getRewardRates(rewardTokens[i])[0], rwdRate[0]);
+            if (lockup) {
+                assertEq(Farm(farm).getRewardRates(rewardTokens[i])[1], rwdRate[1]);
+            }
         }
     }
 }
@@ -983,6 +1001,11 @@ abstract contract FarmPauseSwitchTest is FarmTest {
 }
 
 abstract contract UpdateFarmStartTimeTest is FarmTest {
+    function test_updateFarmStartTime_revertWhen_CallerIsNotOwner() public useActor(3) {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, actors[3]));
+        Farm(nonLockupFarm).updateFarmStartTime(block.timestamp);
+    }
+
     function test_UpdateFarmStartTime_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(nonLockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
@@ -1065,18 +1088,29 @@ abstract contract CloseFarmTest is FarmTest {
             address farm = lockup ? lockupFarm : nonLockupFarm;
             uint256 rewardRateLength = lockup ? 2 : 1;
             address[] memory rewardTokens = getRewardTokens(farm);
-            uint256[] memory rwdRate = new uint256[](rewardRateLength);
+            uint128[] memory rwdRate = new uint128[](rewardRateLength);
             vm.expectEmit(address(farm));
             emit FarmClosed();
             Farm(farm).closeFarm();
             assertEq(Farm(farm).isFarmOpen(), false);
             assertEq(Farm(farm).isFarmActive(), false);
             for (uint256 i = 0; i < rwdTokens.length; i++) {
-                assertEq(Farm(farm).getRewardRates(rewardTokens[i]), rwdRate);
+                assertEq(Farm(farm).getRewardRates(rewardTokens[i])[0], rwdRate[0]);
+                if (lockup) {
+                    assertEq(Farm(farm).getRewardRates(rewardTokens[i])[1], rwdRate[1]);
+                }
             }
 
             // this function also recovers reward funds. Need to test that here.
         }
+    }
+}
+
+// TODO add more positive test cases
+abstract contract GetRewardRates is FarmTest {
+    function test_RevertWhen_InvalidRewardToken() public setup {
+        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardToken.selector));
+        Farm(nonLockupFarm).getRewardRates(invalidRewardToken);
     }
 }
 
@@ -1179,7 +1213,7 @@ abstract contract MulticallTest is FarmTest {
 
     function test_Multicall_RevertWhen_CallInternalFunction() public useKnownActor(owner) {
         bytes[] memory data = new bytes[](1);
-        data[0] = abi.encodeWithSignature("_updateFarmRewardData()");
+        data[0] = abi.encodeWithSignature("_updateLastRewardAccrualTime()");
 
         vm.expectRevert(Address.FailedInnerCall.selector);
         Farm(lockupFarm).multicall(data);

@@ -30,12 +30,13 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 /// @author Sperax Foundation.
 /// @notice This contract tracks fee details, privileged deployers, deployed farms and farm deployers.
 contract FarmRegistry is OwnableUpgradeable {
+    address[] internal farms;
+    address[] internal deployerList;
+
     address public feeReceiver;
     address public feeToken;
     uint256 public feeAmount;
     uint256 public extensionFeePerDay;
-    address[] public farms;
-    address[] public deployerList;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
     // List of deployers for which fee won't be charged.
@@ -49,6 +50,7 @@ contract FarmRegistry is OwnableUpgradeable {
 
     // Custom Errors.
     error DeployerNotRegistered();
+    error FarmAlreadyRegistered();
     error DeployerAlreadyRegistered();
     error InvalidDeployerId();
     error PrivilegeSameAsDesired();
@@ -77,9 +79,14 @@ contract FarmRegistry is OwnableUpgradeable {
     /// @param _farm Address of the created farm contract
     /// @param _creator Address of the farm creator.
     function registerFarm(address _farm, address _creator) external {
+        _validateNonZeroAddr(_farm);
         if (!deployerRegistered[msg.sender]) {
             revert DeployerNotRegistered();
         }
+        if (farmRegistered[_farm]) {
+            revert FarmAlreadyRegistered();
+        }
+
         farms.push(_farm);
         farmRegistered[_farm] = true;
         emit FarmRegistered(_farm, _creator, msg.sender);

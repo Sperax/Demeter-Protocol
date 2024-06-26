@@ -6,7 +6,7 @@ import {RewardData, RewardFund} from "./DataTypes.sol";
 interface IFarm {
     function updateRewardData(address _rwdToken, address _newTknManager) external;
 
-    function setRewardRate(address _rwdToken, uint256[] memory _newRwdRates) external;
+    function setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) external;
 
     function recoverRewardFunds(address _rwdToken, uint256 _amount) external;
 

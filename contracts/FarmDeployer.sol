@@ -49,6 +49,7 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
 
     // Custom Errors
     error InvalidAddress();
+    error NewFarmImplementationSameAsOld();
 
     /// @notice Constructor.
     /// @param _farmRegistry Address of the Demeter Farm Registry.
@@ -63,7 +64,14 @@ abstract contract FarmDeployer is Ownable, ReentrancyGuard {
     /// @dev Only callable by the owner.
     /// @param _newFarmImplementation New farm implementation's address.
     /// @param _newFarmId  ID of the new farm.
+    /// @dev Ensure that `_newFarmId` is correct for the new farm implementation.
     function updateFarmImplementation(address _newFarmImplementation, string calldata _newFarmId) external onlyOwner {
+        _validateNonZeroAddr(_newFarmImplementation);
+
+        if (farmImplementation == _newFarmImplementation) {
+            revert NewFarmImplementationSameAsOld();
+        }
+
         farmId = _newFarmId;
         farmImplementation = _newFarmImplementation;
 

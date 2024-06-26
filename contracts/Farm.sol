@@ -25,17 +25,16 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
 import {FarmStorage} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
 /// @title Base Farm contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract contains the core logic for the Demeter farms.
-abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, Multicall {
+abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgradeable, MulticallUpgradeable {
     using SafeERC20 for IERC20;
 
     // Events.
@@ -47,7 +46,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
     event FarmStartTimeUpdated(uint256 newStartTime);
     event CooldownPeriodUpdated(uint256 newCooldownPeriod);
-    event RewardRateUpdated(address indexed rwdToken, uint256[] newRewardRate);
+    event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
     event RewardAdded(address rwdToken, uint256 amount);
     event FarmClosed();
     event RecoveredERC20(address token, uint256 amount);
@@ -86,7 +85,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     error WithdrawTooSoon();
 
     // Disallow initialization of an implementation contract.
-    constructor() Ownable(msg.sender) {
+    constructor() {
         _disableInitializers();
     }
 
@@ -115,10 +114,9 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert ZeroAmount();
         }
         _validateFarmOpen();
-        if (rewardData[_rwdToken].tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
-        _updateFarmRewardData();
+        _validateRewardToken(_rwdToken);
+
+        updateFarmRewardData();
         IERC20(_rwdToken).safeTransferFrom(msg.sender, address(this), _amount);
         emit RewardAdded(_rwdToken, _amount);
     }
@@ -144,7 +142,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         if (isPaused == _isPaused) {
             revert FarmAlreadyInRequiredState();
         }
-        _updateFarmRewardData();
+        updateFarmRewardData();
         isPaused = _isPaused;
         emit FarmPaused(isPaused);
     }
@@ -153,13 +151,13 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev Shuts down the farm completely.
     function closeFarm() external onlyOwner nonReentrant {
         _validateFarmOpen();
-        _updateFarmRewardData();
+        updateFarmRewardData();
         isPaused = true;
         isClosed = true;
         uint256 numRewards = rewardTokens.length;
         for (uint8 iRwd; iRwd < numRewards;) {
             _recoverRewardFunds(rewardTokens[iRwd], type(uint256).max);
-            _setRewardRate(rewardTokens[iRwd], new uint256[](rewardFunds.length));
+            _setRewardRate(rewardTokens[iRwd], new uint128[](rewardFunds.length));
             unchecked {
                 ++iRwd;
             }
@@ -169,8 +167,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
     /// @notice Recover erc20 tokens other than the reward Tokens.
     /// @param _token Address of token to be recovered.
-    function recoverERC20(address _token) external virtual onlyOwner nonReentrant {
-        _recoverE20(_token);
+    function recoverERC20(address _token) external onlyOwner nonReentrant {
+        _recoverERC20(_token);
     }
 
     // --------------------- Token Manager Functions ---------------------
@@ -180,17 +178,17 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev Function recovers minOf(_amount, rewardsLeft).
     function recoverRewardFunds(address _rwdToken, uint256 _amount) external nonReentrant {
         _validateTokenManager(_rwdToken);
-        _updateFarmRewardData();
+        updateFarmRewardData();
         _recoverRewardFunds(_rwdToken, _amount);
     }
 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) external {
+    function setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
-        _updateFarmRewardData();
+        updateFarmRewardData();
         _setRewardRate(_rwdToken, _newRewardRates);
     }
 
@@ -225,6 +223,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         rewards = new uint256[][](numDepositSubs);
 
         uint256 time = _getRewardAccrualTimeElapsed();
+        uint256[] memory accumulatedRewards = new uint256[](numRewards);
 
         // Update the two reward funds.
         for (uint8 iSub; iSub < numDepositSubs;) {
@@ -233,12 +232,13 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             uint8 fundId = sub.fundId;
             for (uint8 iRwd; iRwd < numRewards;) {
                 if (funds[fundId].totalLiquidity != 0 && isFarmActive()) {
-                    uint256 accRewards = _getAccRewards(iRwd, fundId, time);
+                    uint256 accRewards = _getAccRewards(iRwd, fundId, time, accumulatedRewards[iRwd]); // accumulatedRewards is sent to consider the already accrued rewards.
+                    accumulatedRewards[iRwd] += accRewards;
                     // update the accRewardPerShare for delta time.
-                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PREC) / funds[fundId].totalLiquidity;
+                    funds[fundId].accRewardPerShare[iRwd] += (accRewards * PRECISION) / funds[fundId].totalLiquidity;
                 }
                 rewards[iSub][iRwd] =
-                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PREC) - sub.rewardDebt[iRwd];
+                    ((userLiquidity * funds[fundId].accRewardPerShare[iRwd]) / PRECISION) - sub.rewardDebt[iRwd];
                 unchecked {
                     ++iRwd;
                 }
@@ -286,6 +286,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdToken The reward token's address.
     /// @return The reward rates for the reward token (uint256[]).
     function getRewardRates(address _rwdToken) external view returns (uint256[] memory) {
+        _validateRewardToken(_rwdToken);
         uint256 numFunds = rewardFunds.length;
         uint256[] memory rates = new uint256[](numFunds);
         uint8 id = rewardData[_rwdToken].id;
@@ -318,6 +319,38 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @return The tokens and amounts associated with the farm's liquidity.
     /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
+
+    /// @notice Function to update the FarmRewardData for all funds.
+    function updateFarmRewardData() public virtual {
+        uint256 time = _getRewardAccrualTimeElapsed();
+        if (time > 0) {
+            // Accrue rewards if farm is active.
+            if (isFarmActive()) {
+                uint256 numFunds = rewardFunds.length;
+                uint256 numRewards = rewardTokens.length;
+                // Update the reward funds.
+                for (uint8 iFund; iFund < numFunds;) {
+                    RewardFund storage fund = rewardFunds[iFund];
+                    if (fund.totalLiquidity != 0) {
+                        for (uint8 iRwd; iRwd < numRewards;) {
+                            // Get the accrued rewards for the time.
+                            uint256 accRewards = _getAccRewards(iRwd, iFund, time, 0); // _alreadyAccRewardBal is 0.
+                            rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
+                            fund.accRewardPerShare[iRwd] += (accRewards * PRECISION) / fund.totalLiquidity;
+
+                            unchecked {
+                                ++iRwd;
+                            }
+                        }
+                    }
+                    unchecked {
+                        ++iFund;
+                    }
+                }
+            }
+        }
+        _updateLastRewardAccrualTime(); // Update the last reward accrual time.
+    }
 
     /// @notice Claim rewards for the user.
     /// @param _account The user's address.
@@ -370,9 +403,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 
-        if (rwdData.tknManager == address(0)) {
-            revert InvalidRewardToken();
-        }
+        _validateRewardToken(_rwdToken);
 
         uint256 numFunds = rewardFunds.length;
         uint256 rewardsAcc = rwdData.accRewardBal;
@@ -394,7 +425,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         return (supply - rewardsAcc);
     }
 
-    function _recoverE20(address _token) internal {
+    function _recoverERC20(address _token) internal virtual {
         if (rewardData[_token].tknManager != address(0)) {
             revert CannotWithdrawRewardToken();
         }
@@ -427,7 +458,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             revert NoLiquidityInPosition();
         }
         // Update the reward funds.
-        _updateFarmRewardData();
+        updateFarmRewardData();
 
         // Prepare data to be stored.
         Deposit memory userDeposit = Deposit({
@@ -526,7 +557,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant.
     function _updateAndClaimFarmRewards(uint256 _depositId) internal {
-        _updateFarmRewardData();
+        updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
         Subscription[] storage depositSubs = subscriptions[_depositId];
@@ -544,8 +575,8 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
             RewardFund storage fund = rewardFunds[fundId];
 
             for (uint256 iRwd; iRwd < numRewards;) {
-                // rewards = (liquidity * accRewardPerShare) / PREC - rewardDebt
-                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PREC;
+                // rewards = (liquidity * accRewardPerShare) / PRECISION - rewardDebt
+                uint256 accRewards = (userDeposit.liquidity * fund.accRewardPerShare[iRwd]) / PRECISION;
                 rewards[iRwd] = accRewards - depositSubs[iSub].rewardDebt[iRwd];
                 totalRewards[iRwd] += rewards[iRwd];
 
@@ -602,7 +633,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @notice Function to update reward params for a fund.
     /// @param _rwdToken The reward token's address.
     /// @param _newRewardRates The new reward rate for the fund (includes the precision).
-    function _setRewardRate(address _rwdToken, uint256[] memory _newRewardRates) internal {
+    function _setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) internal {
         uint8 id = rewardData[_rwdToken].id;
         uint256 numFunds = rewardFunds.length;
         if (_newRewardRates.length != numFunds) {
@@ -618,38 +649,6 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         emit RewardRateUpdated(_rwdToken, _newRewardRates);
     }
 
-    /// @notice Function to update the FarmRewardData for all funds.
-    function _updateFarmRewardData() internal virtual {
-        uint256 time = _getRewardAccrualTimeElapsed();
-        if (time > 0) {
-            // Accrue rewards if farm is active.
-            if (isFarmActive()) {
-                uint256 numFunds = rewardFunds.length;
-                uint256 numRewards = rewardTokens.length;
-                // Update the reward funds.
-                for (uint8 iFund; iFund < numFunds;) {
-                    RewardFund storage fund = rewardFunds[iFund];
-                    if (fund.totalLiquidity != 0) {
-                        for (uint8 iRwd; iRwd < numRewards;) {
-                            // Get the accrued rewards for the time.
-                            uint256 accRewards = _getAccRewards(iRwd, iFund, time);
-                            rewardData[rewardTokens[iRwd]].accRewardBal += accRewards;
-                            fund.accRewardPerShare[iRwd] += (accRewards * PREC) / fund.totalLiquidity;
-
-                            unchecked {
-                                ++iRwd;
-                            }
-                        }
-                    }
-                    unchecked {
-                        ++iFund;
-                    }
-                }
-            }
-        }
-        _updateLastRewardAccrualTime(); // Update the last reward accrual time.
-    }
-
     /// @notice Function to setup the reward funds and initialize the farm global params during construction.
     /// @param _farmId ID of the farm. E.g: `Demeter_Camelot_V2`.
     /// @param _farmStartTime - Farm start time.
@@ -660,12 +659,12 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         uint256 _farmStartTime,
         uint256 _cooldownPeriod,
         RewardTokenData[] memory _rwdTokenData
-    ) internal {
+    ) internal initializer {
         if (_farmStartTime < block.timestamp) {
             revert InvalidFarmStartTime();
         }
         farmId = _farmId;
-        _transferOwnership(msg.sender);
+        __Ownable_init_unchained(msg.sender);
         // Initialize farm global params.
         farmStartTime = _farmStartTime;
 
@@ -737,15 +736,22 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
     /// @param _rwdId Id of the reward token.
     /// @param _fundId Id of the reward fund.
     /// @param _time Time interval for the reward computation.
+    /// @param _alreadyAccRewardBal Already accrued reward balance.
+    /// @dev `_alreadyAccRewardBal` is useful when this function called from `computeRewards` function.
+    /// As `computeReward` is a view function and it doesn't update the `accRewardBal` in the `rewardData`.
     /// @return accRewards Accrued rewards for the given `_rwdId`, `_fundId` and `_time`.
-    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time) internal view returns (uint256) {
+    function _getAccRewards(uint8 _rwdId, uint8 _fundId, uint256 _time, uint256 _alreadyAccRewardBal)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 rewardsPerSec = rewardFunds[_fundId].rewardsPerSec[_rwdId];
         if (rewardsPerSec == 0) {
             return 0;
         }
         address rwdToken = rewardTokens[_rwdId];
         uint256 rwdSupply = IERC20(rwdToken).balanceOf(address(this));
-        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal;
+        uint256 rwdAccrued = rewardData[rwdToken].accRewardBal + _alreadyAccRewardBal;
 
         uint256 rwdBal = 0;
         // Calculate the available reward funds in the farm.
@@ -807,6 +813,14 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
         }
     }
 
+    /// @notice Validate the reward token is valid.
+    /// @param _rwdToken Address of reward token.
+    function _validateRewardToken(address _rwdToken) internal view {
+        if (rewardData[_rwdToken].tknManager == address(0)) {
+            revert InvalidRewardToken();
+        }
+    }
+
     /// @notice Get the time elapsed since the last reward accrual.
     /// @return time The time elapsed since the last reward accrual.
     function _getRewardAccrualTimeElapsed() internal view virtual returns (uint256) {
@@ -849,7 +863,7 @@ abstract contract Farm is FarmStorage, Ownable, ReentrancyGuard, Initializable, 
 
         // Initialize user's reward debt.
         for (uint8 iRwd; iRwd < numRewards;) {
-            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PREC;
+            subscription.rewardDebt[iRwd] = (_liquidity * rewardFunds[_fundId].accRewardPerShare[iRwd]) / PRECISION;
             unchecked {
                 ++iRwd;
             }

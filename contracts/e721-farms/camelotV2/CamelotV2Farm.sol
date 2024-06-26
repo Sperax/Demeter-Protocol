@@ -36,7 +36,7 @@ import {TokenUtils} from "../../utils/TokenUtils.sol";
 /// @title Camelot V2 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V2 farm.
-contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit {
+contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // Camelot router.
@@ -69,7 +69,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
         RewardTokenData[] memory _rwdTokenData,
         address _router,
         address _nftPoolFactory
-    ) external initializer {
+    ) external {
         _validateNonZeroAddr(_router);
         // Initialize camelot related data nftContract = nft pool.
         nftContract = INFTPoolFactory(_nftPoolFactory).getPool(_camelotPairPool);
@@ -247,7 +247,7 @@ contract CamelotV2Farm is E721Farm, ExpirableFarm, INFTHandler, OperableDeposit 
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 

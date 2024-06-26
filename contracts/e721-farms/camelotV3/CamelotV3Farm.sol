@@ -75,7 +75,7 @@ struct InitializeInput {
 /// @title Camelot V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V3 farm.
-contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
+contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     using SafeERC20 for IERC20;
 
     // CamelotV3 params.
@@ -99,7 +99,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
 
     /// @notice Initializer function of this farm.
     /// @param _input A struct having all the input params.
-    function initialize(InitializeInput calldata _input) external initializer {
+    function initialize(InitializeInput calldata _input) external {
         _validateNonZeroAddr(_input.camelotV3Factory);
         _validateNonZeroAddr(_input.nftContract);
         _validateNonZeroAddr(_input.camelotUtils);
@@ -248,7 +248,7 @@ contract CamelotV3Farm is E721Farm, ExpirableFarm, OperableDeposit {
     /// @notice Update the farm start time.
     /// @param _newStartTime The new farm start time.
     /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) onlyOwner {
+    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) {
         ExpirableFarm.updateFarmStartTime(_newStartTime);
     }
 
