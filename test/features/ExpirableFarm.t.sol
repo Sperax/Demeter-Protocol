@@ -204,8 +204,29 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         vm.stopPrank();
     }
 
+    function test_ExtendFarmDuration_RevertWhen_DurationExceeded() public {
+        vm.startPrank(owner);
+        uint256 maxExtensionDays = (
+            block.timestamp + ExpirableFarm(lockupFarm).MAX_EXTENSION() * 1 days
+                - ExpirableFarm(lockupFarm).farmEndTime()
+        ) / 1 days;
+        uint256 durationExceed = maxExtensionDays + 1;
+        uint256 extensionFeePerDay = FarmRegistry(FARM_REGISTRY).extensionFeePerDay();
+        address feeToken = FarmRegistry(FARM_REGISTRY).feeToken();
+        uint256 extensionFeeAmount = durationExceed * extensionFeePerDay;
+        IERC20(feeToken).approve(lockupFarm, extensionFeeAmount);
+
+        vm.expectRevert(abi.encodeWithSelector(ExpirableFarm.DurationExceeded.selector));
+        ExpirableFarm(lockupFarm).extendFarmDuration(durationExceed);
+    }
+
     function testFuzz_extendFarmDuration(bool lockup, uint256 extensionDays, uint256 farmStartTime) public {
-        vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
+        // vm.assume(extensionDays >= MIN_EXTENSION && extensionDays <= MAX_EXTENSION);
+        uint256 maxExtensionDays = (
+            block.timestamp + ExpirableFarm(lockupFarm).MAX_EXTENSION() * 1 days
+                - ExpirableFarm(lockupFarm).farmEndTime()
+        ) / 1 days;
+        extensionDays = bound(extensionDays, MIN_EXTENSION, maxExtensionDays);
         farmStartTime = bound(farmStartTime, block.timestamp + 1, type(uint64).max);
         address farm = createFarm(farmStartTime, lockup);
         vm.warp(farmStartTime + 1);
