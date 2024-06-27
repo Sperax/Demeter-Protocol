@@ -3,7 +3,6 @@ pragma solidity 0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {Farm} from "../../contracts/Farm.sol";
-import {FarmRegistry} from "../../contracts/FarmRegistry.sol";
 import {FarmDeployer} from "../../contracts/FarmDeployer.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 

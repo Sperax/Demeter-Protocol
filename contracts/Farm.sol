@@ -28,7 +28,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {MulticallUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/MulticallUpgradeable.sol";
-import {FarmStorage} from "./FarmStorage.sol";
+import {FarmStorage, IFarm} from "./FarmStorage.sol";
 import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./interfaces/DataTypes.sol";
 
 /// @title Base Farm contract of Demeter Protocol.
@@ -37,78 +37,25 @@ import {RewardTokenData, RewardFund, Subscription, Deposit, RewardData} from "./
 abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgradeable, MulticallUpgradeable {
     using SafeERC20 for IERC20;
 
-    // Events.
-    event Deposited(uint256 indexed depositId, address indexed account, bool locked, uint256 liquidity);
-    event CooldownInitiated(uint256 indexed depositId, uint256 expiryDate);
-    event DepositWithdrawn(uint256 indexed depositId);
-    event RewardsClaimed(uint256 indexed depositId, uint256[][] rewardsForEachSubs);
-    event PoolUnsubscribed(uint256 indexed depositId, uint8 fundId, uint256[] totalRewardsClaimed);
-    event PoolSubscribed(uint256 indexed depositId, uint8 fundId);
-    event FarmStartTimeUpdated(uint256 newStartTime);
-    event CooldownPeriodUpdated(uint256 newCooldownPeriod);
-    event RewardRateUpdated(address indexed rwdToken, uint128[] newRewardRate);
-    event RewardAdded(address indexed rwdToken, uint256 amount);
-    event FarmClosed();
-    event RecoveredERC20(address indexed token, uint256 amount);
-    event FundsRecovered(address indexed account, address indexed rwdToken, uint256 amount);
-    event RewardDataUpdated(address indexed rwdToken, address indexed newTokenManager);
-    event RewardTokenAdded(address indexed rwdToken, address indexed rwdTokenManager);
-    event FarmPaused(bool paused);
-
-    // Custom Errors
-    error InvalidRewardToken();
-    error FarmDoesNotSupportLockup();
-    error FarmAlreadyStarted();
-    error InvalidTime();
-    error FarmAlreadyInRequiredState();
-    error CannotWithdrawRewardToken();
-    error CannotWithdrawZeroAmount();
-    error SubscriptionDoesNotExist();
-    error RewardFundDoesNotExist();
-    error LockupFunctionalityIsDisabled();
-    error NoLiquidityInPosition();
-    error CannotInitiateCooldown();
-    error PleaseInitiateCooldown();
-    error DepositIsInCooldown();
-    error InvalidRewardRatesLength();
-    error InvalidFundId();
-    error InvalidFarmStartTime();
-    error InvalidRewardData();
-    error RewardTokenAlreadyAdded();
-    error DepositDoesNotExist();
-    error FarmIsClosed();
-    error FarmIsInactive();
-    error NotTheTokenManager();
-    error InvalidAddress();
-    error ZeroAmount();
-    error InvalidCooldownPeriod();
-    error WithdrawTooSoon();
-
     // Disallow initialization of an implementation contract.
     constructor() {
         _disableInitializers();
     }
 
-    /// @notice Function to be called to withdraw deposit.
-    /// @param _depositId Id of the deposit.
+    /// @inheritdoc IFarm
     function withdraw(uint256 _depositId) external virtual;
 
-    /// @notice Claim rewards for the user.
-    /// @param _depositId The id of the deposit.
+    /// @inheritdoc IFarm
     function claimRewards(uint256 _depositId) external {
         claimRewards(msg.sender, _depositId);
     }
 
-    /// @notice Function to be called to initiate cooldown for a staked deposit.
-    /// @param _depositId The id of the deposit to be locked.
-    /// @dev _depositId is corresponding to the user's deposit.
+    /// @inheritdoc IFarm
     function initiateCooldown(uint256 _depositId) external nonReentrant {
         _initiateCooldown(_depositId);
     }
 
-    /// @notice Add rewards to the farm.
-    /// @param _rwdToken The reward token's address.
-    /// @param _amount The amount of reward tokens to add.
+    /// @inheritdoc IFarm
     function addRewards(address _rwdToken, uint256 _amount) external nonReentrant {
         if (_amount == 0) {
             revert ZeroAmount();
@@ -123,8 +70,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     // --------------------- Admin  Functions ---------------------
 
-    /// @notice Update the cooldown period.
-    /// @param _newCooldownPeriod The new cooldown period (in days). E.g: 7 means 7 days.
+    /// @inheritdoc IFarm
     function updateCooldownPeriod(uint256 _newCooldownPeriod) external onlyOwner {
         _validateFarmOpen();
         if (cooldownPeriod == 0) {
@@ -135,8 +81,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         emit CooldownPeriodUpdated(_newCooldownPeriod);
     }
 
-    /// @notice Pause / UnPause the farm.
-    /// @param _isPaused Desired state of the farm (true to pause the farm).
+    /// @inheritdoc IFarm
     function farmPauseSwitch(bool _isPaused) external onlyOwner {
         _validateFarmOpen();
         if (isPaused == _isPaused) {
@@ -147,8 +92,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         emit FarmPaused(isPaused);
     }
 
-    /// @notice Recover rewardToken from the farm in case of EMERGENCY.
-    /// @dev Shuts down the farm completely.
+    /// @inheritdoc IFarm
     function closeFarm() external onlyOwner nonReentrant {
         _validateFarmOpen();
         updateFarmRewardData();
@@ -162,26 +106,20 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         emit FarmClosed();
     }
 
-    /// @notice Recover erc20 tokens other than the reward Tokens.
-    /// @param _token Address of token to be recovered.
+    /// @inheritdoc IFarm
     function recoverERC20(address _token) external onlyOwner nonReentrant {
         _recoverERC20(_token);
     }
 
     // --------------------- Token Manager Functions ---------------------
-    /// @notice Get the remaining balance out of the farm.
-    /// @param _rwdToken The reward token's address.
-    /// @param _amount The amount of the reward tokens to be withdrawn.
-    /// @dev Function recovers minOf(_amount, rewardsLeft).
+    /// @inheritdoc IFarm
     function recoverRewardFunds(address _rwdToken, uint256 _amount) external nonReentrant {
         _validateTokenManager(_rwdToken);
         updateFarmRewardData();
         _recoverRewardFunds(_rwdToken, _amount);
     }
 
-    /// @notice Function to update reward params for a fund.
-    /// @param _rwdToken The reward token's address.
-    /// @param _newRewardRates The new reward rate for the fund (includes the precision).
+    /// @inheritdoc IFarm
     function setRewardRate(address _rwdToken, uint128[] memory _newRewardRates) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
@@ -189,10 +127,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         _setRewardRate(_rwdToken, _newRewardRates);
     }
 
-    /// @notice Transfer the tokenManagerRole to other user.
-    /// @dev Only the existing tokenManager for a reward can call this function.
-    /// @param _rwdToken The reward token's address.
-    /// @param _newTknManager Address of the new token manager.
+    /// @inheritdoc IFarm
     function updateRewardData(address _rwdToken, address _newTknManager) external {
         _validateFarmOpen();
         _validateTokenManager(_rwdToken);
@@ -201,10 +136,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         emit RewardDataUpdated(_rwdToken, _newTknManager);
     }
 
-    /// @notice Function to compute the total accrued rewards for a deposit for each subscription.
-    /// @param _account The user's address.
-    /// @param _depositId The id of the deposit.
-    /// @return rewards The total accrued rewards for the deposit for each subscription (uint256[][]).
+    /// @inheritdoc IFarm
     function computeRewards(address _account, uint256 _depositId)
         external
         view
@@ -241,9 +173,17 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         return rewards;
     }
 
-    /// @notice Get deposit info for a deposit id.
-    /// @param _depositId The id of the deposit.
-    /// @return The deposit info (Deposit).
+    /// @inheritdoc IFarm
+    function getRewardFunds() external view returns (RewardFund[] memory) {
+        return rewardFunds;
+    }
+
+    /// @inheritdoc IFarm
+    function getRewardData(address _rwdToken) external view returns (RewardData memory) {
+        return rewardData[_rwdToken];
+    }
+
+    /// @inheritdoc IFarm
     function getDepositInfo(uint256 _depositId) external view returns (Deposit memory) {
         if (_depositId == 0 || _depositId > totalDeposits) {
             revert DepositDoesNotExist();
@@ -251,17 +191,12 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         return deposits[_depositId];
     }
 
-    /// @notice Get number of subscriptions for an account.
-    /// @param _depositId The deposit id.
-    /// @return The number of subscriptions for the deposit.
+    /// @inheritdoc IFarm
     function getNumSubscriptions(uint256 _depositId) external view returns (uint256) {
         return subscriptions[_depositId].length;
     }
 
-    /// @notice Get subscription stats for a deposit.
-    /// @param _depositId The deposit id.
-    /// @param _subscriptionId The subscription's id.
-    /// @return The subscription info (Subscription).
+    /// @inheritdoc IFarm
     function getSubscriptionInfo(uint256 _depositId, uint256 _subscriptionId)
         external
         view
@@ -273,9 +208,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         return subscriptions[_depositId][_subscriptionId];
     }
 
-    /// @notice Get reward rates for a rewardToken.
-    /// @param _rwdToken The reward token's address.
-    /// @return The reward rates for the reward token (uint256[]).
+    /// @inheritdoc IFarm
     function getRewardRates(address _rwdToken) external view returns (uint256[] memory) {
         _validateRewardToken(_rwdToken);
         uint256 numFunds = rewardFunds.length;
@@ -287,9 +220,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         return rates;
     }
 
-    /// @notice Get farm reward fund info.
-    /// @param _fundId The fund's id.
-    /// @return The reward fund info (RewardFund).
+    /// @inheritdoc IFarm
     function getRewardFundInfo(uint8 _fundId) external view returns (RewardFund memory) {
         if (_fundId >= rewardFunds.length) {
             revert RewardFundDoesNotExist();
@@ -297,18 +228,15 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         return rewardFunds[_fundId];
     }
 
-    /// @notice Function to get the reward tokens added in the farm.
-    /// @return The reward tokens added in the farm.
+    /// @inheritdoc IFarm
     function getRewardTokens() external view returns (address[] memory) {
         return rewardTokens;
     }
 
-    /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    /// @return The tokens and amounts associated with the farm's liquidity.
-    /// @dev This function should be overridden to add the respective logic.
+    /// @inheritdoc IFarm
     function getTokenAmounts() external view virtual returns (address[] memory, uint256[] memory);
 
-    /// @notice Function to update the FarmRewardData for all funds.
+    /// @inheritdoc IFarm
     function updateFarmRewardData() public virtual {
         uint256 time = _getRewardAccrualTimeElapsed();
         if (time > 0) {
@@ -333,20 +261,14 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         _updateLastRewardAccrualTime(); // Update the last reward accrual time.
     }
 
-    /// @notice Claim rewards for the user.
-    /// @param _account The user's address.
-    /// @param _depositId The id of the deposit.
-    /// @dev Anyone can call this function to claim rewards for the user.
+    /// @inheritdoc IFarm
     function claimRewards(address _account, uint256 _depositId) public nonReentrant {
         _validateFarmOpen();
         _validateDeposit(_account, _depositId);
         _updateAndClaimFarmRewards(_depositId);
     }
 
-    /// @notice Update the farm start time.
-    /// @dev Can be updated only before the farm start.
-    ///      New start time should be in future.
-    /// @param _newStartTime The new farm start time.
+    /// @inheritdoc IFarm
     function updateFarmStartTime(uint256 _newStartTime) public virtual onlyOwner {
         _validateFarmOpen();
         if (farmStartTime <= block.timestamp) {
@@ -361,26 +283,17 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
         emit FarmStartTimeUpdated(_newStartTime);
     }
 
-    /// @notice Returns if farm is open.
-    ///         Farm is open if it is not closed.
-    /// @return bool True if farm is open.
-    /// @dev This function can be overridden to add any new/additional logic.
+    /// @inheritdoc IFarm
     function isFarmOpen() public view virtual returns (bool) {
         return !isClosed;
     }
 
-    /// @notice Returns if farm is active.
-    ///         Farm is active if it is not paused and not closed.
-    /// @return bool True if farm is active.
-    /// @dev This function can be overridden to add any new/additional logic.
+    /// @inheritdoc IFarm
     function isFarmActive() public view virtual returns (bool) {
         return !isPaused && isFarmOpen();
     }
 
-    /// @notice Get the reward balance for specified reward token.
-    /// @param _rwdToken The address of the reward token.
-    /// @return The available reward balance for the specified reward token.
-    /// @dev This function calculates the available reward balance by considering the accrued rewards and the token supply.
+    /// @inheritdoc IFarm
     function getRewardBalance(address _rwdToken) public view returns (uint256) {
         RewardData memory rwdData = rewardData[_rwdToken];
 

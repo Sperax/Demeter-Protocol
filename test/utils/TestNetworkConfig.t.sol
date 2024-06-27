@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {Arbitrum} from "./networkConfig/Arbitrum.t.sol";
 import {UpgradeUtil} from "./UpgradeUtil.t.sol";
-import {FarmRegistry} from "../../contracts/FarmRegistry.sol";
+import {FarmRegistry, IFarmRegistry} from "../../contracts/FarmRegistry.sol";
 
 // Select the test network configuration
 abstract contract TestNetworkConfig is Arbitrum {
@@ -15,9 +15,9 @@ abstract contract TestNetworkConfig is Arbitrum {
         uint256 _extensionFeePerDay = 1e18;
         vm.startPrank(PROXY_OWNER);
         UpgradeUtil upgradeUtil = new UpgradeUtil();
-        FarmRegistry farmRegistryImpl = new FarmRegistry();
+        IFarmRegistry farmRegistryImpl = new FarmRegistry();
         FARM_REGISTRY = upgradeUtil.deployErc1967Proxy(address(farmRegistryImpl));
-        FarmRegistry(FARM_REGISTRY).initialize(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
+        IFarmRegistry(FARM_REGISTRY).initialize(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
         vm.stopPrank();
     }
 }
