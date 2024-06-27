@@ -5,14 +5,14 @@ import "forge-std/console.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {CamelotV2FarmTest} from "../e721-farms/camelotV2/CamelotV2Farm.t.sol";
 import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol";
-import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
+import {RewarderFactory, IRewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
 import {Rewarder, IERC20, ERC20} from "../../contracts/rewarder/Rewarder.sol";
 import {IOracle} from "../../contracts/interfaces/IOracle.sol";
 import {Farm, RewardData} from "./../../contracts/Farm.sol";
 import {IFarm} from "../../contracts/interfaces/IFarm.sol";
 
 contract RewarderTest is CamelotV2FarmTest {
-    RewarderFactory public rewarderFactory;
+    IRewarderFactory public rewarderFactory;
     Rewarder public rewarder;
     address public rewardToken;
     address public rewardManager;
