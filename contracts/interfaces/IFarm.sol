@@ -182,6 +182,14 @@ interface IFarm {
     /// @dev This function calculates the available reward balance by considering the accrued rewards and the token supply.
     function getRewardBalance(address _rwdToken) external view returns (uint256);
 
+    /// @notice Get the reward fund details.
+    function getRewardFunds() external view returns (RewardFund[] memory);
+
+    /// @notice Get the reward details for specified reward token.
+    /// @param _rwdToken The address of the reward token.
+    /// @return The available reward details for the specified reward token.
+    function getRewardData(address _rwdToken) external view returns (RewardData memory);
+
     // --------------------- Public Variable(functions) ---------------------
 
     // Constants.
@@ -197,12 +205,4 @@ interface IFarm {
     function lastFundUpdateTime() external view returns (uint256);
     function farmStartTime() external view returns (uint256);
     function totalDeposits() external view returns (uint256);
-
-    /// @notice Get the reward fund details.
-    function getRewardFunds() external view returns (RewardFund[] memory);
-
-    /// @notice Get the reward details for specified reward token.
-    /// @param _rwdToken The address of the reward token.
-    /// @return The available reward details for the specified reward token.
-    function getRewardData(address _rwdToken) external view returns (RewardData memory);
 }

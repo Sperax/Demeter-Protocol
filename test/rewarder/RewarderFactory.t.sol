@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {Arbitrum} from "../utils/networkConfig/Arbitrum.t.sol";
 import {RewarderFactory, IRewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
-import {Rewarder} from "../../contracts/rewarder/Rewarder.sol";
+import {IRewarder} from "../../contracts/rewarder/Rewarder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RewarderFactoryTest is Arbitrum {
@@ -26,13 +26,13 @@ contract TestInitialization is RewarderFactoryTest {
 }
 
 contract DeployRewarderTest is RewarderFactoryTest {
-    Rewarder rewarder;
+    IRewarder rewarder;
 
     function test_deployRewarder() public {
         vm.prank(rewardManager);
         vm.expectEmit(true, true, false, false, address(rewarderFactory)); // false, because rewarder address is unknown before calling the function
         emit IRewarderFactory.RewarderDeployed(SPA, rewardManager, rewardManager);
-        rewarder = Rewarder(rewarderFactory.deployRewarder(SPA));
+        rewarder = IRewarder(rewarderFactory.deployRewarder(SPA));
         assertNotEq(address(rewarder), address(0));
         assertEq(rewarder.REWARD_TOKEN(), SPA);
         assertEq(rewarder.rewarderFactory(), address(rewarderFactory));
