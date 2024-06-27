@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.26;
 
 interface IFarmRegistry {
     function registerFarm(address farm, address creator) external;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.26;
 
 import {ExpirableFarm} from "../../contracts/features/ExpirableFarm.sol";
 import {FarmRegistry} from "../../contracts/FarmRegistry.sol";

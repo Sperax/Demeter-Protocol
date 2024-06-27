@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.26;
 
 import {BaseSetup} from "../BaseSetup.t.sol";
 import {INetworkConfig} from "./INetworkConfig.sol";

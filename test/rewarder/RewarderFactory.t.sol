@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+pragma solidity 0.8.26;
 
 import {Arbitrum} from "../utils/networkConfig/Arbitrum.t.sol";
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
