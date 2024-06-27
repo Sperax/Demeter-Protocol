@@ -26,7 +26,7 @@ abstract contract UniV3ActiveLiquidityFarmTest is UniV3FarmTest {
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
-        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
+        IFarmRegistry registry = IFarmRegistry(FARM_REGISTRY);
         uniV3ActiveLiqFarmDeployer = new UniV3ActiveLiquidityDeployer(
             FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );
@@ -113,7 +113,7 @@ abstract contract ActiveLiquidityTest is UniV3ActiveLiquidityFarmTest {
         assertFalse(UniV3ActiveLiquidityFarm(lockupFarm).isFarmActive());
 
         // Functions dependent on isFarmActive should revert.
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
         UniV3ActiveLiquidityFarm(lockupFarm).initiateCooldown(1); // bogus depositId
     }
 
@@ -170,7 +170,7 @@ abstract contract ActiveLiquidityTest is UniV3ActiveLiquidityFarmTest {
         uint256[][] memory rewardsForActiveLiquidity =
             UniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(nonLockupFarm);
-        emit Farm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
+        emit IFarm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
         UniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
         if (activeTime == 0) {
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {

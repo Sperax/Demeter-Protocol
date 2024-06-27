@@ -25,11 +25,12 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 
 /// @title Farm Registry contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract tracks fee details, privileged deployers, deployed farms and farm deployers.
-contract FarmRegistry is OwnableUpgradeable {
+contract FarmRegistry is IFarmRegistry, OwnableUpgradeable {
     address[] internal farms;
     address[] internal deployerList;
 
@@ -42,30 +43,12 @@ contract FarmRegistry is OwnableUpgradeable {
     // List of deployers for which fee won't be charged.
     mapping(address => bool) public isPrivilegedUser;
 
-    // Events.
-    event FarmRegistered(address indexed farm, address indexed creator, address indexed deployer);
-    event FarmDeployerUpdated(address indexed deployer, bool registered);
-    event FeeParamsUpdated(address indexed receiver, address indexed token, uint256 amount, uint256 extensionFeePerDay);
-    event PrivilegeUpdated(address indexed deployer, bool privilege);
-
-    // Custom Errors.
-    error DeployerNotRegistered();
-    error FarmAlreadyRegistered();
-    error DeployerAlreadyRegistered();
-    error InvalidDeployerId();
-    error PrivilegeSameAsDesired();
-    error InvalidAddress();
-
     // Disable initialization for the implementation contract.
     constructor() {
         _disableInitializers();
     }
 
-    /// @notice constructor
-    /// @param _feeReceiver Receiver of the fees.
-    /// @param _feeToken The fee token for farm creation.
-    /// @param _feeAmount The fee amount to be paid by the creator.
-    /// @param _extensionFeePerDay Extension fee per day.
+    /// @inheritdoc IFarmRegistry
     function initialize(address _feeReceiver, address _feeToken, uint256 _feeAmount, uint256 _extensionFeePerDay)
         external
         initializer
@@ -74,10 +57,7 @@ contract FarmRegistry is OwnableUpgradeable {
         updateFeeParams(_feeReceiver, _feeToken, _feeAmount, _extensionFeePerDay);
     }
 
-    /// @notice Register a farm created by registered Deployer.
-    /// @dev Only registered deployer can register a farm.
-    /// @param _farm Address of the created farm contract
-    /// @param _creator Address of the farm creator.
+    /// @inheritdoc IFarmRegistry
     function registerFarm(address _farm, address _creator) external {
         _validateNonZeroAddr(_farm);
         if (!deployerRegistered[msg.sender]) {
@@ -92,8 +72,7 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmRegistered(_farm, _creator, msg.sender);
     }
 
-    /// @notice Register a new farm deployer.
-    /// @param  _deployer Address of deployer to be registered.
+    /// @inheritdoc IFarmRegistry
     function registerFarmDeployer(address _deployer) external onlyOwner {
         _validateNonZeroAddr(_deployer);
         if (deployerRegistered[_deployer]) {
@@ -104,8 +83,7 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(_deployer, true);
     }
 
-    /// @notice Remove an existing deployer from registry.
-    /// @param _id of the deployer to be removed (0 index based).
+    /// @inheritdoc IFarmRegistry
     function removeDeployer(uint16 _id) external onlyOwner {
         uint256 numDeployer = deployerList.length;
         if (_id >= numDeployer) {
@@ -119,10 +97,7 @@ contract FarmRegistry is OwnableUpgradeable {
         emit FarmDeployerUpdated(deployer, false);
     }
 
-    /// @notice Function to add/remove privileged User.
-    /// @param _user User Address for which privilege is to be updated.
-    /// @param _privilege Privilege(bool) whether true or false.
-    /// @dev Only callable by the owner.
+    /// @inheritdoc IFarmRegistry
     function updatePrivilege(address _user, bool _privilege) external onlyOwner {
         if (isPrivilegedUser[_user] == _privilege) {
             revert PrivilegeSameAsDesired();
@@ -131,22 +106,17 @@ contract FarmRegistry is OwnableUpgradeable {
         emit PrivilegeUpdated(_user, _privilege);
     }
 
-    /// @notice Get list of registered deployer.
-    /// @return Returns array of registered deployer addresses.
+    /// @inheritdoc IFarmRegistry
     function getFarmDeployerList() external view returns (address[] memory) {
         return deployerList;
     }
 
-    /// @notice Get list of farms created via registered deployer.
-    /// @return Returns array of farm addresses.
+    /// @inheritdoc IFarmRegistry
     function getFarmList() external view returns (address[] memory) {
         return farms;
     }
 
-    /// @notice Get all the fee parameters for creating farm.
-    /// @param _user The account creating the farm.
-    /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay.
-    /// @dev It returns fee amount as 0 if deployer account is privileged.
+    /// @inheritdoc IFarmRegistry
     function getFeeParams(address _user) external view returns (address, address, uint256, uint256) {
         if (isPrivilegedUser[_user]) {
             return (feeReceiver, feeToken, 0, 0);
@@ -154,11 +124,7 @@ contract FarmRegistry is OwnableUpgradeable {
         return (feeReceiver, feeToken, feeAmount, extensionFeePerDay);
     }
 
-    /// @notice Update the fee params for registry.
-    /// @param _receiver FeeReceiver address.
-    /// @param _feeToken Token address for fee.
-    /// @param _amount Amount of token to be collected.
-    /// @param _extensionFeePerDay Extension fee per day.
+    /// @inheritdoc IFarmRegistry
     function updateFeeParams(address _receiver, address _feeToken, uint256 _amount, uint256 _extensionFeePerDay)
         public
         onlyOwner

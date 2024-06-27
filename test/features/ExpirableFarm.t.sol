@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import {ExpirableFarm} from "../../contracts/features/ExpirableFarm.sol";
-import {FarmRegistry} from "../../contracts/FarmRegistry.sol";
+import {IFarmRegistry} from "../../contracts/FarmRegistry.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../Farm.t.sol";
@@ -42,7 +42,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
     function test_updateFarmStartTime_RevertWhen_FarmHasExpired() public useKnownActor(owner) {
         uint256 farmEndTime = ExpirableFarm(nonLockupFarm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         ExpirableFarm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
@@ -63,7 +63,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit Farm.FarmStartTimeUpdated(newStartTime);
+        emit IFarm.FarmStartTimeUpdated(newStartTime);
         ExpirableFarm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
@@ -104,7 +104,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
             : farmEndTimeBeforeUpdate - (farmStartTime - newStartTime);
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit Farm.FarmStartTimeUpdated(newStartTime);
+        emit IFarm.FarmStartTimeUpdated(newStartTime);
         vm.expectEmit(address(farm));
         emit ExpirableFarm.FarmEndTimeUpdated(newEndTime);
 
@@ -133,7 +133,7 @@ abstract contract UpdateFarmStartTimeWithExpiryTest is ExpirableFarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit Farm.FarmStartTimeUpdated(initialStartTime);
+        emit IFarm.FarmStartTimeUpdated(initialStartTime);
         ExpirableFarm(farm).updateFarmStartTime(initialStartTime);
         vm.stopPrank();
 
@@ -193,7 +193,7 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
     function test_ExtendFarmDuration_RevertWhen_farmClosed() public useKnownActor(owner) {
         uint256 extensionDays = 200;
         ExpirableFarm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         ExpirableFarm(nonLockupFarm).extendFarmDuration(extensionDays);
     }
 
@@ -203,7 +203,7 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         address farm = createFarm(farmStartTime, false);
         uint256 farmEndTime = ExpirableFarm(farm).farmEndTime();
         vm.warp(farmEndTime + 1);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         vm.startPrank(owner);
         ExpirableFarm(farm).extendFarmDuration(extensionDays);
         vm.stopPrank();
@@ -216,8 +216,8 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
                 - ExpirableFarm(lockupFarm).farmEndTime()
         ) / 1 days;
         uint256 durationExceed = maxExtensionDays + 1;
-        uint256 extensionFeePerDay = FarmRegistry(FARM_REGISTRY).extensionFeePerDay();
-        address feeToken = FarmRegistry(FARM_REGISTRY).feeToken();
+        uint256 extensionFeePerDay = IFarmRegistry(FARM_REGISTRY).extensionFeePerDay();
+        address feeToken = IFarmRegistry(FARM_REGISTRY).feeToken();
         uint256 extensionFeeAmount = durationExceed * extensionFeePerDay;
         IERC20(feeToken).approve(lockupFarm, extensionFeeAmount);
 
@@ -237,9 +237,9 @@ abstract contract ExtendFarmDurationTest is ExpirableFarmTest {
         vm.warp(farmStartTime + 1);
         uint256 farmEndTimeBeforeUpdate = ExpirableFarm(farm).farmEndTime();
 
-        uint256 extensionFeePerDay = FarmRegistry(FARM_REGISTRY).extensionFeePerDay();
-        address feeReceiver = FarmRegistry(FARM_REGISTRY).feeReceiver();
-        address feeToken = FarmRegistry(FARM_REGISTRY).feeToken();
+        uint256 extensionFeePerDay = IFarmRegistry(FARM_REGISTRY).extensionFeePerDay();
+        address feeReceiver = IFarmRegistry(FARM_REGISTRY).feeReceiver();
+        address feeToken = IFarmRegistry(FARM_REGISTRY).feeToken();
         uint256 extensionFeeAmount = extensionDays * extensionFeePerDay;
 
         uint256 feeReceiverTokenBalanceBeforeExtension = IERC20(feeToken).balanceOf(feeReceiver);
@@ -285,7 +285,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit Farm.DepositWithdrawn(depositId);
+            emit IFarm.DepositWithdrawn(depositId);
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(
@@ -309,7 +309,7 @@ abstract contract WithdrawWithExpiryTest is ExpirableFarmTest {
             vm.warp(ExpirableFarm(farm).farmEndTime() + 1);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit Farm.DepositWithdrawn(depositId);
+            emit IFarm.DepositWithdrawn(depositId);
             ExpirableFarm(farm).withdraw(depositId);
             Deposit memory depositInfo = ExpirableFarm(farm).getDepositInfo(depositId);
             _assertHelper(

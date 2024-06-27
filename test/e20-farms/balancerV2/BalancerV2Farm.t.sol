@@ -56,7 +56,7 @@ contract BalancerV2FarmTest is FarmInheritTest, ExpirableFarmInheritTest, E20Far
 
         vm.startPrank(PROXY_OWNER);
         // Deploy and register farm deployer
-        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
+        IFarmRegistry registry = IFarmRegistry(FARM_REGISTRY);
         balancerV2FarmDeployer = new BalancerV2FarmDeployer(FARM_REGISTRY, FARM_ID, BALANCER_VAULT);
         registry.registerFarmDeployer(address(balancerV2FarmDeployer));
 

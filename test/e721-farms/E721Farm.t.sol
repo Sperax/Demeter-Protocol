@@ -2,10 +2,9 @@
 pragma solidity 0.8.24;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {FarmTest, FarmInheritTest} from "../Farm.t.sol";
+import {FarmTest, FarmInheritTest, IFarm} from "../Farm.t.sol";
 import {Deposit} from "../../contracts/interfaces/DataTypes.sol";
 import {UniV3Farm, E721Farm} from "../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
-import {Farm} from "../../contracts/Farm.sol";
 
 abstract contract E721FarmTest is FarmTest {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
@@ -36,15 +35,15 @@ abstract contract NFTDepositTest is E721FarmTest {
 
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit IFarm.PoolSubscribed(IFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit IFarm.PoolSubscribed(IFarm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+                emit IFarm.PoolSubscribed(IFarm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
-            emit Farm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+            emit IFarm.Deposited(IFarm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
             IERC721(nftContract).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
             uint256 depositId = E721Farm(farm).totalDeposits();
             Deposit memory userDeposit = E721Farm(farm).getDepositInfo(depositId);
@@ -57,13 +56,13 @@ abstract contract NFTDepositTest is E721FarmTest {
 
 abstract contract WithdrawAdditionalTest is E721FarmTest {
     function test_Withdraw_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         E721Farm(lockupFarm).withdraw(0);
     }
 
     function test_Withdraw() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        Farm(lockupFarm).initiateCooldown(depositId);
+        IFarm(lockupFarm).initiateCooldown(depositId);
         skip((COOLDOWN_PERIOD_DAYS * 1 days) + 100); //100 seconds after the end of CoolDown Period
         vm.expectEmit(nfpm());
         emit Transfer(lockupFarm, currentActor, E721Farm(lockupFarm).depositToTokenId(depositId));
@@ -73,7 +72,7 @@ abstract contract WithdrawAdditionalTest is E721FarmTest {
     function test_Withdraw_paused() public depositSetup(lockupFarm, true) {
         uint256 depositId = 1;
         vm.startPrank(owner);
-        Farm(lockupFarm).farmPauseSwitch(true);
+        IFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         vm.expectEmit(nfpm());
         emit Transfer(lockupFarm, currentActor, E721Farm(lockupFarm).depositToTokenId(depositId));
@@ -83,7 +82,7 @@ abstract contract WithdrawAdditionalTest is E721FarmTest {
     function test_Withdraw_closed() public depositSetup(lockupFarm, true) {
         uint256 depositId = 1;
         vm.startPrank(owner);
-        Farm(lockupFarm).closeFarm();
+        IFarm(lockupFarm).closeFarm();
         vm.startPrank(user);
         vm.expectEmit(nfpm());
         emit Transfer(lockupFarm, currentActor, E721Farm(lockupFarm).depositToTokenId(depositId));
@@ -101,7 +100,7 @@ abstract contract WithdrawAdditionalTest is E721FarmTest {
     function test_Withdraw_closedAndExpired() public depositSetup(lockupFarm, true) {
         uint256 depositId = 1;
         vm.startPrank(owner);
-        Farm(lockupFarm).closeFarm();
+        IFarm(lockupFarm).closeFarm();
         vm.warp(UniV3Farm(lockupFarm).farmEndTime() + 1);
         vm.startPrank(user);
         vm.expectEmit(nfpm());
