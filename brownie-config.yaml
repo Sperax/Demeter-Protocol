@@ -14,7 +14,7 @@ pytest:
   revert_traceback: true
 compiler:
     solc:
-        version: 0.8.24
+        version: 0.8.26
         optimizer:
           enabled: true
           runs: 200
