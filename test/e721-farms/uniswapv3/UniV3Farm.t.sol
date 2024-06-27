@@ -23,7 +23,7 @@ import {
     Position
 } from "../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol";
 import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
-import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+import {IFarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // import tests
@@ -62,7 +62,7 @@ abstract contract UniV3FarmTest is E721FarmTest {
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
-        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
+        IFarmRegistry registry = IFarmRegistry(FARM_REGISTRY);
         uniV3FarmDeployer = new UniV3FarmDeployer(
             FARM_REGISTRY, FARM_ID, UNIV3_FACTORY, NFPM, UNISWAP_UTILS, NONFUNGIBLE_POSITION_MANAGER_UTILS
         );

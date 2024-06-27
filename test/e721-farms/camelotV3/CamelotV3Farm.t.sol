@@ -23,7 +23,7 @@ import {
 } from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol";
 import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol";
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
-import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
+import {IFarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // import tests
@@ -82,7 +82,7 @@ abstract contract CamelotV3FarmTest is E721FarmTest {
         farmProxy = upgradeUtil.deployErc1967Proxy(address(impl));
 
         // Deploy and register farm deployer
-        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
+        IFarmRegistry registry = IFarmRegistry(FARM_REGISTRY);
         camelotV3FarmDeployer = new CamelotV3FarmDeployer(
             FARM_REGISTRY,
             FARM_ID,

@@ -17,7 +17,6 @@ import "../E721Farm.t.sol";
 import {VmSafe} from "forge-std/Vm.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
-import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {E721Farm} from "../../../contracts/e721-farms/E721Farm.sol";
 
@@ -35,7 +34,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         super.setUp();
 
         vm.startPrank(PROXY_OWNER);
-        FarmRegistry registry = FarmRegistry(FARM_REGISTRY);
+        IFarmRegistry registry = IFarmRegistry(FARM_REGISTRY);
         camelotV2FarmDeployer =
             new CamelotV2FarmDeployer(FARM_REGISTRY, FARM_ID, CAMELOT_FACTORY, ROUTER, NFT_POOL_FACTORY);
         registry.registerFarmDeployer(address(camelotV2FarmDeployer));
