@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import {
-    Farm,
     E721Farm,
     UniV3Farm,
     UniswapPoolData,
@@ -26,11 +25,10 @@ import {
 import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {FarmTest, FarmInheritTest} from "../../Farm.t.sol";
+import {FarmTest, FarmInheritTest, IFarm} from "../../Farm.t.sol";
 import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
@@ -443,7 +441,7 @@ abstract contract OnERC721ReceivedTest is UniV3FarmTest {
 
 abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
     function test_ClaimUniswapFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
-        Farm(lockupFarm).closeFarm();
+        IFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         UniV3Farm(lockupFarm).claimUniswapFee(0);
     }

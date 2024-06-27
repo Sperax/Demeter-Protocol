@@ -20,7 +20,6 @@ import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {E721Farm} from "../../../contracts/e721-farms/E721Farm.sol";
-import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 abstract contract CamelotV2FarmTest is E721FarmTest {
     using SafeERC20 for IERC20;
@@ -196,8 +195,8 @@ abstract contract ClaimPoolRewardsTest is CamelotV2FarmTest {
         useKnownActor(user)
     {
         skip(7 days);
-        vm.startPrank(Farm(nonLockupFarm).owner());
-        Farm(nonLockupFarm).closeFarm();
+        vm.startPrank(OwnableUpgradeable(nonLockupFarm).owner());
+        IFarm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         uint256 PoolRewards = CamelotV2Farm(nonLockupFarm).computePoolRewards(0);
         vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
@@ -237,8 +236,8 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         amounts[1] = 1e3 * 10 ** ERC20(USDCe).decimals();
 
         skip(7 days);
-        vm.startPrank(Farm(nonLockupFarm).owner());
-        Farm(nonLockupFarm).farmPauseSwitch(true);
+        vm.startPrank(OwnableUpgradeable(nonLockupFarm).owner());
+        IFarm(nonLockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);
@@ -426,8 +425,8 @@ abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
         Deposit memory userDeposit = CamelotV2Farm(nonLockupFarm).getDepositInfo(depositId);
         uint256 liquidity = userDeposit.liquidity;
         skip(7 days);
-        vm.startPrank(Farm(nonLockupFarm).owner());
-        Farm(nonLockupFarm).closeFarm();
+        vm.startPrank(OwnableUpgradeable(nonLockupFarm).owner());
+        IFarm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         (minAmounts[0], minAmounts[1]) = CamelotV2Farm(nonLockupFarm).getDepositAmounts(amounts[0], amounts[1]);
         deal(DAI, user, amounts[0]);

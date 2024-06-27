@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@cryptoalgebra/v1.9-directional-fee-periphery/contracts/interfaces/ISwapRouter.sol";
 import {
-    Farm,
     E721Farm,
     CamelotV3Farm,
     CamelotPoolData,
@@ -26,11 +25,10 @@ import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/inter
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
-import {FarmTest, FarmInheritTest} from "../../Farm.t.sol";
+import {FarmTest, FarmInheritTest, IFarm} from "../../Farm.t.sol";
 import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
@@ -446,7 +444,7 @@ abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
 
 abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
     function test_ClaimCamelotFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
-        Farm(lockupFarm).closeFarm();
+        IFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         CamelotV3Farm(lockupFarm).claimCamelotFee(0);
     }
