@@ -20,6 +20,7 @@ import {OperableDeposit} from "../../../contracts/features/OperableDeposit.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {Deposit, Subscription, RewardFund} from "../../../contracts/interfaces/DataTypes.sol";
 import {E721Farm} from "../../../contracts/e721-farms/E721Farm.sol";
+import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 abstract contract CamelotV2FarmTest is E721FarmTest {
     using SafeERC20 for IERC20;
@@ -100,7 +101,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         bytes memory lockup = locked ? abi.encode(true) : abi.encode(false);
         uint256 tokenId = INFTPool(nfpm()).lastTokenId() + 1;
         address poolAddress = INFTPoolFactory(NFT_POOL_FACTORY).getPool(LP_TOKEN);
-        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(Farm.NoLiquidityInPosition.selector)))
+        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(IFarm.NoLiquidityInPosition.selector)))
         {
             amt = 100;
         }
@@ -113,7 +114,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         IPositionHelper(POSITION_HELPER).addLiquidityAndCreatePosition(
             DAI, USDCe, amt1, amt2, amt1 / 10, amt2 / 10, block.timestamp, user, INFTPool(nfpm()), 0
         );
-        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(Farm.NoLiquidityInPosition.selector)))
+        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(IFarm.NoLiquidityInPosition.selector)))
         {
             vm.mockCall(
                 poolAddress,
@@ -123,7 +124,7 @@ abstract contract CamelotV2FarmTest is E721FarmTest {
         }
         vm.expectRevert(revertMsg);
         IERC721(poolAddress).safeTransferFrom(user, farm, tokenId, lockup);
-        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(Farm.NoLiquidityInPosition.selector)))
+        if (keccak256(abi.encodePacked(revertMsg)) == keccak256(abi.encodePacked(IFarm.NoLiquidityInPosition.selector)))
         {
             vm.clearMockedCalls();
         }
@@ -199,7 +200,7 @@ abstract contract ClaimPoolRewardsTest is CamelotV2FarmTest {
         Farm(nonLockupFarm).closeFarm();
         vm.startPrank(user);
         uint256 PoolRewards = CamelotV2Farm(nonLockupFarm).computePoolRewards(0);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         CamelotV2Farm(nonLockupFarm).claimPoolRewards(0);
         assertEq(0, PoolRewards);
     }
@@ -210,7 +211,7 @@ abstract contract ClaimPoolRewardsTest is CamelotV2FarmTest {
         useKnownActor(user)
     {
         skip(7 days);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV2Farm(nonLockupFarm).claimPoolRewards(2);
     }
 
@@ -244,7 +245,7 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
         CamelotV2Farm(nonLockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
@@ -264,7 +265,7 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV2Farm(nonLockupFarm).increaseDeposit(numDeposits + 1, amounts, minAmounts);
     }
 
@@ -301,7 +302,7 @@ abstract contract CamelotIncreaseDepositTest is CamelotV2FarmTest {
         IERC20(DAI).forceApprove(lockupFarm, 1e22);
         IERC20(USDCe).forceApprove(lockupFarm, 1e22);
         CamelotV2Farm(lockupFarm).initiateCooldown(depositId);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositIsInCooldown.selector));
         CamelotV2Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
@@ -433,7 +434,7 @@ abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, liquidity, minAmounts);
     }
 
@@ -455,7 +456,7 @@ abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV2Farm(nonLockupFarm).decreaseDeposit(numDeposits + 1, liquidity, minAmounts);
     }
 
@@ -475,7 +476,7 @@ abstract contract CamelotDecreaseDepositTest is CamelotV2FarmTest {
         deal(USDCe, user, amounts[1]);
         IERC20(DAI).forceApprove(nonLockupFarm, 1e22);
         IERC20(USDCe).forceApprove(nonLockupFarm, 1e22);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotWithdrawZeroAmount.selector));
         CamelotV2Farm(nonLockupFarm).decreaseDeposit(depositId, 0, minAmounts);
     }
 

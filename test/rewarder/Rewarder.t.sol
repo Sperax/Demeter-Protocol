@@ -8,7 +8,8 @@ import {CamelotV2Farm} from "../../contracts/e721-farms/camelotV2/CamelotV2Farm.
 import {RewarderFactory} from "../../contracts/rewarder/RewarderFactory.sol";
 import {Rewarder, IERC20, ERC20} from "../../contracts/rewarder/Rewarder.sol";
 import {IOracle} from "../../contracts/interfaces/IOracle.sol";
-import {Farm} from "./../../contracts/Farm.sol";
+import {Farm, RewardData} from "./../../contracts/Farm.sol";
+import {IFarm} from "../../contracts/interfaces/IFarm.sol";
 
 contract RewarderTest is CamelotV2FarmTest {
     RewarderFactory public rewarderFactory;
@@ -48,11 +49,11 @@ contract TestUpdateTokenManagerOfFarm is RewarderTest {
         vm.prank(owner);
         CamelotV2Farm(lockupFarm).updateRewardData(USDCe, address(rewarder));
         vm.expectEmit(true, true, true, true, lockupFarm);
-        emit Farm.RewardDataUpdated(rewardToken, actors[1]);
+        emit IFarm.RewardDataUpdated(rewardToken, actors[1]);
         vm.prank(rewardManager);
         rewarder.updateTokenManagerOfFarm(lockupFarm, actors[1]);
-        (address tokenManager,,) = CamelotV2Farm(lockupFarm).rewardData(rewardToken);
-        assertEq(tokenManager, actors[1]);
+        RewardData memory rewardData = CamelotV2Farm(lockupFarm).getRewardData(rewardToken);
+        assertEq(rewardData.tknManager, actors[1]);
     }
 }
 
@@ -71,7 +72,7 @@ contract TestRecoverRewardFundsOfFarm is RewarderTest {
         amount = 100 * 10 ** ERC20(USDCe).decimals();
         deal(USDCe, lockupFarm, amount);
         vm.expectEmit(true, true, true, true, lockupFarm);
-        emit Farm.FundsRecovered(address(rewarder), USDCe, amount);
+        emit IFarm.FundsRecovered(address(rewarder), USDCe, amount);
         vm.prank(rewardManager);
         rewarder.recoverRewardFundsOfFarm(lockupFarm, amount);
         uint256 balanceAfter = IERC20(USDCe).balanceOf(address(rewarder));

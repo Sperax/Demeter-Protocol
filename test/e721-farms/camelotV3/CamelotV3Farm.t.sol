@@ -26,6 +26,7 @@ import {ICamelotV3PoolState} from "../../../contracts/e721-farms/camelotV3/inter
 import {CamelotV3FarmDeployer} from "../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
@@ -446,12 +447,12 @@ abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
 abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
     function test_ClaimCamelotFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(lockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         CamelotV3Farm(lockupFarm).claimCamelotFee(0);
     }
 
     function test_ClaimCamelotFee_RevertWhen_DepositDoesNotExist_during_claimCamelotFee() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV3Farm(lockupFarm).claimCamelotFee(0);
     }
 
@@ -554,12 +555,12 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
         IERC20(DAI).approve(lockupFarm, deposit0);
         IERC20(USDCe).approve(lockupFarm, deposit1);
 
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
         CamelotV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
     }
 
@@ -588,7 +589,7 @@ abstract contract IncreaseDepositTest is CamelotV3FarmTest {
         IERC20(USDCe).approve(lockupFarm, deposit1);
 
         CamelotV3Farm(lockupFarm).initiateCooldown(depositId);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositIsInCooldown.selector));
         CamelotV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
@@ -679,12 +680,12 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         vm.startPrank(owner);
         CamelotV3Farm(lockupFarm).closeFarm();
         vm.startPrank(user);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         CamelotV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
     function test_DecreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         CamelotV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
@@ -694,7 +695,7 @@ abstract contract DecreaseDepositTest is CamelotV3FarmTest {
         useKnownActor(user)
     {
         skip(1);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotWithdrawZeroAmount.selector));
         CamelotV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
     }
 

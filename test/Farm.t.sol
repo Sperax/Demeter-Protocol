@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {IFarm} from "../contracts/interfaces/IFarm.sol";
 import {Farm, RewardTokenData} from "../contracts/Farm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -102,23 +103,23 @@ abstract contract FarmTest is TestNetworkConfig {
 
 abstract contract DepositTest is FarmTest {
     function test_Deposit_RevertWhen_NoLiquidityInPosition() public {
-        deposit(nonLockupFarm, false, 0, abi.encodeWithSelector(Farm.NoLiquidityInPosition.selector));
+        deposit(nonLockupFarm, false, 0, abi.encodeWithSelector(IFarm.NoLiquidityInPosition.selector));
     }
 
     function test_Deposit_RevertWhen_LockupFunctionalityIsDisabled() public {
-        deposit(nonLockupFarm, true, 1e2, abi.encodeWithSelector(Farm.LockupFunctionalityIsDisabled.selector));
+        deposit(nonLockupFarm, true, 1e2, abi.encodeWithSelector(IFarm.LockupFunctionalityIsDisabled.selector));
     }
 
     function test_Deposit_RevertWhen_FarmIsInactive() public {
         vm.startPrank(Farm(nonLockupFarm).owner());
         Farm(nonLockupFarm).farmPauseSwitch(true);
-        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
     }
 
     function test_Deposit_RevertWhen_FarmIsClosed() public {
         vm.startPrank(Farm(nonLockupFarm).owner());
         Farm(nonLockupFarm).closeFarm();
-        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        deposit(nonLockupFarm, false, 1e2, abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
     }
 
     function test_deposit() public {
@@ -137,16 +138,15 @@ abstract contract DepositTest is FarmTest {
         setRewardRates(farm);
 
         address[] memory rewardTokens = getRewardTokens(farm);
-        uint256 accRewardBal;
-        (,, accRewardBal) = Farm(farm).rewardData(rewardTokens[0]);
-        assertEq(accRewardBal, 0);
+        RewardData memory rewardData = Farm(farm).getRewardData(rewardTokens[0]);
+        assertEq(rewardData.accRewardBal, 0);
 
         deposit(farm, false, DEPOSIT_AMOUNT);
         skip(1 days);
         deposit(farm, false, DEPOSIT_AMOUNT);
 
-        (,, accRewardBal) = Farm(farm).rewardData(rewardTokens[0]);
-        assertEq(accRewardBal, 0);
+        rewardData = Farm(farm).getRewardData(rewardTokens[0]);
+        assertEq(rewardData.accRewardBal, 0);
         assertEq(Farm(farm).farmStartTime(), startTime); // Farm start time should be the same as the one set in createFarm
         assertEq(Farm(farm).lastFundUpdateTime(), block.timestamp); // lastFundUpdateTime should be the time when the deposit is made
         assertEq(Farm(farm).computeRewards(currentActor, DEPOSIT_ID)[0][0], 0); // rewards should be 0 as Farm is not started
@@ -170,7 +170,7 @@ abstract contract ClaimRewardsTest is FarmTest {
         skip(2 days);
         vm.startPrank(owner);
         Farm(lockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(lockupFarm).claimRewards(depositId);
     }
 
@@ -188,7 +188,7 @@ abstract contract ClaimRewardsTest is FarmTest {
         Farm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(user);
         skip(2 days);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         Farm(lockupFarm).claimRewards(depositId + 1);
     }
 
@@ -215,7 +215,7 @@ abstract contract ClaimRewardsTest is FarmTest {
             rewardsForEachSubs = Farm(farm).computeRewards(user, 1);
 
             vm.expectEmit(address(farm));
-            emit Farm.RewardsClaimed(depositId, rewardsForEachSubs);
+            emit IFarm.RewardsClaimed(depositId, rewardsForEachSubs);
             Farm(farm).claimRewards(depositId);
             // Checking the rewards claimed users balances
             for (uint8 i; i < rewardTokens.length; ++i) {
@@ -248,7 +248,7 @@ abstract contract ClaimRewardsTest is FarmTest {
         rewardsForEachSubs = Farm(nonLockupFarm).computeRewards(currentActor, depositId);
 
         vm.expectEmit(address(nonLockupFarm));
-        emit Farm.RewardsClaimed(1, rewardsForEachSubs);
+        emit IFarm.RewardsClaimed(1, rewardsForEachSubs);
         Farm(nonLockupFarm).claimRewards(depositId);
         for (uint8 i; i < rewardTokens.length; ++i) {
             assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
@@ -272,7 +272,7 @@ abstract contract ClaimRewardsTest is FarmTest {
         vm.startPrank(user);
         rewardsForEachSubs = Farm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(nonLockupFarm));
-        emit Farm.RewardsClaimed(depositId, rewardsForEachSubs);
+        emit IFarm.RewardsClaimed(depositId, rewardsForEachSubs);
         Farm(nonLockupFarm).claimRewards(depositId);
         assertEq(rewardsForEachSubs[0][0], 0);
         for (uint8 i; i < rewardTokens.length; ++i) {
@@ -309,10 +309,10 @@ abstract contract WithdrawTest is FarmTest {
                 assertEq(depositInfo.cooldownPeriod, 0);
                 assertEq(depositInfo.depositTs, 0);
 
-                vm.expectRevert(abi.encodeWithSelector(Farm.SubscriptionDoesNotExist.selector));
+                vm.expectRevert(abi.encodeWithSelector(IFarm.SubscriptionDoesNotExist.selector));
                 Farm(farm).getSubscriptionInfo(i, 0);
                 if (lockup) {
-                    vm.expectRevert(abi.encodeWithSelector(Farm.SubscriptionDoesNotExist.selector));
+                    vm.expectRevert(abi.encodeWithSelector(IFarm.SubscriptionDoesNotExist.selector));
                     Farm(farm).getSubscriptionInfo(i, 1);
                 }
             } else {
@@ -342,7 +342,7 @@ abstract contract WithdrawTest is FarmTest {
     {
         uint256 depositId = 1;
         skip(1);
-        vm.expectRevert(abi.encodeWithSelector(Farm.PleaseInitiateCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.PleaseInitiateCooldown.selector));
         Farm(lockupFarm).withdraw(depositId);
     }
 
@@ -353,7 +353,7 @@ abstract contract WithdrawTest is FarmTest {
         useKnownActor(user)
     {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(Farm.WithdrawTooSoon.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.WithdrawTooSoon.selector));
         Farm(lockupFarm).withdraw(depositId);
     }
 
@@ -366,7 +366,7 @@ abstract contract WithdrawTest is FarmTest {
         uint256 depositId = 1;
         Farm(lockupFarm).initiateCooldown(depositId);
         skip(COOLDOWN_PERIOD_DAYS * 1 days - 100); //100 seconds before the end of CoolDown Period
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositIsInCooldown.selector));
         Farm(lockupFarm).withdraw(depositId);
     }
 
@@ -390,13 +390,13 @@ abstract contract WithdrawTest is FarmTest {
             Farm(farm).farmPauseSwitch(true);
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit Farm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
+            emit IFarm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
             if (lockup) {
                 vm.expectEmit(address(farm));
-                emit Farm.PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
+                emit IFarm.PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
             }
             vm.expectEmit(address(farm));
-            emit Farm.DepositWithdrawn(depositId);
+            emit IFarm.DepositWithdrawn(depositId);
             Farm(farm).withdraw(depositId);
             Deposit memory depositInfo = Farm(farm).getDepositInfo(depositId);
             _assertHelperOne(depositInfo);
@@ -416,7 +416,7 @@ abstract contract WithdrawTest is FarmTest {
             Farm(farm).closeFarm();
             vm.startPrank(user);
             vm.expectEmit(address(farm));
-            emit Farm.DepositWithdrawn(depositId);
+            emit IFarm.DepositWithdrawn(depositId);
             Farm(farm).withdraw(depositId);
             Deposit memory depositInfo = Farm(farm).getDepositInfo(depositId);
             _assertHelperOne(depositInfo);
@@ -448,9 +448,9 @@ abstract contract WithdrawTest is FarmTest {
             Farm(farm).getDepositInfo(depositId);
             rewardsForEachSubs = Farm(farm).computeRewards(currentActor, depositId);
             vm.expectEmit(address(farm));
-            emit Farm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
+            emit IFarm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForEachSubs[0]);
             vm.expectEmit(address(farm));
-            emit Farm.DepositWithdrawn(depositId);
+            emit IFarm.DepositWithdrawn(depositId);
             Farm(farm).withdraw(depositId);
             skip(time);
             Farm(farm).getRewardBalance(rwdTokens[0]);
@@ -619,7 +619,7 @@ abstract contract WithdrawTest is FarmTest {
 
 abstract contract GetRewardFundInfoTest is FarmTest {
     function test_GetRewardFundInfo_RevertWhen_RewardFundDoesNotExist() public setup useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.RewardFundDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.RewardFundDoesNotExist.selector));
         Farm(lockupFarm).getRewardFundInfo(2);
     }
 
@@ -641,12 +641,12 @@ abstract contract GetRewardTokensTest is FarmTest {
 
 abstract contract RecoverERC20Test is FarmTest {
     function test_RecoverERC20_RevertWhen_CannotWithdrawRewardToken() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawRewardToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotWithdrawRewardToken.selector));
         Farm(lockupFarm).recoverERC20(rwdTokens[0]);
     }
 
     function test_RecoverERC20_RevertWhen_CannotWithdrawZeroAmount() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotWithdrawZeroAmount.selector));
         Farm(lockupFarm).recoverERC20(USDT);
     }
 
@@ -655,7 +655,7 @@ abstract contract RecoverERC20Test is FarmTest {
         amt = bound(amt, 1000 * 10 ** ERC20(USDT).decimals(), 10000 * 10 ** ERC20(USDT).decimals());
         deal(USDT, address(farm), 10e10);
         vm.expectEmit(address(farm));
-        emit Farm.RecoveredERC20(USDT, 10e10);
+        emit IFarm.RecoveredERC20(USDT, 10e10);
         Farm(farm).recoverERC20(USDT);
     }
 }
@@ -669,7 +669,7 @@ abstract contract InitiateCooldownTest is FarmTest {
         useKnownActor(actors[9])
     {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         Farm(lockupFarm).initiateCooldown(depositId);
     }
 
@@ -679,11 +679,11 @@ abstract contract InitiateCooldownTest is FarmTest {
         uint256[][] memory rewardsForEachSubs = new uint256[][](2);
         rewardsForEachSubs = Farm(lockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(address(lockupFarm));
-        emit Farm.RewardsClaimed(depositId, rewardsForEachSubs);
+        emit IFarm.RewardsClaimed(depositId, rewardsForEachSubs);
         vm.expectEmit(address(lockupFarm));
-        emit Farm.PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
+        emit IFarm.PoolUnsubscribed(depositId, LOCKUP_FUND_ID, rewardsForEachSubs[1]);
         vm.expectEmit(address(lockupFarm));
-        emit Farm.CooldownInitiated(depositId, block.timestamp + (COOLDOWN_PERIOD_DAYS * 1 days));
+        emit IFarm.CooldownInitiated(depositId, block.timestamp + (COOLDOWN_PERIOD_DAYS * 1 days));
         Farm(lockupFarm).initiateCooldown(depositId);
     }
 
@@ -694,7 +694,7 @@ abstract contract InitiateCooldownTest is FarmTest {
         useKnownActor(user)
     {
         skip(7 days);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotInitiateCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotInitiateCooldown.selector));
         Farm(nonLockupFarm).initiateCooldown(1);
     }
 }
@@ -704,12 +704,12 @@ abstract contract AddRewardsTest is FarmTest {
         uint256 rwdAmt = 1 * 10 ** ERC20(invalidRewardToken).decimals();
         deal(address(invalidRewardToken), currentActor, rwdAmt);
         ERC20(invalidRewardToken).approve(nonLockupFarm, rwdAmt);
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidRewardToken.selector));
         Farm(nonLockupFarm).addRewards(invalidRewardToken, rwdAmt);
     }
 
     function test_AddRewards_RevertWhen_ZeroAmount() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.ZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.ZeroAmount.selector));
         Farm(lockupFarm).addRewards(USDCe, 0);
     }
 
@@ -722,7 +722,7 @@ abstract contract AddRewardsTest is FarmTest {
             deal(address(rewardTokens[i]), currentActor, rwdAmt);
             ERC20(rewardTokens[i]).approve(address(farm), rwdAmt);
             vm.expectEmit(address(farm));
-            emit Farm.RewardAdded(rewardTokens[i], rwdAmt);
+            emit IFarm.RewardAdded(rewardTokens[i], rwdAmt);
             Farm(farm).addRewards(rewardTokens[i], rwdAmt);
             assertEq(Farm(farm).getRewardBalance(rewardTokens[i]), rwdAmt);
         }
@@ -735,7 +735,7 @@ abstract contract SetRewardRateTest is FarmTest {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         rwdRate[0] = ERC20(rewardTokens[0]).decimals();
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).setRewardRate(rewardTokens[0], rwdRate);
     }
 
@@ -746,7 +746,7 @@ abstract contract SetRewardRateTest is FarmTest {
             uint8 decimals = ERC20(rewardTokens[i]).decimals();
             rwdRate[0] = SafeCast.toUint128(2 * 10 ** decimals);
             vm.startPrank(currentActor);
-            vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardRatesLength.selector));
+            vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidRewardRatesLength.selector));
             Farm(lockupFarm).setRewardRate(rewardTokens[i], rwdRate);
         }
     }
@@ -771,7 +771,7 @@ abstract contract SetRewardRateTest is FarmTest {
             }
 
             vm.expectEmit(address(farm));
-            emit Farm.RewardRateUpdated(rewardTokens[i], rwdRate);
+            emit IFarm.RewardRateUpdated(rewardTokens[i], rwdRate);
             Farm(farm).setRewardRate(rewardTokens[i], rwdRate);
             assertEq(Farm(farm).getRewardRates(rewardTokens[i])[0], rwdRate[0]);
             if (lockup) {
@@ -788,7 +788,7 @@ abstract contract GetRewardBalanceTest is FarmTest {
         depositSetup(lockupFarm, true)
         useKnownActor(owner)
     {
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidRewardToken.selector));
         Farm(nonLockupFarm).getRewardBalance(invalidRewardToken);
     }
 
@@ -807,12 +807,12 @@ abstract contract GetRewardBalanceTest is FarmTest {
 
 abstract contract GetDepositTest is FarmTest {
     function test_GetDeposit_RevertWhen_DepositDoesNotExist() public setup {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         Farm(nonLockupFarm).getDepositInfo(0);
 
         uint256 totalDeposits = Farm(nonLockupFarm).totalDeposits();
 
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         Farm(nonLockupFarm).getDepositInfo(totalDeposits + 1);
     }
 }
@@ -835,7 +835,7 @@ abstract contract SubscriptionInfoTest is FarmTest {
         depositSetup(nonLockupFarm, false)
         useKnownActor(user)
     {
-        vm.expectRevert(abi.encodeWithSelector(Farm.SubscriptionDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.SubscriptionDoesNotExist.selector));
         Farm(nonLockupFarm).getSubscriptionInfo(1, 2);
     }
 
@@ -857,21 +857,21 @@ abstract contract UpdateRewardTokenDataTest is FarmTest {
 
         vm.startPrank(owner);
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
     function test_UpdateRewardTokenData_RevertWhen_NotTheTokenManager() public useKnownActor(user) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = newTokenManager;
-        vm.expectRevert(abi.encodeWithSelector(Farm.NotTheTokenManager.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.NotTheTokenManager.selector));
         Farm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
     function test_UpdateRewardTokenData_RevertWhen_InvalidAddress() public useKnownActor(owner) {
         address[] memory rewardTokens = getRewardTokens(nonLockupFarm);
         address _newTknManager = address(0);
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidAddress.selector));
         Farm(nonLockupFarm).updateRewardData(rewardTokens[0], _newTknManager);
     }
 
@@ -885,7 +885,7 @@ abstract contract UpdateRewardTokenDataTest is FarmTest {
                 address rwdToken = rewardTokens[i];
 
                 vm.expectEmit(address(farm));
-                emit Farm.RewardDataUpdated(rwdToken, _newTknManager);
+                emit IFarm.RewardDataUpdated(rwdToken, _newTknManager);
                 Farm(farm).updateRewardData(rwdToken, _newTknManager);
             }
         }
@@ -906,7 +906,7 @@ abstract contract RecoverRewardFundsTest is FarmTest {
                 uint256 rwdBalance = ERC20(rwdToken).balanceOf(farm);
 
                 vm.expectEmit(address(farm));
-                emit Farm.FundsRecovered(owner, rwdToken, rwdBalance);
+                emit IFarm.FundsRecovered(owner, rwdToken, rwdBalance);
                 Farm(farm).recoverRewardFunds(rwdToken, rwdBalance);
             }
         }
@@ -924,7 +924,7 @@ abstract contract RecoverRewardFundsTest is FarmTest {
                 uint256 rwdBalance = ERC20(rwdToken).balanceOf(farm);
 
                 vm.expectEmit(address(farm));
-                emit Farm.FundsRecovered(currentActor, rwdToken, rwdBalance);
+                emit IFarm.FundsRecovered(currentActor, rwdToken, rwdBalance);
                 Farm(farm).recoverRewardFunds(rwdToken, rwdBalance);
             }
         }
@@ -943,7 +943,7 @@ abstract contract RecoverRewardFundsTest is FarmTest {
                 uint256 rwdBalanceBefore = ERC20(rwdToken).balanceOf(farm);
 
                 vm.expectEmit(address(farm));
-                emit Farm.FundsRecovered(currentActor, rwdToken, rwdToRecover);
+                emit IFarm.FundsRecovered(currentActor, rwdToken, rwdToRecover);
                 Farm(farm).recoverRewardFunds(rwdToken, rwdToRecover);
 
                 uint256 rwdBalanceAfter = ERC20(rwdToken).balanceOf(farm);
@@ -957,14 +957,14 @@ abstract contract FarmPauseSwitchTest is FarmTest {
     function test_FarmPauseSwitch_RevertWhen_FarmAlreadyInRequiredState() public useKnownActor(owner) {
         bool isFarmActive = Farm(nonLockupFarm).isFarmActive();
         isFarmActive = !isFarmActive;
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmAlreadyInRequiredState.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmAlreadyInRequiredState.selector));
         Farm(nonLockupFarm).farmPauseSwitch(isFarmActive);
     }
 
     function test_FarmPauseSwitch_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         bool isFarmActive = Farm(nonLockupFarm).isFarmActive();
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).farmPauseSwitch(isFarmActive);
     }
 
@@ -974,7 +974,7 @@ abstract contract FarmPauseSwitchTest is FarmTest {
             address farm = lockup ? lockupFarm : nonLockupFarm;
             bool isFarmActive = Farm(farm).isFarmActive();
             vm.expectEmit(address(farm));
-            emit Farm.FarmPaused(isFarmActive);
+            emit IFarm.FarmPaused(isFarmActive);
             Farm(farm).farmPauseSwitch(isFarmActive);
         }
     }
@@ -988,19 +988,19 @@ abstract contract UpdateFarmStartTimeTest is FarmTest {
 
     function test_UpdateFarmStartTime_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
     function test_UpdateFarmStartTime_RevertWhen_FarmAlreadyStarted() public useKnownActor(owner) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmAlreadyStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmAlreadyStarted.selector));
         Farm(nonLockupFarm).updateFarmStartTime(block.timestamp);
     }
 
     function test_UpdateFarmStartTime_RevertWhen_InvalidTime() public {
         address farm = createFarm(block.timestamp + 2000, false);
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidTime.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidTime.selector));
         Farm(farm).updateFarmStartTime(block.timestamp - 1);
     }
 
@@ -1011,7 +1011,7 @@ abstract contract UpdateFarmStartTimeTest is FarmTest {
 
         vm.startPrank(owner);
         vm.expectEmit(address(farm));
-        emit Farm.FarmStartTimeUpdated(newStartTime);
+        emit IFarm.FarmStartTimeUpdated(newStartTime);
         Farm(farm).updateFarmStartTime(newStartTime);
         vm.stopPrank();
 
@@ -1023,26 +1023,26 @@ abstract contract UpdateFarmStartTimeTest is FarmTest {
 abstract contract UpdateCoolDownPeriodTest is FarmTest {
     function test_UpdateCoolDownPeriod_noLockupFarm() public useKnownActor(owner) {
         uint256 cooldownPeriodInDays = 20;
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmDoesNotSupportLockup.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmDoesNotSupportLockup.selector));
         Farm(nonLockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         uint256 cooldownPeriodInDays = 20;
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_InvalidCooldownPeriod() public useKnownActor(owner) {
         uint256 cooldownPeriodInDays = 31;
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidCooldownPeriod.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidCooldownPeriod.selector));
         Farm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
     function test_UpdateCoolDownPeriod_RevertWhen_InvalidCooldownPeriod0() public useKnownActor(owner) {
         uint256 cooldownPeriodInDays = 0;
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidCooldownPeriod.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidCooldownPeriod.selector));
         Farm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 
@@ -1050,7 +1050,7 @@ abstract contract UpdateCoolDownPeriodTest is FarmTest {
         vm.assume(cooldownPeriodInDays >= MIN_COOLDOWN_PERIOD_DAYS && cooldownPeriodInDays <= MAX_COOLDOWN_PERIOD_DAYS);
 
         vm.expectEmit(address(lockupFarm));
-        emit Farm.CooldownPeriodUpdated(cooldownPeriodInDays);
+        emit IFarm.CooldownPeriodUpdated(cooldownPeriodInDays);
         Farm(lockupFarm).updateCooldownPeriod(cooldownPeriodInDays);
     }
 }
@@ -1058,7 +1058,7 @@ abstract contract UpdateCoolDownPeriodTest is FarmTest {
 abstract contract CloseFarmTest is FarmTest {
     function test_CloseFarm_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(nonLockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         Farm(nonLockupFarm).closeFarm();
     }
 
@@ -1070,7 +1070,7 @@ abstract contract CloseFarmTest is FarmTest {
             address[] memory rewardTokens = getRewardTokens(farm);
             uint128[] memory rwdRate = new uint128[](rewardRateLength);
             vm.expectEmit(address(farm));
-            emit Farm.FarmClosed();
+            emit IFarm.FarmClosed();
             Farm(farm).closeFarm();
             assertEq(Farm(farm).isFarmOpen(), false);
             assertEq(Farm(farm).isFarmActive(), false);
@@ -1089,14 +1089,14 @@ abstract contract CloseFarmTest is FarmTest {
 // TODO add more positive test cases
 abstract contract GetRewardRates is FarmTest {
     function test_RevertWhen_InvalidRewardToken() public setup {
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardToken.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidRewardToken.selector));
         Farm(nonLockupFarm).getRewardRates(invalidRewardToken);
     }
 }
 
 abstract contract _SetupFarmTest is FarmTest {
     function test_SetupFarm_RevertWhen_InvalidFarmStartTime() public {
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidFarmStartTime.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidFarmStartTime.selector));
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp - 200, false));
         assertTrue(success);
@@ -1107,7 +1107,7 @@ abstract contract _SetupFarmTest is FarmTest {
             rwdTokens.push(USDCe);
         } while (rwdTokens.length <= MAX_NUM_REWARDS); // <= So that rwdTokens.length becomes MAX_NUM_REWARDS + 1
 
-        vm.expectRevert(abi.encodeWithSelector(Farm.InvalidRewardData.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.InvalidRewardData.selector));
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
         assertTrue(success);
@@ -1127,7 +1127,7 @@ abstract contract _SetupFarmTest is FarmTest {
     function test_SetupFarm_RevertWhen_RewardAlreadyAdded() public {
         rwdTokens.push(rwdTokens[0]);
 
-        vm.expectRevert(abi.encodeWithSelector(Farm.RewardTokenAlreadyAdded.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.RewardTokenAlreadyAdded.selector));
         (bool success,) =
             address(this).call(abi.encodeWithSignature("createFarm(uint256,bool)", block.timestamp, false));
         assertTrue(success);
@@ -1139,8 +1139,8 @@ abstract contract MulticallTest is FarmTest {
         cooldownPeriodInDays = bound(cooldownPeriodInDays, MIN_COOLDOWN_PERIOD_DAYS, MAX_COOLDOWN_PERIOD_DAYS);
 
         bytes[] memory data = new bytes[](2);
-        data[0] = abi.encodeWithSelector(Farm.updateCooldownPeriod.selector, cooldownPeriodInDays);
-        data[1] = abi.encodeWithSelector(Farm.closeFarm.selector);
+        data[0] = abi.encodeWithSelector(IFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
+        data[1] = abi.encodeWithSelector(IFarm.closeFarm.selector);
 
         Farm(lockupFarm).multicall(data);
 
@@ -1156,9 +1156,9 @@ abstract contract MulticallTest is FarmTest {
         {
             bytes[] memory data = new bytes[](1);
             // This should revert as farm already started.
-            data[0] = abi.encodeWithSelector(Farm.updateFarmStartTime.selector, block.timestamp + 200);
+            data[0] = abi.encodeWithSelector(IFarm.updateFarmStartTime.selector, block.timestamp + 200);
 
-            vm.expectRevert(abi.encodeWithSelector(Farm.FarmAlreadyStarted.selector));
+            vm.expectRevert(abi.encodeWithSelector(IFarm.FarmAlreadyStarted.selector));
             Farm(lockupFarm).multicall(data);
         }
 
@@ -1168,12 +1168,12 @@ abstract contract MulticallTest is FarmTest {
 
             // When any single call fails the whole transaction should revert.
             bytes[] memory data = new bytes[](3);
-            data[0] = abi.encodeWithSelector(Farm.updateCooldownPeriod.selector, cooldownPeriodInDays);
+            data[0] = abi.encodeWithSelector(IFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
             // This should revert as farm already started.
-            data[1] = abi.encodeWithSelector(Farm.updateFarmStartTime.selector, block.timestamp + 200);
-            data[2] = abi.encodeWithSelector(Farm.closeFarm.selector);
+            data[1] = abi.encodeWithSelector(IFarm.updateFarmStartTime.selector, block.timestamp + 200);
+            data[2] = abi.encodeWithSelector(IFarm.closeFarm.selector);
 
-            vm.expectRevert(abi.encodeWithSelector(Farm.FarmAlreadyStarted.selector));
+            vm.expectRevert(abi.encodeWithSelector(IFarm.FarmAlreadyStarted.selector));
             Farm(lockupFarm).multicall(data);
         }
 
@@ -1184,7 +1184,7 @@ abstract contract MulticallTest is FarmTest {
 
             // When any single call fails the whole transaction should revert.
             bytes[] memory data = new bytes[](3);
-            data[0] = abi.encodeWithSelector(Farm.updateCooldownPeriod.selector, cooldownPeriodInDays);
+            data[0] = abi.encodeWithSelector(IFarm.updateCooldownPeriod.selector, cooldownPeriodInDays);
 
             vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
             Farm(lockupFarm).multicall(data);

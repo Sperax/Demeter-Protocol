@@ -113,7 +113,7 @@ abstract contract ActiveLiquidityTest is UniV3ActiveLiquidityFarmTest {
         assertFalse(UniV3ActiveLiquidityFarm(lockupFarm).isFarmActive());
 
         // Functions dependent on isFarmActive should revert.
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
         UniV3ActiveLiquidityFarm(lockupFarm).initiateCooldown(1); // bogus depositId
     }
 
@@ -170,7 +170,7 @@ abstract contract ActiveLiquidityTest is UniV3ActiveLiquidityFarmTest {
         uint256[][] memory rewardsForActiveLiquidity =
             UniV3ActiveLiquidityFarm(nonLockupFarm).computeRewards(currentActor, depositId);
         vm.expectEmit(nonLockupFarm);
-        emit Farm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
+        emit IFarm.PoolUnsubscribed(depositId, COMMON_FUND_ID, rewardsForActiveLiquidity[0]);
         UniV3ActiveLiquidityFarm(nonLockupFarm).withdraw(depositId);
         if (activeTime == 0) {
             for (uint256 j; j < rewardsForActiveLiquidity[0].length; j++) {

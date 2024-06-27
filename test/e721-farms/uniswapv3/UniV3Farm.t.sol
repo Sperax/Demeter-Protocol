@@ -26,6 +26,7 @@ import {
 import {UniV3FarmDeployer} from "../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol";
 import {FarmRegistry} from "../../../contracts/FarmRegistry.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IFarm} from "../../../contracts/interfaces/IFarm.sol";
 
 // import tests
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
@@ -443,12 +444,12 @@ abstract contract OnERC721ReceivedTest is UniV3FarmTest {
 abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
     function test_ClaimUniswapFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         Farm(lockupFarm).closeFarm();
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         UniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
     function test_ClaimUniswapFee_RevertWhen_DepositDoesNotExist_during_claimUniswapFee() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         UniV3Farm(lockupFarm).claimUniswapFee(0);
     }
 
@@ -498,12 +499,12 @@ abstract contract IncreaseDepositTest is UniV3FarmTest {
         IERC20(DAI).approve(lockupFarm, deposit0);
         IERC20(USDCe).approve(lockupFarm, deposit1);
 
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsInactive.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsInactive.selector));
         UniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
     function test_IncreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         UniV3Farm(lockupFarm).increaseDeposit(depositId, [DEPOSIT_AMOUNT, DEPOSIT_AMOUNT], [uint256(0), uint256(0)]);
     }
 
@@ -532,7 +533,7 @@ abstract contract IncreaseDepositTest is UniV3FarmTest {
         IERC20(USDCe).approve(lockupFarm, deposit1);
 
         UniV3Farm(lockupFarm).initiateCooldown(depositId);
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositIsInCooldown.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositIsInCooldown.selector));
         UniV3Farm(lockupFarm).increaseDeposit(depositId, amounts, minAmounts);
     }
 
@@ -622,12 +623,12 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         vm.startPrank(owner);
         UniV3Farm(lockupFarm).closeFarm();
         vm.startPrank(user);
-        vm.expectRevert(abi.encodeWithSelector(Farm.FarmIsClosed.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
         UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
     function test_DecreaseDeposit_RevertWhen_DepositDoesNotExist() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         UniV3Farm(lockupFarm).decreaseDeposit(depositId, dummyLiquidityToWithdraw, [uint256(0), uint256(0)]);
     }
 
@@ -637,7 +638,7 @@ abstract contract DecreaseDepositTest is UniV3FarmTest {
         useKnownActor(user)
     {
         skip(1);
-        vm.expectRevert(abi.encodeWithSelector(Farm.CannotWithdrawZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.CannotWithdrawZeroAmount.selector));
         UniV3Farm(lockupFarm).decreaseDeposit(depositId, 0, [uint256(0), uint256(0)]);
     }
 

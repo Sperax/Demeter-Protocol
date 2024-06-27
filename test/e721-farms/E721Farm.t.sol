@@ -6,6 +6,7 @@ import {FarmTest, FarmInheritTest} from "../Farm.t.sol";
 import {Deposit} from "../../contracts/interfaces/DataTypes.sol";
 import {UniV3Farm, E721Farm} from "../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
 import {Farm} from "../../contracts/Farm.sol";
+import {IFarm} from "../../contracts/interfaces/IFarm.sol";
 
 abstract contract E721FarmTest is FarmTest {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
@@ -36,15 +37,15 @@ abstract contract NFTDepositTest is E721FarmTest {
 
             if (!lockup) {
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit IFarm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
             } else {
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
+                emit IFarm.PoolSubscribed(Farm(farm).totalDeposits() + 1, COMMON_FUND_ID);
                 vm.expectEmit(address(farm));
-                emit Farm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
+                emit IFarm.PoolSubscribed(Farm(farm).totalDeposits() + 1, LOCKUP_FUND_ID);
             }
             vm.expectEmit(address(farm));
-            emit Farm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
+            emit IFarm.Deposited(Farm(farm).totalDeposits() + 1, currentActor, lockup, liquidity);
             IERC721(nftContract).safeTransferFrom(currentActor, farm, tokenId, abi.encode(lockup));
             uint256 depositId = E721Farm(farm).totalDeposits();
             Deposit memory userDeposit = E721Farm(farm).getDepositInfo(depositId);
@@ -57,7 +58,7 @@ abstract contract NFTDepositTest is E721FarmTest {
 
 abstract contract WithdrawAdditionalTest is E721FarmTest {
     function test_Withdraw_RevertWhen_DepositDoesNotExist_during_withdraw() public useKnownActor(user) {
-        vm.expectRevert(abi.encodeWithSelector(Farm.DepositDoesNotExist.selector));
+        vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         E721Farm(lockupFarm).withdraw(0);
     }
 

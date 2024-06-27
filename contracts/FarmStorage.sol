@@ -25,11 +25,12 @@ pragma solidity 0.8.24;
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ //
 
 import {RewardFund, RewardData, Deposit, Subscription} from "./interfaces/DataTypes.sol";
+import {IFarm} from "./interfaces/IFarm.sol";
 
 /// @title FarmStorage contract of Demeter Protocol.
 /// @author Sperax Foundation.
 /// @notice This contract contains the base storage variables for farms.
-abstract contract FarmStorage {
+abstract contract FarmStorage is IFarm {
     // constants.
     uint8 public constant COMMON_FUND_ID = 0;
     uint8 public constant LOCKUP_FUND_ID = 1;
@@ -48,9 +49,9 @@ abstract contract FarmStorage {
     uint256 public totalDeposits;
 
     // Reward info.
-    RewardFund[] public rewardFunds;
+    RewardFund[] internal rewardFunds;
     address[] internal rewardTokens;
-    mapping(address => RewardData) public rewardData;
+    mapping(address => RewardData) internal rewardData;
     mapping(uint256 => Deposit) internal deposits;
     mapping(uint256 => Subscription[]) internal subscriptions;
 }
