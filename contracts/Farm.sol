@@ -47,7 +47,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
 
     /// @inheritdoc IFarm
     function claimRewards(uint256 _depositId) external {
-        claimRewards(msg.sender, _depositId);
+        claimRewardsTo(msg.sender, _depositId);
     }
 
     /// @inheritdoc IFarm
@@ -262,10 +262,10 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     }
 
     /// @inheritdoc IFarm
-    function claimRewards(address _account, uint256 _depositId) public nonReentrant {
+    function claimRewardsTo(address _account, uint256 _depositId) public nonReentrant {
         _validateFarmOpen();
-        _validateDeposit(_account, _depositId);
-        _updateAndClaimFarmRewards(_depositId);
+        _validateDeposit(msg.sender, _depositId);
+        _updateAndClaimFarmRewardsTo(_depositId, _account);
     }
 
     /// @inheritdoc IFarm
@@ -448,6 +448,15 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
     /// @dev NOTE: any function calling this private
     ///     function should be marked as non-reentrant.
     function _updateAndClaimFarmRewards(uint256 _depositId) internal {
+        _updateAndClaimFarmRewardsTo(_depositId, msg.sender);
+    }
+
+    /// @notice Claim rewards for the user and send it to another account.
+    /// @param _depositId The id of the deposit.
+    /// @param _receiver The receiver of the rewards (Could be different from depositor)
+    /// @dev NOTE: any function calling this private
+    ///     function should be marked as non-reentrant.
+    function _updateAndClaimFarmRewardsTo(uint256 _depositId, address _receiver) internal {
         updateFarmRewardData();
 
         Deposit storage userDeposit = deposits[_depositId];
@@ -481,7 +490,6 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
 
         emit RewardsClaimed(_depositId, rewardsForEachSubs);
 
-        address user = userDeposit.depositor;
         // Transfer the claimed rewards to the user if any.
         for (uint8 iRwd; iRwd < numRewards; ++iRwd) {
             if (totalRewards[iRwd] != 0) {
@@ -489,7 +497,7 @@ abstract contract Farm is FarmStorage, OwnableUpgradeable, ReentrancyGuardUpgrad
                 rewardData[rewardToken].accRewardBal -= totalRewards[iRwd];
                 // Update the total rewards earned for the deposit.
                 userDeposit.totalRewardsClaimed[iRwd] += totalRewards[iRwd];
-                IERC20(rewardToken).safeTransfer(user, totalRewards[iRwd]);
+                IERC20(rewardToken).safeTransfer(_receiver, totalRewards[iRwd]);
             }
         }
     }
