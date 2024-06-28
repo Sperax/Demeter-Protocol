@@ -193,65 +193,18 @@ abstract contract ClaimRewardsTest is FarmTest {
         IFarm(lockupFarm).claimRewards(depositId + 1);
     }
 
-    function test_ClaimRewardsTo_RevertWhen_DepositDoesNotExist()
-        public
-        setup
-        depositSetup(lockupFarm, true)
-        useKnownActor(user)
-    {
+    function test_ClaimRewardsTo_RevertWhen_DepositDoesNotExist() public setup depositSetup(lockupFarm, true) {
         uint256 depositId = 1;
         skip(2 days);
-        IFarm(lockupFarm).initiateCooldown(depositId);
-        vm.startPrank(owner);
-        skip(2 days);
-        IFarm(lockupFarm).farmPauseSwitch(true);
         vm.startPrank(actors[4]);
-        skip(2 days);
         vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
         IFarm(lockupFarm).claimRewardsTo(user, depositId);
     }
 
-    function test_claimRewards() public setup {
-        for (uint8 j; j < 2; ++j) {
-            uint256 depositId = 1;
-            bool lockup = j == 0 ? true : false;
-            address farm = lockup ? lockupFarm : nonLockupFarm;
-            uint256 rewardsForEachSubsLength = lockup ? 2 : 1;
-            depositSetupFn(farm, lockup);
-
-            vm.startPrank(owner);
-            _setRewardRates(farm, true, type(uint128).max);
-            vm.stopPrank();
-
-            skip(15 days);
-            vm.startPrank(user);
-            address[] memory rewardTokens = getRewardTokens(farm);
-            uint256[] memory balances = new uint256[](rewardTokens.length);
-            for (uint8 i; i < rewardTokens.length; ++i) {
-                balances[i] = IERC20(rewardTokens[i]).balanceOf(user);
-            }
-            uint256[][] memory rewardsForEachSubs = new uint256[][](rewardsForEachSubsLength);
-            rewardsForEachSubs = IFarm(farm).computeRewards(user, 1);
-
-            vm.expectEmit(address(farm));
-            emit IFarm.RewardsClaimed(depositId, rewardsForEachSubs);
-            IFarm(farm).claimRewards(depositId);
-            // Checking the rewards claimed users balances
-            for (uint8 i; i < rewardTokens.length; ++i) {
-                if (lockup) {
-                    assertEq(
-                        IERC20(rewardTokens[i]).balanceOf(user),
-                        rewardsForEachSubs[0][i] + rewardsForEachSubs[1][i] + balances[i]
-                    );
-                } else {
-                    assertEq(IERC20(rewardTokens[i]).balanceOf(user), rewardsForEachSubs[0][i] + balances[i]);
-                }
-            }
-        }
-    }
-
-    function test_claimRewardsTo() public setup {
-        address receiver = actors[4];
+    function test_Fuzz_claimRewards_claimRewardsTo(bool claimRewardsTo) public setup {
+        address receiver;
+        receiver = user;
+        if (claimRewardsTo) receiver = actors[4];
         for (uint8 j; j < 2; ++j) {
             uint256 depositId = 1;
             bool lockup = j == 0 ? true : false;
@@ -275,7 +228,7 @@ abstract contract ClaimRewardsTest is FarmTest {
 
             vm.expectEmit(address(farm));
             emit IFarm.RewardsClaimed(depositId, rewardsForEachSubs);
-            IFarm(farm).claimRewardsTo(receiver, depositId);
+            claimRewardsTo ? IFarm(farm).claimRewardsTo(receiver, depositId) : IFarm(farm).claimRewards(depositId);
             // Checking the rewards claimed users balances
             for (uint8 i; i < rewardTokens.length; ++i) {
                 if (lockup) {
@@ -338,6 +291,8 @@ abstract contract ClaimRewardsTest is FarmTest {
             assertEq(IERC20(rewardTokens[i]).balanceOf(currentActor), rewardsForEachSubs[0][i] + balances[i]);
         }
     }
+
+    function _preClaimRewards() internal {}
 }
 
 abstract contract WithdrawTest is FarmTest {
