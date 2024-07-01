@@ -89,12 +89,8 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     int256 internal constant MIN_TICK = -887272;
     int256 internal constant MAX_TICK = 887272;
 
-    // Events.
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-
     // Custom Errors.
     error InvalidCamelotPoolConfig();
-    error NoFeeToClaim();
     error IncorrectPoolToken();
     error IncorrectTickRange();
     error InvalidTickRange();
@@ -207,30 +203,6 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
                 amount1Max: SafeCast.toUint128(amount1)
             })
         );
-    }
-
-    /// @notice Claim camelot pool fee for a deposit.
-    /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit.
-    function claimCamelotFee(uint256 _depositId) external nonReentrant {
-        _validateFarmOpen();
-        _validateDeposit(msg.sender, _depositId);
-        uint256 tokenId = depositToTokenId[_depositId];
-
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nftContract).collect(
-            INFPM.CollectParams({
-                tokenId: tokenId,
-                recipient: msg.sender,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-
-        if (amt0Recv == 0 && amt1Recv == 0) {
-            revert NoFeeToClaim();
-        }
-
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
     }
 
     /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
