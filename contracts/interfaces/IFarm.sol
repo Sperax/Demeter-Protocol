@@ -112,7 +112,7 @@ interface IFarm {
     /// @param _account The user's address.
     /// @param _depositId The id of the deposit.
     /// @dev Anyone can call this function to claim rewards for the user.
-    function claimRewards(address _account, uint256 _depositId) external;
+    function claimRewardsTo(address _account, uint256 _depositId) external;
 
     /// @notice Update the farm start time.
     /// @dev Can be updated only before the farm start.
