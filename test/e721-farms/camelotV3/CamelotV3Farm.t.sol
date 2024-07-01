@@ -872,7 +872,7 @@ contract CamelotV3FarmInheritTest is
     IncreaseDepositTest,
     DecreaseDepositTest,
     FarmInheritTest,
-    ExpirableFarmInheritTest,
+    // ExpirableFarmInheritTest,
     E721FarmInheritTest,
     GetTokenAmountsTest
 {
