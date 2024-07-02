@@ -26,7 +26,6 @@ pragma solidity 0.8.26;
 
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {INFPM} from "./uniswapV3/interfaces/IUniswapV3.sol";
 import {Farm} from "../Farm.sol";
 
 /// @title Base E721Farm contract of Demeter Protocol.
@@ -38,13 +37,9 @@ abstract contract E721Farm is Farm, IERC721Receiver {
 
     mapping(uint256 => uint256) public depositToTokenId;
 
-    // Events.
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-
     // Custom Errors.
     error UnauthorisedNFTContract();
     error NoData();
-    error NoFeeToClaim();
 
     /// @notice Function is called when user transfers the NFT to this farm.
     /// @param _from The address of the owner.
@@ -77,37 +72,6 @@ abstract contract E721Farm is Farm, IERC721Receiver {
         // Transfer the nft back to the user.
         IERC721(nftContract).safeTransferFrom(address(this), msg.sender, depositToTokenId[_depositId]);
         delete depositToTokenId[_depositId];
-    }
-
-    /// @notice A function to claim the pool fee earned by lp.
-    /// @dev Only the deposit owner can call this function.
-    /// @param _depositId ID of the deposit.
-    function claimPoolFee(uint256 _depositId) external nonReentrant {
-        _validateFarmOpen();
-        _validateDeposit(msg.sender, _depositId);
-
-        uint256 tokenId = depositToTokenId[_depositId];
-        (uint256 amt0Recv, uint256 amt1Recv) = _claimPoolFee(tokenId);
-
-        if (amt0Recv == 0 && amt1Recv == 0) {
-            revert NoFeeToClaim();
-        }
-
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
-    }
-
-    /// @notice Claim pool fee internal logic to be implemented by child farm contract.
-    /// @param _tokenId Token ID of the deposit in the dex.
-    /// @dev Uniswap v3 and Camelot v3 has same mechanism but other farms can override this function.
-    function _claimPoolFee(uint256 _tokenId) internal virtual returns (uint256 amt0Recv, uint256 amt1Recv) {
-        (amt0Recv, amt1Recv) = INFPM(nftContract).collect(
-            INFPM.CollectParams({
-                tokenId: _tokenId,
-                recipient: msg.sender,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
     }
 
     /// @notice Function to get the liquidity. Must be defined by the farm.

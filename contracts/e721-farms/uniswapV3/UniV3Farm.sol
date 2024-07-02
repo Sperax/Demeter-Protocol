@@ -26,6 +26,7 @@ pragma solidity 0.8.26;
 
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
+import {ClaimableFee} from "./../../features/ClaimableFee.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -77,7 +78,7 @@ struct InitializeInput {
 /// @title Uniswap V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V3 farm.
-contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
+contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params.
@@ -235,6 +236,24 @@ contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
+    }
+
+    /// @notice Claim pool fee implementation from `ClaimableFee` feature.
+    /// @param _depositId Deposit ID of the deposit in the farm.
+    function _claimPoolFee(uint256 _depositId)
+        internal
+        override
+        returns (uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv)
+    {
+        tokenId = depositToTokenId[_depositId];
+        (amt0Recv, amt1Recv) = INFPM(nftContract).collect(
+            INFPM.CollectParams({
+                tokenId: tokenId,
+                recipient: msg.sender,
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
     }
 
     /// @notice Validate the position for the pool and get Liquidity.
