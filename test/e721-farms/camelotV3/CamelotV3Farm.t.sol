@@ -14,6 +14,7 @@ import {
     ICamelotV3TickSpacing,
     INFPM,
     OperableDeposit,
+    ClaimableFee,
     InitializeInput
 } from "../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol";
 import {ICamelotV3Utils} from "../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol";
@@ -443,37 +444,37 @@ abstract contract OnERC721ReceivedTest is CamelotV3FarmTest {
 }
 
 abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
-    function test_ClaimCamelotFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
+    function test_ClaimPoolFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         IFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
-        CamelotV3Farm(lockupFarm).claimCamelotFee(0);
+        CamelotV3Farm(lockupFarm).claimPoolFee(0);
     }
 
-    function test_ClaimCamelotFee_RevertWhen_DepositDoesNotExist_during_claimCamelotFee() public useKnownActor(user) {
+    function test_ClaimPoolFee_RevertWhen_DepositDoesNotExist_during_claimCamelotFee() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
-        CamelotV3Farm(lockupFarm).claimCamelotFee(0);
+        CamelotV3Farm(lockupFarm).claimPoolFee(0);
     }
 
-    function test_ClaimCamelotFee_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_ClaimPoolFee_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(CamelotV3Farm.NoFeeToClaim.selector));
-        CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
+        vm.expectRevert(abi.encodeWithSelector(ClaimableFee.NoFeeToClaim.selector));
+        CamelotV3Farm(lockupFarm).claimPoolFee(depositId);
     }
 
-    function test_claimCamelotFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_claimPoolFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = CamelotV3Farm(lockupFarm).depositToTokenId(depositId);
 
         vm.expectEmit(true, false, false, false, address(lockupFarm)); // for now ignoring amount0 and amount1
-        emit CamelotV3Farm.PoolFeeCollected(currentActor, _tokenId, 0, 0);
+        emit ClaimableFee.PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
         vm.recordLogs();
 
         uint256 balance0Before = IERC20(DAI).balanceOf(user);
         uint256 balance1Before = IERC20(USDCe).balanceOf(user);
 
-        CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
+        CamelotV3Farm(lockupFarm).claimPoolFee(depositId);
 
         uint256 balance0After = IERC20(DAI).balanceOf(user);
         uint256 balance1After = IERC20(USDCe).balanceOf(user);
@@ -496,7 +497,7 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
         assertEq(balance1After, amt1 + balance1Before);
     }
 
-    function testFuzz_claimCamelotFee_tickSpacingChanged(int24 newTickSpacing)
+    function testFuzz_claimPoolFee_tickSpacingChanged(int24 newTickSpacing)
         public
         depositSetup(lockupFarm, true)
         useKnownActor(user)
@@ -519,9 +520,9 @@ abstract contract ClaimCamelotFeeTest is CamelotV3FarmTest {
 
         vm.startPrank(user);
         vm.expectEmit(true, false, false, false, address(lockupFarm)); // for now ignoring amount0 and amount1
-        emit CamelotV3Farm.PoolFeeCollected(currentActor, _tokenId, 0, 0);
+        emit ClaimableFee.PoolFeeCollected(currentActor, _tokenId, 0, 0);
 
-        CamelotV3Farm(lockupFarm).claimCamelotFee(depositId);
+        CamelotV3Farm(lockupFarm).claimPoolFee(depositId);
     }
 }
 

@@ -26,6 +26,7 @@ pragma solidity 0.8.26;
 
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
+import {ClaimableFee} from "./../../features/ClaimableFee.sol";
 import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -77,7 +78,7 @@ struct InitializeInput {
 /// @title Uniswap V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V3 farm.
-contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
+contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee {
     using SafeERC20 for IERC20;
 
     // UniswapV3 params.
@@ -91,11 +92,8 @@ contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     int256 internal constant MIN_TICK = -887272;
     int256 internal constant MAX_TICK = 887272;
 
-    event PoolFeeCollected(address indexed recipient, uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv);
-
     // Custom Errors.
     error InvalidUniswapPoolConfig();
-    error NoFeeToClaim();
     error IncorrectPoolToken();
     error IncorrectTickRange();
     error InvalidTickRange();
@@ -210,30 +208,6 @@ contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
         );
     }
 
-    /// @notice Claim uniswap pool fee for a deposit.
-    /// @dev Only the deposit owner can claim the fee.
-    /// @param _depositId Id of the deposit.
-    function claimUniswapFee(uint256 _depositId) external nonReentrant {
-        _validateFarmOpen();
-        _validateDeposit(msg.sender, _depositId);
-        uint256 tokenId = depositToTokenId[_depositId];
-
-        (uint256 amt0Recv, uint256 amt1Recv) = INFPM(nftContract).collect(
-            INFPM.CollectParams({
-                tokenId: tokenId,
-                recipient: msg.sender,
-                amount0Max: type(uint128).max,
-                amount1Max: type(uint128).max
-            })
-        );
-
-        if (amt0Recv == 0 && amt1Recv == 0) {
-            revert NoFeeToClaim();
-        }
-
-        emit PoolFeeCollected(msg.sender, tokenId, amt0Recv, amt1Recv);
-    }
-
     /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
@@ -262,6 +236,24 @@ contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm {
     /// @dev Calls ExpirableFarm's isOpenFarm function.
     function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
         return ExpirableFarm.isFarmOpen();
+    }
+
+    /// @notice Claim pool fee implementation from `ClaimableFee` feature.
+    /// @param _depositId Deposit ID of the deposit in the farm.
+    function _claimPoolFee(uint256 _depositId)
+        internal
+        override
+        returns (uint256 tokenId, uint256 amt0Recv, uint256 amt1Recv)
+    {
+        tokenId = depositToTokenId[_depositId];
+        (amt0Recv, amt1Recv) = INFPM(nftContract).collect(
+            INFPM.CollectParams({
+                tokenId: tokenId,
+                recipient: msg.sender,
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
     }
 
     /// @notice Validate the position for the pool and get Liquidity.
