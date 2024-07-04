@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {FarmTest, FarmInheritTest, IFarm} from "../Farm.t.sol";
+import {FarmTest, IFarm} from "../Farm.t.sol";
 import {Deposit} from "../../contracts/interfaces/DataTypes.sol";
 import {UniV3Farm, E721Farm} from "../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
 

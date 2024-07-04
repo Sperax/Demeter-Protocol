@@ -15,6 +15,7 @@ import {
     IUniswapV3TickSpacing,
     INFPM,
     OperableDeposit,
+    ClaimableFee,
     InitializeInput
 } from "../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol";
 import {IUniswapV3Utils} from "../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol";
@@ -30,6 +31,9 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {E721FarmTest, E721FarmInheritTest} from "../E721Farm.t.sol";
 import {FarmTest, FarmInheritTest, IFarm} from "../../Farm.t.sol";
 import {ExpirableFarmInheritTest} from "../../features/ExpirableFarm.t.sol";
+
+import {E721FarmTest} from "../E721Farm.t.sol";
+import {IFarm} from "../../Farm.t.sol";
 import {UpgradeUtil} from "../../utils/UpgradeUtil.t.sol";
 
 import {VmSafe} from "forge-std/Vm.sol";
@@ -440,24 +444,24 @@ abstract contract OnERC721ReceivedTest is UniV3FarmTest {
 }
 
 abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
-    function test_ClaimUniswapFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
+    function test_ClaimPoolFee_RevertWhen_FarmIsClosed() public useKnownActor(owner) {
         IFarm(lockupFarm).closeFarm();
         vm.expectRevert(abi.encodeWithSelector(IFarm.FarmIsClosed.selector));
-        UniV3Farm(lockupFarm).claimUniswapFee(0);
+        UniV3Farm(lockupFarm).claimPoolFee(0);
     }
 
-    function test_ClaimUniswapFee_RevertWhen_DepositDoesNotExist_during_claimUniswapFee() public useKnownActor(user) {
+    function test_ClaimPoolFee_RevertWhen_DepositDoesNotExist_during_claimPoolFee() public useKnownActor(user) {
         vm.expectRevert(abi.encodeWithSelector(IFarm.DepositDoesNotExist.selector));
-        UniV3Farm(lockupFarm).claimUniswapFee(0);
+        UniV3Farm(lockupFarm).claimPoolFee(0);
     }
 
-    function test_ClaimUniswapFee_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_ClaimPoolFee_RevertWhen_NoFeeToClaim() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
-        vm.expectRevert(abi.encodeWithSelector(UniV3Farm.NoFeeToClaim.selector));
-        UniV3Farm(lockupFarm).claimUniswapFee(depositId);
+        vm.expectRevert(abi.encodeWithSelector(ClaimableFee.NoFeeToClaim.selector));
+        UniV3Farm(lockupFarm).claimPoolFee(depositId);
     }
 
-    function test_claimUniswapFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
+    function test_claimPoolFee() public depositSetup(lockupFarm, true) useKnownActor(user) {
         uint256 depositId = 1;
         _simulateSwap();
         uint256 _tokenId = UniV3Farm(lockupFarm).depositToTokenId(depositId);
@@ -465,12 +469,12 @@ abstract contract ClaimUniswapFeeTest is UniV3FarmTest {
         (uint256 amt0, uint256 amt1) = IUniswapV3Utils(UNISWAP_UTILS).fees(NFPM, _tokenId);
 
         vm.expectEmit(address(lockupFarm));
-        emit UniV3Farm.PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
+        emit ClaimableFee.PoolFeeCollected(currentActor, _tokenId, amt0, amt1);
 
         uint256 amt0Before = IERC20(DAI).balanceOf(currentActor);
         uint256 amt1Before = IERC20(USDCe).balanceOf(currentActor);
 
-        UniV3Farm(lockupFarm).claimUniswapFee(depositId);
+        UniV3Farm(lockupFarm).claimPoolFee(depositId);
 
         assertEq(amt0Before + amt0, IERC20(DAI).balanceOf(currentActor));
         assertEq(amt1Before + amt1, IERC20(USDCe).balanceOf(currentActor));
