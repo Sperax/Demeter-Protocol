@@ -76,6 +76,7 @@ struct InitializeInput {
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V3 farm.
 contract CamelotV3Farm is E721Farm, OperableDeposit, ClaimableFee {
+    using TokenUtils for address;
     using SafeERC20 for IERC20;
 
     // CamelotV3 params.
@@ -208,8 +209,7 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ClaimableFee {
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getCamelotV3TokenAmounts({
-            _camelotPool: camelotPool,
+        return camelotPool.getCamelotV3TokenAmounts({
             _camelotUtils: camelotUtils,
             _tickLower: tickLowerAllowed,
             _tickUpper: tickUpperAllowed,

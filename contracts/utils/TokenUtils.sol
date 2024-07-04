@@ -43,7 +43,7 @@ library TokenUtils {
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getUniV2TokenAmounts(address _nftContract, uint256 _farmLiquidity)
-        public
+        internal
         view
         returns (address[] memory tokens, uint256[] memory amounts)
     {
@@ -72,7 +72,7 @@ library TokenUtils {
         int24 _tickLower,
         int24 _tickUpper,
         uint256 _liquidity
-    ) public view returns (address[] memory tokens, uint256[] memory amounts) {
+    ) internal view returns (address[] memory tokens, uint256[] memory amounts) {
         tokens = new address[](2);
         amounts = new uint256[](2);
         tokens[0] = IUniswapV3PoolState(_uniPool).token0();
@@ -101,7 +101,7 @@ library TokenUtils {
         int24 _tickLower,
         int24 _tickUpper,
         uint256 _liquidity
-    ) public view returns (address[] memory tokens, uint256[] memory amounts) {
+    ) internal view returns (address[] memory tokens, uint256[] memory amounts) {
         tokens = new address[](2);
         amounts = new uint256[](2);
         tokens[0] = ICamelotV3PoolState(_camelotPool).token0();
