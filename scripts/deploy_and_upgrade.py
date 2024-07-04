@@ -1,9 +1,9 @@
 from brownie import (
     Contract,
     network,
-    PA,
-    TUP,
-    accounts
+    config as BrownieConfig,
+    accounts, 
+    project
 )
 from .constants import (
     Create_Farm_data,
@@ -26,6 +26,9 @@ import click
 import json
 GAS_LIMIT = 40000000
 
+oz_project = project.load(BrownieConfig["dependencies"][0])
+ProxyAdmin = oz_project.ProxyAdmin
+TransparentUpgradeableProxy = oz_project.TransparentUpgradeableProxy
 
 def resolve_args(args, contract_obj, caller):
     """Resolves derived arguments
@@ -201,7 +204,7 @@ def deploy(configuration, deployer):
 
         if(proxy_admin is None):
             print('\nDeploying proxy admin contract')
-            pa_deployment = PA.deploy(
+            pa_deployment = ProxyAdmin.deploy(
                 {'from': deployer, 'gas_limit': GAS_LIMIT}
             )
             tx_list.append(
@@ -210,7 +213,7 @@ def deploy(configuration, deployer):
             proxy_admin = pa_deployment.address
 
         print('\nDeploying proxy contract')
-        proxy = TUP.deploy(
+        proxy = TransparentUpgradeableProxy.deploy(
             impl.address,
             proxy_admin,
             eth_utils.to_bytes(hexstr='0x'),
@@ -310,9 +313,9 @@ def upgrade(configuration, deployer):
         if(flag == 'n'):
             admin = get_user('Admin account: ')
         proxy_admin = Contract.from_abi(
-            'PA',
+            'ProxyAdmin',
             conf.proxy_admin,
-            PA.abi
+            ProxyAdmin.abi
         )
         print('\nPerforming upgrade!')
         upgrade_tx = proxy_admin.upgrade(
