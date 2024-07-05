@@ -257,7 +257,7 @@ deployment_config = {
                 'fee_token': '0xD74f5255D557944cf7Dd0E45FF521520002D5748', # USDs
                 'fee_amount': 100e18, # 100 USDs
                 'extension_fee_per_day': 1e18 # 1 USDs
-            },
+            }
             # post_deployment_steps=[
             #     Step(
             #         func='transferOwnership',
@@ -310,7 +310,7 @@ deployment_config = {
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
-                'farm_registry': '0xf3f98086f7B61a32be4EdF8d8A4b964eC886BBcd', # To be updated post registry's deployment
+                'farm_registry': '0x45bC6B44107837E7aBB21E2CaCbe7612Fce222e0', # To be updated post registry's deployment
                 'farm_id': 'Demeter_CamelotV3_NonExpirable_Farm_v1',
                 'camelotv3_factory': '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
                 'camelotv3_nfpm': '0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15',

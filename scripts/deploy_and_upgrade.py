@@ -205,6 +205,7 @@ def deploy(configuration, deployer):
         if(proxy_admin is None):
             print('\nDeploying proxy admin contract')
             pa_deployment = ProxyAdmin.deploy(
+                deployer,
                 {'from': deployer, 'gas_limit': GAS_LIMIT}
             )
             tx_list.append(
