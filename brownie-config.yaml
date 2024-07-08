@@ -6,6 +6,7 @@ dependencies:
   - OpenZeppelin/openzeppelin-contracts-upgradeable@5.0.2
   - Uniswap/uniswap-v3-periphery@1.3.0
   - Uniswap/uniswap-v3-core@1.0.0
+  - OpenZeppelin/openzeppelin-contracts@4.9.2
 
 pytest:
   # these settings replace the defaults when running pytest

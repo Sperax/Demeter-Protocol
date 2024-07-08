@@ -6,8 +6,8 @@ from brownie import (
     CamelotV2FarmDeployer,
     UniV2FarmDeployer,
     BalancerV2FarmDeployer,
-    FarmRegistry,
     RewarderFactory,
+    CamelotV3Farm,
     CamelotV3FarmDeployer,
     chain,
 )
@@ -386,4 +386,28 @@ farm_config = {
             }
         )
     ),
+    'arb_usdc_camelotV3_farm': Create_Farm_data(
+        contract=CamelotV3Farm,
+        deployer_contract=CamelotV3FarmDeployer,
+        deployer_address='0x212208daF12D7612e65fb39eE9a07172b08226B8',
+        config=Farm_config(
+            deployment_params={
+                'farm_admin': '0xAbf9a85022a8777f5c970a3324D98e0110550238',
+                'farm_start_time': 1720264107,
+                'cooldown_period': 0,
+                'pool_data': {
+                    'tokenA': '0x912CE59144191C1204E64559FE8253a0e49E6548',
+                    'tokenB': '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+                    'tickLowerAllowed': -280920,
+                    'tickUpperAllowed': -280900
+                },
+                'reward_token_data': [
+                    {
+                        'token': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'tknManager': '0xAbf9a85022a8777f5c970a3324D98e0110550238'
+                    }
+                ]
+            }
+        )
+    )
 }

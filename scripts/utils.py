@@ -115,3 +115,16 @@ def save_deployment_artifacts(data, name, operation_type=''):
     with open(file, 'w') as json_file:
         json.dump(data, json_file, default=lambda o: o.__dict__, indent=4)
     print(f'Artifacts stored at: {file}')
+
+
+def get_user(msg):
+    """Get the address of the users
+
+    Returns:
+        address: Returns address of the deployer
+    """
+    # simulate transacting with vault core from deployer address on fork
+    # contract deployer account
+    deployer = accounts.load(click.prompt(msg, type=click.Choice(accounts.load())))
+    print(f"{msg}{deployer.address}\n")
+    return deployer
