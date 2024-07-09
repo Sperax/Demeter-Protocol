@@ -139,6 +139,10 @@ contract CamelotV2Farm is E721Farm, INFTHandler, OperableDeposit, ExpirableFarm 
         }
     }
 
+    /// @notice Withdraw liquidity partially from an existing deposit.
+    /// @param _depositId Deposit index for the user.
+    /// @param _liquidityToWithdraw Amount to be withdrawn.
+    /// @param _minAmounts Minimum amount of tokens to be received.
     function decreaseDeposit(uint256 _depositId, uint256 _liquidityToWithdraw, uint256[2] calldata _minAmounts)
         external
         nonReentrant

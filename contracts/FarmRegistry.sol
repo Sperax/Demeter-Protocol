@@ -29,7 +29,7 @@ import {IFarmRegistry} from "./interfaces/IFarmRegistry.sol";
 
 /// @title Farm Registry contract of Demeter Protocol.
 /// @author Sperax Foundation.
-/// @notice This contract tracks fee details, privileged deployers, deployed farms and farm deployers.
+/// @notice This contract tracks fee details, privileged users, deployed farms and farm deployers.
 contract FarmRegistry is IFarmRegistry, OwnableUpgradeable {
     address[] internal farms;
     address[] internal deployerList;
@@ -40,7 +40,7 @@ contract FarmRegistry is IFarmRegistry, OwnableUpgradeable {
     uint256 public extensionFeePerDay;
     mapping(address => bool) public farmRegistered;
     mapping(address => bool) public deployerRegistered;
-    // List of deployers for which fee won't be charged.
+    // List of user for which fee won't be charged.
     mapping(address => bool) public isPrivilegedUser;
 
     // Disable initialization for the implementation contract.

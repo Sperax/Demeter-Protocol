@@ -75,6 +75,9 @@ abstract contract OperableDeposit is Farm {
         }
     }
 
+    /// @notice Common logic for increasing a deposit.
+    /// @param _depositId Unique deposit id for the deposit
+    /// @param _amount _amount to be decreased.
     function _increaseDeposit(uint256 _depositId, uint256 _amount) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
@@ -96,6 +99,9 @@ abstract contract OperableDeposit is Farm {
         emit DepositIncreased(_depositId, _amount);
     }
 
+    /// @notice Common logic for decreasing a deposit.
+    /// @param _depositId Unique deposit id for the deposit
+    /// @param _amount _amount to be decreased.
     function _decreaseDeposit(uint256 _depositId, uint256 _amount) internal {
         Deposit storage userDeposit = deposits[_depositId];
 
