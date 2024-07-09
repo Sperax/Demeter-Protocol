@@ -88,7 +88,7 @@ interface IFarm {
     function recoverERC20(address _token) external;
 
     // --------------------- Token Manager Functions ---------------------
-    /// @notice Get the remaining balance out of the farm.
+    /// @notice Get the remaining reward balance out of the farm.
     /// @param _rwdToken The reward token's address.
     /// @param _amount The amount of the reward tokens to be withdrawn.
     /// @dev Function recovers minOf(_amount, rewardsLeft).
