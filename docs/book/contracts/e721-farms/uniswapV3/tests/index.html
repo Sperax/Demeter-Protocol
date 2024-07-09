@@ -1,0 +1,237 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>❱ tests</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../../favicon.png">
+        <link rel="stylesheet" href="../../../../css/variables.css">
+        <link rel="stylesheet" href="../../../../css/general.css">
+        <link rel="stylesheet" href="../../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../../highlight.css">
+        <link rel="stylesheet" href="../../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../../book.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../../../index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">contracts</li><li class="chapter-item "><a href="../../../../contracts/e20-farms/index.html">❱ e20-farms</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e20-farms/balancerV2/index.html">❱ balancerV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e20-farms/balancerV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e20-farms/balancerV2/interfaces/IBalancerV2Vault.sol/interface.IBalancerV2Vault.html">IBalancerV2Vault</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/balancerV2/BalancerV2Farm.sol/contract.BalancerV2Farm.html">BalancerV2Farm</a></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/balancerV2/BalancerV2FarmDeployer.sol/contract.BalancerV2FarmDeployer.html">BalancerV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/uniswapV2/index.html">❱ uniswapV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e20-farms/uniswapV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e20-farms/uniswapV2/interfaces/IUniswapV2Factory.sol/interface.IUniswapV2Factory.html">IUniswapV2Factory</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/uniswapV2/UniV2Farm.sol/contract.UniV2Farm.html">UniV2Farm</a></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/uniswapV2/UniV2FarmDeployer.sol/contract.UniV2FarmDeployer.html">UniV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e20-farms/E20Farm.sol/abstract.E20Farm.html">E20Farm</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../contracts/e721-farms/index.html">❱ e721-farms</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/index.html">❱ camelotV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTPoolFactory.html">INFTPoolFactory</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IPair.html">IPair</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTPool.html">INFTPool</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.ICamelotV2Factory.html">ICamelotV2Factory</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTHandler.html">INFTHandler</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IPositionHelper.html">IPositionHelper</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IRouter.html">IRouter</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/CamelotV2Farm.sol/contract.CamelotV2Farm.html">CamelotV2Farm</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV2/CamelotV2FarmDeployer.sol/contract.CamelotV2FarmDeployer.html">CamelotV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/index.html">❱ camelotV3</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.INFPM.html">INFPM</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3Factory.html">ICamelotV3Factory</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3TickSpacing.html">ICamelotV3TickSpacing</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3PoolState.html">ICamelotV3PoolState</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol/struct.Position.html">Position</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol/interface.ICamelotV3NFPMUtils.html">ICamelotV3NFPMUtils</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol/interface.ICamelotV3Utils.html">ICamelotV3Utils</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol/struct.CamelotPoolData.html">CamelotPoolData</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol/struct.InitializeInput.html">InitializeInput</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/CamelotV3Farm.sol/contract.CamelotV3Farm.html">CamelotV3Farm</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol/contract.CamelotV3FarmDeployer.html">CamelotV3FarmDeployer</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../contracts/e721-farms/uniswapV3/index.html">❱ uniswapV3</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol/struct.Position.html">Position</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol/interface.INFPMUtils.html">INFPMUtils</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IPoolInitializer.html">IPoolInitializer</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.INFPM.html">INFPM</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3Factory.html">IUniswapV3Factory</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3TickSpacing.html">IUniswapV3TickSpacing</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3PoolDerivedState.html">IUniswapV3PoolDerivedState</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3PoolState.html">IUniswapV3PoolState</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol/interface.IUniswapV3Utils.html">IUniswapV3Utils</a></li></ol></li><li class="chapter-item expanded "><a href="../../../../contracts/e721-farms/uniswapV3/tests/index.html" class="active">❱ tests</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/tests/ISwapRouter.sol/interface.ISwapRouter.html">ISwapRouter</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/tests/UniswapV3Test.sol/contract.UniswapV3Test.html">UniswapV3Test</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityDeployer.sol/contract.UniV3ActiveLiquidityDeployer.html">UniV3ActiveLiquidityDeployer</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityFarm.sol/contract.UniV3ActiveLiquidityFarm.html">UniV3ActiveLiquidityFarm</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol/struct.UniswapPoolData.html">UniswapPoolData</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol/struct.InitializeInput.html">InitializeInput</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3Farm.sol/contract.UniV3Farm.html">UniV3Farm</a></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol/contract.UniV3FarmDeployer.html">UniV3FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/e721-farms/E721Farm.sol/abstract.E721Farm.html">E721Farm</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/features/index.html">❱ features</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/features/ClaimableFee.sol/abstract.ClaimableFee.html">ClaimableFee</a></li><li class="chapter-item "><a href="../../../../contracts/features/ExpirableFarm.sol/abstract.ExpirableFarm.html">ExpirableFarm</a></li><li class="chapter-item "><a href="../../../../contracts/features/OperableDeposit.sol/abstract.OperableDeposit.html">OperableDeposit</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/interfaces/DataTypes.sol/struct.RewardTokenData.html">RewardTokenData</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/DataTypes.sol/struct.RewardFund.html">RewardFund</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/DataTypes.sol/struct.Subscription.html">Subscription</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/DataTypes.sol/struct.Deposit.html">Deposit</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/DataTypes.sol/struct.RewardData.html">RewardData</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/IFarm.sol/interface.IFarm.html">IFarm</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/IFarmRegistry.sol/interface.IFarmRegistry.html">IFarmRegistry</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/IOracle.sol/interface.IOracle.html">IOracle</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/IRewarder.sol/interface.IRewarder.html">IRewarder</a></li><li class="chapter-item "><a href="../../../../contracts/interfaces/IRewarderFactory.sol/interface.IRewarderFactory.html">IRewarderFactory</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/rewarder/index.html">❱ rewarder</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/rewarder/Rewarder.sol/contract.Rewarder.html">Rewarder</a></li><li class="chapter-item "><a href="../../../../contracts/rewarder/RewarderFactory.sol/contract.RewarderFactory.html">RewarderFactory</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/utils/index.html">❱ utils</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../../contracts/utils/TokenUtils.sol/library.TokenUtils.html">TokenUtils</a></li></ol></li><li class="chapter-item "><a href="../../../../contracts/Farm.sol/abstract.Farm.html">Farm</a></li><li class="chapter-item "><a href="../../../../contracts/FarmDeployer.sol/abstract.FarmDeployer.html">FarmDeployer</a></li><li class="chapter-item "><a href="../../../../contracts/FarmRegistry.sol/contract.FarmRegistry.html">FarmRegistry</a></li><li class="chapter-item "><a href="../../../../contracts/FarmStorage.sol/abstract.FarmStorage.html">FarmStorage</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/Sperax/Demeter-Protocol" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="contents"><a class="header" href="#contents">Contents</a></h1>
+<ul>
+<li><a href="ISwapRouter.sol/interface.ISwapRouter.html">ISwapRouter</a></li>
+<li><a href="UniswapV3Test.sol/contract.UniswapV3Test.html">UniswapV3Test</a></li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol/interface.IUniswapV3Utils.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../../contracts/e721-farms/uniswapV3/tests/ISwapRouter.sol/interface.ISwapRouter.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../../contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol/interface.IUniswapV3Utils.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../../contracts/e721-farms/uniswapV3/tests/ISwapRouter.sol/interface.ISwapRouter.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../../elasticlunr.min.js"></script>
+        <script src="../../../../mark.min.js"></script>
+        <script src="../../../../searcher.js"></script>
+
+        <script src="../../../../clipboard.min.js"></script>
+        <script src="../../../../highlight.js"></script>
+        <script src="../../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../../solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>

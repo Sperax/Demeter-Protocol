@@ -1,0 +1,301 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Home</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="book.css">
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="index.html" class="active">Home</a></li><li class="chapter-item affix "><li class="part-title">contracts</li><li class="chapter-item "><a href="contracts/e20-farms/index.html">❱ e20-farms</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e20-farms/balancerV2/index.html">❱ balancerV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e20-farms/balancerV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e20-farms/balancerV2/interfaces/IBalancerV2Vault.sol/interface.IBalancerV2Vault.html">IBalancerV2Vault</a></li></ol></li><li class="chapter-item "><a href="contracts/e20-farms/balancerV2/BalancerV2Farm.sol/contract.BalancerV2Farm.html">BalancerV2Farm</a></li><li class="chapter-item "><a href="contracts/e20-farms/balancerV2/BalancerV2FarmDeployer.sol/contract.BalancerV2FarmDeployer.html">BalancerV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="contracts/e20-farms/uniswapV2/index.html">❱ uniswapV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e20-farms/uniswapV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e20-farms/uniswapV2/interfaces/IUniswapV2Factory.sol/interface.IUniswapV2Factory.html">IUniswapV2Factory</a></li></ol></li><li class="chapter-item "><a href="contracts/e20-farms/uniswapV2/UniV2Farm.sol/contract.UniV2Farm.html">UniV2Farm</a></li><li class="chapter-item "><a href="contracts/e20-farms/uniswapV2/UniV2FarmDeployer.sol/contract.UniV2FarmDeployer.html">UniV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="contracts/e20-farms/E20Farm.sol/abstract.E20Farm.html">E20Farm</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/index.html">❱ e721-farms</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/index.html">❱ camelotV2</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTPoolFactory.html">INFTPoolFactory</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IPair.html">IPair</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTPool.html">INFTPool</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.ICamelotV2Factory.html">ICamelotV2Factory</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.INFTHandler.html">INFTHandler</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IPositionHelper.html">IPositionHelper</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/interfaces/ICamelotV2.sol/interface.IRouter.html">IRouter</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/CamelotV2Farm.sol/contract.CamelotV2Farm.html">CamelotV2Farm</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV2/CamelotV2FarmDeployer.sol/contract.CamelotV2FarmDeployer.html">CamelotV2FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/index.html">❱ camelotV3</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.INFPM.html">INFPM</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3Factory.html">ICamelotV3Factory</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3TickSpacing.html">ICamelotV3TickSpacing</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3.sol/interface.ICamelotV3PoolState.html">ICamelotV3PoolState</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol/struct.Position.html">Position</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3NonfungiblePositionManagerUtils.sol/interface.ICamelotV3NFPMUtils.html">ICamelotV3NFPMUtils</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/interfaces/ICamelotV3Utils.sol/interface.ICamelotV3Utils.html">ICamelotV3Utils</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/CamelotV3Farm.sol/struct.CamelotPoolData.html">CamelotPoolData</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/CamelotV3Farm.sol/struct.InitializeInput.html">InitializeInput</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/CamelotV3Farm.sol/contract.CamelotV3Farm.html">CamelotV3Farm</a></li><li class="chapter-item "><a href="contracts/e721-farms/camelotV3/CamelotV3FarmDeployer.sol/contract.CamelotV3FarmDeployer.html">CamelotV3FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/index.html">❱ uniswapV3</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol/struct.Position.html">Position</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/INonfungiblePositionManagerUtils.sol/interface.INFPMUtils.html">INFPMUtils</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IPoolInitializer.html">IPoolInitializer</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.INFPM.html">INFPM</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3Factory.html">IUniswapV3Factory</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3TickSpacing.html">IUniswapV3TickSpacing</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3PoolDerivedState.html">IUniswapV3PoolDerivedState</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3.sol/interface.IUniswapV3PoolState.html">IUniswapV3PoolState</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/interfaces/IUniswapV3Utils.sol/interface.IUniswapV3Utils.html">IUniswapV3Utils</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/tests/index.html">❱ tests</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/tests/ISwapRouter.sol/interface.ISwapRouter.html">ISwapRouter</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/tests/UniswapV3Test.sol/contract.UniswapV3Test.html">UniswapV3Test</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityDeployer.sol/contract.UniV3ActiveLiquidityDeployer.html">UniV3ActiveLiquidityDeployer</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3ActiveLiquidityFarm.sol/contract.UniV3ActiveLiquidityFarm.html">UniV3ActiveLiquidityFarm</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3Farm.sol/struct.UniswapPoolData.html">UniswapPoolData</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3Farm.sol/struct.InitializeInput.html">InitializeInput</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3Farm.sol/contract.UniV3Farm.html">UniV3Farm</a></li><li class="chapter-item "><a href="contracts/e721-farms/uniswapV3/UniV3FarmDeployer.sol/contract.UniV3FarmDeployer.html">UniV3FarmDeployer</a></li></ol></li><li class="chapter-item "><a href="contracts/e721-farms/E721Farm.sol/abstract.E721Farm.html">E721Farm</a></li></ol></li><li class="chapter-item "><a href="contracts/features/index.html">❱ features</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/features/ClaimableFee.sol/abstract.ClaimableFee.html">ClaimableFee</a></li><li class="chapter-item "><a href="contracts/features/ExpirableFarm.sol/abstract.ExpirableFarm.html">ExpirableFarm</a></li><li class="chapter-item "><a href="contracts/features/OperableDeposit.sol/abstract.OperableDeposit.html">OperableDeposit</a></li></ol></li><li class="chapter-item "><a href="contracts/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/interfaces/DataTypes.sol/struct.RewardTokenData.html">RewardTokenData</a></li><li class="chapter-item "><a href="contracts/interfaces/DataTypes.sol/struct.RewardFund.html">RewardFund</a></li><li class="chapter-item "><a href="contracts/interfaces/DataTypes.sol/struct.Subscription.html">Subscription</a></li><li class="chapter-item "><a href="contracts/interfaces/DataTypes.sol/struct.Deposit.html">Deposit</a></li><li class="chapter-item "><a href="contracts/interfaces/DataTypes.sol/struct.RewardData.html">RewardData</a></li><li class="chapter-item "><a href="contracts/interfaces/IFarm.sol/interface.IFarm.html">IFarm</a></li><li class="chapter-item "><a href="contracts/interfaces/IFarmRegistry.sol/interface.IFarmRegistry.html">IFarmRegistry</a></li><li class="chapter-item "><a href="contracts/interfaces/IOracle.sol/interface.IOracle.html">IOracle</a></li><li class="chapter-item "><a href="contracts/interfaces/IRewarder.sol/interface.IRewarder.html">IRewarder</a></li><li class="chapter-item "><a href="contracts/interfaces/IRewarderFactory.sol/interface.IRewarderFactory.html">IRewarderFactory</a></li></ol></li><li class="chapter-item "><a href="contracts/rewarder/index.html">❱ rewarder</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/rewarder/Rewarder.sol/contract.Rewarder.html">Rewarder</a></li><li class="chapter-item "><a href="contracts/rewarder/RewarderFactory.sol/contract.RewarderFactory.html">RewarderFactory</a></li></ol></li><li class="chapter-item "><a href="contracts/utils/index.html">❱ utils</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="contracts/utils/TokenUtils.sol/library.TokenUtils.html">TokenUtils</a></li></ol></li><li class="chapter-item "><a href="contracts/Farm.sol/abstract.Farm.html">Farm</a></li><li class="chapter-item "><a href="contracts/FarmDeployer.sol/abstract.FarmDeployer.html">FarmDeployer</a></li><li class="chapter-item "><a href="contracts/FarmRegistry.sol/contract.FarmRegistry.html">FarmRegistry</a></li><li class="chapter-item "><a href="contracts/FarmStorage.sol/abstract.FarmStorage.html">FarmStorage</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title"></h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/Sperax/Demeter-Protocol" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="demeter-protocol"><a class="header" href="#demeter-protocol"><a href="https://demeter.sperax.io/">Demeter-Protocol</a></a></h1>
+<p><img src="https://sperax.io/assets/working.88f515ef.png" alt="plot" /></p>
+<p>Works on Arbitrum Uniswap V3 and Camelot V2 <br />
+Demeter protocol is a protocol for DAOs to launch and manage decentralized exchange liquidity - without needing to know how to code. Demeter gives users the power to launch incentivized liquidity pools on Uniswap V3 and Camelot V2. Future versions will support custom liquidity shapes on major DEXs such as Balancer, Saddle, Sushiswap or anything veSPA holders prefer. Demeter is launched on Arbitrum and will be expanded to Optimism, Polygon and Ethereum soon. Additional blockchains will be added in future versions.</p>
+<h2 id="contributing"><a class="header" href="#contributing">Contributing</a></h2>
+<p>Demeter is now open source and we are looking forward for your contributions!</p>
+<p>If you’re interested in contributing please see our <a href="./CONTRIBUTING.html">contribution guidelines</a>.</p>
+<h2 id="about-demeter"><a class="header" href="#about-demeter">About Demeter</a></h2>
+<p>Demeter automates the fundamental aspects of launching and managing decentralized exchange liquidity for the DAOs native token:</p>
+<ul>
+<li><strong>Engineering support to launch and manage the farm</strong> - The Audited Demeter Farm Factory contract will generate the pool and farm contracts for the Demeter user.</li>
+<li><strong>Marketing support to make the community aware of the new farm</strong> - Protocols that launch their farm through Demeter benefit from being whitelisted on the Demeter active farms dashboard. This exclusive list features all of the farms that are actively distributing rewards that were deployed with Demeter. Farmers will regularly look to this dashboard for new projects and become users of these protocols.</li>
+</ul>
+<h3 id="launching-demeter-farm"><a class="header" href="#launching-demeter-farm">Launching Demeter Farm</a></h3>
+<ol>
+<li>Approve fee token to spend</li>
+<li>Input pool parameters and farm parameters and execute a transaction to create farm and pay the farm creation fee
+<ol>
+<li>If pool does not exist then the transaction reverts.</li>
+<li>If the user does not have enough fee tokens for fee payment then the transaction reverts. The fee is 100 USDs on Arbitrum.</li>
+</ol>
+</li>
+<li>After creation of the farm contract, reward token managers can update reward related parameters.</li>
+<li>After creation of the farm contract, the farm admin can manage some attributes of the farm like start date, cooldown period, close/pause farm etc.</li>
+</ol>
+<h3 id="farm-parameters"><a class="header" href="#farm-parameters">Farm Parameters</a></h3>
+<ol>
+<li>Farm admin: It is the address that will have admin control on the farm. It can be the same as the deployer’s address or any other desired address which will be used to manage the farm.</li>
+<li>Price range for the LP</li>
+<li>Reward tokens
+<ul>
+<li>Token addresses</li>
+<li>Token address managers; Each token will have its own token manager</li>
+<li>Reward tokens have to be added at the time of farm creation and cant be added after the farm is created. Maximum 4 reward tokens are possible for a farm. SPA is added as a default reward token for       farms on Arbitrum and Ethereum networks. So for these networks, 3 additional reward tokens can be added by the farm creator.</li>
+</ul>
+</li>
+<li>Cooldown Period for Locked Liquidity - It is the number of days users have to wait after initiating cooldown before they can unstake from a locked position. Only whole numbers are allowed for this       parameter.
+<ul>
+<li>If Cooldown Period = 0, then the farm only allows creation of unlocked positions. Unlocked positions can be unstaked anytime.</li>
+<li>If Cooldown Period &gt; =1, the farm will allow creation of both locked and unlocked positions. For unstaking a locked position, users have to initiate cooldown and wait for cooldown period before
+unstaking. Farm</li>
+</ul>
+</li>
+<li>Start date time stamp - Reward emission starts from this date. This date can be changed by the farm admin using admin functions. However date change is not allowed after the farm starts.
+The farms start accepting liquidity immediately after the creation of the farm contract. However, the reward accrual starts from the farm start date time stamp.</li>
+</ol>
+<h3 id="fee"><a class="header" href="#fee">Fee</a></h3>
+<p>Demeter will charge a flat $100 fee to launch the farm. The fee collected belongs to the SPA stakers and can be transferred directly to the wallet address where all Sperax protocol fees are collected. Fees have to be paid in USDs on Arbitrum in the beginning, more payment methods can be added in future. Fee amount and fee token can be changed in future through governance.</p>
+<h3 id="farm-management"><a class="header" href="#farm-management">Farm Management</a></h3>
+<p>No one can make changes to the farm contract once deployed. Farm admins can do the following:</p>
+<ol>
+<li>Transfer farm ownership to another address</li>
+<li>Change start date of the farm - Farm will emit rewards from this date. The date can be changed after farm creation. However date change is not allowed after the farm starts.</li>
+<li>Update cooldown period of the locked positions</li>
+<li>Pause or Unpause the farm
+<ul>
+<li><strong>Pause the farm</strong> - All reward distributions are paused, LPs do not earn any rewards during this period. Withdrawals are allowed (including lockup LPs) and users can also claim previously accrued rewards. Admin/managers can make changes to the distribution rates and the other parameters when the farm is paused.</li>
+<li><strong>Unpause the farm</strong> - Resume the reward distribution. The reward distribution rate remains the same as set by the reward managers.</li>
+</ul>
+</li>
+<li>Close the farm - Once the farm is closed, all liquidity providers including lockup users can now unstake their liquidity pool tokens and claim the accrued rewards from the farm</li>
+</ol>
+<h3 id="reward-management"><a class="header" href="#reward-management">Reward Management</a></h3>
+<p>Each reward token will be assigned a reward token manager. Farm admin cannot update the reward token manager once the farms are deployed. Reward token managers can do the following:</p>
+<ol>
+<li>Add reward token balance</li>
+<li>Update reward distribution rate per second for each token. Only future distribution rates can be affected through this. Reward distribution can be paused by setting the rate to 0. These actions can be done: For all liquidity providers For lockup liquidity providers (If cooldown period is greater than 0)</li>
+<li>Withdraw reward tokens (Any rewards already accrued to LPs cannot be removed)</li>
+<li>Transfer reward token management to another address</li>
+</ol>
+<h3 id="notes"><a class="header" href="#notes">Notes</a></h3>
+<ul>
+<li>Protocols can call functions through non-EOA addresses and manage the farm. This is for multi-sigs or DAO’s to manage the pool and farm.</li>
+<li>SPA is added as a default reward token and protocols do not have the power to add or update the token reward manager for the SPA token. And the <a href="https://app-v2.sperax.io/gauge">Sperax-Gauge</a> acts as the default token manager for SPA.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+                            <a rel="next prefetch" href="contracts/e20-farms/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+                    <a rel="next prefetch" href="contracts/e20-farms/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>
