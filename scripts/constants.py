@@ -158,7 +158,6 @@ deployment_config = {
                     func='transferOwnership',
                     transact=True,
                     args={
-                        #0x12DBb60bAd909e6d9139aBd61D0c9AA11eB49D51
                         'new_owner':
                             '0x6d5240f086637fb408c7F727010A10cf57D51B62'
                     }
@@ -258,16 +257,6 @@ deployment_config = {
                 'fee_amount': 100e18, # 100 USDs
                 'extension_fee_per_day': 1e18 # 1 USDs
             }
-            # post_deployment_steps=[
-            #     Step(
-            #         func='transferOwnership',
-            #         transact=True,
-            #         args={
-            #             'new_owner':
-            #                 '0x6d5240f086637fb408c7F727010A10cf57D51B62'
-            #         }
-            #     ),
-            # ]
         )
     ),
     'RewarderFactory': Deployment_data(
