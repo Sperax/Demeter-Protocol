@@ -32,3 +32,4 @@ def main():
     
     camelotV3Deployer = Contract.from_abi('CamelotV3Deployer', '0x212208daF12D7612e65fb39eE9a07172b08226B8', CamelotV3FarmDeployer.abi)
     
+    camelotV3Farm = Contract.from_abi('CamelotV3Farm', '0xadbcc455c700ac6ec6a8b692e81996cfefdf56b7', CamelotV3Farm.abi)    

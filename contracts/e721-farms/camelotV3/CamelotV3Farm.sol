@@ -217,8 +217,6 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ClaimableFee {
         });
     }
 
-    // --------------------- Public and overriding Functions ---------------------
-
     /// @notice Claim pool fee implementation from `ClaimableFee` feature.
     /// @param _depositId Deposit ID of the deposit in the farm.
     function _claimPoolFee(uint256 _depositId)
