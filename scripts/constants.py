@@ -94,37 +94,6 @@ class Create_Farm_data():
 
 
 deployment_config = {
-    'FarmFactory_v1': Deployment_data(
-        contract=FarmRegistry,
-        config=Deployment_config(
-            upgradeable=True,
-            deployment_params={
-                'fee_receiver': '0x4F987B24bD2194a574bB3F57b4e66B7f7eD36196',
-                'fee_token': '0xD74f5255D557944cf7Dd0E45FF521520002D5748',
-                'fee_amount': 500e18
-            },
-            post_deployment_steps=[
-                Step(
-                    func='transferOwnership',
-                    transact=True,
-                    args={
-                        'new_owner':
-                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
-                    }
-                ),
-                # Transfer Ownership for proxyAdmin
-                # Step(
-                #     contract=ProxyAdmin
-                #     transact=True,
-                #     func='transferOwnership',
-                #     args={
-                #         'new_owner':
-                #             '0xEeE35407BC8eAF4D82A7CD4876f87dD0De2f07B8'
-                #     }
-                # )
-            ]
-        )
-    ),
     'UniV3FarmDeployer_v3': Deployment_data(
         contract=UniV3FarmDeployer,
         config=Deployment_config(
@@ -158,7 +127,6 @@ deployment_config = {
                     func='transferOwnership',
                     transact=True,
                     args={
-                        #0x12DBb60bAd909e6d9139aBd61D0c9AA11eB49D51
                         'new_owner':
                             '0x6d5240f086637fb408c7F727010A10cf57D51B62'
                     }
