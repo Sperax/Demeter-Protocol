@@ -60,10 +60,12 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _disableInitializers();
     }
 
+    /// @inheritdoc IRewarder
     function initialize(address _rwdToken, address _oracle, address _admin) external initializer {
         _initialize(_rwdToken, _oracle, _admin, msg.sender);
     }
 
+    /// @inheritdoc IRewarder
     function calibrateReward(address _farm) external nonReentrant returns (uint256 rewardsToSend) {
         _isConfigured(_farm);
         if (calibrationRestricted[_farm] && msg.sender != owner()) {
@@ -72,16 +74,19 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         return _calibrateReward(_farm);
     }
 
+    /// @inheritdoc IRewarder
     function updateTokenManagerOfFarm(address _farm, address _newManager) external onlyOwner {
         _validateNonZeroAddr(_farm);
         IFarm(_farm).updateRewardData(REWARD_TOKEN, _newManager);
     }
 
+    /// @inheritdoc IRewarder
     function recoverRewardFundsOfFarm(address _farm, uint256 _amount) external onlyOwner {
         _validateNonZeroAddr(_farm);
         IFarm(_farm).recoverRewardFunds(REWARD_TOKEN, _amount);
     }
 
+    /// @inheritdoc IRewarder
     function updateAPR(address _farm, uint256 _apr) external onlyOwner nonReentrant {
         _isConfigured(_farm);
         farmRewardConfigs[_farm].apr = _apr;
@@ -89,11 +94,13 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _calibrateReward(_farm);
     }
 
+    /// @inheritdoc IRewarder
     function toggleCalibrationRestriction(address _farm) external onlyOwner {
         calibrationRestricted[_farm] = !calibrationRestricted[_farm];
         emit CalibrationRestrictionToggled(_farm);
     }
 
+    /// @inheritdoc IRewarder
     function recoverERC20(address _token, uint256 _amount) external onlyOwner {
         if (IERC20(_token).balanceOf(address(this)) == 0) {
             revert ZeroAmount();
@@ -101,15 +108,18 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 
+    /// @inheritdoc IRewarder
     function getTokenAmounts(address _farm) external view returns (address[] memory, uint256[] memory) {
         return _getTokenAmounts(_farm);
     }
 
+    /// @inheritdoc IRewarder
     function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
         _isConfigured(_farm);
         return farmRewardConfigs[_farm];
     }
 
+    /// @inheritdoc IRewarder
     function rewardsEndTime(address _farm) external view returns (uint256 rewardsEndingOn) {
         uint256 farmBalance = IFarm(_farm).getRewardBalance(REWARD_TOKEN);
         uint256 rewarderBalance = IERC20(REWARD_TOKEN).balanceOf(address(this));
@@ -117,6 +127,7 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
             + ((farmBalance / farmRewardConfigs[_farm].rewardRate) + (rewarderBalance / totalRewardRate));
     }
 
+    /// @inheritdoc IRewarder
     function updateRewardConfig(address _farm, FarmRewardConfigInput memory _rewardConfig)
         public
         onlyOwner

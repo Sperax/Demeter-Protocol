@@ -52,10 +52,10 @@ interface IFarm {
     error WithdrawTooSoon();
 
     /// @notice Function to be called to withdraw deposit.
-    /// @param _depositId Id of the deposit.
+    /// @param _depositId The id of the deposit.
     function withdraw(uint256 _depositId) external;
 
-    /// @notice Claim rewards for the user.
+    /// @notice A function to be called by the depositor to claim rewards.
     /// @param _depositId The id of the deposit.
     function claimRewards(uint256 _depositId) external;
 
@@ -79,16 +79,17 @@ interface IFarm {
     /// @param _isPaused Desired state of the farm (true to pause the farm).
     function farmPauseSwitch(bool _isPaused) external;
 
-    /// @notice Recover rewardToken from the farm in case of EMERGENCY.
-    /// @dev Shuts down the farm completely.
+    /// @notice A function to explicitly close the farm.
+    /// @dev Recovers remaining non accrued rewards.
+    /// @dev Sets reward rate to 0 and shuts down the farm completely.
     function closeFarm() external;
 
-    /// @notice Recover erc20 tokens other than the reward Tokens.
+    /// @notice Recover erc20 tokens other than the reward tokens.
     /// @param _token Address of token to be recovered.
     function recoverERC20(address _token) external;
 
     // --------------------- Token Manager Functions ---------------------
-    /// @notice Get the remaining balance out of the farm.
+    /// @notice Get the remaining reward balance out of the farm.
     /// @param _rwdToken The reward token's address.
     /// @param _amount The amount of the reward tokens to be withdrawn.
     /// @dev Function recovers minOf(_amount, rewardsLeft).
@@ -108,10 +109,10 @@ interface IFarm {
     /// @notice Function to update the FarmRewardData for all funds.
     function updateFarmRewardData() external;
 
-    /// @notice Claim rewards for the user.
-    /// @param _account The user's address.
+    /// @notice Claim rewards and send it to another account.
+    /// @param _account To receive the rewards.
     /// @param _depositId The id of the deposit.
-    /// @dev Anyone can call this function to claim rewards for the user.
+    /// @dev Only the depositor can call this function.
     function claimRewardsTo(address _account, uint256 _depositId) external;
 
     /// @notice Update the farm start time.
@@ -160,7 +161,8 @@ interface IFarm {
     function getRewardTokens() external view returns (address[] memory);
 
     /// @notice Function to be called by Demeter Rewarder to get tokens and amounts associated with the farm's liquidity.
-    /// @return The tokens and amounts associated with the farm's liquidity.
+    /// @return Tokens associated with the farm's pool.
+    /// @return Amounts associated with the farm's liquidity.
     /// @dev This function should be overridden to add the respective logic.
     function getTokenAmounts() external view returns (address[] memory, uint256[] memory);
 
@@ -183,6 +185,7 @@ interface IFarm {
     function getRewardBalance(address _rwdToken) external view returns (uint256);
 
     /// @notice Get the reward fund details.
+    /// @return The available reward funds' details for all the reward funds.
     function getRewardFunds() external view returns (RewardFund[] memory);
 
     /// @notice Get the reward details for specified reward token.

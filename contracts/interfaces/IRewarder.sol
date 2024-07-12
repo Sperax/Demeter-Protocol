@@ -49,20 +49,22 @@ interface IRewarder {
     /// @param _admin Admin/ deployer of this contract.
     function initialize(address _rwdToken, address _oracle, address _admin) external;
 
-    /// @notice Function to calibrate rewards for a reward token for a farm.
+    /// @notice Function to calibrate rewards for this rewarder's reward token for a farm.
     /// @param _farm Address of the farm for which the rewards are to be calibrated.
     /// @return rewardsToSend Rewards which are sent to the farm.
-    /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards.
+    /// @dev Calculates based on APR, caps based on maxRewardPerSec or balance rewards, sends and sets the rewardRate in the farm.
     function calibrateReward(address _farm) external returns (uint256 rewardsToSend);
 
     /// @notice Function to update the token manager's address in the farm.
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerOfFarm(address _farm, address _newManager) external;
+
     /// @notice Function to recover reward funds from the farm.
     /// @param _farm Farm's address from which reward funds is to be recovered.
     /// @param _amount Amount which is to be recovered.
     function recoverRewardFundsOfFarm(address _farm, uint256 _amount) external;
+
     /// @notice Function to update APR.
     /// @param _farm Address of the farm.
     /// @param _apr APR in 1e8 precision.

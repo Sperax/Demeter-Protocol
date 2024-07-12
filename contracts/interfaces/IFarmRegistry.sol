@@ -32,10 +32,12 @@ interface IFarmRegistry {
 
     /// @notice Register a new farm deployer.
     /// @param  _deployer Address of deployer to be registered.
+    /// @dev Only owner can call this function.
     function registerFarmDeployer(address _deployer) external;
 
     /// @notice Remove an existing deployer from registry.
-    /// @param _id of the deployer to be removed (0 index based).
+    /// @param _id ID of the deployer to be removed (0 index based).
+    /// @dev Only owner can call this function.
     function removeDeployer(uint16 _id) external;
 
     /// @notice Function to add/remove privileged User.
@@ -62,8 +64,11 @@ interface IFarmRegistry {
 
     /// @notice Get all the fee parameters for creating farm.
     /// @param _user The account creating the farm.
-    /// @return Returns FeeReceiver, feeToken address, feeTokenAmt and extensionFeePerDay.
-    /// @dev It returns fee amount as 0 if deployer account is privileged.
+    /// @return Receiver of the fees.
+    /// @return Token in which fee is to be paid.
+    /// @return Amount of fees to be paid for creation of farm.
+    /// @return Extension fee per day in case of extending a farm.
+    /// @dev It returns fee amount and extension fee as 0 if _user is privileged.
     function getFeeParams(address _user) external view returns (address, address, uint256, uint256);
 
     // --------------------- Public Variable(functions) ---------------------

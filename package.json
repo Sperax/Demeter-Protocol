@@ -7,9 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "install-pip-packages": "pip install -r pip-requirements.txt",
-    "install-husky": "husky install",
-    "prepare": "npm-run-all install-husky install-pip-packages",
+    "prepare": "husky install",
     "lint-contract": "solhint 'contracts/**/*.sol' -f table",
     "lint-test-contract": "solhint 'test/**/*.sol' -f table",
     "prettier": "forge fmt",
@@ -30,7 +28,6 @@
   },
   "devDependencies": {
     "husky": "^8.0.3",
-    "npm-run-all": "^4.1.5",
     "solhint": "^3.6.2"
   },
   "repository": {

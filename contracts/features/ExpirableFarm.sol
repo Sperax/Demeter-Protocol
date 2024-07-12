@@ -99,6 +99,8 @@ abstract contract ExpirableFarm is Farm {
     }
 
     /// @notice Setup the farm data for farm expiry.
+    /// @param _farmStartTime Start time of the farm.
+    /// @param _farmRegistry Address of the farm registry.
     function _setupFarmExpiry(uint256 _farmStartTime, address _farmRegistry) internal {
         _validateNonZeroAddr(_farmRegistry);
         farmEndTime = _farmStartTime + MIN_EXTENSION * 1 days;
@@ -107,7 +109,7 @@ abstract contract ExpirableFarm is Farm {
 
     // --------------------- Private  Functions ---------------------
 
-    /// @notice Collect farm extension fee and transfer it to feeReceiver.
+    /// @notice Collects farm extension fee and transfers it to feeReceiver.
     /// @dev Function fetches all the fee params from farmRegistry.
     /// @param _extensionDays The number of days to extend the farm. Example: 150 means 150 days.
     function _collectExtensionFee(uint256 _extensionDays) private {
