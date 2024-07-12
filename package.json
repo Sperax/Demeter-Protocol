@@ -7,8 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "install-husky": "husky install",
-    "prepare": "install-husky",
+    "prepare": "husky install",
     "lint-contract": "solhint 'contracts/**/*.sol' -f table",
     "lint-test-contract": "solhint 'test/**/*.sol' -f table",
     "prettier": "forge fmt",
