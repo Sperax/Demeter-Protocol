@@ -303,6 +303,7 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 _assetsLen = _assets.length;
         uint256 _baseTokensLen = _baseTokens.length;
         bool hasBaseTokens;
+        delete farmRewardConfigs[_farm].baseAssetIndexes;
         for (uint8 i; i < _baseTokensLen; ++i) {
             hasBaseTokens = false;
             for (uint8 j; j < _assetsLen; ++j) {
