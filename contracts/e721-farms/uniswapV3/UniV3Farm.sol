@@ -79,6 +79,7 @@ struct InitializeInput {
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V3 farm.
 contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee {
+    using TokenUtils for address;
     using SafeERC20 for IERC20;
 
     // UniswapV3 params.
@@ -212,8 +213,7 @@ contract UniV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee {
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getUniV3TokenAmounts({
-            _uniPool: uniswapPool,
+        return uniswapPool.getUniV3TokenAmounts({
             _uniUtils: uniswapUtils,
             _tickLower: tickLowerAllowed,
             _tickUpper: tickUpperAllowed,

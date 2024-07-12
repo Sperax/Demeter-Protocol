@@ -1,0 +1,60 @@
+{
+    "proxy_addr": "0x45bC6B44107837E7aBB21E2CaCbe7612Fce222e0",
+    "impl_addr": "0x0935f0956667490fECE812564d7EC8a81Af6937d",
+    "proxy_admin": "0x537ebC190f1362E4E5a2448bFF67d08984593Ba1",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Implementation_deployment",
+            "tx_hash": "0x7b0a0932c66479c4c47e4cee938d0a768cfe46cb28340ebfdf42aadb1f7a135b",
+            "contract": "FarmRegistry",
+            "contract_addr": "0x0935f0956667490fECE812564d7EC8a81Af6937d",
+            "tx_func": "constructor",
+            "blocknumber": 228717494,
+            "gas_used": 1734844,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Proxy_admin_deployment",
+            "tx_hash": "0x89f58945894ed6b13d0c473f670ab72101af91fc5885e960e17e508a266f9c3d",
+            "contract": "ProxyAdmin",
+            "contract_addr": "0x537ebC190f1362E4E5a2448bFF67d08984593Ba1",
+            "tx_func": "constructor",
+            "blocknumber": 228717537,
+            "gas_used": 723356,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Proxy_deployment",
+            "tx_hash": "0x6bc3cf9664da3f8304f415353d5fd3ae0d9c5bbfee1a41d6ca3e759d3334ac15",
+            "contract": "TransparentUpgradeableProxy",
+            "contract_addr": "0x45bC6B44107837E7aBB21E2CaCbe7612Fce222e0",
+            "tx_func": "constructor",
+            "blocknumber": 228717563,
+            "gas_used": 1540224,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Proxy_initialization",
+            "tx_hash": "0x479255d7912a21896101becc8a2d27cf5a7a8e1e3613d297d8c465a28d17d9f3",
+            "contract": "TransparentUpgradeableProxy",
+            "contract_addr": null,
+            "tx_func": null,
+            "blocknumber": 228717584,
+            "gas_used": 261185,
+            "gas_limit": 40000000
+        }
+    ],
+    "config_name": "FarmRegistry",
+    "config": {
+        "deployment_params": {
+            "fee_receiver": "0xFbc0d3cA777722d234FE01dba94DeDeDb277AFe3",
+            "fee_token": "0xD74f5255D557944cf7Dd0E45FF521520002D5748",
+            "fee_amount": 1e+20,
+            "extension_fee_per_day": 1e+18
+        },
+        "post_deployment_steps": [],
+        "upgradeable": true,
+        "proxy_admin": null
+    }
+}

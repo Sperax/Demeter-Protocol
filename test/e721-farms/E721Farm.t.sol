@@ -89,19 +89,11 @@ abstract contract WithdrawAdditionalTest is E721FarmTest {
         E721Farm(lockupFarm).withdraw(depositId);
     }
 
-    function test_Withdraw_notClosedButExpired() public depositSetup(lockupFarm, true) useKnownActor(user) {
-        uint256 depositId = 1;
-        vm.warp(UniV3Farm(lockupFarm).farmEndTime() + 1);
-        vm.expectEmit(nfpm());
-        emit Transfer(lockupFarm, currentActor, E721Farm(lockupFarm).depositToTokenId(depositId));
-        E721Farm(lockupFarm).withdraw(depositId);
-    }
-
     function test_Withdraw_closedAndExpired() public depositSetup(lockupFarm, true) {
         uint256 depositId = 1;
         vm.startPrank(owner);
         IFarm(lockupFarm).closeFarm();
-        vm.warp(UniV3Farm(lockupFarm).farmEndTime() + 1);
+        vm.warp(block.timestamp + 1);
         vm.startPrank(user);
         vm.expectEmit(nfpm());
         emit Transfer(lockupFarm, currentActor, E721Farm(lockupFarm).depositToTokenId(depositId));

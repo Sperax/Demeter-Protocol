@@ -1,11 +1,14 @@
 from brownie import (
-    FarmFactory,
-    Demeter_UniV3FarmDeployer,
-    Demeter_UniV3Farm,
-    Demeter_CamelotFarm,
-    Demeter_CamelotFarm_Deployer,
-    Demeter_UniV2FarmDeployer,
-    Demeter_BalancerFarm_Deployer,
+    FarmRegistry,
+    UniV3FarmDeployer,
+    UniV3Farm,
+    CamelotV2Farm,
+    CamelotV2FarmDeployer,
+    UniV2FarmDeployer,
+    BalancerV2FarmDeployer,
+    RewarderFactory,
+    CamelotV3Farm,
+    CamelotV3FarmDeployer,
     chain,
 )
 
@@ -92,7 +95,7 @@ class Create_Farm_data():
 
 deployment_config = {
     'FarmFactory_v1': Deployment_data(
-        contract=FarmFactory,
+        contract=FarmRegistry,
         config=Deployment_config(
             upgradeable=True,
             deployment_params={
@@ -123,7 +126,7 @@ deployment_config = {
         )
     ),
     'UniV3FarmDeployer_v3': Deployment_data(
-        contract=Demeter_UniV3FarmDeployer,
+        contract=UniV3FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -142,7 +145,7 @@ deployment_config = {
         )
     ),
     'CamelotFarmDeployer_v1': Deployment_data(
-        contract=Demeter_CamelotFarm_Deployer,
+        contract=CamelotV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -162,9 +165,8 @@ deployment_config = {
             ]
         )
     ),
-
     'SushiSwapFarmDeployer_v1': Deployment_data(
-        contract=Demeter_UniV2FarmDeployer,
+        contract=UniV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -186,7 +188,7 @@ deployment_config = {
         )
     ),
     'TraderJoeFarmDeployer_v1': Deployment_data(
-        contract=Demeter_UniV2FarmDeployer,
+        contract=UniV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -208,7 +210,7 @@ deployment_config = {
         )
     ),
     'Demeter_UniV3Farm_implementation': Deployment_data(
-        contract=Demeter_UniV3Farm,
+        contract=UniV3Farm,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={},
@@ -222,7 +224,7 @@ deployment_config = {
         )
     ),
     'Demeter_BalancerFarmDeployer': Deployment_data(
-        contract=Demeter_BalancerFarm_Deployer,
+        contract=BalancerV2FarmDeployer,
         config=Deployment_config(
             upgradeable=False,
             deployment_params={
@@ -242,12 +244,85 @@ deployment_config = {
                 ),
             ]
         )
+    ),
+    
+    # Demeter V2 deployments 
+    'FarmRegistry': Deployment_data(
+        contract=FarmRegistry,
+        config=Deployment_config(
+            upgradeable=True,
+            deployment_params={
+                'fee_receiver': '0xFbc0d3cA777722d234FE01dba94DeDeDb277AFe3', # Buyback
+                'fee_token': '0xD74f5255D557944cf7Dd0E45FF521520002D5748', # USDs
+                'fee_amount': 100e18, # 100 USDs
+                'extension_fee_per_day': 1e18 # 1 USDs
+            }
+        )
+    ),
+    'RewarderFactory': Deployment_data(
+        contract=RewarderFactory,
+        config=Deployment_config(
+            upgradeable=False,
+            deployment_params={
+                'oracle': '0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50'
+            },
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
+                ),
+                Step(
+                    func='deployRewarder',
+                    transact=True,
+                    args={
+                        'reward_token':
+                            '0x912CE59144191C1204E64559FE8253a0e49E6548'
+                    }
+                ),
+                Step(
+                    func='deployRewarder',
+                    transact=True,
+                    args={
+                        'reward_token':
+                            '0x5575552988A3A80504bBaeB1311674fCFd40aD4B'
+                    }
+                ),
+            ]
+        )
+    ),
+    'CamelotV3FarmDeployer': Deployment_data(
+        contract=CamelotV3FarmDeployer,
+        config=Deployment_config(
+            upgradeable=False,
+            deployment_params={
+                'farm_registry': '0x45bC6B44107837E7aBB21E2CaCbe7612Fce222e0', # To be updated post registry's deployment
+                'farm_id': 'Demeter_CamelotV3_NonExpirable_Farm_v1',
+                'camelotv3_factory': '0x1a3c9B1d2F0529D97f2afC5136Cc23e58f1FD35B',
+                'camelotv3_nfpm': '0x00c7f3082833e796A5b3e4Bd59f6642FF44DCD15',
+                'camelotv3_utils': '0xA9d3B0B4D2cbC9D35463E7317ca95578e1805a45',
+                'camelotv3_nfpm_utils': '0xaB39C3d042BA31978087a4b946baBc8C80d868a4'
+            },
+            post_deployment_steps=[
+                Step(
+                    func='transferOwnership',
+                    transact=True,
+                    args={
+                        'new_owner':
+                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                    }
+                ),
+            ]
+        )
     )
 }
 
 upgrade_config = {
     'farm_factory_v2': Upgrade_data(
-        contract=FarmFactory,
+        contract=FarmRegistry,
         config=Upgrade_config(
             proxy_address='0xC4fb09E0CD212367642974F6bA81D8e23780A659',
             proxy_admin='0x474b9be3998Ab278b2846dB7C667497f16F83e0C'
@@ -257,8 +332,8 @@ upgrade_config = {
 
 farm_config = {
     'l2dao_usds_v1': Create_Farm_data(
-        contract=Demeter_UniV3Farm,
-        deployer_contract=Demeter_UniV3FarmDeployer,
+        contract=UniV3Farm,
+        deployer_contract=UniV3FarmDeployer,
         deployer_address='0xe9426fCF504D448CC2e39783f1D1111DC0d8E4E0',
         config=Farm_config(
             deployment_params={
@@ -284,8 +359,8 @@ farm_config = {
         )
     ),
     'usds_usdc_camelot_Farm': Create_Farm_data(
-        contract=Demeter_CamelotFarm,
-        deployer_contract=Demeter_CamelotFarm_Deployer,
+        contract=CamelotV2Farm,
+        deployer_contract=CamelotV2FarmDeployer,
         deployer_address='0x1a85c90cfEE9eD499C598a11ea56A8E5a16c307f',
         config=Farm_config(
             deployment_params={
@@ -300,4 +375,28 @@ farm_config = {
             }
         )
     ),
+    'arb_usdc_camelotV3_farm': Create_Farm_data(
+        contract=CamelotV3Farm,
+        deployer_contract=CamelotV3FarmDeployer,
+        deployer_address='0x212208daF12D7612e65fb39eE9a07172b08226B8',
+        config=Farm_config(
+            deployment_params={
+                'farm_admin': '0xAbf9a85022a8777f5c970a3324D98e0110550238',
+                'farm_start_time': 1720264107,
+                'cooldown_period': 0,
+                'pool_data': {
+                    'tokenA': '0x912CE59144191C1204E64559FE8253a0e49E6548',
+                    'tokenB': '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+                    'tickLowerAllowed': -280920,
+                    'tickUpperAllowed': -280900
+                },
+                'reward_token_data': [
+                    {
+                        'token': '0x5575552988A3A80504bBaeB1311674fCFd40aD4B',
+                        'tknManager': '0xAbf9a85022a8777f5c970a3324D98e0110550238'
+                    }
+                ]
+            }
+        )
+    )
 }

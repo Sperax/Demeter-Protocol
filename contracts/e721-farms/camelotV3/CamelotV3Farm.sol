@@ -27,7 +27,6 @@ pragma solidity 0.8.26;
 import {RewardTokenData} from "../../Farm.sol";
 import {Farm, E721Farm} from "../E721Farm.sol";
 import {ClaimableFee} from "./../../features/ClaimableFee.sol";
-import {ExpirableFarm} from "../../features/ExpirableFarm.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -76,7 +75,8 @@ struct InitializeInput {
 /// @title Camelot V3 farm.
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Camelot V3 farm.
-contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee {
+contract CamelotV3Farm is E721Farm, OperableDeposit, ClaimableFee {
+    using TokenUtils for address;
     using SafeERC20 for IERC20;
 
     // CamelotV3 params.
@@ -121,7 +121,6 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee
         camelotUtils = _input.camelotUtils;
         nfpmUtils = _input.nfpmUtils;
         _setupFarm(_input.farmId, _input.farmStartTime, _input.cooldownPeriod, _input.rwdTokenData);
-        _setupFarmExpiry(_input.farmStartTime, _input.farmRegistry);
     }
 
     /// @notice Allow user to increase liquidity for a deposit.
@@ -210,30 +209,12 @@ contract CamelotV3Farm is E721Farm, OperableDeposit, ExpirableFarm, ClaimableFee
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory, uint256[] memory) {
-        return TokenUtils.getCamelotV3TokenAmounts({
-            _camelotPool: camelotPool,
+        return camelotPool.getCamelotV3TokenAmounts({
             _camelotUtils: camelotUtils,
             _tickLower: tickLowerAllowed,
             _tickUpper: tickUpperAllowed,
             _liquidity: rewardFunds[COMMON_FUND_ID].totalLiquidity
         });
-    }
-
-    // --------------------- Public and overriding Functions ---------------------
-
-    /// @notice Update the farm start time.
-    /// @param _newStartTime The new farm start time.
-    /// @dev Calls ExpirableFarm's updateFarmStartTime function.
-    function updateFarmStartTime(uint256 _newStartTime) public override(Farm, ExpirableFarm) {
-        ExpirableFarm.updateFarmStartTime(_newStartTime);
-    }
-
-    /// @notice Returns if farm is open.
-    ///         Farm is open if it is not closed.
-    /// @return bool True if farm is open.
-    /// @dev Calls ExpirableFarm's isOpenFarm function.
-    function isFarmOpen() public view override(Farm, ExpirableFarm) returns (bool) {
-        return ExpirableFarm.isFarmOpen();
     }
 
     /// @notice Claim pool fee implementation from `ClaimableFee` feature.

@@ -33,6 +33,8 @@ import {ExpirableFarm} from "./../../features/ExpirableFarm.sol";
 /// @author Sperax Foundation.
 /// @notice This contract is the implementation of the Uniswap V2 farm.
 contract UniV2Farm is E20Farm, ExpirableFarm {
+    using TokenUtils for address;
+
     /// @notice Constructor.
     /// @param _farmId - ID of the farm.
     /// @param _farmStartTime - Farm start time.
@@ -63,7 +65,7 @@ contract UniV2Farm is E20Farm, ExpirableFarm {
     /// @return tokens An array of token addresses.
     /// @return amounts An array of token amounts.
     function getTokenAmounts() external view override returns (address[] memory tokens, uint256[] memory amounts) {
-        return TokenUtils.getUniV2TokenAmounts(farmToken, rewardFunds[COMMON_FUND_ID].totalLiquidity);
+        return farmToken.getUniV2TokenAmounts(rewardFunds[COMMON_FUND_ID].totalLiquidity);
     }
 
     /// @notice Update the farm start time.
