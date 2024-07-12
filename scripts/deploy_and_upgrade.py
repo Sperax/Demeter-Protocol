@@ -1,9 +1,9 @@
 from brownie import (
     Contract,
     network,
-    ProxyAdmin,
-    TransparentUpgradeableProxy,
-    accounts
+    config as BrownieConfig,
+    accounts, 
+    project
 )
 from .constants import (
     Create_Farm_data,
@@ -26,6 +26,9 @@ import click
 import json
 GAS_LIMIT = 40000000
 
+oz_project = project.load(BrownieConfig["dependencies"][0])
+ProxyAdmin = oz_project.ProxyAdmin
+TransparentUpgradeableProxy = oz_project.TransparentUpgradeableProxy
 
 def resolve_args(args, contract_obj, caller):
     """Resolves derived arguments
@@ -202,6 +205,7 @@ def deploy(configuration, deployer):
         if(proxy_admin is None):
             print('\nDeploying proxy admin contract')
             pa_deployment = ProxyAdmin.deploy(
+                deployer,
                 {'from': deployer, 'gas_limit': GAS_LIMIT}
             )
             tx_list.append(
@@ -310,7 +314,7 @@ def upgrade(configuration, deployer):
         if(flag == 'n'):
             admin = get_user('Admin account: ')
         proxy_admin = Contract.from_abi(
-            'PA',
+            'ProxyAdmin',
             conf.proxy_admin,
             ProxyAdmin.abi
         )
@@ -363,8 +367,10 @@ def create_farm(configuration, deployer):
     print(json.dumps(conf, default=lambda o: o.__dict__, indent=2))
     confirm('Are the above configurations correct?')
 
-    deployer_contract = config_data.deployer_contract.at(
-        config_data.deployer_address
+    deployer_contract = Contract.from_abi(
+        'Deployer_contract',
+        config_data.deployer_address,
+        config_data.deployer_contract.abi
     )
     deployment_data = {}
     tx_list = []

@@ -1,0 +1,27 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "compiler-version": [
+      "error",
+      "0.8.26"
+    ],
+    "ordering": "error",
+    "avoid-throw": "off",
+    "avoid-suicide": "error",
+    "avoid-sha3": "warn",
+    "not-rely-on-time": "off",
+    "no-console": "error",
+    "func-named-parameters": [
+      "warn",
+      4
+    ],
+    "func-visibility": [
+      "error",
+      {
+        "ignoreConstructors": true
+      }
+    ],
+    "one-contract-per-file": "off",
+    "contract-name-camelcase": "off"
+  }
+}
