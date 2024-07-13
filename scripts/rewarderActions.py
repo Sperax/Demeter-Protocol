@@ -47,6 +47,7 @@ def calibrateRewards(owner):
             tx = rewarders[j].calibrateReward(farm, {'from': owner})
             print(tx.info())
             farm.getRewardRates(rewarders[j].REWARD_TOKEN())
+    print('Successfully Calibrated', j, 'rewards for', i - 1, 'farms!')
 
 def updateFarmRewardConfig():
     return # to be implemented
