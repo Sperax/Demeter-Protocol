@@ -16,9 +16,8 @@ oz_project = project.load(BrownieConfig["dependencies"][4])
 ERC20 = oz_project.ERC20
 MAX_PERCENTAGE = 1e4
 MIN_PERCENTAGE = 1e2
-def main():
-    owner = get_user('Select deployer ')
 
+def calibrateRewards(owner):
     # Deploy all the ERC20 contracts
     arb = ERC20.at('0x912CE59144191C1204E64559FE8253a0e49E6548')
     usdc = ERC20.at('0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
@@ -38,6 +37,19 @@ def main():
     
     # camelotV3Deployer = Contract.from_abi('CamelotV3Deployer', '0x212208daF12D7612e65fb39eE9a07172b08226B8', CamelotV3FarmDeployer.abi)
 
+    farms = farmRegistry.getFarmList()
+    for i in range(1,8):
+        farm = Contract.from_abi("Farm", farms[i], CamelotV3Farm.abi)
+        for j in range(3):
+            print('*' * 50)
+            print('\n *****', i, j, '*****')
+            print(farm.getTokenAmounts())
+            tx = rewarders[j].calibrateReward(farm, {'from': owner})
+            print(tx.info())
+            farm.getRewardRates(rewarders[j].REWARD_TOKEN())
+
+def updateFarmRewardConfig():
+    return # to be implemented
     farmRewardConfigs = [
         ( # ARB
             5e9, # apr
@@ -64,13 +76,22 @@ def main():
             MIN_PERCENTAGE
         )
     ]
-    farms = farmRegistry.getFarmList()
-    for i in range(1,8):
-        farm = Contract.from_abi("Farm", farms[i], CamelotV3Farm.abi)
-        for j in range(3):
-            print('*' * 50)
-            print('\n *****', i, j, '*****')
-            print(farm.getTokenAmounts())
-            tx = rewarders[j].calibrateReward(farm, {'from': owner})
-            print(tx.info())
-            farm.getRewardRates(rewarders[j].REWARD_TOKEN())
+
+
+def main():
+    owner = get_user('Deployer account: ')
+    menu = '\nPlease select one of the following options: \n \
+    1. Calibrate Rewards \n \
+    2. Update farm reward config \n \
+    3. Exit \n \
+    -> '
+    while True:
+        choice = input(menu)
+        if choice == '1':
+            calibrateRewards(owner)
+        elif choice == '2':
+            updateFarmRewardConfig()
+        elif choice == '3':
+            break
+        else:
+            print('Please select a valid option')
