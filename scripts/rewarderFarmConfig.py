@@ -31,9 +31,9 @@ def main():
     # Base contracts
     farmRegistry = Contract.from_abi('FarmRegistry', '0x45bC6B44107837E7aBB21E2CaCbe7612Fce222e0', FarmRegistry.abi)
     # rewarderFactory = Contract.from_abi('RewarderFactory', '0x382B536873746b36faCBC0d45cDE17D122affB79', RewarderFactory.abi)
-    arbRewarder = Contract.from_abi('Rewarder', '0x9418678F11298e847F420BC8276BA1e459b51f01', Rewarder.abi)
-    xspaRewarder = Contract.from_abi('Rewarder', '0x373C14C1129fa815a1B1322622DDF7E6C2FB55b5', Rewarder.abi)
-    spaRewarder = Contract.from_abi('Rewarder', '0x3529D51de1c473cD78D439784825f40738f001FD', Rewarder.abi)
+    arbRewarder = Contract.from_abi('Rewarder', '0xB0e50AbaEACE0715D5b84A9769750D3E48c4509E', Rewarder.abi)
+    xspaRewarder = Contract.from_abi('Rewarder', '0x6bed024CBeCEcA3CEE0bb04a967857CF9554FEcB', Rewarder.abi)
+    spaRewarder = Contract.from_abi('Rewarder', '0xFB64f50d0BDE4595187632525eb6cfFB5D18B486', Rewarder.abi)
     rewarders = [arbRewarder, xspaRewarder, spaRewarder]
     
     # camelotV3Deployer = Contract.from_abi('CamelotV3Deployer', '0x212208daF12D7612e65fb39eE9a07172b08226B8', CamelotV3FarmDeployer.abi)
@@ -64,8 +64,13 @@ def main():
             MIN_PERCENTAGE
         )
     ]
-
     farms = farmRegistry.getFarmList()
     for i in range(1,8):
+        farm = Contract.from_abi("Farm", farms[i], CamelotV3Farm.abi)
         for j in range(3):
-            rewarders[j].updateRewardConfig(farms[i], farmRewardConfigs[j], {'from': owner})
+            print('*' * 50)
+            print('\n *****', i, j, '*****')
+            print(farm.getTokenAmounts())
+            tx = rewarders[j].calibrateReward(farm, {'from': owner})
+            print(tx.info())
+            farm.getRewardRates(rewarders[j].REWARD_TOKEN())
