@@ -81,6 +81,13 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IRewarder
+    function removeRewardConfig(address _farm) external onlyOwner {
+        _adjustGlobalRewardRate(farmRewardConfigs[_farm].rewardRate, 0);
+        delete calibrationRestricted[_farm];
+        delete farmRewardConfigs[_farm];
+    }
+
+    /// @inheritdoc IRewarder
     function recoverRewardFundsOfFarm(address _farm, uint256 _amount) external onlyOwner {
         _validateNonZeroAddr(_farm);
         IFarm(_farm).recoverRewardFunds(REWARD_TOKEN, _amount);
@@ -114,7 +121,7 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IRewarder
-    function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
+    function getRewardConfig(address _farm) external view returns (FarmRewardConfig memory) {
         _isConfigured(_farm);
         return farmRewardConfigs[_farm];
     }
@@ -133,8 +140,11 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         onlyOwner
         nonReentrant
     {
-        if (!_isValidFarm(_farm, _rewardConfig.baseTokens)) {
+        if (!_isValidFarm(_farm)) {
             revert InvalidFarm();
+        }
+        if (!_validateAndUpdateBaseTokens(_farm, _rewardConfig.baseTokens)) {
+            revert InvalidBaseTokens();
         }
         address oracle = IRewarderFactory(rewarderFactory).oracle();
         // validating new reward config.
@@ -181,16 +191,6 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /// @notice Function to check if the reward token of this contract is one of farm's reward token.
     /// @param _farm Address of the farm.
     /// @return If farm has one of the reward token as reward token of this contract.
-    function _hasRewardToken(address _farm) internal view virtual returns (bool) {
-        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
-        uint256 rwdTokensLen = rwdTokens.length;
-        for (uint8 i; i < rwdTokensLen; ++i) {
-            if (rwdTokens[i] == REWARD_TOKEN) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     /// @notice Validate address.
     /// @param _addr Address to be validated.
@@ -283,26 +283,17 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
         totalRewardRate = totalRewardRate - _oldRewardRate + _newRewardRate;
     }
 
-    /// @notice Function to validate farm.
-    /// @param _farm Address of the farm to be validated.
-    /// @param _baseTokens Array of base tokens.
-    /// @return bool True if farm is valid.
-    /// @dev It checks that the farm should implement getTokenAmounts and have REWARD_TOKEN.
-    /// as one of the reward tokens.
-    function _isValidFarm(address _farm, address[] memory _baseTokens) private returns (bool) {
-        return _hasRewardToken(_farm) && _hasBaseTokens(_farm, _baseTokens);
-    }
-
     /// @notice Function to check whether the base tokens are a subset of farm's assets.
     /// @param _farm Address of the farm.
     /// @param _baseTokens Array of base token addresses to be considered for value calculation.
     /// @dev It handles repeated base tokens as well and pushes indexed in farmRewardConfigs.
     /// @return hasBaseTokens True if baseTokens are non redundant and are a subset of assets.
-    function _hasBaseTokens(address _farm, address[] memory _baseTokens) private returns (bool) {
+    function _validateAndUpdateBaseTokens(address _farm, address[] memory _baseTokens) private returns (bool) {
         (address[] memory _assets,) = _getTokenAmounts(_farm);
         uint256 _assetsLen = _assets.length;
         uint256 _baseTokensLen = _baseTokens.length;
         bool hasBaseTokens;
+        delete farmRewardConfigs[_farm].baseAssetIndexes;
         for (uint8 i; i < _baseTokensLen; ++i) {
             hasBaseTokens = false;
             for (uint8 j; j < _assetsLen; ++j) {
@@ -320,6 +311,21 @@ contract Rewarder is IRewarder, OwnableUpgradeable, ReentrancyGuardUpgradeable {
             }
         }
         return true;
+    }
+
+    /// @notice Function to validate farm.
+    /// @param _farm Address of the farm to be validated.
+    /// @return bool True if farm is valid.
+    /// @dev It checks that the farm should have REWARD_TOKEN as one of the reward tokens.
+    function _isValidFarm(address _farm) private view returns (bool) {
+        address[] memory rwdTokens = IFarm(_farm).getRewardTokens();
+        uint256 rwdTokensLen = rwdTokens.length;
+        for (uint8 i; i < rwdTokensLen; ++i) {
+            if (rwdTokens[i] == REWARD_TOKEN) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// @notice Function to normalize asset amounts to be of precision REWARD_TOKEN_DECIMALS.

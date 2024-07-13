@@ -37,6 +37,7 @@ interface IRewarder {
     // Custom Errors.
     error InvalidAddress();
     error InvalidFarm();
+    error InvalidBaseTokens();
     error FarmNotConfigured(address farm);
     error ZeroAmount();
     error PriceFeedDoesNotExist(address token);
@@ -59,6 +60,10 @@ interface IRewarder {
     /// @param _farm Farm's address in which the token manager is to be updated.
     /// @param _newManager Address of the new token manager.
     function updateTokenManagerOfFarm(address _farm, address _newManager) external;
+
+    /// @notice A function to remove farm config.
+    /// @param _farm Farm of which config is to be removed.
+    function removeRewardConfig(address _farm) external;
 
     /// @notice Function to recover reward funds from the farm.
     /// @param _farm Farm's address from which reward funds is to be recovered.
@@ -91,10 +96,14 @@ interface IRewarder {
     /// @return Array of token amounts.
     function getTokenAmounts(address _farm) external view returns (address[] memory, uint256[] memory);
 
+    /// @notice Function to check whether calibration is restricted for the farm or not.
+    /// @param _farm Address of the farm.
+    function calibrationRestricted(address _farm) external view returns (bool);
+
     /// @notice Function to get reward config for a farm.
     /// @param _farm Address of the farm.
     /// @return FarmRewardConfig Farm reward config.
-    function getFarmRewardConfig(address _farm) external view returns (FarmRewardConfig memory);
+    function getRewardConfig(address _farm) external view returns (FarmRewardConfig memory);
 
     /// @notice Function to calculate the time till which rewards are there for an LP.
     /// @param _farm Address of the farm for which the end time is to be calculated.
