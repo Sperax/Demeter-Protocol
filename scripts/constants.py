@@ -236,12 +236,20 @@ deployment_config = {
                 'oracle': '0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50'
             },
             post_deployment_steps=[
+                # Step(
+                #     func='transferOwnership',
+                #     transact=True,
+                #     args={
+                #         'new_owner':
+                #             '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                #     }
+                # ),
                 Step(
-                    func='transferOwnership',
+                    func='deployRewarder',
                     transact=True,
                     args={
-                        'new_owner':
-                            '0x6d5240f086637fb408c7F727010A10cf57D51B62'
+                        'reward_token':
+                            '0x0966E72256d6055145902F72F9D3B6a194B9cCc3'
                     }
                 ),
                 Step(

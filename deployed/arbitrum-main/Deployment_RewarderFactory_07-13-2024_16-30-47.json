@@ -1,0 +1,83 @@
+{
+    "contract_addr": "0x926477bAF60C25857419CC9Bf52E914881E1bDD3",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Deployment_transaction",
+            "tx_hash": "0xfd2b2610e7b7c3905fe587c3eb1d3bbf2306fb08078b42a4c119ce1c519dacdd",
+            "contract": "RewarderFactory",
+            "contract_addr": "0x926477bAF60C25857419CC9Bf52E914881E1bDD3",
+            "tx_func": "constructor",
+            "blocknumber": 231750304,
+            "gas_used": 2976210,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0xa32e717e628c572338de5125f8d3eb887654b5c99ea11129cd3bbb79428c8175",
+            "contract": "RewarderFactory",
+            "contract_addr": null,
+            "tx_func": "deployRewarder",
+            "blocknumber": 231750341,
+            "gas_used": 190337,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0xa3def4f19fba908a977695f98b3b052ca8ba6705c914d69e5df18c3d1e8a482f",
+            "contract": "RewarderFactory",
+            "contract_addr": null,
+            "tx_func": "deployRewarder",
+            "blocknumber": 231750365,
+            "gas_used": 190236,
+            "gas_limit": 40000000
+        },
+        {
+            "step": "Post_deployment_step",
+            "tx_hash": "0x25e0455bcac14b5e41cae2e7cb03a2a41aefbd5b71365a0a35ba06f9cb77c5b4",
+            "contract": "RewarderFactory",
+            "contract_addr": null,
+            "tx_func": "deployRewarder",
+            "blocknumber": 231750377,
+            "gas_used": 185200,
+            "gas_limit": 40000000
+        }
+    ],
+    "config_name": "RewarderFactory",
+    "config": {
+        "deployment_params": {
+            "oracle": "0x14D99412dAB1878dC01Fe7a1664cdE85896e8E50"
+        },
+        "post_deployment_steps": [
+            {
+                "func": "deployRewarder",
+                "args": {
+                    "reward_token": "0x0966E72256d6055145902F72F9D3B6a194B9cCc3"
+                },
+                "transact": true,
+                "contract": "RewarderFactory",
+                "contract_addr": "0x926477bAF60C25857419CC9Bf52E914881E1bDD3"
+            },
+            {
+                "func": "deployRewarder",
+                "args": {
+                    "reward_token": "0x912CE59144191C1204E64559FE8253a0e49E6548"
+                },
+                "transact": true,
+                "contract": "RewarderFactory",
+                "contract_addr": "0x926477bAF60C25857419CC9Bf52E914881E1bDD3"
+            },
+            {
+                "func": "deployRewarder",
+                "args": {
+                    "reward_token": "0x5575552988A3A80504bBaeB1311674fCFd40aD4B"
+                },
+                "transact": true,
+                "contract": "RewarderFactory",
+                "contract_addr": "0x926477bAF60C25857419CC9Bf52E914881E1bDD3"
+            }
+        ],
+        "upgradeable": false,
+        "proxy_admin": null
+    }
+}
