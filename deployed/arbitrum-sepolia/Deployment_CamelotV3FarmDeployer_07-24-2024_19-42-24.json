@@ -1,0 +1,30 @@
+{
+    "contract_addr": "0xBF34B955b9BC809C2B17738B8B628e6aD99dc418",
+    "type": "Deployment",
+    "transactions": [
+        {
+            "step": "Deployment_transaction",
+            "tx_hash": "0xa098bb68a9ab75a47a381a5686261731291dc6063432904a30841ac6866939b9",
+            "contract": "CamelotV3FarmDeployer",
+            "contract_addr": "0xBF34B955b9BC809C2B17738B8B628e6aD99dc418",
+            "tx_func": "constructor",
+            "blocknumber": 66315709,
+            "gas_used": 20032031,
+            "gas_limit": 40000000
+        }
+    ],
+    "config_name": "CamelotV3FarmDeployer",
+    "config": {
+        "deployment_params": {
+            "farm_registry": "0xEb4B13593A819CE78cd796040497Cb7520411039",
+            "farm_id": "Demeter_CamelotV3_NonExpirable_Farm_Testnet",
+            "camelotv3_factory": "0xaA37Bea711D585478E1c04b04707cCb0f10D762a",
+            "camelotv3_nfpm": "0x79EA6cB3889fe1FC7490A1C69C7861761d882D4A",
+            "camelotv3_utils": "0xfc05244AeA98CbC756691a7fC314d20DAB1FcdBA",
+            "camelotv3_nfpm_utils": "0x7FaeD52F49D48EcAe8b484C6fd93394F474dE103"
+        },
+        "post_deployment_steps": [],
+        "upgradeable": false,
+        "proxy_admin": null
+    }
+}
