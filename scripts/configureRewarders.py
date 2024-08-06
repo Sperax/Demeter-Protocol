@@ -111,20 +111,6 @@ def getValue(token, amount):
   tokenPrice = ORACLE.getPrice(token)
   value = int((amount * tokenPrice[0]) / tokenPrice[1])
   return normalizeAmount(token, value)
-  
-
-# def normalizeAmounts(tokenAmounts):
-#   normalizedTokenAmounts = [[0 for x in range(len(tokenAmounts[0]))] for y in range(2)]
-#   for i in range(len(tokenAmounts[0])):
-#     token = ERC20.at(tokenAmounts[0][i])
-#     decimals = token.decimals()
-#     normalizedTokenAmounts[0][i] = tokenAmounts[0][i]
-#     normalizedTokenAmounts[1][i] = tokenAmounts[1][i]
-#     if (decimals < STANDARD_DECIMALS):
-#       normalizedTokenAmounts[1][i] = int(tokenAmounts[1][i] * 10 ** (STANDARD_DECIMALS - decimals))
-#     if (decimals > STANDARD_DECIMALS):
-#       normalizedTokenAmounts[1][i] = int(tokenAmounts[1][i] / 10 ** (decimals - STANDARD_DECIMALS))
-#   return normalizedTokenAmounts
 
 def getFarmData(rewarders, farms):
     print('Getting farm data')
